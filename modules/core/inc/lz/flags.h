@@ -73,14 +73,12 @@ namespace lz {
          LZ_Flags(std::string text, SA_Args _sa_args) :
             algorithm(SA_ALG::caps),
             sa_impl(lz::suffixarray::CaPS_SA(_sa_args.chunks, _sa_args.max_context)),
-            // input({ text }),
             input({ text }),
             alphabet_size(2),
             sa_args(_sa_args) {};
          /** @deprecated */
          LZ_Flags(sa_type& sa_impl_, std::string text, SA_Args _sa_args) :
             sa_impl(sa_impl_),
-            // input({ text }),
             input({ text }),
             alphabet_size(2),
             sa_args(_sa_args) {
@@ -95,28 +93,12 @@ namespace lz {
             if (std::holds_alternative<lz::suffixarray::CaPS_SA>(sa_impl_)) { algorithm = SA_ALG::caps; }
             else { algorithm = SA_ALG::sais; }
          };
-         /** @deprecated */
-         // LZ_Flags(std::vector<std::string> data, SA_Args _sa_args) :
-         //    algorithm(SA_ALG::caps),
-         //    sa_impl(lz::suffixarray::CaPS_SA(_sa_args.chunks, _sa_args.max_context)),
-         //    input(data),
-         //    alphabet_size(2),
-         //    sa_args(_sa_args) {};
          LZ_Flags(std::vector<sequence> data, SA_Args _sa_args) :
             algorithm(SA_ALG::caps),
             sa_impl(lz::suffixarray::CaPS_SA(_sa_args.chunks, _sa_args.max_context)),
             input(data),
             alphabet_size(2),
             sa_args(_sa_args) {};
-         /** @deprecated */
-         // LZ_Flags(sa_type& sa_impl_, std::vector<std::string> data, SA_Args _sa_args) :
-         //    sa_impl(sa_impl_),
-         //    input(data),
-         //    alphabet_size(2),
-         //    sa_args(_sa_args) {
-         //    if (std::holds_alternative<lz::suffixarray::CaPS_SA>(sa_impl_)) { algorithm = SA_ALG::caps; }
-         //    else { algorithm = SA_ALG::sais; }
-         // };
          LZ_Flags(sa_type& sa_impl_, std::vector<sequence> data, SA_Args _sa_args) :
             sa_impl(sa_impl_),
             input(data),
@@ -130,12 +112,6 @@ namespace lz {
             input({ text }),
             alphabet_size(2),
             sa_args(_sa_args) {};
-         // LZ_Flags(SA_ALG algorithm, std::vector<std::string> data, SA_Args _sa_args) :
-         //    algorithm(algorithm),
-         //    input(data),
-         //    alphabet_size(2),
-         //    sa_args(_sa_args) {};
-         // Copy constructor
          LZ_Flags(const LZ_Flags& flags) :
             algorithm(flags.algorithm),
             sa_impl(flags.sa_impl),
