@@ -1,0 +1,208 @@
+
+# =============================================================================
+
+# Minimimum CMake version.
+cmake_minimum_required(VERSION 3.5)
+cmake_policy(VERSION 3.5...3.28)
+
+# Better make
+# > export [CXX/CC]="path/to/compiler"
+# set(CMAKE_CXX_COMPILER /opt/homebrew/bin/g++-13)
+
+# Project name and languages used.
+set(PROJECT_NAME LempelZiv)
+set(namespace lz)
+set(VERSION 0.7.0)
+project(
+    ${PROJECT_NAME}
+    VERSION ${VERSION}
+    DESCRIPTION "Lempel-Ziv factorization program"
+    LANGUAGES CXX
+)
+
+# Language standards and hard requirements for such.
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+# for clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+option(asan "Build with address sanitizer instrumentation " OFF)
+option(builtin_tbb "Use local TBB library" ON)
+option(binding_python "Build python binding of LZ lib" OFF)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_CXX_FLAGS)
+# Global cmake
+include(FindThreads)
+include(CheckIPOSupported)
+# Local cmake
+include(ConfigInstallDirs)
+include(CheckCompiler)
+
+# Warning flags.
+set(CMAKE_CXX_FLAGS -Wextra)
+set(public_headers)
+
+set(EXT_DIR ${CMAKE_SOURCE_DIR}/external)
+set(EXT_INCLUDE ${CMAKE_SOURCE_DIR}/external/include)
+
+if(NOT EXISTS EXT_INCLUDE)
+   file(MAKE_DIRECTORY ${EXT_DIR})
+   file(MAKE_DIRECTORY ${EXT_INCLUDE})
+endif()
+
+if(NOT Threads_FOUND)
+    message(FATAL_ERROR "A supported threads library is required. Aborting.")
+endif()
+
+# Default build type.
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build Type" FORCE)
+endif()
+
+# Specify compiler features required when compiling a given target.
+# See https://cmake.org/cmake/help/v3.1/prop_gbl/CMAKE_CXX_KNOWN_FEATURES.html#prop_gbl:CMAKE_CXX_KNOWN_FEATURES
+# for complete list of features available
+list(APPEND REQUIRED_FEATURES
+        cxx_std_20 # Compiler mode is aware of C++ 20.
+        #MSVC 1900 cxx_alignas # Alignment control alignas, as defined in N2341.
+        #MSVC 1900 cxx_alignof # Alignment control alignof, as defined in N2341.
+        #MSVC 1900 cxx_attributes # Generic attributes, as defined in N2761.
+        cxx_auto_type # Automatic type deduction, as defined in N1984.
+        #MSVC 1900 cxx_constexpr # Constant expressions, as defined in N2235.
+        cxx_decltype # Decltype, as defined in N2343.
+        cxx_default_function_template_args # Default template arguments for function templates, as defined in DR226
+        cxx_defaulted_functions # Defaulted functions, as defined in N2346.
+        #MSVC 1900 cxx_defaulted_move_initializers # Defaulted move initializers, as defined in N3053.
+        cxx_delegating_constructors # Delegating constructors, as defined in N1986.
+        #MSVC 1900 cxx_deleted_functions # Deleted functions, as defined in N2346.
+        cxx_enum_forward_declarations # Enum forward declarations, as defined in N2764.
+        cxx_explicit_conversions # Explicit conversion operators, as defined in N2437.
+        cxx_extended_friend_declarations # Extended friend declarations, as defined in N1791.
+        cxx_extern_templates # Extern templates, as defined in N1987.
+        cxx_final # Override control final keyword, as defined in N2928, N3206 and N3272.
+        #MSVC 1900 cxx_func_identifier # Predefined __func__ identifier, as defined in N2340.
+        #MSVC 1900 cxx_generalized_initializers # Initializer lists, as defined in N2672.
+        #MSVC 1900 cxx_inheriting_constructors # Inheriting constructors, as defined in N2540.
+        #MSVC 1900 cxx_inline_namespaces # Inline namespaces, as defined in N2535.
+        cxx_lambdas # Lambda functions, as defined in N2927.
+        #MSVC 1900 cxx_local_type_template_args # Local and unnamed types as template arguments, as defined in N2657.
+        cxx_long_long_type # long long type, as defined in N1811.
+        #MSVC 1900 cxx_noexcept # Exception specifications, as defined in N3050.
+        #MSVC 1900 cxx_nonstatic_member_init # Non-static data member initialization, as defined in N2756.
+        cxx_nullptr # Null pointer, as defined in N2431.
+        cxx_override # Override control override keyword, as defined in N2928, N3206 and N3272.
+        cxx_range_for # Range-based for, as defined in N2930.
+        cxx_raw_string_literals # Raw string literals, as defined in N2442.
+        #MSVC 1900 cxx_reference_qualified_functions # Reference qualified functions, as defined in N2439.
+        cxx_right_angle_brackets # Right angle bracket parsing, as defined in N1757.
+        cxx_rvalue_references # R-value references, as defined in N2118.
+        #MSVC 1900 cxx_sizeof_member # Size of non-static data members, as defined in N2253.
+        cxx_static_assert # Static assert, as defined in N1720.
+        cxx_strong_enums # Strongly typed enums, as defined in N2347.
+        #MSVC 1900 cxx_thread_local # Thread-local variables, as defined in N2659.
+        cxx_trailing_return_types # Automatic function return type, as defined in N2541.
+        #MSVC 1900 cxx_unicode_literals # Unicode string literals, as defined in N2442.
+        cxx_uniform_initialization # Uniform initialization, as defined in N2640.
+        #MSVC 1900 cxx_unrestricted_unions # Unrestricted unions, as defined in N2544.
+        #MSVC 1900 cxx_user_literals # User-defined literals, as defined in N2765.
+        cxx_variadic_macros # Variadic macros, as defined in N1653.
+        cxx_variadic_templates # Variadic templates, as defined in N2242.
+)
+
+
+# Fix memory problem when use SAIS algorithm
+if(NOT binding_python)
+    set(LZ_LINK_SANITIZE $<$<COMPILE_LANGUAGE:CXX>:-fsanitize=address>)
+endif()
+#--- Set up address sanitizer builds ----------------------------------------------------------
+if(asan)
+  if(NOT CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    message(WARNING "Address sanitizer builds only tested with gcc and Clang")
+  endif()
+
+  set(LZ_COMPILE_SANITIZE)
+  foreach(item IN LISTS ASAN_EXTRA_CXX_FLAGS)
+    # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${item}>)
+    list(APPEND LZ_COMPILE_SANITIZE ${item})
+  endforeach()
+
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-v>)
+#   add_link_options(${ASAN_EXTRA_SHARED_LINKER_FLAGS})
+#   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ASAN_EXTRA_SHARED_LINKER_FLAGS}")
+#   set(LZ_LINK_SANITIZE "${LZ_LINK_SANITIZE} ${ASAN_EXTRA_SHARED_LINKER_FLAGS}")
+endif()
+
+# add module subdirectory
+add_subdirectory(modules)
+
+# Executable for the driver program.
+# add_executable(${PROJECT_NAME} MACOSX_BUNDLE main.cpp ${LZ_ALG})
+if(NOT binding_python)
+    add_executable(${PROJECT_NAME} main.cpp)
+
+    target_link_libraries(${PROJECT_NAME} PUBLIC LZCore TBB::tbb)
+
+    # Compiler flags for the target.
+    target_include_directories(${PROJECT_NAME} 
+    PUBLIC 
+        $<BUILD_INTERFACE:${SA_INCLUDE_DIR}> 
+        $<BUILD_INTERFACE:${CORE_INCLUDE_DIR}> 
+        $<BUILD_INTERFACE:${EXT_INCLUDE}>
+        $<BUILD_INTERFACE:${UTILS_INCLUDE_DIR}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    )
+
+    message(STATUS "SANITIZER: ${LZ_COMPILE_SANITIZE}")
+    target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
+    target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
+    target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
+
+    # set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${public_headers}")
+    # Debug prefix for libs when build it in debug mode
+    set_target_properties(${PROJECT_NAME} 
+        PROPERTIES 
+          DEBUG_POSTFIX "_dbg"
+    )
+
+    if(IPO_CHECKED)
+        set_target_properties(${PROJECT_NAME} 
+        PROPERTIES 
+          INTERPROCEDURAL_OPTIMIZATION TRUE
+          INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
+    endif()
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        BUNDLE True
+        # MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.${CUR_TARGET}
+        MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
+        MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}"
+        # MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/customtemplate.plist.in
+    )
+
+    # install the target and create export-set
+    install(
+        TARGETS ${PROJECT_NAME}
+        EXPORT "${PROJECT_NAME}Targets"
+        COMPONENT ${namespace} # must be here, not any line lower
+        # these get default values from GNUInstallDirs, no need to set them
+        #RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
+        LIBRARY 
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            NAMELINK_COMPONENT lz_headers
+        ARCHIVE
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            # NAMELINK_COMPONENT lz_headers
+        # except for public headers, as we want them to be inside a library folder
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
+    )
+
+    include(packaging)
+endif()
+
+if(binding_python)
+    add_subdirectory(python)
+endif()

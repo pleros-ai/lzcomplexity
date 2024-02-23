@@ -1,0 +1,11 @@
+.DS_Store
+
+/build/**
+/bin/**
+/data/**
+/lib/**
+/share/**
+
+/python/build/**
+/python/dist/**
+/python/src/LempelZiv.egg-info/**

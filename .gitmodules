@@ -1,0 +1,9 @@
+[submodule "external/tbb"]
+	path = external/tbb
+	url = https://github.com/oneapi-src/oneTBB.git
+	tag = v2021.10.0
+
+[submodule "external/pybind11"]
+	path = external/pybind11
+	url = https://github.com/pybind/pybind11.git
+	branch = v2.11

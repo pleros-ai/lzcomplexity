@@ -1,0 +1,20 @@
+--- external/tbb/CMakeLists.txt	2024-02-10 18:16:26
++++ external/tbb/MyCMakeLists.txt	2024-02-10 18:15:53
+@@ -93,7 +93,7 @@
+     set(TBB_ARCH 64)
+ endif()
+ 
+-option(TBB_TEST "Enable testing" ON)
++option(TBB_TEST "Enable testing" OFF)
+ option(TBB_EXAMPLES "Enable examples" OFF)
+ option(TBB_STRICT "Treat compiler warnings as errors" ON)
+ option(TBB_WINDOWS_DRIVER "Build as Universal Windows Driver (UWD)" OFF)
+@@ -233,7 +233,7 @@
+     # Allow specifying external TBB to test with.
+     # Do not add main targets and installation instructions in that case.
+     message(STATUS "Using external TBB for testing")
+-    find_package(TBB REQUIRED)
++    # find_package(TBB REQUIRED)
+ else()
+     if (TBB_BUILD)
+         add_subdirectory(src/tbb)
