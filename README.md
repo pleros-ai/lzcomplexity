@@ -1,14 +1,21 @@
 ```
-                               _    ____  ____ __
-                              | |  |_  /_|__  / /          -----------------------------
-                              | |__ / /___|/ / _ \      LempelZiv analysis engine v0.7 2024.
-                              |____/___|  /_/\___/
+       _    ____  ____ __
+      | |  |_  /_|__  / /          -----------------------------
+      | |__ / /___|/ / _ \      LempelZiv analysis engine v0.7 2024.
+      |____/___|  /_/\___/
 ```
 [![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-### Prepare the workspace
+### Prerequisites
+---
 
-The project use submodules (tbb and pybind11), so first it is needs initialize the modules:
+- Make sure you have installed CMake version 3.1 (or newer) on your system. LempelZiv uses CMake build configuration.
+- The project uses C++20 features so it needs a compiler compatible with it.
+
+### Prepare the workspace
+---
+
+The project uses submodules (tbb and pybind11), so first it needs to initialize the modules:
 
 ```bash
 $ git submodule init
@@ -20,8 +27,9 @@ $ git submodule update
 ```
 
 ### Build
+---
 
-1. Create build directory and move into it
+1. Create a build directory and move into it
 
 ```bash
 mkdir build && cd build
@@ -33,7 +41,7 @@ mkdir build && cd build
 cmake -DCMAKE_INSTALL_PREFIX=../ -DCMAKE_BUILD_TYPE=[Debug | Release] [OPTIONS] ..
 ```
 
-The possibles cmake OPTIONS can be found in the `CMakeLists.txt` file:
+The possible cmake OPTIONS can be found in the `CMakeLists.txt` file:
 
 - `asan` (**OFF** by default): configure the build with address sanitizer
 - `binding_python` (**OFF** by default): enable python binding
