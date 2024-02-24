@@ -1,3 +1,11 @@
+```
+                               _    ____  ____ __
+                              | |  |_  /_|__  / /          -----------------------------
+                              | |__ / /___|/ / _ \      LempelZiv analysis engine v0.7 2024.
+                              |____/___|  /_/\___/
+```
+[![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 ### Prepare the workspace
 
 The project use submodules (tbb and pybind11), so first it is needs initialize the modules:
