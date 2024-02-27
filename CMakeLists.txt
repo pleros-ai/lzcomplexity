@@ -112,16 +112,13 @@ list(APPEND REQUIRED_FEATURES
 )
 
 
-# Fix memory problem when use SAIS algorithm
-if(NOT binding_python)
-    set(LZ_LINK_SANITIZE $<$<COMPILE_LANGUAGE:CXX>:-fsanitize=address>)
-endif()
 #--- Set up address sanitizer builds ----------------------------------------------------------
 if(asan)
   if(NOT CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_ID MATCHES Clang)
     message(WARNING "Address sanitizer builds only tested with gcc and Clang")
   endif()
 
+  set(LZ_LINK_SANITIZE $<$<COMPILE_LANGUAGE:CXX>:-fsanitize=address>)
   set(LZ_COMPILE_SANITIZE)
   foreach(item IN LISTS ASAN_EXTRA_CXX_FLAGS)
     # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${item}>)
@@ -142,15 +139,17 @@ add_subdirectory(modules)
 if(NOT binding_python)
     add_executable(${PROJECT_NAME} main.cpp)
 
-    target_link_libraries(${PROJECT_NAME} PUBLIC LZCore TBB::tbb)
+    target_link_libraries(${PROJECT_NAME} PRIVATE TBB::tbb)
+    target_link_libraries(${PROJECT_NAME} PUBLIC LZApp)
 
     # Compiler flags for the target.
     target_include_directories(${PROJECT_NAME} 
     PUBLIC 
         $<BUILD_INTERFACE:${SA_INCLUDE_DIR}> 
-        $<BUILD_INTERFACE:${CORE_INCLUDE_DIR}> 
-        $<BUILD_INTERFACE:${EXT_INCLUDE}>
         $<BUILD_INTERFACE:${UTILS_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${CORE_INCLUDE_DIR}> 
+        $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${EXT_INCLUDE}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
 

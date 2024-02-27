@@ -37,7 +37,7 @@
 
 namespace lz {
 
-	constexpr int ALPHABET_SIZE = 0x02;
+	constexpr lz_int ALPHABET_SIZE = 0x02;
 
 	// The error condition exceptions
 	class SequenceError : Errors {};
@@ -52,23 +52,23 @@ namespace lz {
 	class sequence {
 	protected:
 		std::vector<char> seq; //!< the sequence
-		int alphabet_size;
+		lz_int alphabet_size;
 
 	public:
 		sequence(void) :alphabet_size(ALPHABET_SIZE) {};
-		sequence(int alphsize) :alphabet_size(alphsize) {};
+		sequence(lz_int alphsize) :alphabet_size(alphsize) {};
 		sequence(const std::vector<char> vec);
 		sequence(const std::string str);
-		sequence(const std::vector<char> vec, int aph) : seq(vec), alphabet_size(aph) {};
-		sequence(const std::string str, int aph) : seq(str.begin(), str.end()), alphabet_size(aph) {};
+		sequence(const std::vector<char> vec, lz_int aph) : seq(vec), alphabet_size(aph) {};
+		sequence(const std::string str, lz_int aph) : seq(str.begin(), str.end()), alphabet_size(aph) {};
 		sequence(const sequence& s) : seq(s.seq), alphabet_size(s.alphabet_size) {};
 		sequence(sequence&& s) : seq(std::move(s.seq)), alphabet_size(s.alphabet_size) {};
 		~sequence() { alphabet_size = ALPHABET_SIZE; seq.clear(); };
 
-		constexpr int alphabetSize(void) const { return alphabet_size; };
-		int SetAlphabetSize(void);
+		constexpr lz_int alphabetSize(void) const { return alphabet_size; };
+		lz_int SetAlphabetSize(void);
 
-		constexpr unsigned int NoZeroes(void) const;
+		constexpr lz_uint NoZeroes(void) const;
 		constexpr std::string toString(void) const;
 
 		char& operator[](std::vector<char>::size_type);
@@ -93,18 +93,19 @@ namespace lz {
 		char back(void)const;
 
 		std::vector<char>::size_type size(void) const;
+		std::vector<char>::size_type length(void) const;
 
 		std::vector<char> SequenceVector(void) const;
 
 		sequence Take(std::vector<char>::size_type l) const;
 		sequence Drop(std::vector<char>::size_type l) const;
 		std::pair<sequence, sequence> Split(std::vector<char>::size_type l) const;
-		sequence Granularity(unsigned int gr) const;
+		sequence Granularity(lz_uint gr) const;
 
 		sequence& pi(void);
 		sequence& reverse(void);
-		sequence& rightShift(unsigned int ls = 1);
-		sequence& leftShift(unsigned int ls = 1);
+		sequence& rightShift(lz_uint ls = 1);
+		sequence& leftShift(lz_uint ls = 1);
 
 		sequence& operator=(sequence);
 		sequence& operator=(const std::vector<char>&);
@@ -138,8 +139,8 @@ namespace lz {
 
 	};
 
-	void Shuffle(sequence& s, unsigned int block_size);
-	sequence Shuffle(sequence& s, unsigned int block_size, unsigned int times);
+	void Shuffle(sequence& s, lz_uint block_size);
+	sequence Shuffle(sequence& s, lz_uint block_size, lz_uint times);
 
 
 	//.............................................................................................................
@@ -165,8 +166,8 @@ namespace lz {
 	}
 
 
-	inline constexpr unsigned int sequence::NoZeroes(void) const {
-		unsigned int acum = 0;
+	inline constexpr lz_uint sequence::NoZeroes(void) const {
+		lz_uint acum = 0;
 
 		for (auto s : seq)
 			acum += (s == 0) ? 1 : 0;
@@ -278,7 +279,7 @@ namespace lz {
 		return al;
 	}
 
-	inline int sequence::SetAlphabetSize(void) {
+	inline lz_int sequence::SetAlphabetSize(void) {
 		std::vector<char> al;
 
 		al = DetermineAlphabet();
@@ -403,7 +404,7 @@ namespace lz {
 		return *this;
 	}
 
-	inline sequence& sequence::rightShift(unsigned int ls) {
+	inline sequence& sequence::rightShift(lz_uint ls) {
 #ifdef __cpp_lib_ranges
 		std::ranges::rotate(seq.begin(), seq.begin() + (ls % seq.size()), seq.end());
 #else
@@ -413,7 +414,7 @@ namespace lz {
 		return *this;
 	}
 
-	inline sequence& sequence::leftShift(unsigned int ls) {
+	inline sequence& sequence::leftShift(lz_uint ls) {
 #ifdef __cpp_lib_ranges
 		std::ranges::rotate(seq.begin(), seq.begin() + seq.size() - (ls % seq.size()), seq.end());
 #else
@@ -424,6 +425,10 @@ namespace lz {
 	}
 
 	inline std::vector<char>::size_type sequence::size(void) const {
+		return seq.size();
+	}
+
+	inline std::vector<char>::size_type sequence::length(void) const {
 		return seq.size();
 	}
 
@@ -460,11 +465,11 @@ namespace lz {
 		return std::make_pair(lhs, rhs);
 	}
 
-	inline sequence sequence::Granularity(unsigned int gr) const {
+	inline sequence sequence::Granularity(lz_uint gr) const {
 		char temp = 0;
 		std::vector<char> ns;
 		std::set<char> alphabet;
-		unsigned int count = 0;
+		lz_uint count = 0;
 
 		for (auto c : seq) {
 			if (count == gr - 1) {
@@ -602,12 +607,12 @@ namespace lz {
 		return !operator< (lhs, rhs);
 	}
 
-	inline void Shuffle(sequence& s, unsigned int block_size) {
+	inline void Shuffle(sequence& s, lz_uint block_size) {
 		static std::random_device rd_seed;
 		static std::mt19937 random_engine(rd_seed());
 
 		std::uniform_int_distribution<> dis(0, (s.size() - block_size - 0x01) / block_size);
-		unsigned int op1 = s.size() + 0x03, op2 = s.size() + 0x03;
+		lz_uint op1 = s.size() + 0x03, op2 = s.size() + 0x03;
 
 		while (op1 > s.size() - block_size - 0x01) // this goes on until we get a valid index
 			op1 = block_size * dis(random_engine); // the index for the first block
@@ -621,10 +626,10 @@ namespace lz {
 		swap(s, op1, op2, block_size);
 	}
 
-	inline sequence Shuffle(const sequence& s, unsigned int block_size, unsigned int times) {
+	inline sequence Shuffle(const sequence& s, lz_uint block_size, lz_uint times) {
 		sequence seq(s);
 
-		for (unsigned int i = 0; i < times; i++)
+		for (lz_uint i = 0; i < times; i++)
 			Shuffle(seq, block_size);
 
 		return seq;

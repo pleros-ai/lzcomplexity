@@ -49,6 +49,23 @@ namespace lz {
             debug = false;
         }
 
+        CaPS_SA::CaPS_SA(utils::LZ_Args args)
+            : T_(nullptr),
+            n_(0),
+            SA_(nullptr),
+            LCP_(nullptr),
+            SA_w(nullptr),
+            LCP_w(nullptr),
+            p_(args.chunks > 0 ? args.chunks : default_subproblem_count),
+            max_context(args.max_context > 0 ? args.max_context : n_),
+            pivot_(nullptr),
+            pivot_per_part_(p_ - 1),
+            part_size_scan_(nullptr),
+            part_ruler_(nullptr) {
+            c = p_ == 1 ? 1 : p_ - 1;
+            debug = false;
+        }
+
         CaPS_SA::CaPS_SA(const CaPS_SA& other) :CaPS_SA(other.T_, other.n_, other.p_, other.max_context) {
             std::memcpy(SA_, other.SA_, n_ * sizeof(lz_int));
             std::memcpy(LCP_, other.LCP_, n_ * sizeof(lz_int));

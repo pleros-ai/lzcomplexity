@@ -58,10 +58,8 @@ FIND_PATH (TBB_ROOT_DIR
         ENV TBB30_INSTALL_DIR
         ENV TBB22_INSTALL_DIR
         ENV TBB21_INSTALL_DIR
-        # ${CMAKE_SOURCE_DIR}/external/tbb
   DOC "TBB root directory")
 
-  # add_subdirectory(${CMAKE_SOURCE_DIR}/external/tbb)
 
 FIND_PATH (TBB_INCLUDE_DIR
   NAMES tbb/tbb.h
@@ -118,15 +116,6 @@ ELSEIF (TBB_LIBRARY_RELEASE)
   IF (NOT TBB_LIBRARY)
     SET (TBB_LIBRARY ${TBB_LIBRARY_RELEASE} CACHE STRING "TBB library" FORCE)
   ENDIF (NOT TBB_LIBRARY)
-# ELSE()
-  # Look for local version of TBB
-  # IF(NOT EXISTS ${CMAKE_SOURCE_DIR}/external/tbb)
-  #   add_subdirectory(${CMAKE_SOURCE_DIR}/external/tbb tbb)
-  #   SET(TBB_LIBRARY TBB::tbb)
-  # ELSE()
-  #   SET(TBB_LIBRARY tbb)
-  #   SET(TBB_FOUND OFF)
-  # ENDIF()
 ENDIF (TBB_LIBRARY_RELEASE AND TBB_LIBRARY_DEBUG)
 
 message(STATUS "TBB dirs found")

@@ -2,17 +2,16 @@
 #include <limits>
 #include <vector>
 #include <thread>
+#if __cplusplus >= 201703L
 #include <variant>
+#endif
 
 #include <tbb/task_arena.h>
 #include <cxxopts.hpp>
 #include <json.hpp>
 
-#include <lz/utils.h>
-#include <lz/flags.h>
-#include <lz/lempelziv.h>
-#include <lz/caps.h>
-#include <lz/sais_lite.h>
+#include <lz/core.h>
+#include <lz/lzApp.h>
 
 inline auto getColor(lz::utils::MSG_TYPE type) {
     switch (type) {
@@ -67,7 +66,7 @@ inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
 }
 
 // Read a plain text file with one line
-inline void read_input(const std::string& ip_path, lz::sequence& text) {
+inline std::vector<lz::sequence> read_input(const std::string& ip_path, bool multiline = false) {
     namespace fs = std::filesystem;
     std::error_code ec;
     const auto file_size = fs::file_size(ip_path, ec);
@@ -77,13 +76,29 @@ inline void read_input(const std::string& ip_path, lz::sequence& text) {
         std::exit(EXIT_FAILURE);
     }
 
+    int num_line = 0;
     std::ifstream input(ip_path);
-    input >> text;
+    lz::sequence line;
+    lz::sequence final_str;
+    std::vector<lz::sequence> data;
+
+    while (input.good() && !input.eof()) {
+        input >> line;
+        num_line++;
+        if (num_line % 35 == 0) std::cout << "\r Num of lines read: " << num_line;
+
+        if (line.at(0) == '#' || line.at(0) == '\n' || line.length() == 0) continue;
+
+        data.push_back(line);
+        if(!multiline) break;
+    }
+
     input.close();
+    return data;
 }
 
 // Read a plain text file with multiple line
-inline void read_multiInputs(const std::string& ip_path, std::vector<std::string>& text_col, bool process = false) {
+inline void read_multiInputs(const std::string& ip_path, std::vector<lz::sequence>& text_col, bool process = false) {
     namespace fs = std::filesystem;
     std::error_code ec;
 
@@ -96,12 +111,11 @@ inline void read_multiInputs(const std::string& ip_path, std::vector<std::string
     }
 
     std::ifstream input(ip_path);
-    std::string line;
-    std::string final_str = "";
-    if (process) final_str.reserve(file_size);
+    lz::sequence line;
+    lz::sequence final_str;
 
     while (input.good() && !input.eof()) {
-        std::getline(input, line);
+        input >> line;
         num_line++;
         if (num_line % 35 == 0) std::cout << "\rprocess: " << process << " Num of lines read: " << num_line;
 
@@ -156,11 +170,11 @@ inline void read_csv(const std::string& ip_path, std::vector<std::string>& text_
 
 
 struct lz_options {
-    std::string input;
-    std::string output;
-    lz::utils::SA_ALG algorithm;
-    lz::lz_int chunks;
-    lz::lz_int max_context;
+    std::string input;      //? Input filepath.
+    std::string output;     //? Output filepath.
+    /* Extra args for LZApp functions */
+    lz::utils::LZ_Args args;
+    /* flags */
     bool multiLine;
     bool print_factors;
     bool find_distance;
@@ -170,9 +184,6 @@ struct lz_options {
 
     lz_options() {
         output = "lz_results.json";
-        algorithm = lz::utils::SA_ALG::sais;
-        chunks = 1;
-        max_context = 0;
         multiLine = false;
         print_factors = false;
         find_distance = false;
@@ -184,15 +195,17 @@ struct lz_options {
     lz_options(cxxopts::ParseResult result) {
         input = result.unmatched()[0];
         output = result["output"].as<std::string>();
-        algorithm = result["suffix-algorithm"].as<std::string>() == "caps" ? lz::utils::SA_ALG::caps : lz::utils::SA_ALG::sais;
-        chunks = result["chunks"].as<lz::lz_int>();
-        max_context = result["max-context"].as<lz::lz_int>();
         multiLine = result["multi-line"].as<bool>();
         print_factors = result["factors"].as<bool>();
         find_distance = result["dlz"].as<bool>();
         preprocess = result["process"].as<bool>();
         is_csv = result["csv"].as<bool>();
         save_results = result["save"].as<bool>();
+
+        args.chunks = result["chunks"].as<lz::lz_int>();
+        args.max_context = result["max-context"].as<lz::lz_int>();
+        args.block_size = result["max-excess"].as<lz::lz_int>();
+        args.excess_line = result["excess"].as<lz::lz_int>();
     }
 };
 
@@ -209,27 +222,35 @@ lz_options process_args(cxxopts::ParseResult& result) {
     return options;
 }
 
-void save_data(lz::utils::LZ_Flags& flags, lz_options& opt) {
+void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_options& opt) {
     nlohmann::json out_data;
 
     for (std::size_t i = 0; i < flags.input.size(); i++) {
         // out_data["input"] = opt.input;
         out_data["sequences"][i]["sequence_size"] = flags.input[i].size();
 
-        if (flags.complexity.size()) {
-            out_data["sequences"][i]["complexity"] = flags.complexity[i];
+        if (results.complexity.size()) {
+            out_data["sequences"][i]["complexity"] = results.complexity[i];
         }
 
-        if (flags.entropy_density.size()) {
-            out_data["sequences"][i]["entropy_density"] = flags.entropy_density[i];
+        if (results.entropy_density.size()) {
+            out_data["sequences"][i]["entropy_density"] = results.entropy_density[i];
         }
 
-        if (flags.excess_entropy_mi.size()) {
-            out_data["sequences"][i]["excess_entropy_mi"] = flags.excess_entropy_mi[i];
+        if (results.excess_entropy_mi.size()) {
+            out_data["sequences"][i]["excess_entropy_mi"] = results.excess_entropy_mi[i];
+        }
+
+        if (results.excess_entropy_dist.size()) {
+            out_data["sequences"][i]["excess_entropy_by_distance"] = results.excess_entropy_dist[i];
+        }
+
+        if (results.excess_entropy_shuffle.size()) {
+            out_data["sequences"][i]["excess_entropy_by_shuffle"] = results.excess_entropy_shuffle[i];
         }
 
         if (opt.find_distance && i < flags.input.size() - 1) {
-            out_data["sequences"][i]["info_distance"] = flags.info_distance[i];
+            out_data["sequences"][i]["info_distance"] = results.info_distance[i];
         }
 
         if (!opt.multiLine) break;
@@ -252,28 +273,23 @@ lz::lz_int process(lz_options& opt) {
         read_csv(opt.input, data);
         exit(0);
     }
-    else if (!opt.multiLine) {
-        read_input(opt.input, text2);
-        data2.push_back(text2);
+    else {
+        data2 = read_input(opt.input, opt.multiLine);
     }
-    else if (opt.multiLine) {
-        read_multiInputs(opt.input, data, opt.preprocess);
-    }
+    // read_multiInputs(opt.input, data2, opt.preprocess);
 
     if (data.size()) std::cout << data[0].length() << " str: " << data[0].substr(0, 10) << std::endl;
     if (data2.size()) std::cout << " seq: " << text2.Take(10) << std::endl;
 
-    lz::utils::sa_type alg = lz::suffixarray::SAIS();
+    // lz::utils::sa_type<>::type alg = lz::suffixarray::SAIS();
+    // lz::utils::sa_type<>::type alg = lz::suffixarray::CaPS_SA(opt.args.chunks, opt.args.max_context);
 
-    if (opt.algorithm == lz::utils::SA_ALG::caps) {
-        alg = lz::suffixarray::CaPS_SA(opt.chunks, opt.max_context);
-    }
-
-    std::cout << "after: " << std::holds_alternative<lz::suffixarray::CaPS_SA>(alg) << std::endl;
-    // lz::utils::LZ_Flags test_flags(opt.algorithm, data, opt.input_type, opt.chunks);
-    lz::utils::SA_Args args(opt.chunks, opt.max_context);
-    lz::utils::LZ_Flags test_flags(alg, data2, args);
+    lz::utils::LZ_Flags test_flags(data2, opt.args);
     lz::utils::LZ_Output lz;
+    lz::utils::LZ_Output lz2;
+
+    std::cout << data2.size() << std::endl;
+
 
     // auto maxConcurrency = 11;
     // if (maxConcurrency > tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism)) {
@@ -283,11 +299,23 @@ lz::lz_int process(lz_options& opt) {
     // auto arena = tbb::task_arena();
     // arena.initialize(maxConcurrency);
 
-    // auto [x, y] = data2[0].Split(100);
-    // map([&](auto c)->char { std::cout << c << " "; }, data2[0]);
-    // data2[0].map([&](auto c)->char { std::cout << c << " "; return c; });
-
     // tbb::task_arena no_ht_arena(std::thread::hardware_concurrency());
+    
+    // Core functions
+    // auto c = lz::LempelZivFactorization(data2[0]);
+    // auto d = lz::EntropyDensity(data2[0], lz::utils::LZ_Args(8));
+    // auto f = lz::InformationDistance(data2[0], data2[0]);
+    // auto es = lz::ExcessEntropyShuffle(data2[0], lz::utils::LZ_Args(8));
+    // auto em = lz::ExcessEntropyMi(data2[0]);
+    // auto ed = lz::ExcessEntropyDistance(data2[0]);
+    // std::cout  << c << "\n";
+    // std::cout  << d << "\n";
+    // std::cout  << f << "\n";
+    // std::cout  << em << "\n";
+    // std::cout  << es << "\n";
+    // std::cout  << ed << "\n";
+
+    // App functions
     lz::LempelZivFactorization(test_flags, lz);
     std::cout << std::endl;
     std::cout << "Complexity: ";
@@ -312,12 +340,19 @@ lz::lz_int process(lz_options& opt) {
     lz::ExcessEntropyShuffle(test_flags, lz);
     std::cout << "Excess entropy by shuffle: ";
     for (auto x : lz.excess_entropy_shuffle) std::cout << x << " ";
+    // lz::ExcessEntropyShuffleSequential(test_flags, lz2);
+    // std::cout << "\nExcess entropy by shuffle sequential: ";
+    // for (auto x : lz2.excess_entropy_shuffle) std::cout << x << " ";
     std::cout << std::endl;
 
-    // lz::InformationDistanceBySequence(test_flags);
-    // std::cout << "Info distance in sequences: ";
-    // for (auto x : test_flags.sequence_info_distance) std::cout << x << " ";
-    // std::cout << std::endl;
+    if(opt.args.excess_line > 0) {
+        // TODO: Implement excess of entropy for a sequence and get struct with info
+    }
+
+    lz::InformationDistanceBySequence(test_flags);
+    std::cout << "Info distance in sequences: ";
+    for (auto x : test_flags.sequence_info_distance) std::cout << x << " ";
+    std::cout << std::endl;
 
     if (opt.find_distance) {
         lz::InformationDistance(test_flags, lz);
@@ -327,7 +362,7 @@ lz::lz_int process(lz_options& opt) {
         std::cout << std::endl;
     }
 
-    if (opt.save_results) save_data(test_flags, opt);
+    if (opt.save_results) save_data(test_flags, lz, opt);
 
     return EXIT_SUCCESS;
 }
@@ -339,14 +374,15 @@ auto main(int argc, char const* argv[]) -> int {
     options.allow_unrecognised_options();
     options.add_options("lz")
         ("h,help", "Show the help of the program.") // a bool parameter
-        ("a,suffix-algorithm", "Suffix array algorithm.", cxxopts::value<std::string>()->default_value("caps"), "caps | sais")
-        ("c,chunks", "Number of partitions for data array (only for caps algorithm).", cxxopts::value<int>()->default_value("20"), "num")
-        ("m,max-context", "Max context for suffix comparisons (only for caps algorithm).", cxxopts::value<int>()->default_value("0"), "num")
+        // ("a,suffix-algorithm", "Suffix array algorithm.", cxxopts::value<std::string>()->default_value("caps"), "caps | sais")
+        ("c,chunks", "Number of partitions for data array (only for caps algorithm).", cxxopts::value<lz::lz_int>()->default_value("20"), "num")
+        ("m,max-context", "Max context for suffix comparisons (only for caps algorithm).", cxxopts::value<lz::lz_int>()->default_value("0"), "num")
         ("o,output", "Output file path for results (json format).", cxxopts::value<std::string>()->default_value("result.json"), "file_name")
         ("M,multi-line", "Treat each line in the input stream as a different sequence.")
         // ("t,text", "Treat 'input_data' as text.")
         ("f,factors", "Print the factors and save them in the output file.")
-        ("e,excess", "Outputs the excess entropy.")
+        ("e,excess", "Outputs the excess entropy list of a given line.", cxxopts::value<lz::lz_int>()->default_value("-1"), "value")
+        ("E,max-excess", "Maximum iteration value for the excess entropy calculation by shuffling.", cxxopts::value<lz::lz_int>()->default_value("0"), "value")
         ("p,process", "Clear input data.")
         ("d,dlz", "The LZ distance is calculated between successive sequences. Only valid for multisequence file (-M option).")
         ("C,csv", "Input file has csv format.")
@@ -381,6 +417,11 @@ auto main(int argc, char const* argv[]) -> int {
     catch (std::exception err) {
         std::string msg{ err.what() };
         std::cerr << std::endl << print_msg(lz::utils::MSG_TYPE::ERROR, "Fatal error BOOM!!!" + msg) << std::endl;
+        return EXIT_FAILURE;
+    }
+    catch (...) {
+        // std::string msg{ err.what() };
+        std::cerr << std::endl << print_msg(lz::utils::MSG_TYPE::ERROR, "Fatal error BOOM!!!") << std::endl;
         return EXIT_FAILURE;
     }
 }

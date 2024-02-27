@@ -28,237 +28,242 @@
 #include <lz/lempelziv.h>
 
 namespace lz {
-   //.......................................................................
-   //                            THE BANANA
-   //.......................................................................
-   lz_int LempelZivFactorization(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
-      // std::vector<lz_int> complex_result;
-      LZ.complexity.clear();
-      LZ.complexity.reserve(flags.input.size());
+   //.......................................................................//
+   //                            THE BANANA                                 //
+   //.......................................................................//
 
-      for (sequence str : flags.input) {
-
-         auto clx = LempelZivFactorization(str, flags.sa_impl);
-         LZ.complexity.push_back(clx);
-      }
-
-      return EXIT_SUCCESS;
-   };
-
+   //-------------------- Factorization functions ----------------------------//
    lz_int LempelZivFactorization(const sequence& text) {
       lz76::LempelZiv76 L;
       L.Factorize(text);
       return L.getFactorization();
    };
-
-   lz_int LempelZivFactorization(const sequence& text, utils::sa_type algorithm) {
-      utils::LZ_SuffixArray _SA;
+   
+   lz76::LZ_Result LempelZivFactors(const sequence& text) {
       lz76::LempelZiv76 L;
+      return L.Factorize(text);
+   };
 
-      std::visit([&](auto&& alg) { _SA = alg.construct(text.toString()); }, algorithm);
-
-      L.Factorize(_SA);
+   lz_int LempelZivFactorization(const sequence& text, utils::LZ_Args args) {
+      lz76::LempelZiv76 L;
+      L.Factorize(text, args);
       return L.getFactorization();
    };
 
-   lz_int LempelZivFactorization(const std::string& text, utils::sa_type algorithm) {
-      utils::LZ_SuffixArray _SA;
+   lz76::LZ_Result LempelZivFactors(const sequence& text, utils::LZ_Args args) {
       lz76::LempelZiv76 L;
-
-      std::visit([&](auto&& alg) { _SA = alg.construct(text); }, algorithm);
-
-      L.Factorize(_SA);
-      return L.getFactorization();
+      return L.Factorize(text, args);
    };
 
-   lz_int LempelZivFactorization(const std::string& text, utils::SA_ALG algorithm, lz_int chunks_count, lz_int max_context) {
-      utils::LZ_SuffixArray _SA;
+   //-------------------- Entropy density functions ----------------------------//
+   lz_double EntropyDensity(const sequence& text) {
       lz76::LempelZiv76 L;
+      L.Factorize(text);
+      lz_double div = (text.size() * std::log(text.alphabetSize())) / std::log(text.size());
+   
+      return L.getFactorization() / div;
+   }
 
-      if (algorithm == utils::SA_ALG::sais) {
-         lz::suffixarray::SAIS alg(text.data(), text.length());
-         _SA = alg.construct();
-      }
+   lz_double EntropyDensity(const sequence& text, utils::LZ_Args args) {
+      lz76::LempelZiv76 L;
+      L.Factorize(text, args);
+      lz_double div = text.size() * std::log(text.alphabetSize()) / std::log(text.size());
+   
+      return L.getFactorization() / div;
+   }
 
-      if (algorithm == utils::SA_ALG::caps) {
-         if (chunks_count < 0) throw LZSuffixArrayError();
-         lz::suffixarray::CaPS_SA alg(text.data(), text.length(), chunks_count, max_context);
-         // alg.debug = true; 
-         _SA = alg.construct();
-      }
+   //-------------------- Excess of entropy functions ----------------------------//
+   lz_int ExcessEntropyMi(const sequence& text) {
+      std::vector<char>::size_type mid = text.size() / 2; // the half of the sequence
 
-      L.Factorize(_SA);
-      return L.getFactorization();
+      lz_int C_, C_fh, C_lh = 0;
+      auto [seq_fh, seq_lh] = text.Split(mid);
+
+      auto fh_fun = [&]() {
+         C_fh = LempelZivFactorization(seq_fh);
+         };
+      auto lh_fun = [&]() {
+         C_lh = LempelZivFactorization(seq_lh);
+         };
+      auto all_fun = [&]() {
+         C_ = LempelZivFactorization(text);
+         };
+
+      utils::par_do(all_fun, fh_fun, lh_fun);
+      return C_fh + C_lh - C_;
    };
 
-   lz_int ExcessEntropyMi(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
-      // std::vector<lz_int> excess_entropy_mi;
-      LZ.excess_entropy_mi.clear();
-      LZ.excess_entropy_mi.reserve(flags.input.size());
+   lz_double ExcessEntropyMiNormalized(const sequence& text) {
+      auto excess = ExcessEntropyMi(text);
+      auto div = (text.size() * std::log(text.alphabetSize())) / std::log(text.size());
 
-      for (sequence str : flags.input) {
-         std::vector<char>::size_type mid = str.size() / 2; // the half of the sequence
+      return excess / div;
+   }
+   
+   lz_int ExcessEntropyMi(const sequence& text, utils::LZ_Args args) {
+      std::vector<char>::size_type mid = text.size() / 2; // the half of the sequence
 
-         lz_int C_, C_fh, C_lh = 0;
-         auto [seq_fh, seq_lh] = str.Split(mid);
+      lz_int C_, C_fh, C_lh = 0;
+      auto [seq_fh, seq_lh] = text.Split(mid);
 
-         auto fh_fun = [&]() {
-            C_fh = LempelZivFactorization(seq_fh, flags.sa_impl);
-            };
-         auto lh_fun = [&]() {
-            C_lh = LempelZivFactorization(seq_lh, flags.sa_impl);
-            };
-         auto all_fun = [&]() {
-            C_ = LempelZivFactorization(str, flags.sa_impl);
-            };
+      auto fh_fun = [&]() {
+         C_fh = LempelZivFactorization(seq_fh, args);
+         };
+      auto lh_fun = [&]() {
+         C_lh = LempelZivFactorization(seq_lh, args);
+         };
+      auto all_fun = [&]() {
+         C_ = LempelZivFactorization(text, args);
+         };
 
-         utils::par_do(all_fun, fh_fun, lh_fun);
-
-         LZ.excess_entropy_mi.push_back(C_fh + C_lh - C_);
-      }
-
-      return EXIT_SUCCESS;
+      utils::par_do(all_fun, fh_fun, lh_fun);
+      return C_fh + C_lh - C_;
    };
 
-   lz_int ExcessEntropyShuffle(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
-      std::vector<lz_int> excess_entropy;
-      excess_entropy.reserve(flags.input.size());
+   lz_double ExcessEntropyMiNormalized(const sequence& text, utils::LZ_Args args) {
+      auto excess = ExcessEntropyMi(text, args);
+      auto div = (text.size() * std::log(text.alphabetSize())) / std::log(text.size());
 
-      for (auto str : flags.input) {
-         std::vector<char>::size_type mm = utils::Mmax(str.size()); // the maximum number for the sum in the entropy estimation
-         double excessentropy = 0;
+      return excess / div;
+   }
 
-         for (unsigned int m = 1; m <= mm; m++) {
+   lz_double ExcessEntropyShuffle(const sequence& str) {
+      std::size_t mm = utils::max_block_size(str.size()); // the maximum number for the sum in the entropy estimation
 
-            std::random_device rd;
-            std::mt19937 gen{ rd() };
+      auto complex = LempelZivFactorization(str);
+      auto tbb_range = tbb::blocked_range<size_t>(1, mm);
+      auto main_fun = [&](const tbb::blocked_range<size_t>& r, lz_double init) -> lz_double {
+         for (auto m = r.begin(); m <= r.end(); m++) {
+            sequence rand_seq = Shuffle(str, m, str.size() / 2); // Shuffling is made for half the size of the sequence, hope that is enough
+            auto rand_complexity = LempelZivFactorization(rand_seq);
+            lz_double eeterm = 0;
+            eeterm = std::log(str.size()) * std::fabs((lz_double)rand_complexity - (lz_double)complex) / (str.size() * std::log(str.alphabetSize()));
 
-            sequence sseq = Shuffle(str, m, str.size() / 2); // Shuffling is made for half the size of the sequence, hope that is enough
-            std::vector <unsigned int> slzf;
-            auto scomplexity = LempelZivFactorization(sseq);
-            double eeterm = 0;
-            eeterm = log(str.size()) * fabs((double)scomplexity - (double)LZ.complexity[0]) / (str.size() * log(str.alphabetSize()));
+            // cumexcess_entropy.push_back(eeterm);
+            init += eeterm;
 
-            // cumexcessentropy.push_back(eeterm);
-            excessentropy += eeterm;
-
-            if (m == 1)
-               LZ.multi_information.push_back(eeterm);
+            // if (m == 1)
+            //    LZ.multi_information.push_back(eeterm);
          }
+         return init;
+      };
+      auto reduce_fun = [&](const lz_double &a, const lz_double &b) -> lz_double { return a+b; };
 
-         LZ.excess_entropy_shuffle.push_back(excessentropy);
+      return tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
+   }
+   
+   lz_double ExcessEntropyShuffleSequential(const sequence& str, utils::LZ_Args args) {
+      std::size_t mm = args.block_size;
+      if(mm <= 0) {
+         mm = utils::max_block_size(str.size()); // the maximum number for the sum in the entropy estimation
+	      mm += 10; // begin aggressive
       }
 
-      return EXIT_SUCCESS;
+      lz_double excessentropy = 0;
+      auto complex = LempelZivFactorization(str, args);
+
+      for (unsigned int m = 1; m <= mm; m++) {
+         sequence sseq = Shuffle(str, m, str.size() / 2); // Shuffling is made for half the size of the sequence, hope that is enough
+         std::vector <unsigned int> slzf;
+         auto scomplexity = LempelZivFactorization(sseq, args);
+         lz_double eeterm = 0;
+         eeterm = std::log(str.size()) * std::fabs((lz_double)scomplexity - (lz_double)complex) / (str.size() * std::log(str.alphabetSize()));
+         // cumexcessentropy.push_back(eeterm);
+         excessentropy += eeterm;
+      }
+
+      return excessentropy;
+   }
+   
+   lz_double ExcessEntropyShuffle(const sequence& str, utils::LZ_Args args) {
+      std::size_t mm = args.block_size;
+      if(mm <= 0) {
+         mm = utils::max_block_size(str.size()); // the maximum number for the sum in the entropy estimation
+	      mm += 10; // begin aggressive
+      }
+
+      std::vector<lz_double> cum_excess;
+      auto complex = LempelZivFactorization(str, args);
+
+      auto tbb_range = tbb::blocked_range<size_t>(1, mm + 1);
+      auto main_fun = [&](const tbb::blocked_range<size_t>& r, lz_double init) -> lz_double {
+         for (auto m = r.begin(); m < r.end(); m++) {
+            sequence rand_seq = Shuffle(str, m, str.size() / 2); // Shuffling is made for half the size of the sequence, hope that is enough
+            auto rand_complexity = LempelZivFactorization(rand_seq, args);
+            lz_double eeterm = std::log(str.size()) * std::fabs((lz_double)rand_complexity - (lz_double)complex) / (str.size() * std::log(str.alphabetSize()));
+            init += eeterm;
+
+            if(args.excess_line >= 0) cum_excess.push_back(eeterm);
+            // if (m == 1)
+            //    LZ.multi_information.push_back(eeterm);
+         }
+         return init;
+      };
+      auto reduce_fun = [](const lz_double &a, const lz_double &b) -> lz_double { return a+b; };
+
+      return tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
    }
 
-   lz_int ExcessEntropyDistance(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
-      // std::vector<lz_int> excess_entropy_dist;
-      LZ.excess_entropy_dist.clear();
-      LZ.excess_entropy_dist.reserve(flags.input.size());
+   lz_double ExcessEntropyDistance(const sequence& str) {
+      std::vector<char>::size_type mid = str.size() / 2; // the half of the sequence
 
-      for (auto str : flags.input) {
-         std::vector<char>::size_type mid = str.size() / 2; // the half of the sequence
+      lz_double dist = 0;
+      lz_int fh_complexity = 0;
+      lz_int lh_complexity = 0;
+      auto [seq_fh, seq_lh] = str.Split(mid);
 
-         double dist = 0;
-         lz_int fh_complexity = 0;
-         lz_int lh_complexity = 0;
-         auto [seq_fh, seq_lh] = str.Split(mid);
+      auto fh_fun = [&]() {
+         fh_complexity = LempelZivFactorization(seq_fh);
+         };
+      auto lh_fun = [&]() {
+         lh_complexity = LempelZivFactorization(seq_lh);
+         };
+      auto dist_fun = [&]() {
+         dist = InformationDistance(seq_fh, seq_lh);
+         };
 
-         auto fh_fun = [&]() {
-            fh_complexity = LempelZivFactorization(seq_fh, flags.sa_impl);
-            };
-         auto lh_fun = [&]() {
-            lh_complexity = LempelZivFactorization(seq_lh, flags.sa_impl);
-            };
-         auto dist_fun = [&]() {
-            dist = InformationDistance(seq_fh, seq_lh, flags.sa_impl);
-            };
+      utils::par_do(dist_fun, fh_fun, lh_fun);
 
-         utils::par_do(dist_fun, fh_fun, lh_fun);
-
-         auto res = (1 - dist) * std::fmax(fh_complexity, lh_complexity);
-         LZ.excess_entropy_dist.push_back(res);
-      }
-
-      return EXIT_SUCCESS;
+      return (1.0 - dist) * std::fmax(fh_complexity, lh_complexity);
    }
 
-   lz_int EntropyDensity(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
-      LZ.complexity.clear();
-      LZ.complexity.reserve(flags.input.size());
-      LZ.entropy_density.clear();
-      LZ.entropy_density.reserve(flags.input.size());
+   lz_double ExcessEntropyDistance(const sequence& str, utils::LZ_Args args) {
+      std::vector<char>::size_type mid = str.size() / 2; // the half of the sequence
 
-      for (auto str : flags.input) {
-         utils::LZ_SuffixArray _SA;
-         lz76::LempelZiv76 L;
+      lz_double dist = 0;
+      lz_int fh_complexity = 0;
+      lz_int lh_complexity = 0;
+      auto [seq_fh, seq_lh] = str.Split(mid);
 
-         std::visit([&](auto alg) { _SA = alg.construct(str.toString()); }, flags.sa_impl);
+      auto fh_fun = [&]() {
+         fh_complexity = LempelZivFactorization(seq_fh, args);
+         };
+      auto lh_fun = [&]() {
+         lh_complexity = LempelZivFactorization(seq_lh, args);
+         };
+      auto dist_fun = [&]() {
+         dist = InformationDistance(seq_fh, seq_lh, args);
+         };
 
-         L.Factorize(_SA);
+      utils::par_do(dist_fun, fh_fun, lh_fun);
 
-         double div = str.size() / std::log(str.size());
-
-         LZ.complexity.push_back(L.getFactorization());
-         LZ.entropy_density.push_back(L.getFactorization() / div);
-         // std::cout << L;
-      }
-
-      return EXIT_SUCCESS;
+      return (1.0 - dist) * std::fmax(fh_complexity, lh_complexity);
    }
 
-   lz_int InformationDistance(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
-      if (flags.input.size() == 1) {
-         LZ.info_distance = { 0 };
-         return EXIT_SUCCESS;
-      }
-
-      LZ.info_distance.clear();
-      std::vector<sequence> text = flags.input;
-      for (std::size_t i = 1; i < text.size(); i++) {
-         auto res = InformationDistance(text[i - 1], text[i], flags.sa_impl);
-         LZ.info_distance.push_back(res);
-      }
-
-      return EXIT_SUCCESS;
-   }
-
-   double InformationDistance(const std::string& T1, const std::string& T2, utils::sa_type sa_impl) {
+   //-------------------- Distance functions ----------------------------//
+   lz_double InformationDistance(const sequence& T1, const sequence& T2) {
       lz_int C_t1, C_t2, C_all = 0;
 
       auto fh_fun = [&]() {
-         C_t1 = LempelZivFactorization(T1, sa_impl);
+         C_t1 = LempelZivFactorization(T1);
          };
 
       auto lh_fun = [&]() {
-         C_t2 = LempelZivFactorization(T2, sa_impl);
+         C_t2 = LempelZivFactorization(T2);
          };
 
       auto all_fun = [&]() {
-         C_all = LempelZivFactorization(T1 + T2, sa_impl);
-         };
-
-      utils::par_do(fh_fun, lh_fun, all_fun);
-
-      auto res = (C_all - std::min(C_t1, C_t2)) * 1.0 / std::max(C_t1, C_t2);
-
-      return res;
-   }
-
-   double InformationDistance(const sequence& T1, const sequence& T2, utils::sa_type sa_impl) {
-      lz_int C_t1, C_t2, C_all = 0;
-
-      auto fh_fun = [&]() {
-         C_t1 = LempelZivFactorization(T1, sa_impl);
-         };
-
-      auto lh_fun = [&]() {
-         C_t2 = LempelZivFactorization(T2, sa_impl);
-         };
-
-      auto all_fun = [&]() {
-         C_all = LempelZivFactorization(T1 + T2, sa_impl);
+         C_all = LempelZivFactorization(T1 + T2);
          };
 
       utils::par_do(fh_fun, lh_fun, all_fun);
@@ -268,24 +273,36 @@ namespace lz {
       return res;
    }
 
-   lz_int InformationDistanceBySequence(utils::LZ_Flags& flags) {
-      std::vector<sequence> text = flags.input;
-      flags.sequence_info_distance.clear();
-      flags.sequence_info_distance.reserve(flags.input.size());
+   lz_double InformationDistance(const sequence& T1, const lz76::LZ_Result& R1, const sequence& T2, const lz76::LZ_Result& R2) {
+      lz_int C_all = 0;
 
-      for (auto str : flags.input) {
-         if (str.size() == 1) {
-            flags.info_distance.push_back(0);
-            continue;
-         }
-         std::size_t mid = str.size() / 2; // the half of the sequence
-         auto [seq_fh, seq_lh] = str.Split(mid);
-         auto res = InformationDistance(seq_fh, seq_lh, flags.sa_impl);
+      C_all = LempelZivFactorization(T1 + T2);
 
-         flags.sequence_info_distance.push_back(res);
-      }
+      auto res = (C_all - std::fmin(R1.factorization, R2.factorization)) * 1.0 / std::fmax(R1.factorization, R2.factorization);
 
-      return EXIT_SUCCESS;
+      return res;
+   }
+
+   lz_double InformationDistance(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
+      lz_int C_t1, C_t2, C_all = 0;
+
+      auto fh_fun = [&]() {
+         C_t1 = LempelZivFactorization(T1, args);
+         };
+
+      auto lh_fun = [&]() {
+         C_t2 = LempelZivFactorization(T2, args);
+         };
+
+      auto all_fun = [&]() {
+         C_all = LempelZivFactorization(T1 + T2, args);
+         };
+
+      utils::par_do(fh_fun, lh_fun, all_fun);
+
+      auto res = (C_all - std::fmin(C_t1, C_t2)) * 1.0 / std::fmax(C_t1, C_t2);
+
+      return res;
    }
 
 

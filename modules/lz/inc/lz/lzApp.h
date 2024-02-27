@@ -38,57 +38,47 @@
 #include <variant>
 #endif
 
-#include "lz76.h"
-#include "types.h"
-#include "sequence.h"
-#include "lpf.h"
+#include "flags.h"
 
-#include <lz/caps.h>
-#include <lz/sais_lite.h>
-#include <lz/utils.h>
+#include <lz/lempelziv.h>
 
 namespace lz {
+   // using T = std::variant<suffixarray::CaPS_SA, suffixarray::SAIS>;
    //.........................................................................
    // Lempel-Ziv 76 factorization
    //.........................................................................
-   auto LempelZivFactorization(const sequence&) -> lz_int;
-   auto LempelZivFactors(const sequence&) -> lz76::LZ_Result;
-   auto LempelZivFactorization(const sequence&, utils::LZ_Args) -> lz_int;
-   auto LempelZivFactors(const sequence&, utils::LZ_Args) -> lz76::LZ_Result;
+   lz_int LempelZivFactorization(utils::LZ_Flags&, utils::LZ_Output&);
 
    //.........................................................................
    // Entropy density
    //.........................................................................
-   auto EntropyDensity(const sequence&) -> lz_double;
-   auto EntropyDensity(const sequence&, utils::LZ_Args) -> lz_double;
+   lz_int EntropyDensity(utils::LZ_Flags&, utils::LZ_Output&);
 
    //.........................................................................
    // Excess entropy as mutual information: E = (C(X) + C(Y) - C(XY))
    //.........................................................................
-   auto ExcessEntropyMi(const sequence&) -> lz_int;
-   auto ExcessEntropyMiNormalized(const sequence&) -> lz_double;
-   auto ExcessEntropyMi(const sequence&, utils::LZ_Args) -> lz_int;
-   auto ExcessEntropyMiNormalized(const sequence&, utils::LZ_Args) -> lz_double;
+   lz_int ExcessEntropyMi(utils::LZ_Flags&, utils::LZ_Output&);
 
    //.........................................................................
-   // Excess entropy by shuffling.
+   // Here comes the excess entropy by shuffling.
    //.........................................................................
-   auto ExcessEntropyShuffle(const sequence&) -> lz_double;
-   auto ExcessEntropyShuffle(const sequence&, utils::LZ_Args) -> lz_double;
-   auto ExcessEntropyShuffleSequential(const sequence&, utils::LZ_Args) -> lz_double;
+   lz_int ExcessEntropyShuffle(utils::LZ_Flags&, utils::LZ_Output&);
+   lz_int ExcessEntropyShuffleSequential(utils::LZ_Flags&, utils::LZ_Output&);
 
    //.........................................................................
-   // Excess entropy by distance: E = [1 - d(X,Y)] * max(C(X), C(Y))
+   // Here comes the excess entropy by distance: E = [1 - d(X,Y)] * max(C(X), C(Y))
    // X -> first half, Y -> second half
    //.........................................................................
-   auto ExcessEntropyDistance(const sequence&) -> lz_double;
-   auto ExcessEntropyDistance(const sequence&, utils::LZ_Args) -> lz_double;
+   lz_int ExcessEntropyDistance(utils::LZ_Flags&, utils::LZ_Output&);
 
    //.........................................................................
    // Information distance between two consecutive sequences
    //.........................................................................
-   auto InformationDistance(const sequence&, const sequence&) -> lz_double;
-   auto InformationDistance(const sequence&, const lz76::LZ_Result&, const sequence&, const lz76::LZ_Result&) -> lz_double;
-   auto InformationDistance(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+   lz_int InformationDistance(utils::LZ_Flags&, utils::LZ_Output&);
+
+   //.........................................................................
+   // Information distance into the sequences
+   //.........................................................................
+   lz_int InformationDistanceBySequence(utils::LZ_Flags&);
 
 } // namespace lz

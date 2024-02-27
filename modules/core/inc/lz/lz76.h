@@ -32,10 +32,12 @@
 
 #include <assert.h>
 #include <vector>
+#include <thread>
 
 #include "suffix_structure.h"
 #include "sequence.h"
 #include "lpf.h"
+#include "types.h"
 
 #include <lz/caps.h>
 #include <lz/utils.h>
@@ -65,8 +67,13 @@ namespace lz {
          LempelZiv76(const LempelZiv76&);             //!> copy constructor.
          LempelZiv76(LempelZiv76&&);                  //!> move constructor.
 
-         struct LZ_Result Factorize(const utils::LZ_SuffixArray);   //!> Find the factors and calculate the lz76 complexity.
-         struct LZ_Result Factorize(const sequence);   //!> Find the factors and calculate the lz76 complexity.
+         LZ_Result Factorize(const sequence);   //!> Find the factors and calculate the lz76 complexity using CaPS.
+         LZ_Result Factorize(const sequence, utils::LZ_Args&);   //!> Find the factors and calculate the lz76 complexity using CaPS with the parameters specified.
+         LZ_Result Factorize(const utils::LZ_SuffixArray);   //!> Find the factors and calculate the lz76 complexity using the SA calculated.
+         #if __cplusplus >= 201703L
+         template <typename ...SAImpl>
+         LZ_Result Factorize(const sequence, utils::sa_type<SAImpl...>::type);   //!> Find the factors and calculate the lz76 complexity using a SA algorithm.
+         #endif
 
          void Clear(); 								//!> Clears the field of the object freeing memory.
          ~LempelZiv76();                     //!> Destructor.

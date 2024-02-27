@@ -1,18 +1,12 @@
 #pragma once
 
-#include "sequence.h"
-
-#include <lz/caps.h>
-#include <lz/sais_lite.h>
+#include <vector>
+#include <lz/types.h>
 
 namespace lz {
-   namespace utils {
-      using sa_type = std::variant<suffixarray::CaPS_SA, suffixarray::SAIS>;
+    namespace utils {
 
-      template <typename... Ts>
-      struct overload : Ts... { using Ts::operator()...; };
-
-      //...............................................
+//...............................................
       //          Free structures declaration
       //...............................................
       struct LZ_Output {
@@ -54,13 +48,15 @@ namespace lz {
       };
 
       struct LZ_Flags {
-         SA_ALG algorithm;                  //!> Type of algorithm for construct the suffix array
-         sa_type sa_impl;                    //!> Implementation of the suffix array
+         SA_ALG algorithm;                   //!> Type of algorithm for construct the suffix array
+         #if __cplusplus >= 201703L
+         sa_type<>::type sa_impl;            //!> Implementation of the suffix array
+         #endif
          std::vector<sequence> input;        //!> Input set of sequences
 
          // In case the selected algorithm is CaPS_SA
          lz_int alphabet_size;      //!> Length of the alphabet of input sequences
-         SA_Args sa_args;
+         LZ_Args sa_args;           //!> Suffix-array extra arguments for LZ core library functions
 
          // Post process parameters
          std::vector<lz_int> complexity;              //!> complexity of the sequence
@@ -70,14 +66,27 @@ namespace lz {
          std::vector<double> info_distance;           //!> information distance of the two consecutive sequences
          std::vector<double> sequence_info_distance;  //!> information distance of each sequences
 
-         LZ_Flags(std::string text, SA_Args _sa_args) :
+         LZ_Flags(std::string text, LZ_Args _sa_args) :
             algorithm(SA_ALG::caps),
             sa_impl(lz::suffixarray::CaPS_SA(_sa_args.chunks, _sa_args.max_context)),
             input({ text }),
+            alphabet_size(2),
+            sa_args(_sa_args) {};
+         LZ_Flags(sequence text, LZ_Args _sa_args) :
+            algorithm(SA_ALG::caps),
+            sa_impl(lz::suffixarray::CaPS_SA(_sa_args.chunks, _sa_args.max_context)),
+            input({ text }),
+            alphabet_size(2),
+            sa_args(_sa_args) {};
+         LZ_Flags(std::vector<sequence> data, LZ_Args _sa_args) :
+            algorithm(SA_ALG::caps),
+            sa_impl(lz::suffixarray::CaPS_SA(_sa_args.chunks, _sa_args.max_context)),
+            input(data),
             alphabet_size(2),
             sa_args(_sa_args) {};
          /** @deprecated */
-         LZ_Flags(sa_type& sa_impl_, std::string text, SA_Args _sa_args) :
+         #if __cplusplus >= 201703L
+         LZ_Flags(sa_type<>::type& sa_impl_, std::string text, LZ_Args _sa_args) :
             sa_impl(sa_impl_),
             input({ text }),
             alphabet_size(2),
@@ -85,7 +94,7 @@ namespace lz {
             if (std::holds_alternative<lz::suffixarray::CaPS_SA>(sa_impl_)) { algorithm = SA_ALG::caps; }
             else { algorithm = SA_ALG::sais; }
          };
-         LZ_Flags(sa_type& sa_impl_, sequence text, SA_Args _sa_args) :
+         LZ_Flags(sa_type<>::type& sa_impl_, sequence text, LZ_Args _sa_args) :
             sa_impl(sa_impl_),
             input({ text }),
             alphabet_size(2),
@@ -93,13 +102,7 @@ namespace lz {
             if (std::holds_alternative<lz::suffixarray::CaPS_SA>(sa_impl_)) { algorithm = SA_ALG::caps; }
             else { algorithm = SA_ALG::sais; }
          };
-         LZ_Flags(std::vector<sequence> data, SA_Args _sa_args) :
-            algorithm(SA_ALG::caps),
-            sa_impl(lz::suffixarray::CaPS_SA(_sa_args.chunks, _sa_args.max_context)),
-            input(data),
-            alphabet_size(2),
-            sa_args(_sa_args) {};
-         LZ_Flags(sa_type& sa_impl_, std::vector<sequence> data, SA_Args _sa_args) :
+         LZ_Flags(sa_type<>::type& sa_impl_, std::vector<sequence> data, LZ_Args _sa_args) :
             sa_impl(sa_impl_),
             input(data),
             alphabet_size(2),
@@ -107,11 +110,14 @@ namespace lz {
             if (std::holds_alternative<lz::suffixarray::CaPS_SA>(sa_impl_)) { algorithm = SA_ALG::caps; }
             else { algorithm = SA_ALG::sais; }
          };
-         LZ_Flags(SA_ALG algorithm, std::string text, SA_Args _sa_args) :
+         #endif
+         /** @deprecated */
+         LZ_Flags(SA_ALG algorithm, std::string text, LZ_Args _sa_args) :
             algorithm(algorithm),
             input({ text }),
             alphabet_size(2),
             sa_args(_sa_args) {};
+         // Copy construct
          LZ_Flags(const LZ_Flags& flags) :
             algorithm(flags.algorithm),
             sa_impl(flags.sa_impl),
@@ -172,5 +178,6 @@ namespace lz {
          };
          friend constexpr bool operator!=(const LZ_Flags& lhs, const LZ_Flags& rhs) { return !operator==(lhs, rhs); };
       };
-   } // namespace utils
-} // namespace lz
+
+    }
+}

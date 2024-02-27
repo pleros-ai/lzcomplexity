@@ -43,7 +43,7 @@ namespace lz {
        * @param _SA Enhanced suffix array structure with LCP values
        * @return the sequence LZ76 complexity.
        */
-      struct LZ_Result LempelZiv76::Factorize(const utils::LZ_SuffixArray _SA) {
+      LZ_Result LempelZiv76::Factorize(const utils::LZ_SuffixArray _SA) {
          lzf.reserve(_SA.n);
          lz_int* lpf = NULL;
          std::vector<char>::size_type i = 0;
@@ -85,9 +85,15 @@ namespace lz {
          return LZ_Result{ factorization, lzf };
       }
 
-      struct LZ_Result LempelZiv76::Factorize(const sequence seq) {
+      LZ_Result LempelZiv76::Factorize(const sequence seq) {
          // parameters should come from flags
-         auto _SA = suffixarray::CaPS_SA(10).construct(seq.toString());
+         auto max_th = std::thread::hardware_concurrency();
+         if(seq.size() < max_th) {
+            max_th = 1;
+         } else if(seq.size() > 1e6) {
+            max_th = 100;
+         }
+         auto _SA = suffixarray::CaPS_SA(max_th).construct(seq.toString());
 
          lzf.reserve(_SA.n);
          lz_int* lpf = NULL;
@@ -130,6 +136,99 @@ namespace lz {
          return LZ_Result{ factorization, lzf };
       }
 
+      LZ_Result LempelZiv76::Factorize(const sequence seq, utils::LZ_Args& sa_args) {
+         // parameters should come from flags
+         auto _SA = suffixarray::CaPS_SA(sa_args).construct(seq.toString());
+
+         lzf.reserve(_SA.n);
+         lz_int* lpf = NULL;
+         std::vector<char>::size_type i = 0;
+
+         lzf.clear();
+
+         try {
+            lpf = (lz_int*)std::malloc(_SA.n * sizeof(lz_int));
+         }
+         catch (std::bad_alloc& ba) {
+            std::free(lpf);
+            throw LZBadAlloc();
+         }
+
+         try {
+            lz::utils::LPF(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n); // Largest prefix factor.
+
+            // Lets build the factorization table
+            i = 1; lzf.push_back(0); lzf.push_back(1);
+
+            while (i < _SA.n) {
+               i = lzf.back() + lpf[i] + 1;
+               lzf.push_back(i);
+            }
+
+         }
+         catch (std::bad_alloc& ba) {
+            std::free(lpf);
+            throw LZBadAlloc();
+         }
+         catch (...) {
+            std::free(lpf);
+            throw LZError();
+         }
+
+         // done !
+         std::free(lpf);
+         factorization = ((lzf.back() <= _SA.n) ? lzf.size() - 1 : lzf.size() - 2);
+         return LZ_Result{ factorization, lzf };
+      }
+      
+      #if __cplusplus >= 201703L
+      template <typename ...SAImpl>
+      LZ_Result LempelZiv76::Factorize(const sequence seq, utils::sa_type<SAImpl...>::type sa_impl)  {
+         // parameters should come from flags
+         utils::LZ_SuffixArray _SA;
+         std::visit([&](auto&& alg) { _SA = alg.construct(seq.toString()); }, sa_impl);
+
+         lzf.reserve(_SA.n);
+         lz_int* lpf = NULL;
+         std::vector<char>::size_type i = 0;
+
+         lzf.clear();
+
+         try {
+            lpf = (lz_int*)std::malloc(_SA.n * sizeof(lz_int));
+         }
+         catch (std::bad_alloc& ba) {
+            std::free(lpf);
+            throw LZBadAlloc();
+         }
+
+         try {
+            lz::utils::LPF(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n); // Largest prefix factor.
+
+            // Lets build the factorization table
+            i = 1; lzf.push_back(0); lzf.push_back(1);
+
+            while (i < _SA.n) {
+               i = lzf.back() + lpf[i] + 1;
+               lzf.push_back(i);
+            }
+
+         }
+         catch (std::bad_alloc& ba) {
+            std::free(lpf);
+            throw LZBadAlloc();
+         }
+         catch (...) {
+            std::free(lpf);
+            throw LZError();
+         }
+
+         // done !
+         std::free(lpf);
+         factorization = ((lzf.back() <= _SA.n) ? lzf.size() - 1 : lzf.size() - 2);
+         return LZ_Result{ factorization, lzf };
+      }
+      #endif
    } // namespace lz76
 
 } // namespace lz

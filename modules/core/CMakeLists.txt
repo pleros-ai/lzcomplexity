@@ -31,7 +31,7 @@ add_library(lz::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/sa sa)
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
 
-message(STATUS "headers: ${public_headers}")
+message(STATUS "headers for ${PROJECT_NAME}: ${public_headers}")
 
 target_sources(${PROJECT_NAME} PRIVATE ${LZ_LZ76} ${LZ_ALG})
 target_include_directories(${PROJECT_NAME} 
@@ -41,13 +41,13 @@ target_include_directories(${PROJECT_NAME}
 )
 
 # possible
-include(useTbb)
 target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
 
 set(public_headers 
   # LZ factorization headers
   ${public_headers}
-  ${CORE_INCLUDE_DIR}/lz/flags.h
+  ${CORE_INCLUDE_DIR}/lz/core.h
+  ${CORE_INCLUDE_DIR}/lz/types.h
   ${CORE_INCLUDE_DIR}/lz/lpf.h
   ${CORE_INCLUDE_DIR}/lz/sequence.h
   ${CORE_INCLUDE_DIR}/lz/suffix_structure.h
@@ -60,6 +60,8 @@ set(public_headers
 # target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
 target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
 target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
+
+set(LZCore_FOUND TRUE)
 
 include(InstallingGeneral)
 include(InstallingConfigs)
