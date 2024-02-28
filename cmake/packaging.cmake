@@ -9,16 +9,46 @@ set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 string(TOLOWER ${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}_${CMAKE_BUILD_TYPE} CPACK_PACKAGE_FILE_NAME)
 # set(CPACK_GENERATOR ZIP)
 
+set(CPACK_PACKAGE_CONTACT "efrenaragon96@gmail.com")
+
+configure_file(LICENSE LICENSE.txt COPYONLY)
+configure_file(README.md README.rtf COPYONLY)
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_BINARY_DIR}/LICENSE.txt")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_BINARY_DIR}/README.rtf")
+
+# https://unix.stackexchange.com/a/11552/254512
+set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local/")#/${CMAKE_PROJECT_VERSION}")
+# which is useful in case of packing only selected components instead of the whole thing
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Library for Lempel-Ziv calculation"
+    CACHE STRING "Lempel-Ziv calculation"
+)
+# set(CPACK_PACKAGE_VENDOR "DySAG")
+
+set(CPACK_VERBATIM_VARIABLES YES)
+
+set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
+SET(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_SOURCE_DIR}/_packages")
+
+set(CPACK_PACKAGE_RELOCATABLE True)
+set(CPACK_PACKAGE_EXECUTABLES "LempelZiv" "LempelZiv")
+
 if (UNIX)
+
+  # set(CMAKE_MACOSX_RPATH 1)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
   if (APPLE)
     set (CMAKE_OS_NAME "OSX" CACHE STRING "Operating system name" FORCE)
     # Construct MacOS
+    set(CPACK_GENERATOR "TGZ;productbuild")
+    set(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
     # set(CPACK_GENERATOR "Bundle")
     # set(CPACK_BINARY_DRAGNDROP ON)
     # set(CPACK_BUNDLE_NAME "${PROJECT_NAME}")
-    # set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/cmake/cpack/sdrangel_icon.icns")
-    # set(CPACK_BUNDLE_PLIST "${CMAKE_BINARY_DIR}/Info.plist")
-    # set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/cmake/cpack/sdrangel_icon.icns")
+    # set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/cmake/config/icon.icns")
+    # set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/cmake/config/Info.plist")
+    # set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/cmake/config/icon.icns")
     # set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}_${CPACK_MACOS_PACKAGE_ARCHITECTURE}_${CMAKE_SYSTEM_PROCESSOR}" CACHE INTERNAL "")
     # set(CPACK_PRE_BUILD_SCRIPTS "${PROJECT_BINARY_DIR}/deploy_mac.cmake")
 
@@ -117,33 +147,16 @@ if(WIN32 OR MINGW)
 endif(WIN32 OR MINGW)
 
 message(STATUS "SO detected ${CMAKE_OS_NAME}")
-# which is useful in case of packing only selected components instead of the whole thing
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Library for Lempel-Ziv calculation"
-    CACHE STRING "Lempel-Ziv calculation"
-)
-set(CPACK_PACKAGE_VENDOR "Some Company")
 
-set(CPACK_VERBATIM_VARIABLES YES)
+#----------------------------------------------------------------------------------------------------
+# Finally, generate the CPack per-generator options file and include the
+# base CPack configuration.
+#
+configure_file(cmake/config/CMakeCPackOptions.cmake.in CMakeCPackOptions.cmake @ONLY)
+set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_BINARY_DIR}/CMakeCPackOptions.cmake)
+include(CPack)
 
-set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
-SET(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_SOURCE_DIR}/_packages")
-
-# https://unix.stackexchange.com/a/11552/254512
-# set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/some")#/${CMAKE_PROJECT_VERSION}")
-
-set(CPACK_PACKAGE_CONTACT "efrenaragon96@gmail.com")
-
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
-# set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
-
-set(CPACK_PKGBUILD_IDENTITY_NAME "TestName")
-
-# Note: this is an internal non-documented variable set by CPack 
-if (NOT CPack_CMake_INCLUDED)
-    include(CPack)
-
-    # cpack_add_component(lz)
-    # cpack_add_component(lz_headers)
-    # cpack_add_component(lz_cmake)
-    # cpack_add_component(lz_pkgconfig)
-endif()
+# cpack_add_component(lz)
+# cpack_add_component(lz_headers)
+# cpack_add_component(lz_cmake)
+# cpack_add_component(lz_pkgconfig)

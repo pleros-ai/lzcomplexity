@@ -51,7 +51,8 @@ install(
     EXPORT "${PROJECT_NAME}Targets"
     COMPONENT ${namespace} # must be here, not any line lower
     # these get default values from GNUInstallDirs, no need to set them
-    #RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
+    RUNTIME 
+        DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
     LIBRARY 
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
         NAMELINK_COMPONENT lz_headers

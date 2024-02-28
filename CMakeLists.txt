@@ -131,6 +131,10 @@ if(asan)
 #   set(LZ_LINK_SANITIZE "${LZ_LINK_SANITIZE} ${ASAN_EXTRA_SHARED_LINKER_FLAGS}")
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_VERBOSE_MAKEFILE ON)
+endif()
+
 # add module subdirectory
 add_subdirectory(modules)
 
@@ -154,6 +158,7 @@ if(NOT binding_python)
     )
 
     message(STATUS "SANITIZER: ${LZ_COMPILE_SANITIZE}")
+
     target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
     target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
     target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
@@ -187,7 +192,7 @@ if(NOT binding_python)
         EXPORT "${PROJECT_NAME}Targets"
         COMPONENT ${namespace} # must be here, not any line lower
         # these get default values from GNUInstallDirs, no need to set them
-        #RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
         LIBRARY 
             DESTINATION ${CMAKE_INSTALL_LIBDIR}
             NAMELINK_COMPONENT lz_headers
