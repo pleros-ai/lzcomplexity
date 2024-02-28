@@ -84,9 +84,9 @@ namespace lz {
 			lz_size push(struct stack_element el); 	//!< Adds an element to the stack.
 			lz_size pop(void); 						//!< Pops an element from the stack.
 
-			struct stack_element Top(void)const; 	//!< Returns the top element from the stack, without poping.
-			lz_int TopLen(void)const; 					//!< Returns the len value of the top element from the stack, without poping.
-			lz_int TopPos(void)const; 					//!< Returns the pos value of the top element from the stack, without poping.
+			struct stack_element Top(void)const; 	//!< Returns the top element from the stack, without popping.
+			lz_int TopLen(void)const; 					//!< Returns the len value of the top element from the stack, without popping.
+			lz_int TopPos(void)const; 					//!< Returns the pos value of the top element from the stack, without popping.
 
 			lz_size length(void)const; 		//!< Returns the number of elements in the stack.
 			lz_size No(void)const; 			//!< Returns the number of elements in the stack.
@@ -143,7 +143,7 @@ namespace lz {
 
 
 		/// \brief 
-		/// Returns the top element from the stack, without poping.
+		/// Returns the top element from the stack, without popping.
 		/// \return The top element
 		/// \sa pop()
 		/// \sa push()
@@ -152,14 +152,14 @@ namespace lz {
 		}
 
 		/// \brief 
-		/// Returns the len value of the top element from the stack, without poping.
+		/// Returns the len value of the top element from the stack, without popping.
 		/// \return The len value of the top element
 		inline int LPFStack::TopLen(void)const {
 			return element.back().len;
 		}
 
 		/// \brief 
-		/// Returns the pos value of the top element from the stack, without poping.
+		/// Returns the pos value of the top element from the stack, without popping.
 		/// \return The pos value of the top element
 		inline int LPFStack::TopPos(void)const {
 			return element.back().pos;

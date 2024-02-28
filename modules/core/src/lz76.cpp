@@ -27,7 +27,7 @@
 
   /***************************************************************************
    * Tasks to be done:                                                       *
-   *   1) Paralelizing via threads the calculation of the excess entropy.    *
+   *   1) Parallelizing via threads the calculation of the excess entropy.    *
    *                                                                         *
    ***************************************************************************/
 

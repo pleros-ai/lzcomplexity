@@ -41,7 +41,7 @@
 
 
    //*****************************************************
-   // The folling function is a variation of the code of Yuta Mori
+   // The following function is a variation of the code of Yuta Mori
    // done by Johannes Fischer and slightly modified
    // for the calculation  of suffix array together with LCP.
    // The Yuta Mori code has the following heading

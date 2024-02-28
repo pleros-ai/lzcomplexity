@@ -16,7 +16,9 @@
 
 SCAN_TARGET=$1
 
-SKIP_PATTERN='*/(.github|external)/*' 
+SKIP_PATTERN='*/(.github)/*,*/external/*'
+
+IGNORE_WORDS='SAIS'
 
 # Ignored cases
 IGNORE_COMMAND="sed -e /.*\\sOd\\s*=.*/d \
@@ -51,7 +53,7 @@ IGNORE_COMMAND="sed -e /.*\\sOd\\s*=.*/d \
 -e /.*_pipeline_filters.h.*nd\\s*=.*/d \
 -e /.*sub_string_finder\/README.md.*ba\\s*=.*/d"
 
-SCAN_RESULT=`codespell --quiet-level=2 --skip "${SKIP_PATTERN}" ${SCAN_TARGET}`
+SCAN_RESULT=`codespell --quiet-level=2 --skip "${SKIP_PATTERN}" --ignore-words "${IGNORE_WORDS}" ${SCAN_TARGET}`
 SCAN_RESULT=`echo -e "${SCAN_RESULT}" | ${IGNORE_COMMAND}`
 echo "${SCAN_RESULT}"
 

@@ -14,7 +14,7 @@ execute_process(
 list(GET PING_STATUS 0 STATUS_CODE)
 # Check if download was successful.
 if(${STATUS_CODE} EQUAL 0)
-  # Succcess
+  # Success
   message(STATUS "Checking internet connectivity - found")
   # Now let's delete the file
   file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/cmake_connectivity_test.txt)

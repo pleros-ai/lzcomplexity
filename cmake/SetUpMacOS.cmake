@@ -83,10 +83,10 @@ if (CMAKE_SYSTEM_NAME MATCHES Darwin)
   #---Set Linker flags----------------------------------------------------------------------
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mmacosx-version-min=${MACOSX_VERSION}")
 else (CMAKE_SYSTEM_NAME MATCHES Darwin)
-  MESSAGE(FATAL_ERROR "There is no setup for this this Apple system up to now. Don't know waht to do. Stop cmake at this point.")
+  MESSAGE(FATAL_ERROR "There is no setup for this this Apple system up to now. Don't know what to do. Stop cmake at this point.")
 endif (CMAKE_SYSTEM_NAME MATCHES Darwin)
 
-#---Avoid puting the libraires and executables in different configuration locations
+#---Avoid putting the libraires and executables in different configuration locations
 if(CMAKE_GENERATOR MATCHES Xcode)
   foreach( _conf ${CMAKE_CONFIGURATION_TYPES} )
     string( TOUPPER ${_conf} _conf )
