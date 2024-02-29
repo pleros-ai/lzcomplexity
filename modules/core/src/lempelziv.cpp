@@ -127,8 +127,11 @@ namespace lz {
       return excess / div;
    }
 
-   lz_double ExcessEntropyShuffle(const sequence& str) {
+   utils::LZ_ExcessInfo ExcessEntropyShuffle(const sequence& str) {
+      utils::LZ_ExcessInfo result;
+      
       std::size_t mm = utils::max_block_size(str.size()); // the maximum number for the sum in the entropy estimation
+      result.max_block_size = mm;
 
       auto complex = LempelZivFactorization(str);
       auto tbb_range = tbb::blocked_range<size_t>(1, mm);
@@ -139,26 +142,28 @@ namespace lz {
             lz_double eeterm = 0;
             eeterm = std::log(str.size()) * std::fabs((lz_double)rand_complexity - (lz_double)complex) / (str.size() * std::log(str.alphabetSize()));
 
-            // cumexcess_entropy.push_back(eeterm);
             init += eeterm;
 
-            // if (m == 1)
-            //    LZ.multi_information.push_back(eeterm);
+            if (m == 1)
+               result.multi_information = eeterm;
          }
          return init;
       };
       auto reduce_fun = [&](const lz_double &a, const lz_double &b) -> lz_double { return a+b; };
 
-      return tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
+      result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
+      return result;
    }
    
-   lz_double ExcessEntropyShuffleSequential(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_ExcessInfo ExcessEntropyShuffleSequential(const sequence& str, utils::LZ_Args args) {
       std::size_t mm = args.block_size;
       if(mm <= 0) {
          mm = utils::max_block_size(str.size()); // the maximum number for the sum in the entropy estimation
 	      mm += 10; // begin aggressive
       }
 
+      utils::LZ_ExcessInfo result;
+      result.max_block_size = mm;
       lz_double excessentropy = 0;
       auto complex = LempelZivFactorization(str, args);
 
@@ -168,21 +173,28 @@ namespace lz {
          auto scomplexity = LempelZivFactorization(sseq, args);
          lz_double eeterm = 0;
          eeterm = std::log(str.size()) * std::fabs((lz_double)scomplexity - (lz_double)complex) / (str.size() * std::log(str.alphabetSize()));
-         // cumexcessentropy.push_back(eeterm);
+
          excessentropy += eeterm;
+
+         if(args.excess_line >= 0) result.excess_by_terms.push_back(eeterm);
+         if (m == 1)
+            result.multi_information = eeterm;
       }
 
-      return excessentropy;
+      result.excess_value = excessentropy;
+      return result;
    }
    
-   lz_double ExcessEntropyShuffle(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_ExcessInfo ExcessEntropyShuffle(const sequence& str, utils::LZ_Args args) {
       std::size_t mm = args.block_size;
       if(mm <= 0) {
          mm = utils::max_block_size(str.size()); // the maximum number for the sum in the entropy estimation
 	      mm += 10; // begin aggressive
       }
 
-      std::vector<lz_double> cum_excess;
+      utils::LZ_ExcessInfo result;
+      result.max_block_size = mm;
+
       auto complex = LempelZivFactorization(str, args);
 
       auto tbb_range = tbb::blocked_range<size_t>(1, mm + 1);
@@ -193,15 +205,16 @@ namespace lz {
             lz_double eeterm = std::log(str.size()) * std::fabs((lz_double)rand_complexity - (lz_double)complex) / (str.size() * std::log(str.alphabetSize()));
             init += eeterm;
 
-            if(args.excess_line >= 0) cum_excess.push_back(eeterm);
-            // if (m == 1)
-            //    LZ.multi_information.push_back(eeterm);
+            if(args.excess_line >= 0) result.excess_by_terms.push_back(eeterm);
+            if (m == 1)
+               result.multi_information = eeterm;
          }
          return init;
       };
       auto reduce_fun = [](const lz_double &a, const lz_double &b) -> lz_double { return a+b; };
 
-      return tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
+      result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
+      return result;
    }
 
    lz_double ExcessEntropyDistance(const sequence& str) {

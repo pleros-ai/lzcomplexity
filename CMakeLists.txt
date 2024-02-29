@@ -138,6 +138,12 @@ endif()
 # add module subdirectory
 add_subdirectory(modules)
 
+if(UNIX)
+  # set(CMAKE_MACOSX_RPATH 1)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
+
 # Executable for the driver program.
 # add_executable(${PROJECT_NAME} MACOSX_BUNDLE main.cpp ${LZ_ALG})
 if(NOT binding_python)

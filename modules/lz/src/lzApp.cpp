@@ -65,7 +65,7 @@ namespace lz {
       for (auto str : flags.input) {
          auto excessentropy = ExcessEntropyShuffle(str, flags.sa_args);
 
-         LZ.excess_entropy_shuffle.push_back(excessentropy);
+         LZ.excess_entropy_shuffle.push_back(excessentropy.excess_value);
       }
 
       return EXIT_SUCCESS;
@@ -78,7 +78,7 @@ namespace lz {
       for (auto str : flags.input) {
          auto excessentropy = ExcessEntropyShuffleSequential(str, flags.sa_args);
 
-         LZ.excess_entropy_shuffle.push_back(excessentropy);
+         LZ.excess_entropy_shuffle.push_back(excessentropy.excess_value);
       }
 
       return EXIT_SUCCESS;

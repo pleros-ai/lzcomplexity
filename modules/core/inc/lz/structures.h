@@ -7,13 +7,20 @@ namespace lz {
     namespace utils {
         enum SA_ALG { sais, caps };
 
+        struct LZ_ExcessInfo {
+            lz_int max_block_size;                  //? The value used in excess of entropy by shuffling
+            lz_double excess_value;                 //? The excess of entropy value
+            lz_double multi_information;            //? The multi information value
+            std::vector<lz_double> excess_by_terms; //? The vector of excess fo entropy for each term (size == mm_value)
+        };
+
         struct LZ_Args {
             /* Args for CaPS class */
             lz_int chunks = 0;          //?> Number of chunks to divide the sequence (use by CaPS)
             lz_int max_context = 0;     //?> Max length to compare prefix for generate the LCP (use by CaPS)
             /* Excess entropy by shuffling parameters */
             lz_int block_size = 0;      //?> Max length of the block for excess of entropy by shuffle.
-            lz_int excess_line = -1;    //?> Line where get excess entropy by terms.
+            lz_int excess_line = -1;    //?> Line where get excess entropy by terms (valid for excess of entropy by shuffling).
 
             LZ_Args() = default;
             LZ_Args(lz_int chunks) : chunks(chunks) {};
@@ -50,8 +57,8 @@ namespace lz {
             lz_uint n;                          //!> Length of the string (n+1 size of the vectors)
 
             LZ_SuffixArray(void) :SA(), LCP(), n(0) {};
-            LZ_SuffixArray(std::vector<lz_uint> SA_, std::vector<lz_uint> LCP_, const lz_uint n_) :SA(SA_), LCP(LCP_), n(n_) {};
-            LZ_SuffixArray(std::vector<lz_uint> SA_, const lz_uint n_) :SA(SA_), LCP(), n(n_) {};
+            LZ_SuffixArray(std::vector<lz_uint> SA_, std::vector<lz_uint> LCP_, const lz_uint n_) : SA(std::move(SA_)), LCP(std::move(LCP_)), n(n_){};
+            LZ_SuffixArray(std::vector<lz_uint> SA_, const lz_uint n_) : SA(std::move(SA_)), LCP(), n(n_){};
             LZ_SuffixArray(lz_uint* const SA_, lz_uint* const LCP_, lz_uint n_) :n(n_) {
                 SA = std::vector<lz_uint>(SA_, SA_ + n_);
                 LCP = std::vector<lz_uint>(LCP_, LCP_ + n_);

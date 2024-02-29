@@ -46,7 +46,7 @@
 #include <limits>
 
 #include <lz/utils.h>
-#include <lz/suffix_structure.h>
+#include <lz/structures.h>
 
 #ifndef CHAR_SIZE
 #define CHAR_SIZE  std::numeric_limits<char>::max()

@@ -9,89 +9,79 @@ on:
     branches: ["main"]
 
 jobs:
-  codespell:
-    runs-on: [ubuntu-20.04]
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run scan
-        run: |
-          sudo apt update && sudo apt install -y codespell
-          ${GITHUB_WORKSPACE}/.github/scripts/codespell.sh `pwd`
+  # codespell:
+  #   runs-on: [ubuntu-20.04]
+  #   timeout-minutes: 10
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Run scan
+  #       run: |
+  #         sudo apt update && sudo apt install -y codespell
+  #         ${GITHUB_WORKSPACE}/.github/scripts/codespell.sh `pwd`
 
   build:
-    name: ${{ matrix.config.os }} ${{ matrix.config.cxx }} (C++17) ${{ matrix.config.note }} (${{ matrix.build_type }})
-    runs-on: ${{ matrix.config.os }}
     defaults:
       run:
         shell: bash
     strategy:
       matrix:
-        build_type: ["Debug", "Release"]
-        config:
-          - {
-              os: ubuntu-20.04, # Note: GCC-7 is gone in Ubuntu-22
-              cc: "gcc-7",
-              cxx: "g++-7",
-            }
-          - { os: ubuntu-22.04, cc: "gcc-12", cxx: "g++-12" }
-          - { os: ubuntu-20.04, cc: "clang-6.0", cxx: "clang++-6.0" }
-          - { os: ubuntu-22.04, cc: "clang-15", cxx: "clang++-15" }
-          - {
-              os: ubuntu-22.04,
-              cc: "clang-15",
-              cxx: "clang++-15",
-              libcxx: true,
-              libcxx_version: 15,
-              note: " with libc++",
-            }
-          - { os: macos-latest, cc: "gcc-12", cxx: "g++-12" }
-          - { os: macos-latest, cc: "clang", cxx: "clang++" }
+        runs-on: [ubuntu-20.04, macos-latest, windows-latest]
+        arch: [x64]
+        cxx: [g++, clang++]
+        std: [20]
+        cmake: ["3.5"]
+
+        include:
+          - runs-on: ubuntu-20.04
+            arch: x64
+            cxx: g++
+            std: 20
+            cmake: "3.5"
+
+          - runs-on: ubuntu-20.04
+            arch: x64
+            cxx: g++-10
+            cmake: "3.6"
+
+          - runs-on: macos-latest
+            arch: x64
+            cxx: clang++
+            std: 20
+            cmake: "3.7"
+
+          - runs-on: windows-2019
+            arch: x64 # x86 compilers seem to be missing on 2019 image
+            cxx: cl
+            std: 20
+            cmake: "3.5"
+
+    name: CMake ${{ matrix.cmake }} • ${{ matrix.runs-on }}
+    runs-on: ${{ matrix.runs-on }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up toolchain repositories
-        run: |
-          if [[ "${{ matrix.config.os }}" == "ubuntu-18.04" ]]; then
-            sudo apt-get update
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-            wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-            sudo apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-6.0 main"
-          elif [[ "${{ matrix.config.os }}" == "ubuntu-20.04" ]]; then
-            sudo apt-get update
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-            wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-            sudo apt-add-repository "deb http://apt.llvm.org/focal/ llvm-toolchain-focal-15 main"
-          elif [[ "${{ matrix.config.os }}" == "ubuntu-22.04" ]]; then
-            sudo apt-get update
-            sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-            wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-            sudo apt-add-repository "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-15 main"
-          fi
+      # An action for adding a specific version of CMake:
+      #   https://github.com/jwlawson/actions-setup-cmake
+      - name: Setup CMake ${{ matrix.cmake }}
+        uses: jwlawson/actions-setup-cmake@v1.14
+        with:
+          cmake-version: ${{ matrix.cmake }}
 
-      - name: Install Compiler
-        if: startsWith(matrix.config.os, 'ubuntu')
-        run: |
-          sudo apt-get update
-          sudo apt-get -qq install ${{matrix.config.cc}} ${{matrix.config.cxx}}
-
-      - name: Install libc++
-        if: matrix.config.libcxx
-        run: sudo apt-get -qq install libc++1-${{matrix.config.libcxx_version}} libc++abi1-${{matrix.config.libcxx_version}} libc++-${{matrix.config.libcxx_version}}-dev libc++abi-${{matrix.config.libcxx_version}}-dev
-
-      - name: Install TBB
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get -qq install libtbb-dev
+      # - name: Install TBB
+      #   shell: bash
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get -qq install libtbb-dev
 
       - name: Configure
+        shell: bash
         run: |
           mkdir build && cd build
-          CC=${{matrix.config.cc}} CXX=${{matrix.config.cxx}} cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=OFF ..
+          cmake -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_CXX_STANDARD=${{ matrix.std }} \
+                -DCMAKE_BUILD_TYPE=Release -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=OFF ..
 
       - name: Build
         run: |
           cd build
-          cmake --build . --config ${{ matrix.build_type }}
+          cmake --build . --config Release

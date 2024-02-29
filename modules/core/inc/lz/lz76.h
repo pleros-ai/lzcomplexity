@@ -34,7 +34,7 @@
 #include <vector>
 #include <thread>
 
-#include "suffix_structure.h"
+#include "structures.h"
 #include "sequence.h"
 #include "lpf.h"
 #include "types.h"

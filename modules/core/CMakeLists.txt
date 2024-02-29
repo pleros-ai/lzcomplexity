@@ -51,7 +51,7 @@ set(public_headers
   ${CORE_INCLUDE_DIR}/lz/types.h
   ${CORE_INCLUDE_DIR}/lz/lpf.h
   ${CORE_INCLUDE_DIR}/lz/sequence.h
-  ${CORE_INCLUDE_DIR}/lz/suffix_structure.h
+  ${CORE_INCLUDE_DIR}/lz/structures.h
   ${CORE_INCLUDE_DIR}/lz/lempelziv.h
   ${CORE_INCLUDE_DIR}/lz/lz76.h
   PARENT_SCOPE

@@ -41,6 +41,7 @@
 #include "lz76.h"
 #include "types.h"
 #include "sequence.h"
+#include "structures.h"
 #include "lpf.h"
 
 #include <lz/caps.h>
@@ -73,9 +74,9 @@ namespace lz {
    //.........................................................................
    // Excess entropy by shuffling.
    //.........................................................................
-   auto ExcessEntropyShuffle(const sequence&) -> lz_double;
-   auto ExcessEntropyShuffle(const sequence&, utils::LZ_Args) -> lz_double;
-   auto ExcessEntropyShuffleSequential(const sequence&, utils::LZ_Args) -> lz_double;
+   auto ExcessEntropyShuffle(const sequence&) -> utils::LZ_ExcessInfo;
+   auto ExcessEntropyShuffle(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
+   auto ExcessEntropyShuffleSequential(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
 
    //.........................................................................
    // Excess entropy by distance: E = [1 - d(X,Y)] * max(C(X), C(Y))

@@ -45,7 +45,7 @@
 #include <new>
 
 #include <lz/utils.h>
-#include <lz/suffix_structure.h>
+#include <lz/structures.h>
 
 #if defined(__i386__) || defined(__x86_64__)
 #include <immintrin.h>

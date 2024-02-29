@@ -12,9 +12,22 @@ string(TOLOWER ${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}_${CMAKE_BUILD_TYPE} CPACK
 set(CPACK_PACKAGE_CONTACT "efrenaragon96@gmail.com")
 
 configure_file(LICENSE LICENSE.txt COPYONLY)
-configure_file(README.md README.rtf COPYONLY)
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_BINARY_DIR}/LICENSE.txt")
-set(CPACK_RESOURCE_FILE_README "${CMAKE_BINARY_DIR}/README.rtf")
+if (APPLE)
+  # Apple productbuild cannot handle .md files as CPACK_PACKAGE_DESCRIPTION_FILE;
+  # convert to HTML instead.
+  find_program(CONVERTER textutil)
+  if (NOT CONVERTER)
+    message(FATAL_ERROR "textutil executable not found")
+  endif()
+  execute_process(COMMAND ${CONVERTER} -convert html "${CMAKE_SOURCE_DIR}/README.md" -output "${CMAKE_BINARY_DIR}/README.html")
+  set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_BINARY_DIR}/README.html")
+  set(CPACK_RESOURCE_FILE_README "${CMAKE_BINARY_DIR}/README.html")
+else()
+  configure_file(README.md README.md COPYONLY)
+  set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_BINARY_DIR}/README.md")
+  set(CPACK_RESOURCE_FILE_README "${CMAKE_BINARY_DIR}/README.md")
+endif()
 
 # https://unix.stackexchange.com/a/11552/254512
 set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local/")#/${CMAKE_PROJECT_VERSION}")
@@ -33,11 +46,6 @@ set(CPACK_PACKAGE_RELOCATABLE True)
 set(CPACK_PACKAGE_EXECUTABLES "LempelZiv" "LempelZiv")
 
 if (UNIX)
-
-  # set(CMAKE_MACOSX_RPATH 1)
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
   if (APPLE)
     set (CMAKE_OS_NAME "OSX" CACHE STRING "Operating system name" FORCE)
     # Construct MacOS
