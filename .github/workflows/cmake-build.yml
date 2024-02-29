@@ -24,49 +24,21 @@ jobs:
       run:
         shell: bash
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - runs-on: ubuntu-20.04
-            arch: x64
-            cxx: g++-10
-            std: 20
-            cmake: "3.5"
+        runs-on: [ubuntu-22.04, ubuntu-20.04, macos-latest]
+        build_type: ["Release", "Debug"]
+        cxx: ["g++", "clang++"]
 
-          - runs-on: macos-latest
-            arch: x64
-            cxx: clang++
-            std: 20
-            cmake: "3.7"
-
-          - runs-on: macos-latest
-            arch: arm64
-            cxx: clang++
-            std: 20
-            cmake: "3.7"
-
-          - runs-on: windows-2019
-            arch: x64 # x86 compilers seem to be missing on 2019 image
-            cxx: cl
-            std: 20
-            cmake: "3.5"
-
-    name: • ${{ matrix.runs-on }} • ${{ matrix.arch }} • ${{ matrix.cxx }} •
+    name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} •
     runs-on: ${{ matrix.runs-on }}
-    concurrency:
-      group: ci-${{ matrix.arch }}
-      cancel-in-progress: true
 
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
 
-      # An action for adding a specific version of CMake:
-      #   https://github.com/jwlawson/actions-setup-cmake
-      # - name: Setup CMake ${{ matrix.cmake }}
-      #   uses: jwlawson/actions-setup-cmake@v1.14
-      #   with:
-      #     cmake-version: ${{ matrix.cmake }}
+      - uses: lukka/get-cmake@latest
 
       # - name: Install TBB
       #   shell: bash
@@ -78,11 +50,55 @@ jobs:
         run: patch -p0 -i patches/tbb.patch
 
       - name: Configure cmake
-        run: |
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: >
           mkdir build && cd build
-          CXX=${{ matrix.cxx }} cmake -DCMAKE_BUILD_TYPE=Release -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON ..
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON ..
 
       - name: Build
-        run: |
+        run: >
           cd build
-          cmake --build . --config Release
+          cmake --build . --config ${{ matrix.build_type }}
+
+  msvc:
+    name: • ${{ matrix.os }} • ${{ matrix.build_type }} • ${{ matrix.msvc }} •
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: powershell
+    strategy:
+      fail-fast: false
+      matrix:
+        msvc:
+          - VS-16-2019
+          - VS-17-2022
+        arch:
+          - x64
+        build_type:
+          - Debug
+          - Release
+        include:
+          - msvc: VS-16-2019
+            os: windows-2019
+            generator: "Visual Studio 16 2019"
+          - msvc: VS-17-2022
+            os: windows-2022
+            generator: "Visual Studio 17 2022"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Configure cmake
+        run: >
+          mkdir build && cd build
+          cmake -G "${{ matrix.generator }}" -A ${{ matrix.arch }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON ..
+
+      - name: Build
+        run: >
+          cd build
+          cmake --build . --config ${{ matrix.build_type }}

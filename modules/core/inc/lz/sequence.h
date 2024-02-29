@@ -175,7 +175,7 @@ namespace lz {
 		return acum;
 	}
 
-	inline constexpr std::string sequence::toString(void) const {
+	inline std::string sequence::toString(void) const {
 		return std::string{ seq.begin(), seq.end() };
 	}
 

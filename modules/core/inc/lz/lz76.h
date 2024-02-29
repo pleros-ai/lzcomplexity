@@ -79,7 +79,7 @@ namespace lz {
          ~LempelZiv76();                     //!> Destructor.
 
          constexpr auto getFactorization(void) const;              //!> Returns the LZ76 complexity of the string.
-         constexpr auto getFactors(void) const;                     //!> Returns the LZ76 factors
+         auto getFactors(void) const;                     //!> Returns the LZ76 factors
 
          LempelZiv76& operator=(LempelZiv76);
          LempelZiv76& operator=(const LempelZiv76&);
@@ -137,7 +137,7 @@ namespace lz {
       /// @brief
       /// Returns the Lempel-Ziv factors of the sequence
       /// @return The array of Lempel-Ziv factors
-      inline constexpr auto LempelZiv76::getFactors(void) const {
+      inline auto LempelZiv76::getFactors(void) const {
          return lzf;
       }
 
