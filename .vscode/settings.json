@@ -76,7 +76,8 @@
     "memory_resource": "cpp",
     "functional": "cpp",
     "memory": "cpp",
-    "version": "cpp"
+    "version": "cpp",
+    "iterator": "cpp"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/clang++"
 }

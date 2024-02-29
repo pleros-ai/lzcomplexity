@@ -41,7 +41,11 @@ include(ConfigInstallDirs)
 include(CheckCompiler)
 
 # Warning flags.
-set(CMAKE_CXX_FLAGS -Wextra)
+if(WIN32)
+    set(CMAKE_CXX_FLAGS -Ofast)
+else()
+    set(CMAKE_CXX_FLAGS -Wextra)
+endif()
 set(public_headers)
 
 set(EXT_DIR ${CMAKE_SOURCE_DIR}/external)

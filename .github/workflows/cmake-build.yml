@@ -57,7 +57,8 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON ..
 
       - name: Build
-        run: cmake --build . --config ${{ matrix.build_type }}
+        run: |
+          cmake --build . --config ${{ matrix.build_type }}
 
   msvc:
     name: • ${{ matrix.os }} • ${{ matrix.build_type }} • ${{ matrix.msvc }} •
