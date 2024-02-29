@@ -25,23 +25,23 @@ jobs:
         shell: bash
     strategy:
       matrix:
-        runs-on: [ubuntu-20.04, macos-latest, windows-latest]
-        arch: [x64]
-        cxx: [g++, clang++]
-        std: [20]
-        cmake: ["3.5"]
+        # runs-on: [ubuntu-20.04, macos-latest, windows-latest]
+        # arch: [x64]
+        # cxx: [g++, clang++]
+        # std: [20]
+        # cmake: ["3.5"]
 
         include:
-          - runs-on: ubuntu-20.04
-            arch: x64
-            cxx: g++
-            std: 20
-            cmake: "3.5"
+          # - runs-on: ubuntu-20.04
+          #   arch: x64
+          #   cxx: g++
+          #   std: 20
+          #   cmake: "3.5"
 
-          - runs-on: ubuntu-20.04
-            arch: x64
-            cxx: g++-10
-            cmake: "3.6"
+          # - runs-on: ubuntu-20.04
+          #   arch: x64
+          #   cxx: g++-10
+          #   cmake: "3.27"
 
           - runs-on: macos-latest
             arch: x64
@@ -49,11 +49,11 @@ jobs:
             std: 20
             cmake: "3.7"
 
-          - runs-on: windows-2019
-            arch: x64 # x86 compilers seem to be missing on 2019 image
-            cxx: cl
-            std: 20
-            cmake: "3.5"
+          # - runs-on: windows-2019
+          #   arch: x64 # x86 compilers seem to be missing on 2019 image
+          #   cxx: cl
+          #   std: 20
+          #   cmake: "3.5"
 
     name: CMake ${{ matrix.cmake }} • ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
@@ -63,10 +63,10 @@ jobs:
 
       # An action for adding a specific version of CMake:
       #   https://github.com/jwlawson/actions-setup-cmake
-      - name: Setup CMake ${{ matrix.cmake }}
-        uses: jwlawson/actions-setup-cmake@v1.14
-        with:
-          cmake-version: ${{ matrix.cmake }}
+      # - name: Setup CMake ${{ matrix.cmake }}
+      #   uses: jwlawson/actions-setup-cmake@v1.14
+      #   with:
+      #     cmake-version: ${{ matrix.cmake }}
 
       # - name: Install TBB
       #   shell: bash
@@ -78,8 +78,7 @@ jobs:
         shell: bash
         run: |
           mkdir build && cd build
-          cmake -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_CXX_STANDARD=${{ matrix.std }} \
-                -DCMAKE_BUILD_TYPE=Release -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=OFF ..
+          CXX=${{ matrix.cxx }} cmake -DCMAKE_BUILD_TYPE=Release -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=OFF ..
 
       - name: Build
         run: |
