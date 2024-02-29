@@ -32,11 +32,6 @@ jobs:
             std: 20
             cmake: "3.5"
 
-          # - runs-on: ubuntu-20.04
-          #   arch: x64
-          #   cxx: g++-10
-          #   cmake: "3.27"
-
           - runs-on: macos-latest
             arch: x64
             cxx: clang++
@@ -57,9 +52,14 @@ jobs:
 
     name: • ${{ matrix.runs-on }} • ${{ matrix.arch }} • ${{ matrix.cxx }} •
     runs-on: ${{ matrix.runs-on }}
+    concurrency:
+      group: ci-${{ matrix.arch }}
+      cancel-in-progress: true
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       # An action for adding a specific version of CMake:
       #   https://github.com/jwlawson/actions-setup-cmake
@@ -74,15 +74,10 @@ jobs:
       #     sudo apt-get update
       #     sudo apt-get -qq install libtbb-dev
 
-      - name: Update submodules
-        shell: bash
-        run: |
-          git submodule init
-          git submodule update
-          patch -p0 -i patches/tbb.patch
+      - name: Patch TBB submodule
+        run: patch -p0 -i patches/tbb.patch
 
       - name: Configure cmake
-        shell: bash
         run: |
           mkdir build && cd build
           CXX=${{ matrix.cxx }} cmake -DCMAKE_BUILD_TYPE=Release -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON ..
