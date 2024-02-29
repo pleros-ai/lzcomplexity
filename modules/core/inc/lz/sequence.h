@@ -69,7 +69,7 @@ namespace lz {
 		lz_int SetAlphabetSize(void);
 
 		constexpr lz_uint NoZeroes(void) const;
-		constexpr std::string toString(void) const;
+		std::string toString(void) const;
 
 		char& operator[](std::vector<char>::size_type);
 		const char& operator[](std::vector<char>::size_type) const;

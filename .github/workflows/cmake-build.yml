@@ -39,6 +39,9 @@ jobs:
           submodules: true
 
       - uses: lukka/get-cmake@latest
+        with:
+          useCloudCache: false
+          useLocalCache: true
 
       # - name: Install TBB
       #   shell: bash
@@ -91,6 +94,9 @@ jobs:
           submodules: true
 
       - uses: lukka/get-cmake@latest
+        with:
+          useCloudCache: false
+          useLocalCache: true
 
       - name: Configure cmake
         run: >
