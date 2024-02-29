@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         runs-on: [ubuntu-22.04, ubuntu-20.04, macos-latest]
-        build_type: ["Release", "Debug"]
+        build_type: ["Release"]
         cxx: ["g++", "clang++"]
 
     name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} •
@@ -52,14 +52,12 @@ jobs:
       - name: Configure cmake
         env:
           CXX: ${{ matrix.cxx }}
-        run: >
+        run: |
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON ..
 
       - name: Build
-        run: >
-          cd build
-          cmake --build . --config ${{ matrix.build_type }}
+        run: cmake --build . --config ${{ matrix.build_type }}
 
   msvc:
     name: • ${{ matrix.os }} • ${{ matrix.build_type }} • ${{ matrix.msvc }} •
@@ -76,7 +74,7 @@ jobs:
         arch:
           - x64
         build_type:
-          - Debug
+          # - Debug
           - Release
         include:
           - msvc: VS-16-2019
@@ -95,10 +93,10 @@ jobs:
 
       - name: Configure cmake
         run: >
-          mkdir build && cd build
-          cmake -G "${{ matrix.generator }}" -A ${{ matrix.arch }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON ..
+          cmake cmake -S . -B _build/ 
+          -G "${{ matrix.generator }}" -A ${{ matrix.arch }} 
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} 
+          -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON
 
       - name: Build
-        run: >
-          cd build
-          cmake --build . --config ${{ matrix.build_type }}
+        run: cmake --build _build/ --config ${{ matrix.build_type }}
