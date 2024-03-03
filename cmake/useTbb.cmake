@@ -1,5 +1,9 @@
 include(CheckIncludeFileCXX)
 
+if(TARGET TBB::tbb)
+  return()
+endif()
+
 #---Try to download a file to check internet connection-----------------------------------------
 message(STATUS "Checking internet connectivity")
 # file(DOWNLOAD https://root.cern/files/cmake_connectivity_test.txt ${CMAKE_CURRENT_BINARY_DIR}/cmake_connectivity_test.txt

@@ -1,3 +1,4 @@
+message(STATUS "--- Init LZApp ---")
 set(PROJECT_NAME LZApp)
 set(namespace "lz")
 
@@ -14,6 +15,7 @@ else()
 endif()
 
 set(APP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+set(GLOBAL_APP_INCLUDE_DIR ${APP_INCLUDE_DIR} PARENT_SCOPE)
 set(APP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # set(LZ_LZ76 ${APP_SOURCE_DIR}/lz76.cpp)
@@ -28,10 +30,17 @@ endif()
 add_library(lz::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 # Suffix array algorithms form part of the core
+include(useTbb)
 find_package(LZCore REQUIRED)
 
+message(STATUS "LZCore: ${LZCore_FOUND}")
+
 if(NOT LZCore_FOUND)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/modules/core core)
+   add_subdirectory(${CMAKE_SOURCE_DIR}/modules/core core)
+
+   message(STATUS "LZCore path: ${GLOBAL_CORE_INCLUDE_DIR}")
+   set(LZ_CORE_INCLUDE_DIR ${GLOBAL_CORE_INCLUDE_DIR})
+   set(LZ_CORE_LIB LZCore)
 endif()
 
 # add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
@@ -40,12 +49,12 @@ target_sources(${PROJECT_NAME} PRIVATE ${LZ_ALG})
 target_include_directories(${PROJECT_NAME} 
    PUBLIC 
       $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
-      $<BUILD_INTERFACE:${CORE_INCLUDE_DIR}>
-      $<BUILD_INTERFACE:${EXT_INCLUDE}>
+      $<BUILD_INTERFACE:${LZ_CORE_INCLUDE_DIR}>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
-target_link_libraries(${PROJECT_NAME} PUBLIC LZCore)
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LZ_CORE_LIB})
 set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${LZ_TBB_LIBS})
 
 set(public_headers 
@@ -66,3 +75,5 @@ target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FL
 
 include(InstallingGeneral)
 include(InstallingConfigs)
+
+message(STATUS "--- End LZApp ---")

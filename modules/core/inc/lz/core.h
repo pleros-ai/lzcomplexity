@@ -1,8 +1,8 @@
 #pragma once
 
-#include "types.h"
+#include "lempelziv.h"
 #include "lpf.h"
+#include "lz76.h"
 #include "sequence.h"
 #include "structures.h"
-#include "lz76.h"
-#include "lempelziv.h"
+#include "types.h"

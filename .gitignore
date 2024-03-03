@@ -1,6 +1,7 @@
 .DS_Store
 .codechecker/**
 
+/_packages/**
 /build/**
 /bin/**
 /install/**

@@ -82,5 +82,9 @@
     "metal_limits": "cpp",
     "metal_math": "cpp"
   },
-  "C_Cpp.default.compilerPath": "/usr/bin/clang++"
+  "C_Cpp.default.compilerPath": "/usr/bin/clang++",
+  "editor.defaultFormatter": "xaver.clang-format",
+  "clang-format.executable": "clang-format",
+  "clang-format.style": "file",
+  "clang-format.fallbackStyle": "Google",
 }

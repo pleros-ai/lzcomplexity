@@ -16,6 +16,7 @@ set(public_headers
   # Suffix array headers
   ${public_headers}
   ${SA_INCLUDE_DIR}/lz/caps.h
+  ${SA_INCLUDE_DIR}/lz/sa_structures.h
   ${SA_INCLUDE_DIR}/lz/sais_lite.h
   PARENT_SCOPE
 )

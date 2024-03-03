@@ -8,45 +8,46 @@
 
  ***************************************************************************/
 
- /***************************************************************************
-  *   Copyright (C) 2013-2023 by Efren Aragon Perez      						 *
-  *   efrenaragon96@gmail.com  										                *
-  *                                                                         *
-  *   This program is free software; you can redistribute it and/or modify  *
-  *   it under the terms of the GNU General Public License as published by  *
-  *   the Free Software Foundation; either version 2 of the License, or     *
-  *   (at your option) any later version.                                   *
-  *                                                                         *
-  *   This program is distributed in the hope that it will be useful,       *
-  *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-  *   GNU General Public License for more details.                          *
-  *                                                                         *
-  *   You should have received a copy of the GNU General Public License     *
-  *   along with this program; if not, write to the                         *
-  *   Free Software Foundation, Inc.,                                       *
-  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
-  ***************************************************************************/
+/***************************************************************************
+ *   Copyright (C) 2013-2023 by Efren Aragon Perez      						 *
+ *   efrenaragon96@gmail.com *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
 
 #pragma once
 
 #include <assert.h>
+
 #include <concepts>
-#include <vector>
 #include <typeinfo>
-#if __cplusplus >= 201703L
+#include <vector>
+#if __cplusplus >= 201'703L
 #include <variant>
 #endif
-
-#include "lz76.h"
-#include "types.h"
-#include "sequence.h"
-#include "structures.h"
-#include "lpf.h"
 
 #include <lz/caps.h>
 #include <lz/sais_lite.h>
 #include <lz/utils.h>
+
+#include "lpf.h"
+#include "lz76.h"
+#include "sequence.h"
+#include "structures.h"
+#include "types.h"
 
 namespace lz {
    //.........................................................................
@@ -89,7 +90,8 @@ namespace lz {
    // Information distance between two consecutive sequences
    //.........................................................................
    auto InformationDistance(const sequence&, const sequence&) -> lz_double;
-   auto InformationDistance(const sequence&, const lz76::LZ_Result&, const sequence&, const lz76::LZ_Result&) -> lz_double;
+   auto InformationDistance(const sequence&, const lz76::LZ_Result&, const sequence&, const lz76::LZ_Result&)
+       -> lz_double;
    auto InformationDistance(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
 
-} // namespace lz
+}  // namespace lz

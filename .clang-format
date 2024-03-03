@@ -1,0 +1,40 @@
+---
+BasedOnStyle: Google
+
+Language:     Cpp
+Standard:     c++17
+
+
+PackConstructorInitializers: NextLineOnly
+ColumnLimit:     120
+SortIncludes:    CaseSensitive
+
+IncludeBlocks:   Regroup
+IndentAccessModifiers: false
+IndentCaseBlocks: true
+IndentCaseLabels: true
+IndentExternBlock: AfterExternBlock
+IndentGotoLabels: true
+IndentPPDirectives: None
+RequiresClausePosition: WithFollowing
+IndentRequiresClause: true
+IndentWidth:     3
+IndentWrappedFunctionNames: true
+ReflowComments:  true
+LambdaBodyIndentation: Signature
+Cpp11BracedListStyle: true
+NamespaceIndentation: All
+BreakBeforeTernaryOperators: true
+
+SpaceBeforeRangeBasedForLoopColon: false
+SpaceBeforeSquareBrackets: false
+SpacesBeforeTrailingComments: 2
+
+
+IntegerLiteralSeparator:
+  Binary:          0
+  BinaryMinDigits: 0
+  Decimal:         3
+  DecimalMinDigits: 0
+  Hex:             0
+  HexMinDigits:    0

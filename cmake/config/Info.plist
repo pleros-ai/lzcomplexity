@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>ATSApplicationFontsPath</key>
+    <string>Fonts</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleName</key>
+    <string>LempelZiv</string>
+    <key>CFBundleDisplayName</key>
+    <string>LempelZiv</string>
+    <key>CFBundleExecutable</key>
+    <string>LempelZiv_dbg</string>
+    <key>CFBundleIconFile</key
+	  <string>icon</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.lz.lempelziv</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.7</string>
+    <key>CFBundleVersion</key>
+    <string>0.7</string>
+    <key>CFBundleSupportedPlatforms</key>
+    <array>
+      <string>MacOSX</string>
+    </array>
+    <key>DTCompiler</key>
+    <string>com.apple.compilers.llvm.clang.1_0</string>
+    <key>DTPlatformBuild</key>
+    <string></string>
+    <key>DTPlatformName</key>
+    <string>macosx</string>
+    <key>DTPlatformVersion</key>
+    <string>14.0</string>
+    <key>DTSDKBuild</key>
+    <string>23A334</string>
+    <key>DTSDKName</key>
+    <string>macosx14.0</string>
+    <key>DTXcode</key>
+    <string>1501</string>
+    <key>DTXcodeBuild</key>
+    <string>15A507</string>
+  </dict>
+</plist>

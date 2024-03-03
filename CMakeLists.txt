@@ -32,17 +32,17 @@ option(builtin_tbb "Use local TBB library" ON)
 option(binding_python "Build python binding of LZ lib" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-set(CMAKE_CXX_FLAGS)
 # Global cmake
 include(FindThreads)
 include(CheckIPOSupported)
 # Local cmake
 include(ConfigInstallDirs)
 include(CheckCompiler)
+# include(useTbb)
 
 # Warning flags.
 if(WIN32)
-    set(CMAKE_CXX_FLAGS -Ofast)
+    set(CMAKE_CXX_FLAGS -O3)
 else()
     set(CMAKE_CXX_FLAGS -Wextra)
 endif()
@@ -135,15 +135,15 @@ if(asan)
 #   set(LZ_LINK_SANITIZE "${LZ_LINK_SANITIZE} ${ASAN_EXTRA_SHARED_LINKER_FLAGS}")
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_VERBOSE_MAKEFILE ON)
-endif()
+# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#     set(CMAKE_VERBOSE_MAKEFILE ON)
+# endif()
 
 # add module subdirectory
 add_subdirectory(modules)
 
-if(UNIX)
-  # set(CMAKE_MACOSX_RPATH 1)
+if(UNIX AND TBB_FOUND)
+  set(CMAKE_MACOSX_RPATH 1)
   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
@@ -153,16 +153,18 @@ endif()
 if(NOT binding_python)
     add_executable(${PROJECT_NAME} main.cpp)
 
+    include(useTbb)
+    message(STATUS "TBB: ${LZ_TBB_LIBS} and found: ${TBB_FOUND}")
+
     target_link_libraries(${PROJECT_NAME} PRIVATE TBB::tbb)
     target_link_libraries(${PROJECT_NAME} PUBLIC LZApp)
 
     # Compiler flags for the target.
     target_include_directories(${PROJECT_NAME} 
-    PUBLIC 
+      PUBLIC 
         $<BUILD_INTERFACE:${SA_INCLUDE_DIR}> 
         $<BUILD_INTERFACE:${UTILS_INCLUDE_DIR}>
-        $<BUILD_INTERFACE:${CORE_INCLUDE_DIR}> 
-        $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${GLOBAL_APP_INCLUDE_DIR}>
         $<BUILD_INTERFACE:${EXT_INCLUDE}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
@@ -172,7 +174,8 @@ if(NOT binding_python)
     target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
     target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
     target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
-
+    
+    # set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${CMAKE_INSTALL_RPATH})
     # set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${public_headers}")
     # Debug prefix for libs when build it in debug mode
     set_target_properties(${PROJECT_NAME} 
@@ -196,6 +199,12 @@ if(NOT binding_python)
         # MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/customtemplate.plist.in
     )
 
+    message(STATUS "Paths for install:")
+    message(STATUS "Prefix install dir: ${CMAKE_INSTALL_PREFIX}")
+    message(STATUS "Library dir: ${CMAKE_INSTALL_LIBDIR}")
+    message(STATUS "Inlude dir: ${CMAKE_INSTALL_INCLUDEDIR}")
+    message(STATUS "Binary dir: ${CMAKE_INSTALL_BINDIR}")
+
     # install the target and create export-set
     install(
         TARGETS ${PROJECT_NAME}
@@ -213,6 +222,17 @@ if(NOT binding_python)
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
     )
+
+    # execute_process (
+    #     COMMAND export \$PATH=\$PATH:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
+    #     OUTPUT_VARIABLE outVar
+    # )
+    # message(STATUS "Var: ${outVar}")
+    # install(CODE "execute_process(COMMAND cmake/script/export_path.sh)")
+
+    # configure_file(cmake/config/export_path.sh.in ${CMAKE_INSTALL_LIBDIR}/export_path.sh @ONLY)
+    # install(PROGRAMS ${CMAKE_INSTALL_LIBDIR}/export_path.sh DESTINATION script)
+    # install(CODE "execute_process(COMMAND ${CMAKE_INSTALL_PREFIX}/script/export_path.sh WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/script)")
 
     include(packaging)
 endif()

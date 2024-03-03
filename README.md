@@ -4,7 +4,7 @@
       | |__ / /___|/ / _ \      LempelZiv analysis engine v0.7 2024.
       |____/___|  /_/\___/
 ```
-[![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 ### Prerequisites
 ---

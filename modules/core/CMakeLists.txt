@@ -1,3 +1,4 @@
+message(STATUS "--- Init LZCore ---")
 set(PROJECT_NAME LZCore)
 set(namespace "lz")
 
@@ -14,6 +15,7 @@ else()
 endif()
 
 set(CORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+set(GLOBAL_CORE_INCLUDE_DIR ${CORE_INCLUDE_DIR} PARENT_SCOPE)
 set(CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 set(LZ_LZ76 ${CORE_SOURCE_DIR}/lz76.cpp)
@@ -30,15 +32,16 @@ add_library(lz::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 # Suffix array algorithms form part of the core
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/sa sa)
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
-
 message(STATUS "headers for ${PROJECT_NAME}: ${public_headers}")
 
 target_sources(${PROJECT_NAME} PRIVATE ${LZ_LZ76} ${LZ_ALG})
 target_include_directories(${PROJECT_NAME} 
    PUBLIC 
       $<BUILD_INTERFACE:${CORE_INCLUDE_DIR}>
-      $<BUILD_INTERFACE:${EXT_INCLUDE}>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
+
+include(useTbb)
 
 # possible
 target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
@@ -66,3 +69,5 @@ set(LZCore_FOUND TRUE)
 
 include(InstallingGeneral)
 include(InstallingConfigs)
+
+message(STATUS "--- End LZCore ---")

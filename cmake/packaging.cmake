@@ -32,7 +32,7 @@ endif()
 # https://unix.stackexchange.com/a/11552/254512
 set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local/")#/${CMAKE_PROJECT_VERSION}")
 # which is useful in case of packing only selected components instead of the whole thing
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Library for Lempel-Ziv calculation"
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Library for calculate measures based on LemeplZiv-76 complexity."
     CACHE STRING "Lempel-Ziv calculation"
 )
 # set(CPACK_PACKAGE_VENDOR "DySAG")
@@ -70,7 +70,7 @@ if (UNIX)
         set(CPACK_DEBIAN_PACKAGE_MAINTAINER "earagon") #required
         set(CPACK_DEBIAN_PACKAGE_VERSION ${VERSION})
         set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Efren Aragon")
-        set(CPACK_PACKAGE_DESCRIPTION "Library for calculate lz76 factorization and suffix-array structures.")
+        set(CPACK_PACKAGE_DESCRIPTION "Library for calculate measures based on LemeplZiv-76 complexity.")
         # package name for deb. If set, then instead of some-application-0.9.2-Linux.deb
         # you'll get some-application_0.9.2_amd64.deb (note the underscores too)
         set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
@@ -107,9 +107,9 @@ if (UNIX)
         if (RPMBUILDER)
         # #construct .rpm
             set(CPACK_GENERATOR "RPM")
-            set(CPACK_RPM_PACKAGE_NAME "lz")
+            set(CPACK_RPM_PACKAGE_NAME "LempelZiv")
             set(CPACK_RPM_PACKAGE_VERSION ${VERSION})
-            set(CPACK_RPM_PACKAGE_DESCRIPTION "Library for calculate lz76 factorization and suffix-array structures.")
+            set(CPACK_RPM_PACKAGE_DESCRIPTION "Library for calculate measures based on LemeplZiv-76 complexity.")
         endif (RPMBUILDER)
     endif (FEDORA_FOUND)
 
@@ -151,7 +151,8 @@ if (UNIX)
 endif (UNIX)
 
 if(WIN32 OR MINGW)
-    # Construct Windows
+  # Construct Windows
+  set (CMAKE_OS_NAME "Windows" CACHE STRING "Operating system name" FORCE)
 endif(WIN32 OR MINGW)
 
 message(STATUS "SO detected ${CMAKE_OS_NAME}")
@@ -162,6 +163,13 @@ message(STATUS "SO detected ${CMAKE_OS_NAME}")
 #
 configure_file(cmake/config/CMakeCPackOptions.cmake.in CMakeCPackOptions.cmake @ONLY)
 set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_BINARY_DIR}/CMakeCPackOptions.cmake)
+
+# if(UNIX AND TBB_FOUND)
+#   # set(CMAKE_MACOSX_RPATH 1)
+#   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+#   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# endif()
+
 include(CPack)
 
 # cpack_add_component(lz)
