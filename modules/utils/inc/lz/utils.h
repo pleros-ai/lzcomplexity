@@ -9,8 +9,10 @@
 #ifdef __cpp_lib_ranges
 #include <ranges>
 #endif
-#include <algorithm>
+#ifdef __cpp_concepts
 #include <concepts>
+#endif
+#include <algorithm>
 #include <cstdarg>
 #include <random>
 #include <type_traits>

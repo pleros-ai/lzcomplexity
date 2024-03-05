@@ -178,7 +178,7 @@ namespace lz {
          return LZ_Result{factorization, lzf};
       }
 
-#if __cplusplus >= 201703L
+#ifdef __cpp_concepts
       template <typename... SAImpl>
       LZ_Result LempelZiv76::Factorize(const sequence seq, utils::sa_type_t<SAImpl...> sa_impl) {
          // parameters should come from flags

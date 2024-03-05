@@ -28,7 +28,7 @@ namespace lz {
          { sa.construct(str, n) } -> std::same_as<LZ_SuffixArray>;
       };
 
-#if __cplusplus >= 201703L
+#ifdef __cpp_concepts
       template <typename... SAImpl>
           requires((sa_empty_construct<SAImpl>) || ...) || (sa_string_construct<SAImpl> || ...) struct sa_type {
          using type = std::variant<suffixarray::CaPS_SA, suffixarray::SAIS, SAImpl...>;
