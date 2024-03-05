@@ -16,7 +16,7 @@ IndentCaseLabels: true
 IndentExternBlock: AfterExternBlock
 IndentGotoLabels: true
 IndentPPDirectives: None
-RequiresClausePosition: WithFollowing
+RequiresClausePosition: OwnLine
 IndentRequiresClause: true
 IndentWidth:     3
 IndentWrappedFunctionNames: true

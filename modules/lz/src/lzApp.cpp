@@ -147,21 +147,17 @@ namespace lz {
       return EXIT_SUCCESS;
    }
 
-   lz_int InformationDistanceBySequence(utils::LZ_Flags& flags) {
+   lz_int InformationDistanceBySequence(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
       std::vector<sequence> text = flags.input;
-      flags.sequence_info_distance.clear();
-      flags.sequence_info_distance.reserve(flags.input.size());
+      LZ.sequence_info_distance.clear();
+      LZ.sequence_info_distance.reserve(flags.input.size());
 
       for (auto str: flags.input) {
-         if (str.size() == 1) {
-            flags.info_distance.push_back(0);
-            continue;
-         }
          std::size_t mid = str.size() / 2;  // the half of the sequence
          auto [seq_fh, seq_lh] = str.Split(mid);
          auto res = InformationDistance(seq_fh, seq_lh, flags.sa_args);
 
-         flags.sequence_info_distance.push_back(res);
+         LZ.sequence_info_distance.push_back(res);
       }
 
       return EXIT_SUCCESS;

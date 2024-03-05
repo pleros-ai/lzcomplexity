@@ -352,9 +352,9 @@ lz::lz_int process(lz_options& opt) {
       // TODO: Implement excess of entropy for a sequence and get struct with info
    }
 
-   lz::InformationDistanceBySequence(test_flags);
+   lz::InformationDistanceBySequence(test_flags, lz);
    std::cout << "Info distance in sequences: ";
-   for (auto x: test_flags.sequence_info_distance) std::cout << x << " ";
+   for (auto x: lz.sequence_info_distance) std::cout << x << " ";
    std::cout << std::endl;
 
    if (opt.find_distance) {

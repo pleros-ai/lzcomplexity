@@ -80,6 +80,6 @@ namespace lz {
    //.........................................................................
    // Information distance into the sequences
    //.........................................................................
-   auto InformationDistanceBySequence(utils::LZ_Flags&) -> lz_int;
+   auto InformationDistanceBySequence(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
 }  // namespace lz

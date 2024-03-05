@@ -178,9 +178,9 @@ namespace lz {
          return LZ_Result{factorization, lzf};
       }
 
-#if __cplusplus >= 201'703L
+#if __cplusplus >= 201703L
       template <typename... SAImpl>
-      LZ_Result LempelZiv76::Factorize(const sequence seq, utils::sa_type<SAImpl...>::type sa_impl) {
+      LZ_Result LempelZiv76::Factorize(const sequence seq, utils::sa_type_t<SAImpl...> sa_impl) {
          // parameters should come from flags
          utils::LZ_SuffixArray _SA;
          std::visit([&](auto&& alg) { _SA = alg.construct(seq.toString()); }, sa_impl);

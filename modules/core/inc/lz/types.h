@@ -28,11 +28,14 @@ namespace lz {
          { sa.construct(str, n) } -> std::same_as<LZ_SuffixArray>;
       };
 
-#if __cplusplus >= 201'703L
+#if __cplusplus >= 201703L
       template <typename... SAImpl>
-      struct sa_type {
+          requires((sa_empty_construct<SAImpl>) || ...) || (sa_string_construct<SAImpl> || ...) struct sa_type {
          using type = std::variant<suffixarray::CaPS_SA, suffixarray::SAIS, SAImpl...>;
       };
+
+      template <typename... SAImpl>
+      using sa_type_t = typename sa_type<SAImpl...>::type;
 #endif
    }  // namespace utils
 }  // namespace lz
