@@ -12,6 +12,7 @@ namespace lz {
          using Ts::operator()...;
       };
 
+#ifdef __cpp_concepts
       //---------------------- Concepts -----------------------//
       template <typename SAImpl>
       concept sa_empty_construct = requires(SAImpl sa) {
@@ -28,7 +29,6 @@ namespace lz {
          { sa.construct(str, n) } -> std::same_as<LZ_SuffixArray>;
       };
 
-#ifdef __cpp_concepts
       template <typename... SAImpl>
           requires((sa_empty_construct<SAImpl>) || ...) || (sa_string_construct<SAImpl> || ...) struct sa_type {
          using type = std::variant<suffixarray::CaPS_SA, suffixarray::SAIS, SAImpl...>;
