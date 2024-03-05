@@ -73,7 +73,7 @@ namespace lz {
                                                                 //! using CaPS with the parameters specified.
          LZ_Result Factorize(const utils::LZ_SuffixArray);      //!> Find the factors and calculate the lz76 complexity
 
-#ifdef __cpp_concepts
+#if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
          template <typename... SAImpl>
          LZ_Result Factorize(const sequence, utils::sa_type_t<SAImpl...>);  //!> Find the factors and calculate the
                                                                             //! lz76 complexity using a SA algorithm.

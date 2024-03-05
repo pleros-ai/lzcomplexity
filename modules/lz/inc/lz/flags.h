@@ -101,10 +101,10 @@ namespace lz {
             return *this;
          };
 
-         friend constexpr bool operator==(const LZ_Flags& lhs, const LZ_Flags& rhs) {
+         friend bool operator==(const LZ_Flags& lhs, const LZ_Flags& rhs) {
             return lhs.input == rhs.input && lhs.sa_args == rhs.sa_args;
          };
-         friend constexpr bool operator!=(const LZ_Flags& lhs, const LZ_Flags& rhs) { return !operator==(lhs, rhs); };
+         friend bool operator!=(const LZ_Flags& lhs, const LZ_Flags& rhs) { return !operator==(lhs, rhs); };
       };
 
    }  // namespace utils

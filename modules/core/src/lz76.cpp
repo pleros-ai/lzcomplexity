@@ -178,7 +178,7 @@ namespace lz {
          return LZ_Result{factorization, lzf};
       }
 
-#ifdef __cpp_lib_variant
+#if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
       template <typename... SAImpl>
       LZ_Result LempelZiv76::Factorize(const sequence seq, utils::sa_type_t<SAImpl...> sa_impl) {
          // parameters should come from flags

@@ -12,7 +12,7 @@ namespace lz {
          using Ts::operator()...;
       };
 
-#ifdef __cpp_concepts
+#if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
       //---------------------- Concepts -----------------------//
       template <typename SAImpl>
       concept sa_empty_construct = requires(SAImpl sa) {
