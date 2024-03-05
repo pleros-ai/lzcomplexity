@@ -1,6 +1,7 @@
 message(STATUS "--- Init LZCore ---")
 set(PROJECT_NAME LZCore)
 set(namespace "lz")
+set(component "lz_library")
 
 project(
    ${PROJECT_NAME}
@@ -15,11 +16,11 @@ else()
 endif()
 
 set(CORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
-set(GLOBAL_CORE_INCLUDE_DIR ${CORE_INCLUDE_DIR} PARENT_SCOPE)
 set(CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set_property(GLOBAL PROPERTY CORE_INCLUDE_DIR ${CORE_INCLUDE_DIR})
 
 set(LZ_LZ76 ${CORE_SOURCE_DIR}/lz76.cpp)
-set(LZ_ALG ${CORE_SOURCE_DIR}/lempelziv.cpp)
+set(LZ_ALGS ${CORE_SOURCE_DIR}/lempelziv.cpp)
 
 if(LZ_SHARE)
    add_library(${PROJECT_NAME} SHARED)
@@ -34,18 +35,16 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/modules/sa sa)
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
 message(STATUS "headers for ${PROJECT_NAME}: ${public_headers}")
 
-target_sources(${PROJECT_NAME} PRIVATE ${LZ_LZ76} ${LZ_ALG})
+target_sources(${PROJECT_NAME} PRIVATE ${LZ_LZ76} ${LZ_ALGS})
 target_include_directories(${PROJECT_NAME} 
    PUBLIC 
       $<BUILD_INTERFACE:${CORE_INCLUDE_DIR}>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-include(useTbb)
-
 # possible
-target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
-set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${LZ_TBB_LIBS})
+# target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
+# set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${LZ_TBB_LIBS})
 
 set(public_headers 
   # LZ factorization headers

@@ -342,6 +342,12 @@ lz::lz_int process(lz_options& opt) {
    // for (auto x : lz2.excess_entropy_shuffle) std::cout << x << " ";
    std::cout << std::endl;
 
+   if (opt.args.excess_line >= 0) {
+      std::cout << "Excess entropy by terms of line" << opt.args.excess_line << ": ";
+      for (auto x: lz.excess_entropy_terms) std::cout << x << " ";
+      std::cout << std::endl;
+   }
+
    if (opt.args.excess_line > 0) {
       // TODO: Implement excess of entropy for a sequence and get struct with info
    }

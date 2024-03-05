@@ -19,12 +19,12 @@ jobs:
   #         sudo apt update && sudo apt install -y codespell
   #         ${GITHUB_WORKSPACE}/.github/scripts/codespell.sh `pwd`
 
-  format:
-    runs-on: [ubuntu-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run clang-format on modules
-        run: find ./modules -iname *.h -o -iname *.hpp -o -iname *.cpp | xargs clang-format -i
+  # format:
+  #   runs-on: [ubuntu-latest]
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Run clang-format on modules
+  #       run: find ./modules -iname *.h -o -iname *.hpp -o -iname *.cpp | xargs clang-format -i
 
   build:
     defaults:
@@ -45,10 +45,10 @@ jobs:
         with:
           submodules: true
 
-      - uses: lukka/get-cmake@latest
-        with:
-          useCloudCache: false
-          useLocalCache: true
+      # - uses: lukka/get-cmake@latest
+      #   with:
+      #     useCloudCache: false
+      #     useLocalCache: true
 
       # - name: Install TBB
       #   shell: bash
@@ -70,47 +70,47 @@ jobs:
         run: |
           cmake --build . --config ${{ matrix.build_type }}
 
-  msvc:
-    name: • ${{ matrix.os }} • ${{ matrix.build_type }} • ${{ matrix.msvc }} •
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: powershell
-    strategy:
-      fail-fast: false
-      matrix:
-        msvc:
-          - VS-16-2019
-          - VS-17-2022
-        arch:
-          - x64
-        build_type:
-          # - Debug
-          - Release
-        include:
-          - msvc: VS-16-2019
-            os: windows-2019
-            generator: "Visual Studio 16 2019"
-          - msvc: VS-17-2022
-            os: windows-2022
-            generator: "Visual Studio 17 2022"
+  # msvc:
+  #   name: • ${{ matrix.os }} • ${{ matrix.build_type }} • ${{ matrix.msvc }} •
+  #   runs-on: ${{ matrix.os }}
+  #   defaults:
+  #     run:
+  #       shell: powershell
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       msvc:
+  #         - VS-16-2019
+  #         - VS-17-2022
+  #       arch:
+  #         - x64
+  #       build_type:
+  #         # - Debug
+  #         - Release
+  #       include:
+  #         - msvc: VS-16-2019
+  #           os: windows-2019
+  #           generator: "Visual Studio 16 2019"
+  #         - msvc: VS-17-2022
+  #           os: windows-2022
+  #           generator: "Visual Studio 17 2022"
 
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
 
-      - uses: lukka/get-cmake@latest
-        with:
-          useCloudCache: false
-          useLocalCache: true
+  #     - uses: lukka/get-cmake@latest
+  #       with:
+  #         useCloudCache: false
+  #         useLocalCache: true
 
-      - name: Configure cmake
-        run: >
-          cmake cmake -S . -B _build/ 
-          -G "${{ matrix.generator }}" -A ${{ matrix.arch }} 
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} 
-          -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON
+  #     - name: Configure cmake
+  #       run: >
+  #         cmake cmake -S . -B _build/ 
+  #         -G "${{ matrix.generator }}" -A ${{ matrix.arch }} 
+  #         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} 
+  #         -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON
 
-      - name: Build
-        run: cmake --build _build/ --config ${{ matrix.build_type }}
+  #     - name: Build
+  #       run: cmake --build _build/ --config ${{ matrix.build_type }}

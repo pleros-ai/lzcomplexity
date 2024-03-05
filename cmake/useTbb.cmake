@@ -58,6 +58,7 @@ int main() { return 0; }" tbb_exception_result)
   endif()
 
   set(LZ_TBB_LIBS ${TBB_LIBRARIES})
+  # set(GLOBAL_LZ_TBB_LIBS ${TBB_LIBRARIES} PARENT_SCOPE)
   set(TBB_CXXFLAGS "-DTBB_SUPPRESS_DEPRECATED_MESSAGES=1")
 endif()
 
@@ -65,31 +66,14 @@ if(builtin_tbb)
    if(NOT NO_CONNECTION AND NOT EXISTS ${CMAKE_SOURCE_DIR}/external/tbb)
       message("Build system will fetch and install tbb")
 
-      include(ExternalProject)
-      ExternalProject_Add(
-         tbb
-         GIT_REPOSITORY    https://github.com/oneapi-src/oneTBB.git
-         GIT_TAG           v2021.10.0 
-         DOWNLOAD_DIR      ${CMAKE_SOURCE_DIR}/external
-         CONFIGURE_COMMAND ""
-         INSTALL_COMMAND   ""
-         GIT_PROGRESS      1
-         BUILD_IN_SOURCE   1
-         LOG_DOWNLOAD      1 
-         LOG_CONFIGURE     1 
-         LOG_BUILD         1 
-         LOG_INSTALL       1
-         TIMEOUT 600
+      include(FetchContent)
+      FetchContent_Declare(
+        tbb
+        GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
+        GIT_TAG        v2021.10.0    
       )
 
-      # include(FetchContent)
-      # FetchContent_Declare(
-      #   tbb
-      #   GIT_REPOSITORY https://github.com/oneapi-src/oneTBB.git
-      #   GIT_TAG        v2021.10.0    
-      # )
-
-      # FetchContent_MakeAvailable(tbb)
+      FetchContent_MakeAvailable(tbb)
 
       execute_process(COMMAND patch -p0 -i ${CMAKE_SOURCE_DIR}/patches/tbbCmake.patch)
    endif()
@@ -97,4 +81,5 @@ if(builtin_tbb)
    add_subdirectory(${CMAKE_SOURCE_DIR}/external/tbb tbb)
    find_package(TBB REQUIRED)
    set(LZ_TBB_LIBS TBB::tbb)
+  #  set(GLOBAL_LZ_TBB_LIBS TBB::tbb PARENT_SCOPE)
 endif()

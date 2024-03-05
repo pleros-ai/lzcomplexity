@@ -11,7 +11,8 @@ cmake_policy(VERSION 3.5...3.28)
 
 # Project name and languages used.
 set(PROJECT_NAME LempelZiv)
-set(namespace lz)
+set(namespace "lz")
+set(component "lz_cmd")
 set(VERSION 0.7.0)
 project(
     ${PROJECT_NAME}
@@ -30,6 +31,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(asan "Build with address sanitizer instrumentation " OFF)
 option(builtin_tbb "Use local TBB library" ON)
 option(binding_python "Build python binding of LZ lib" OFF)
+option(LZ_SHARE "Build shared library" OFF)
+option(LZ_ONLY_LIBS "Build only the libraries (LZCore and LZApp)" OFF)
+option(LZ_ONLY_CORE "Build only the core library" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Global cmake
@@ -38,7 +42,14 @@ include(CheckIPOSupported)
 # Local cmake
 include(ConfigInstallDirs)
 include(CheckCompiler)
-# include(useTbb)
+include(useTbb)
+
+if(NOT Threads_FOUND)
+    message(FATAL_ERROR "A supported threads library is required. Aborting.")
+endif()
+
+message(STATUS "is unix: ${UNIX} and tbb: ${LZ_TBB_LIBS}")
+link_libraries(Threads::Threads ${LZ_TBB_LIBS})
 
 # Warning flags.
 if(WIN32)
@@ -49,15 +60,11 @@ endif()
 set(public_headers)
 
 set(EXT_DIR ${CMAKE_SOURCE_DIR}/external)
-set(EXT_INCLUDE ${CMAKE_SOURCE_DIR}/external/include)
+set(EXTERNAL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/external/include)
 
-if(NOT EXISTS EXT_INCLUDE)
+if(NOT EXISTS EXTERNAL_INCLUDE_DIR)
    file(MAKE_DIRECTORY ${EXT_DIR})
-   file(MAKE_DIRECTORY ${EXT_INCLUDE})
-endif()
-
-if(NOT Threads_FOUND)
-    message(FATAL_ERROR "A supported threads library is required. Aborting.")
+   file(MAKE_DIRECTORY ${EXTERNAL_INCLUDE_DIR})
 endif()
 
 # Default build type.
@@ -142,30 +149,32 @@ endif()
 # add module subdirectory
 add_subdirectory(modules)
 
-if(UNIX AND TBB_FOUND)
-  set(CMAKE_MACOSX_RPATH 1)
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+message(status "path lib: ${CMAKE_INSTALL_LIBDIR} and cpack: ${CPACK_PACKAGING_INSTALL_PREFIX}")
+if(UNIX)
+  if(APPLE)
+    set(CMAKE_MACOSX_RPATH 1)
+  endif()
+  
+  list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 
 # Executable for the driver program.
-# add_executable(${PROJECT_NAME} MACOSX_BUNDLE main.cpp ${LZ_ALG})
-if(NOT binding_python)
+if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     add_executable(${PROJECT_NAME} main.cpp)
 
-    include(useTbb)
-    message(STATUS "TBB: ${LZ_TBB_LIBS} and found: ${TBB_FOUND}")
+    # include(useTbb)
+    message(STATUS "TBB: ${LZ_TBB_LIBS} and found: ${GLOBAL_LZ_TBB_LIBS}")
 
-    target_link_libraries(${PROJECT_NAME} PRIVATE TBB::tbb)
+    # target_link_libraries(${PROJECT_NAME} PRIVATE ${GLOBAL_LZ_TBB_LIBS})
     target_link_libraries(${PROJECT_NAME} PUBLIC LZApp)
 
+    get_property(APP_INCLUDE_DIR GLOBAL PROPERTY APP_INCLUDE_DIR)
     # Compiler flags for the target.
     target_include_directories(${PROJECT_NAME} 
       PUBLIC 
-        $<BUILD_INTERFACE:${SA_INCLUDE_DIR}> 
-        $<BUILD_INTERFACE:${UTILS_INCLUDE_DIR}>
-        $<BUILD_INTERFACE:${GLOBAL_APP_INCLUDE_DIR}>
-        $<BUILD_INTERFACE:${EXT_INCLUDE}>
+        $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
 
@@ -175,8 +184,6 @@ if(NOT binding_python)
     target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
     target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
     
-    # set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${CMAKE_INSTALL_RPATH})
-    # set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${public_headers}")
     # Debug prefix for libs when build it in debug mode
     set_target_properties(${PROJECT_NAME} 
         PROPERTIES 
@@ -190,14 +197,14 @@ if(NOT binding_python)
           INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
     endif()
 
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        BUNDLE True
-        # MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.${CUR_TARGET}
-        MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
-        MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}"
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}"
-        # MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/customtemplate.plist.in
-    )
+    # set_target_properties(${PROJECT_NAME} PROPERTIES
+    #     BUNDLE True
+    #     # MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.${CUR_TARGET}
+    #     MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
+    #     MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}"
+    #     MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}"
+    #     # MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/customtemplate.plist.in
+    # )
 
     message(STATUS "Paths for install:")
     message(STATUS "Prefix install dir: ${CMAKE_INSTALL_PREFIX}")
@@ -209,7 +216,7 @@ if(NOT binding_python)
     install(
         TARGETS ${PROJECT_NAME}
         EXPORT "${PROJECT_NAME}Targets"
-        COMPONENT ${namespace} # must be here, not any line lower
+        COMPONENT ${component} # must be here, not any line lower
         # these get default values from GNUInstallDirs, no need to set them
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
         LIBRARY 

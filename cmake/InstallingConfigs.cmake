@@ -4,7 +4,7 @@ install(
     FILE "${PROJECT_NAME}Targets.cmake"
     NAMESPACE ${namespace}::
     DESTINATION cmake/${PROJECT_NAME}
-    COMPONENT ${namespace}
+    COMPONENT ${component}
 )
 
 include(CMakePackageConfigHelpers)
@@ -26,7 +26,7 @@ install(
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
     DESTINATION cmake/${PROJECT_NAME}
-    COMPONENT ${namespace}
+    COMPONENT ${component}
 )
 # generate the export targets for the build tree
 # (can't say what this one is for, but so far it has been only causing me problems)

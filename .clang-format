@@ -34,7 +34,7 @@ SpacesBeforeTrailingComments: 2
 IntegerLiteralSeparator:
   Binary:          0
   BinaryMinDigits: 0
-  Decimal:         3
+  Decimal:         0
   DecimalMinDigits: 0
   Hex:             0
   HexMinDigits:    0

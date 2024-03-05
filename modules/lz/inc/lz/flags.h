@@ -17,10 +17,14 @@ namespace lz {
          std::vector<lz_int> excess_entropy_mi;          //!> excess of entropy by mutual information of the sequence
          std::vector<lz_double> entropy_density;         //!> entropy density of the sequence
          std::vector<lz_double> excess_entropy_dist;     //!> excess of entropy by distance of the sequence
-         std::vector<lz_double> excess_entropy_shuffle;  //!> excess of entropy by distance of the sequence
+         std::vector<lz_double> excess_entropy_shuffle;  //!> excess of entropy by shuffling of the sequence
          std::vector<lz_double> info_distance;           //!> information distance of the two consecutive sequences
          std::vector<lz_double> sequence_info_distance;  //!> information distance of each sequences
          std::vector<lz_double> multi_information;       //!> multi information value of each sequence
+
+         //? Variables found in Excess fo entropy by shuffling
+         std::vector<lz_double> excess_entropy_terms;  //!> excess of entropy of each permutation of the sequence
+         lz_double multi_info;                         //!> multi information value
 
          LZ_Output() = default;
          LZ_Output(const LZ_Output& lz) = default;

@@ -1,3 +1,6 @@
 # Add Core library for compile
-# add_subdirectory(core)
-add_subdirectory(lz)
+if(LZ_ONLY_CORE)
+   add_subdirectory(core)
+else()
+   add_subdirectory(lz)
+endif()

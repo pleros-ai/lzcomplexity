@@ -16,9 +16,10 @@ namespace lz {
 
       struct LZ_Args : public SA_Args {
          /* Excess entropy by shuffling parameters */
-         lz_int block_size = 0;  //?> Max length of the block for excess of entropy by shuffle.
-         lz_int excess_line =
-             -1;  //?> Line where get excess entropy by terms (valid for excess of entropy by shuffling).
+         lz_int block_size = 0;    //?> Max length of the block for excess of
+                                   //?  entropy by shuffle.
+         lz_int excess_line = -1;  //?> Line where get excess entropy by terms
+                                   //?  (valid for excess of entropy by shuffling).
 
          LZ_Args() = default;
          LZ_Args(lz_int chunks)

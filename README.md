@@ -38,7 +38,7 @@ mkdir build && cd build
 2. Config cmake for build
 
 ```bash
-cmake -DCMAKE_INSTALL_PREFIX=../ -DCMAKE_BUILD_TYPE=[Debug | Release] [OPTIONS] ..
+cmake -DCMAKE_INSTALL_PREFIX=[path/to/install] -DCMAKE_BUILD_TYPE=[Debug | Release] [OPTIONS] ..
 ```
 
 The possible cmake OPTIONS can be found in the `CMakeLists.txt` file:
@@ -46,9 +46,17 @@ The possible cmake OPTIONS can be found in the `CMakeLists.txt` file:
 - `asan` (**OFF** by default): configure the build with address sanitizer
 - `binding_python` (**OFF** by default): enable python binding
 - `builtin_tbb` (**OFF** by default): use local TBB project instead of system one
+- `LZ_SHARE` (**OFF** by default): build shared library
+- `LZ_ONLY_LIBS` (**OFF** by default): build only the libraries (LZCore and LZApp)
+- `LZ_ONLY_CORE` (**OFF** by default): build only the core library
+
+##### Example
+>
+> cmake -DCMAKE_INSTALL_PREFIX=../ -DCMAKE_BUILD_TYPE=Release -Dbinding_python=ON ..
+>
 
 
-1. Install the program
+1. Install
 
 ```bash
 make install

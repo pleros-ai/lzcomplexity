@@ -80,7 +80,8 @@
     "iterator": "cpp",
     "metal_integer": "cpp",
     "metal_limits": "cpp",
-    "metal_math": "cpp"
+    "metal_math": "cpp",
+    "stack": "cpp"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/clang++",
   "editor.defaultFormatter": "xaver.clang-format",

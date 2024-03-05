@@ -35,7 +35,7 @@
 #include <concepts>
 #include <typeinfo>
 #include <vector>
-#if __cplusplus >= 201'703L
+#if __cplusplus >= 201703L
 #include <variant>
 #endif
 
@@ -48,38 +48,38 @@ namespace lz {
    //.........................................................................
    // Lempel-Ziv 76 factorization
    //.........................................................................
-   lz_int LempelZivFactorization(utils::LZ_Flags&, utils::LZ_Output&);
+   auto LempelZivFactorization(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
    //.........................................................................
    // Entropy density
    //.........................................................................
-   lz_int EntropyDensity(utils::LZ_Flags&, utils::LZ_Output&);
+   auto EntropyDensity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
    //.........................................................................
    // Excess entropy as mutual information: E = (C(X) + C(Y) - C(XY))
    //.........................................................................
-   lz_int ExcessEntropyMi(utils::LZ_Flags&, utils::LZ_Output&);
+   auto ExcessEntropyMi(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
    //.........................................................................
    // Here comes the excess entropy by shuffling.
    //.........................................................................
-   lz_int ExcessEntropyShuffle(utils::LZ_Flags&, utils::LZ_Output&);
-   lz_int ExcessEntropyShuffleSequential(utils::LZ_Flags&, utils::LZ_Output&);
+   auto ExcessEntropyShuffle(utils::LZ_Flags&, utils::LZ_Output&) -> utils::LZ_ExcessInfo;
+   auto ExcessEntropyShuffleSequential(utils::LZ_Flags&, utils::LZ_Output&) -> utils::LZ_ExcessInfo;
 
    //.........................................................................
    // Here comes the excess entropy by distance: E = [1 - d(X,Y)] * max(C(X), C(Y))
    // X -> first half, Y -> second half
    //.........................................................................
-   lz_int ExcessEntropyDistance(utils::LZ_Flags&, utils::LZ_Output&);
+   auto ExcessEntropyDistance(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
    //.........................................................................
    // Information distance between two consecutive sequences
    //.........................................................................
-   lz_int InformationDistance(utils::LZ_Flags&, utils::LZ_Output&);
+   auto InformationDistance(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
    //.........................................................................
    // Information distance into the sequences
    //.........................................................................
-   lz_int InformationDistanceBySequence(utils::LZ_Flags&);
+   auto InformationDistanceBySequence(utils::LZ_Flags&) -> lz_int;
 
 }  // namespace lz

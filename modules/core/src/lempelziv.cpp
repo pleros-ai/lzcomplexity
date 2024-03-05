@@ -153,25 +153,24 @@ namespace lz {
 
       utils::LZ_ExcessInfo result;
       result.max_block_size = mm;
-      lz_double excessentropy = 0;
+      lz_double excess_entropy = 0;
       auto complex = LempelZivFactorization(str, args);
 
       for (unsigned int m = 1; m <= mm; m++) {
-         sequence sseq = Shuffle(
+         sequence rand_seq = Shuffle(
              str, m, str.size() / 2);  // Shuffling is made for half the size of the sequence, hope that is enough
          std::vector<unsigned int> slzf;
-         auto scomplexity = LempelZivFactorization(sseq, args);
-         lz_double eeterm = 0;
-         eeterm = std::log(str.size()) * std::fabs((lz_double)scomplexity - (lz_double)complex) /
-                  (str.size() * std::log(str.alphabetSize()));
+         auto rand_complexity = LempelZivFactorization(rand_seq, args);
+         lz_double ee_term = std::log(str.size()) * std::fabs((lz_double)rand_complexity - (lz_double)complex) /
+                             (str.size() * std::log(str.alphabetSize()));
 
-         excessentropy += eeterm;
+         excess_entropy += ee_term;
 
-         if (args.excess_line >= 0) result.excess_by_terms.push_back(eeterm);
-         if (m == 1) result.multi_information = eeterm;
+         if (args.excess_line >= 0) result.excess_by_terms.push_back(ee_term);
+         if (m == 1) result.multi_information = ee_term;
       }
 
-      result.excess_value = excessentropy;
+      result.excess_value = excess_entropy;
       return result;
    }
 

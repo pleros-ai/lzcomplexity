@@ -51,14 +51,6 @@ if (UNIX)
     # Construct MacOS
     set(CPACK_GENERATOR "TGZ;productbuild")
     set(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
-    # set(CPACK_GENERATOR "Bundle")
-    # set(CPACK_BINARY_DRAGNDROP ON)
-    # set(CPACK_BUNDLE_NAME "${PROJECT_NAME}")
-    # set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/cmake/config/icon.icns")
-    # set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/cmake/config/Info.plist")
-    # set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/cmake/config/icon.icns")
-    # set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}_${CPACK_MACOS_PACKAGE_ARCHITECTURE}_${CMAKE_SYSTEM_PROCESSOR}" CACHE INTERNAL "")
-    # set(CPACK_PRE_BUILD_SCRIPTS "${PROJECT_BINARY_DIR}/deploy_mac.cmake")
 
   else (APPLE)
     ## Check for Debian GNU/Linux ________________
@@ -164,11 +156,28 @@ message(STATUS "SO detected ${CMAKE_OS_NAME}")
 configure_file(cmake/config/CMakeCPackOptions.cmake.in CMakeCPackOptions.cmake @ONLY)
 set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_BINARY_DIR}/CMakeCPackOptions.cmake)
 
-# if(UNIX AND TBB_FOUND)
-#   # set(CMAKE_MACOSX_RPATH 1)
-#   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+# if(UNIX)
+#   set(CMAKE_MACOSX_RPATH 1)
+#   set(CMAKE_INSTALL_RPATH "${CPACK_PACKAGING_INSTALL_PREFIX}/lib")
 #   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # endif()
+
+#---Source package settings--------------------------------------------------------------------------
+set(CPACK_SOURCE_IGNORE_FILES
+    ${PROJECT_BINARY_DIR}
+    ${PROJECT_SOURCE_DIR}/tests
+    "~$"
+    "/CVS/"
+    "/.svn/"
+    "/\\\\\\\\.svn/"
+    "/.git/"
+    "/\\\\\\\\.git/"
+    "\\\\\\\\.swp$"
+    "\\\\\\\\.swp$"
+    "\\\\.swp"
+    "\\\\\\\\.#"
+    "/#"
+)
 
 include(CPack)
 
@@ -176,3 +185,25 @@ include(CPack)
 # cpack_add_component(lz_headers)
 # cpack_add_component(lz_cmake)
 # cpack_add_component(lz_pkgconfig)
+
+#----------------------------------------------------------------------------------------------------
+# Define components and installation types (after CPack included!)
+#
+cpack_add_install_type(full      DISPLAY_NAME "Full Installation")
+cpack_add_install_type(minimal   DISPLAY_NAME "Minimal Installation")
+cpack_add_install_type(developer DISPLAY_NAME "Developer Installation")
+
+cpack_add_component(lz_cmd
+    DISPLAY_NAME "LZ cmd Applications"
+    DESCRIPTION "LZ application executable"
+     INSTALL_TYPES full minimal developer)
+
+cpack_add_component(lz_library
+    DISPLAY_NAME "LZ Libraries for build apps"
+    DESCRIPTION "All LZ libraries and dictionaries"
+     INSTALL_TYPES full developer)
+
+cpack_add_component(lz_headers
+    DISPLAY_NAME "C++ Headers"
+    DESCRIPTION "These are needed to do any development"
+     INSTALL_TYPES full developer)
