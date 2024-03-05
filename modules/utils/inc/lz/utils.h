@@ -1,6 +1,7 @@
 #pragma once
 // Language includes
 #include <cstddef>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -76,8 +77,10 @@ namespace lz {
       }
 
       template <typename Fun>
-      requires(std::is_invocable_v<Fun&&, lz_size>) inline void parallel_for(lz_size start, lz_size end, Fun&& fun,
-                                                                             long granularity = 0) {
+#ifdef __cpp_concepts
+      requires(std::is_invocable_v<Fun&&, lz_size>)
+#endif
+          inline void parallel_for(lz_size start, lz_size end, Fun&& fun, long granularity = 0) {
          // static_assert(std::is_invocable_v<F&, lz_size>);
          // Use TBB's automatic granularity partitioner (tbb::auto_partitioner)
          if (granularity == 0) {
@@ -104,7 +107,10 @@ namespace lz {
       }
 
       template <typename... Fun>
-      requires(std::is_invocable_v<Fun&&>&&...) inline void par_do(Fun&&... fun) {
+#ifdef __cpp_concepts
+      requires(std::is_invocable_v<Fun&&>&&...)
+#endif
+          inline void par_do(Fun&&... fun) {
          tbb::parallel_invoke(std::forward<Fun>(fun)...);
       }
 
