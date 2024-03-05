@@ -2,9 +2,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-#if __cplusplus >= 201'703L
-#include <variant>
-#endif
 
 // #include <tbb/task_arena.h>
 #include <csv.h>

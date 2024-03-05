@@ -88,8 +88,8 @@ namespace lz {
          LempelZiv76& operator=(LempelZiv76);
          LempelZiv76& operator=(const LempelZiv76&);
 
-         friend constexpr bool operator==(const LempelZiv76&, const LempelZiv76&);
-         friend constexpr bool operator!=(const LempelZiv76&, const LempelZiv76&);
+         friend bool operator==(const LempelZiv76&, const LempelZiv76&);
+         friend bool operator!=(const LempelZiv76&, const LempelZiv76&);
 
          // void printFactors(std::ostream&, std::string&); //!< pretty print the factors
          friend std::ostream& operator<<(std::ostream&, LempelZiv76&);  //!< the usual io
@@ -161,13 +161,13 @@ namespace lz {
       /// logical equality operator. Compares factorizations, not complexities.
       /// @param lz the source
       /// @return *this
-      inline constexpr bool operator==(const LempelZiv76& lhs, const LempelZiv76& rhs) { return lhs.lzf == rhs.lzf; }
+      inline bool operator==(const LempelZiv76& lhs, const LempelZiv76& rhs) { return lhs.lzf == rhs.lzf; }
 
       /// @brief
       /// logical non-equality operator. Compares factorizations, not complexities.
       /// @param lz the source
       /// @return *this
-      inline constexpr bool operator!=(const LempelZiv76& lhs, const LempelZiv76& rhs) { return !(lhs == rhs); }
+      inline bool operator!=(const LempelZiv76& lhs, const LempelZiv76& rhs) { return !(lhs == rhs); }
 
       /**
        * @brief

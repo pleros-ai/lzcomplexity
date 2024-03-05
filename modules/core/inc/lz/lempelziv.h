@@ -31,17 +31,13 @@
 #pragma once
 
 #include <assert.h>
+#include <lz/caps.h>
+#include <lz/sais_lite.h>
+#include <lz/utils.h>
 
 #include <concepts>
 #include <typeinfo>
 #include <vector>
-#if __cplusplus >= 201'703L
-#include <variant>
-#endif
-
-#include <lz/caps.h>
-#include <lz/sais_lite.h>
-#include <lz/utils.h>
 
 #include "lpf.h"
 #include "lz76.h"

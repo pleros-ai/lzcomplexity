@@ -79,12 +79,13 @@ namespace lz {
       lz_int C_, C_fh, C_lh = 0;
       auto [seq_fh, seq_lh] = text.Split(mid);
 
-      auto wrapper_fun = [&](const lz::sequence& seq, lz_int& res) {
+      auto fun_wrapper = [&](const lz::sequence& seq, lz_int& res) {
          return [&]() { res = LempelZivFactorization(seq); };
       };
-      auto fh_fun = wrapper_fun(seq_fh, C_fh);
-      auto lh_fun = wrapper_fun(seq_lh, C_lh);
-      auto all_fun = wrapper_fun(text, C_);
+
+      auto fh_fun = fun_wrapper(seq_fh, C_fh);
+      auto lh_fun = fun_wrapper(seq_lh, C_lh);
+      auto all_fun = fun_wrapper(text, C_);
 
       utils::par_do(all_fun, fh_fun, lh_fun);
       return C_fh + C_lh - C_;
@@ -103,12 +104,12 @@ namespace lz {
       lz_int C_, C_fh, C_lh = 0;
       auto [seq_fh, seq_lh] = text.Split(mid);
 
-      auto wrapper_fun = [&](const lz::sequence& seq, lz_int& res) {
-         return [&]() { res = LempelZivFactorization(seq); };
+      auto fun_wrapper = [&](const lz::sequence& seq, lz_int& res) {
+         return [&]() { res = LempelZivFactorization(seq, args); };
       };
-      auto fh_fun = wrapper_fun(seq_fh, C_fh);
-      auto lh_fun = wrapper_fun(seq_lh, C_lh);
-      auto all_fun = wrapper_fun(text, C_);
+      auto fh_fun = fun_wrapper(seq_fh, C_fh);
+      auto lh_fun = fun_wrapper(seq_lh, C_lh);
+      auto all_fun = fun_wrapper(text, C_);
 
       utils::par_do(all_fun, fh_fun, lh_fun);
       return C_fh + C_lh - C_;
@@ -219,11 +220,11 @@ namespace lz {
       lz_double dist = 0;
       lz_int fh_complexity = 0;
       lz_int lh_complexity = 0;
-      auto [seq_fh, seq_lh] = str.Split(mid);
+      auto par_seq = str.Split(mid);
 
-      auto fh_fun = [&]() { fh_complexity = LempelZivFactorization(seq_fh); };
-      auto lh_fun = [&]() { lh_complexity = LempelZivFactorization(seq_lh); };
-      auto dist_fun = [&]() { dist = InformationDistance(seq_fh, seq_lh); };
+      auto fh_fun = [&]() { fh_complexity = LempelZivFactorization(par_seq.first); };
+      auto lh_fun = [&]() { lh_complexity = LempelZivFactorization(par_seq.second); };
+      auto dist_fun = [&]() { dist = InformationDistance(par_seq.first, par_seq.second); };
 
       utils::par_do(dist_fun, fh_fun, lh_fun);
 
@@ -236,11 +237,11 @@ namespace lz {
       lz_double dist = 0;
       lz_int fh_complexity = 0;
       lz_int lh_complexity = 0;
-      auto [seq_fh, seq_lh] = str.Split(mid);
+      auto par_seq = str.Split(mid);
 
-      auto fh_fun = [&]() { fh_complexity = LempelZivFactorization(seq_fh, args); };
-      auto lh_fun = [&]() { lh_complexity = LempelZivFactorization(seq_lh, args); };
-      auto dist_fun = [&]() { dist = InformationDistance(seq_fh, seq_lh, args); };
+      auto fh_fun = [&]() { fh_complexity = LempelZivFactorization(par_seq.first, args); };
+      auto lh_fun = [&]() { lh_complexity = LempelZivFactorization(par_seq.second, args); };
+      auto dist_fun = [&]() { dist = InformationDistance(par_seq.first, par_seq.second, args); };
 
       utils::par_do(dist_fun, fh_fun, lh_fun);
 

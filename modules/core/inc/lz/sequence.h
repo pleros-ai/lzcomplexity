@@ -80,7 +80,7 @@ namespace lz {
       constexpr lz_int alphabetSize(void) const { return alphabet_size; };
       lz_int SetAlphabetSize(void);
 
-      constexpr lz_uint NoZeroes(void) const;
+      lz_uint NoZeroes(void) const;
       std::string toString(void) const;
 
       char& operator[](std::vector<char>::size_type);
@@ -176,7 +176,7 @@ namespace lz {
       alphabet_size = aph.size();
    }
 
-   inline constexpr lz_uint sequence::NoZeroes(void) const {
+   inline lz_uint sequence::NoZeroes(void) const {
       lz_uint acum = 0;
 
       for (auto s: seq) acum += (s == 0) ? 1 : 0;

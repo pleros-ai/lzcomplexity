@@ -31,15 +31,11 @@
 #pragma once
 
 #include <assert.h>
+#include <lz/lempelziv.h>
 
 #include <concepts>
 #include <typeinfo>
 #include <vector>
-#if __cplusplus >= 201703L
-#include <variant>
-#endif
-
-#include <lz/lempelziv.h>
 
 #include "flags.h"
 

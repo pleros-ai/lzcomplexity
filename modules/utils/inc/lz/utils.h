@@ -1,21 +1,15 @@
 #pragma once
 // Language includes
+#include <algorithm>
+#include <cstdarg>
 #include <cstddef>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <sstream>
 #include <string>
-#ifdef __cpp_lib_ranges
-#include <ranges>
-#endif
-#ifdef __cpp_concepts
-#include <concepts>
-#endif
-#include <algorithm>
-#include <cstdarg>
-#include <random>
 #include <type_traits>
 #include <utility>
 // External includes
@@ -28,6 +22,18 @@
 #include <tbb/tbb_allocator.h>
 // Local includes
 #include "lzexceptions.h"
+
+#ifdef __cpp_lib_ranges
+#include <ranges>
+#endif
+
+#ifdef __cpp_lib_concepts
+#include <concepts>
+#endif
+
+#if __cpp_lib_variant
+#include <variant>
+#endif
 
 namespace lz {
    using lz_int = int;
