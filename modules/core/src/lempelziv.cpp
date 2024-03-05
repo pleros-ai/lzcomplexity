@@ -79,9 +79,12 @@ namespace lz {
       lz_int C_, C_fh, C_lh = 0;
       auto [seq_fh, seq_lh] = text.Split(mid);
 
-      auto fh_fun = [&]() { C_fh = LempelZivFactorization(seq_fh); };
-      auto lh_fun = [&]() { C_lh = LempelZivFactorization(seq_lh); };
-      auto all_fun = [&]() { C_ = LempelZivFactorization(text); };
+      auto wrapper_fun = [&](const lz::sequence& seq, lz_int& res) {
+         return [&]() { res = LempelZivFactorization(seq); };
+      };
+      auto fh_fun = wrapper_fun(seq_fh, C_fh);
+      auto lh_fun = wrapper_fun(seq_lh, C_lh);
+      auto all_fun = wrapper_fun(text, C_);
 
       utils::par_do(all_fun, fh_fun, lh_fun);
       return C_fh + C_lh - C_;
@@ -100,9 +103,12 @@ namespace lz {
       lz_int C_, C_fh, C_lh = 0;
       auto [seq_fh, seq_lh] = text.Split(mid);
 
-      auto fh_fun = [&]() { C_fh = LempelZivFactorization(seq_fh, args); };
-      auto lh_fun = [&]() { C_lh = LempelZivFactorization(seq_lh, args); };
-      auto all_fun = [&]() { C_ = LempelZivFactorization(text, args); };
+      auto wrapper_fun = [&](const lz::sequence& seq, lz_int& res) {
+         return [&]() { res = LempelZivFactorization(seq); };
+      };
+      auto fh_fun = wrapper_fun(seq_fh, C_fh);
+      auto lh_fun = wrapper_fun(seq_lh, C_lh);
+      auto all_fun = wrapper_fun(text, C_);
 
       utils::par_do(all_fun, fh_fun, lh_fun);
       return C_fh + C_lh - C_;
