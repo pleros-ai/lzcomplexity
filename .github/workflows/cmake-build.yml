@@ -68,7 +68,7 @@ jobs:
 
       - name: Build
         run: |
-          pwd
+          cd build
           cmake --build . --config ${{ matrix.build_type }}
 
   # msvc:
