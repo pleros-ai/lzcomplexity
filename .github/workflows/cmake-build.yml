@@ -56,14 +56,14 @@ jobs:
       #     sudo apt-get update
       #     sudo apt-get -qq install libtbb-dev
 
-      - name: Install LLVM and Clang
-        if: runner.os == 'Linux' && matrix.cxx == 'clang++'
-        uses: KyleMayes/install-llvm-action@v1
-        with:
-          version: "15.0"
-        # run: |
-        #   sudo apt-get install clang
-        #   clang++ --version
+      # - name: Install LLVM and Clang
+      #   if: runner.os == 'Linux' && matrix.cxx == 'clang++'
+      #   # uses: KyleMayes/install-llvm-action@v1
+      #   # with:
+      #   #   version: "15.0"
+      #   run: |
+      #     sudo apt-get install clang
+      #     clang++ --version
 
       - name: Patch TBB submodule
         run: patch -p0 -i patches/tbb.patch
@@ -73,7 +73,7 @@ jobs:
           CXX: ${{ matrix.cxx }}
         run: |
           mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON ..
+          cmake -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON ..
 
       - name: Build
         run: |
