@@ -35,7 +35,6 @@
 #include <lz/sais_lite.h>
 #include <lz/utils.h>
 
-#include <concepts>
 #include <typeinfo>
 #include <vector>
 

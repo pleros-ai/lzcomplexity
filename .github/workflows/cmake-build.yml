@@ -56,6 +56,12 @@ jobs:
       #     sudo apt-get update
       #     sudo apt-get -qq install libtbb-dev
 
+      - name: Install LLVM and Clang
+        if: runner.os == 'Linux' && matrix.cxx == 'clang++'
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "15.0"
+
       - name: Patch TBB submodule
         run: patch -p0 -i patches/tbb.patch
 
