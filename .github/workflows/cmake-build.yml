@@ -26,14 +26,14 @@ jobs:
   #     - name: Run clang-format on modules
   #       run: find ./modules -iname *.h -o -iname *.hpp -o -iname *.cpp | xargs clang-format -i
 
-  build:
+  build-linux:
     defaults:
       run:
         shell: bash
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-22.04, ubuntu-20.04, macos-latest]
+        runs-on: [ubuntu-22.04, ubuntu-20.04]
         build_type: ["Release"]
         cxx: ["g++", "clang++"]
         builtinTbb: ["ON", "OFF"]
@@ -56,6 +56,62 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -q install libtbb-dev
+
+      # - name: Install LLVM and Clang
+      #   if: runner.os == 'Linux' && matrix.cxx == 'clang++'
+      #   # uses: KyleMayes/install-llvm-action@v1
+      #   # with:
+      #   #   version: "15.0"
+      #   run: |
+      #     sudo apt-get install clang
+      #     clang++ --version
+
+      - name: Patch TBB submodule
+        run: patch -p0 -i patches/tbb.patch
+
+      - name: Configure cmake
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: |
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF \
+                -Dbuiltin_tbb=${{matrix.builtinTbb}} ..
+
+      - name: Build
+        run: |
+          cd build
+          cmake --build . --config ${{ matrix.build_type }}
+
+  build-mac:
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [macos-latest]
+        build_type: ["Release"]
+        cxx: ["g++", "clang++"]
+        builtinTbb: ["ON", "OFF"]
+
+    name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
+    runs-on: ${{ matrix.runs-on }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      # - uses: lukka/get-cmake@latest
+      #   with:
+      #     useCloudCache: false
+      #     useLocalCache: true
+
+      - name: Install TBB
+        if: matrix.builtinTbb == 'OFF'
+        run: |
+          brew update
+          brew install tbb
 
       # - name: Install LLVM and Clang
       #   if: runner.os == 'Linux' && matrix.cxx == 'clang++'
