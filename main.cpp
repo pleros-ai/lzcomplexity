@@ -166,27 +166,17 @@ inline void read_csv(const std::string& ip_path, std::vector<std::string>& text_
 }
 
 struct lz_options {
-   std::string input;   //? Input filepath.
-   std::string output;  //? Output filepath.
+   std::string input;                       //? Input filepath.
+   std::string output = "lz_results.json";  //? Output filepath.
    /* Extra args for LZApp functions */
    lz::utils::LZ_Args args;
    /* flags */
-   bool multiLine;
-   bool print_factors;
-   bool find_distance;
-   bool preprocess;
-   bool is_csv;
-   bool save_results;
-
-   lz_options() {
-      output = "lz_results.json";
-      multiLine = false;
-      print_factors = false;
-      find_distance = false;
-      preprocess = false;
-      is_csv = false;
-      save_results = false;
-   }
+   bool multiLine = false;
+   bool print_factors = false;
+   bool find_distance = false;
+   bool preprocess = false;
+   bool is_csv = false;
+   bool save_results = false;
 
    lz_options(cxxopts::ParseResult result) {
       input = result.unmatched()[0];
@@ -194,12 +184,12 @@ struct lz_options {
       multiLine = result["multi-line"].as<bool>();
       print_factors = result["factors"].as<bool>();
       find_distance = result["dlz"].as<bool>();
-      preprocess = result["process"].as<bool>();
+      //   preprocess = result["process"].as<bool>();
       is_csv = result["csv"].as<bool>();
       save_results = result["save"].as<bool>();
 
-      args.chunks = result["chunks"].as<lz::lz_int>();
-      args.max_context = result["max-context"].as<lz::lz_int>();
+      args.chunks = result["partitions"].as<lz::lz_int>();
+      //   args.max_context = result["max-context"].as<lz::lz_int>();
       args.block_size = result["max-excess"].as<lz::lz_int>();
       args.excess_line = result["excess"].as<lz::lz_int>();
    }
@@ -272,8 +262,8 @@ lz::lz_int process(lz_options& opt) {
    }
    // read_multiInputs(opt.input, data2, opt.preprocess);
 
-   if (data.size()) std::cout << data[0].length() << " str: " << data[0].substr(0, 10) << std::endl;
-   if (data2.size()) std::cout << " seq: " << text2.Take(10) << std::endl;
+   //    if (data.size()) std::cout << data[0].length() << " str: " << data[0].substr(0, 10) << std::endl;
+   //    if (data2.size()) std::cout << " seq: " << text2.Take(10) << std::endl;
 
    // lz::utils::sa_type<>::type alg = lz::suffixarray::SAIS();
    // lz::utils::sa_type<>::type alg = lz::suffixarray::CaPS_SA(opt.args.chunks, opt.args.max_context);
@@ -282,7 +272,7 @@ lz::lz_int process(lz_options& opt) {
    lz::utils::LZ_Output lz;
    lz::utils::LZ_Output lz2;
 
-   std::cout << data2.size() << std::endl;
+   //    std::cout << data2.size() << std::endl;
 
    // auto maxConcurrency = 11;
    // if (maxConcurrency > tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism)) {
@@ -316,6 +306,15 @@ lz::lz_int process(lz_options& opt) {
    for (auto x: lz.complexity) std::cout << x << " ";
    std::cout << std::endl;
 
+   if (opt.print_factors) {
+      for (auto seq: test_flags.input) {
+         auto flz = lz::LempelZivFactors(seq);
+         std::cout << "Factors: [ ";
+         for (auto f: flz.lzf) std::cout << f << " ";
+         std::cout << "]" << std::endl;
+      }
+   }
+
    lz::EntropyDensity(test_flags, lz);
    std::cout << "Entropy: ";
    for (auto x: lz.entropy_density) std::cout << x << " ";
@@ -345,10 +344,6 @@ lz::lz_int process(lz_options& opt) {
       std::cout << std::endl;
    }
 
-   if (opt.args.excess_line > 0) {
-      // TODO: Implement excess of entropy for a sequence and get struct with info
-   }
-
    lz::InformationDistanceBySequence(test_flags, lz);
    std::cout << "Info distance in sequences: ";
    for (auto x: lz.sequence_info_distance) std::cout << x << " ";
@@ -374,45 +369,34 @@ auto main(int argc, char const* argv[]) -> int {
 
    options.custom_help("[OPTIONS...] input_data");
    options.allow_unrecognised_options();
-   options.add_options("lz")(
-       "h,help",
-       "Show the help of the program.")  // a bool parameter
-                                         // ("a,suffix-algorithm", "Suffix array algorithm.",
-                                         // cxxopts::value<std::string>()->default_value("caps"), "caps | sais")
-       ("c,chunks", "Number of partitions for data array (only for caps algorithm).",
-        cxxopts::value<lz::lz_int>()->default_value("20"),
-        "num")("m,max-context", "Max context for suffix comparisons (only for caps algorithm).",
-               cxxopts::value<lz::lz_int>()->default_value("0"),
-               "num")("o,output", "Output file path for results (json format).",
-                      cxxopts::value<std::string>()->default_value("result.json"),
-                      "file_name")("M,multi-line", "Treat each line in the input stream as a different sequence.")
-       // ("t,text", "Treat 'input_data' as text.")
-       ("f,factors", "Print the factors and save them in the output file.")(
-           "e,excess", "Outputs the excess entropy list of a given line.",
-           cxxopts::value<lz::lz_int>()->default_value("-1"),
-           "value")("E,max-excess", "Maximum iteration value for the excess entropy calculation by shuffling.",
-                    cxxopts::value<lz::lz_int>()->default_value("0"), "value")("p,process", "Clear input data.")(
-           "d,dlz",
-           "The LZ distance is calculated between successive sequences. Only valid for multisequence file (-M "
-           "option).")("C,csv", "Input file has csv format.")("S,save", "Save results in an output file.")(
-           "v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
+   auto opt_group = options.add_options("lzcomplexity")("h,help", "Show the help of the program.");
+   opt_group("p,partitions", "Number of partitions used for the parallel suffix array algorithm.",
+             cxxopts::value<lz::lz_int>()->default_value("20"), "num");
+   //    opt_group("m,max-context", "Max context for suffix comparisons (only for caps algorithm).",
+   //              cxxopts::value<lz::lz_int>()->default_value("0"), "num");
+   opt_group("o,output", "Output file path for results (json format).",
+             cxxopts::value<std::string>()->default_value("result.json"), "file_name");
+   opt_group("M,multi-line", "Treat each line in the input stream as a different sequence.");
+   opt_group("f,factors", "Print the factors and save them in the output file.");
+   opt_group("e,excess", "Outputs the excess entropy list of a given line.",
+             cxxopts::value<lz::lz_int>()->default_value("-1"), "value");
+   opt_group("E,max-excess", "Maximum iteration value for the excess entropy calculation by shuffling.",
+             cxxopts::value<lz::lz_int>()->default_value("0"), "value");
+   //    opt_group("p,process", "Clear input data.");
+   opt_group("d,dlz",
+             "The LZ distance is calculated between successive sequences. Only valid for multisequence file (-M "
+             "option).");
+   opt_group("C,csv", "Input file has csv format.");
+   opt_group("S,save", "Save results in an output file.");
+   opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
 
    try {
       auto result = options.parse(argc, argv);
 
-      if (result["h"].count() || result["help"].count()) {
+      if (result["h"].count() || result["help"].count() || result.arguments().size() == 0) {
          std::cout << lz::GREEN_COLOR << options.help() << lz::END_COLOR;
          return EXIT_SUCCESS;
       }
-
-      // lz::utils::read_input("/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/ecoli.fa",
-      // text);
-      // lz::utils::read_input("/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/sequence1000.bin",
-      // text);
-      // lz::utils::read_input("/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/sequence1000000.bin",
-      // text);
-      // lz::utils::read_input("/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/simpletest2",
-      // text);
 
       auto opt = process_args(result);
 

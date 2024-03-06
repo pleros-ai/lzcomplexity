@@ -33,19 +33,20 @@ namespace lz {
    //.......................................................................
    lz_int LempelZivFactorization(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
       LZ.complexity.clear();
-      LZ.complexity.reserve(flags.input.size());
+      LZ.complexity.reserve(flags.input.size() + 3);
 
-      auto fun = [&](auto&& idx) {
-         auto clx = LempelZivFactorization(flags.input[idx], flags.sa_args);
-         LZ.complexity[idx] = clx;
-      };
+      // auto fun = [&LZ, &flags](auto&& idx) {
+      //    auto clx = LempelZivFactorization(flags.input[idx], flags.sa_args);
+      //    LZ.complexity[idx] = clx;
+      //    std::cout << "clx: " << clx << " -- " << idx << " -- " << LZ.complexity[idx] << std::endl;
+      // };
 
-      utils::parallel_for(0, flags.input.size(), fun);
+      // utils::parallel_for(0, flags.input.size(), fun);
 
-      // for (sequence& str: flags.input) {
-      //    auto clx = LempelZivFactorization(str, flags.sa_args);
-      //    LZ.complexity.push_back(clx);
-      // }
+      for (sequence& str: flags.input) {
+         auto clx = LempelZivFactorization(str, flags.sa_args);
+         LZ.complexity.push_back(clx);
+      }
 
       return EXIT_SUCCESS;
    };

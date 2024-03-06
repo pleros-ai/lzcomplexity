@@ -46,7 +46,7 @@ The possible cmake OPTIONS can be found in the `CMakeLists.txt` file:
 - `asan` (**OFF** by default): configure the build with address sanitizer
 - `binding_python` (**OFF** by default): enable python binding
 - `builtin_tbb` (**OFF** by default): use local TBB project instead of system one
-- `LZ_SHARE` (**OFF** by default): build shared library
+- `LZ_SHARE` (**ON** by default): build shared library
 - `LZ_ONLY_LIBS` (**OFF** by default): build only the libraries (LZCore and LZApp)
 - `LZ_ONLY_CORE` (**OFF** by default): build only the core library
 

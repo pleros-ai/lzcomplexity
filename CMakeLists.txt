@@ -10,10 +10,10 @@ cmake_policy(VERSION 3.5...3.28)
 # set(CMAKE_CXX_COMPILER /opt/homebrew/bin/g++-13)
 
 # Project name and languages used.
-set(PROJECT_NAME LempelZiv)
+set(PROJECT_NAME lzcomplexity)
 set(namespace "lz")
 set(component "lz_cmd")
-set(VERSION 0.7.0)
+set(VERSION 0.8.0)
 project(
     ${PROJECT_NAME}
     VERSION ${VERSION}
@@ -31,7 +31,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(asan "Build with address sanitizer instrumentation " OFF)
 option(builtin_tbb "Use local TBB library" ON)
 option(binding_python "Build python binding of LZ lib" OFF)
-option(LZ_SHARE "Build shared library" OFF)
+option(LZ_SHARE "Build shared library" ON)
 option(LZ_ONLY_LIBS "Build only the libraries (LZCore and LZApp)" OFF)
 option(LZ_ONLY_CORE "Build only the core library" OFF)
 

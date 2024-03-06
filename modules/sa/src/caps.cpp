@@ -1,11 +1,5 @@
 #include <lz/caps.h>
 
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <cstdlib>
-#include <cstring>
-
 namespace lz {
    namespace suffixarray {
 
@@ -16,7 +10,10 @@ namespace lz {
             LCP_(utils::allocate<lz_int>(n_)),
             SA_w(nullptr),
             LCP_w(nullptr),
-            p_(subproblem_count > 0 ? subproblem_count : default_subproblem_count),
+            p_(subproblem_count > 0 ? subproblem_count
+               : n < 100            ? 1
+               : n < 50000          ? 8
+                                    : default_subproblem_count),
             max_context(max_context ? max_context : n_),
             pivot_(nullptr),
             pivot_per_part_(p_ - 1),

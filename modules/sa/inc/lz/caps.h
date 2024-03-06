@@ -36,13 +36,13 @@
 
 #include <lz/utils.h>
 
+#include <algorithm>
 #include <atomic>
+#include <cassert>
 #include <chrono>
 #include <cmath>
-#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <iostream>
 #include <new>
 
 #include "sa_structures.h"
@@ -86,8 +86,8 @@ namespace lz {
          std::atomic_uint64_t solved_;  //!> Progress tracker—number of subproblems solved in some step.
          lz_int c;                      //!> constant for select the number of pivots by partitions
 
-         static constexpr lz_int default_subproblem_count = 8'192;  // Default subproblem-count to use in construction.
-         static constexpr lz_int nested_par_grain_size = (100);     // Granularity for nested parallelism to kick in.
+         static constexpr lz_int default_subproblem_count = 8192;  //!> Default subproblem-count to use in construction.
+         static constexpr lz_int nested_par_grain_size = (100);    //!> Granularity for nested parallelism to kick in.
 
          // Fields for profiling time.
          typedef std::chrono::high_resolution_clock::time_point time_point_t;
