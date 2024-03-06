@@ -36,8 +36,9 @@ jobs:
         runs-on: [ubuntu-22.04, ubuntu-20.04, macos-latest]
         build_type: ["Release"]
         cxx: ["g++", "clang++"]
+        builtinTbb: ["ON", "OFF"]
 
-    name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} •
+    name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
     runs-on: ${{ matrix.runs-on }}
 
     steps:
@@ -50,11 +51,11 @@ jobs:
       #     useCloudCache: false
       #     useLocalCache: true
 
-      # - name: Install TBB
-      #   shell: bash
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get -qq install libtbb-dev
+      - name: Install TBB
+        if: matrix.builtinTbb == 'OFF'
+        run: |
+          sudo apt-get update
+          sudo apt-get -q install libtbb-dev
 
       # - name: Install LLVM and Clang
       #   if: runner.os == 'Linux' && matrix.cxx == 'clang++'
@@ -73,13 +74,37 @@ jobs:
           CXX: ${{ matrix.cxx }}
         run: |
           mkdir build && cd build
-          cmake -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON ..
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF \
+                -Dbuiltin_tbb=${{matrix.builtinTbb}} ..
 
       - name: Build
         run: |
           cd build
           cmake --build . --config ${{ matrix.build_type }}
 
+  # Test red hat compile
+  # install-runner:
+  #   runs-on: ubuntu-20.04
+  #   name: Install runner
+  #   steps:
+  #     - name: Install self hosted runner into this repository
+  #       uses: redhat-actions/openshift-actions-runner-installer@v1
+  #       with:
+  #         github_pat: ${{ secrets.PAT }}
+
+  # self-hosted-workflow:
+  #   # Now that the above job has ensured the runner container exists,
+  #   # we can run our workflow inside it.
+  #   name: OpenShift Self Hosted Workflow
+  #   # Add other labels here if you have to filter by a runner type.
+  #   runs-on: [ self-hosted ]
+  #   needs: install-runner
+
+  #   steps:
+  #     - run: hostname
+  #     - run: ls -Al
+
+  # Windows cmake compile
   # msvc:
   #   name: • ${{ matrix.os }} • ${{ matrix.build_type }} • ${{ matrix.msvc }} •
   #   runs-on: ${{ matrix.os }}
