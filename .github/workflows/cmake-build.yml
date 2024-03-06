@@ -58,12 +58,12 @@ jobs:
 
       - name: Install LLVM and Clang
         if: runner.os == 'Linux' && matrix.cxx == 'clang++'
-        # uses: KyleMayes/install-llvm-action@v1
-        # with:
-        #   version: "15.0"
-        run: |
-          sudo apt-get install clang
-          clang++ --version
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "15.0"
+        # run: |
+        #   sudo apt-get install clang
+        #   clang++ --version
 
       - name: Patch TBB submodule
         run: patch -p0 -i patches/tbb.patch
