@@ -18,9 +18,12 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE_UPPER)
 
 #----Test if clang setup works----------------------------------------------------------------------
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  execute_process(${CMAKE_CXX_COMPILER} ARGS "--version | grep version" OUTPUT_VARIABLE _clang_version_info)
-  string(REGEX REPLACE "^.*[ ]version[ ]([0-9]+)\\.[0-9]+.*" "\\1" CLANG_MAJOR "${_clang_version_info}")
-  string(REGEX REPLACE "^.*[ ]version[ ][0-9]+\\.([0-9]+).*" "\\1" CLANG_MINOR "${_clang_version_info}")
+  # execute_process(${CMAKE_CXX_COMPILER} ARGS "--version | grep version" OUTPUT_VARIABLE _clang_version_info)
+  # string(REGEX REPLACE "^.*[ ]version[ ]([0-9]+)\\.[0-9]+.*" "\\1" CLANG_MAJOR "${_clang_version_info}")
+  # string(REGEX REPLACE "^.*[ ]version[ ][0-9]+\\.([0-9]+).*" "\\1" CLANG_MINOR "${_clang_version_info}")
+
+  string(REGEX REPLACE "^([0-9]+).*$"            "\\1" CLANG_MAJOR ${CMAKE_CXX_COMPILER_VERSION})
+  string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*$"   "\\1" CLANG_MINOR ${CMAKE_CXX_COMPILER_VERSION})
 
   if(CMAKE_GENERATOR STREQUAL "Ninja")
     # LLVM/Clang are automatically checking if we are in interactive terminal mode.
