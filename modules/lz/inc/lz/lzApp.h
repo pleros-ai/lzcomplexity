@@ -33,7 +33,6 @@
 #include <assert.h>
 #include <lz/lempelziv.h>
 
-#include <concepts>
 #include <typeinfo>
 #include <vector>
 
