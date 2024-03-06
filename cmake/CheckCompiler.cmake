@@ -150,6 +150,9 @@ else()
   set(CMAKE_THREAD_FLAG)
 endif()
 
+if(LZ_SHARE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+endif()
 
 #---Setup compiler-specific flags (warning etc)----------------------------------------------
 if(${CMAKE_CXX_COMPILER_ID} MATCHES Clang)

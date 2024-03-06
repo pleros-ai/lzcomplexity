@@ -72,6 +72,14 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build Type" FORCE)
 endif()
 
+if(LZ_SHARE)
+  if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  endif()
+else()
+  message(WARNING "You are building LZCore and LZApp as a static library. Consider building a dynamic library to avoid unforeseen issues.")
+endif()
+
 # Specify compiler features required when compiling a given target.
 # See https://cmake.org/cmake/help/v3.1/prop_gbl/CMAKE_CXX_KNOWN_FEATURES.html#prop_gbl:CMAKE_CXX_KNOWN_FEATURES
 # for complete list of features available

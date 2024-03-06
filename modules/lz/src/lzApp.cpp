@@ -90,7 +90,7 @@ namespace lz {
       auto excess_line = flags.sa_args.excess_line;
 
       for (auto str: flags.input) {
-         if (excess_line >= 0) {
+         if (excess_line >= 0 && excess_line < static_cast<lz::lz_int>(flags.input.size())) {
             flags.sa_args.excess_line = excess_line;
             excess_entropy = ExcessEntropyShuffleSequential(str, flags.sa_args);
          } else {

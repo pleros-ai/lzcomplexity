@@ -338,7 +338,7 @@ lz::lz_int process(lz_options& opt) {
    // for (auto x : lz2.excess_entropy_shuffle) std::cout << x << " ";
    std::cout << std::endl;
 
-   if (opt.args.excess_line >= 0) {
+   if (opt.args.excess_line >= 0 && opt.args.excess_line < static_cast<lz::lz_int>(test_flags.input.size())) {
       std::cout << "Excess entropy by terms of line" << opt.args.excess_line << ": ";
       for (auto x: lz.excess_entropy_terms) std::cout << x << " ";
       std::cout << std::endl;
