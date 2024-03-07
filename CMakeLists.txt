@@ -39,6 +39,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Global cmake
 include(FindThreads)
 include(CheckIPOSupported)
+include(GNUInstallDirs)
 # Local cmake
 include(ConfigInstallDirs)
 include(CheckCompiler)
@@ -70,14 +71,6 @@ endif()
 # Default build type.
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build Type" FORCE)
-endif()
-
-if(LZ_SHARE)
-  if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-  endif()
-else()
-  message(WARNING "You are building LZCore and LZApp as a static library. Consider building a dynamic library to avoid unforeseen issues.")
 endif()
 
 # Specify compiler features required when compiling a given target.
@@ -171,7 +164,6 @@ endif()
 if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     add_executable(${PROJECT_NAME} main.cpp)
 
-    # include(useTbb)
     message(STATUS "TBB: ${LZ_TBB_LIBS} and found: ${GLOBAL_LZ_TBB_LIBS}")
 
     # target_link_libraries(${PROJECT_NAME} PRIVATE ${GLOBAL_LZ_TBB_LIBS})

@@ -1,8 +1,8 @@
-include(CheckIncludeFileCXX)
-
 if(TARGET TBB::tbb)
   return()
 endif()
+
+include(CheckIncludeFileCXX)
 
 #---Try to download a file to check internet connection-----------------------------------------
 message(STATUS "Checking internet connectivity")
@@ -21,7 +21,7 @@ if(${STATUS_CODE} EQUAL 0)
   # Success
   message(STATUS "Checking internet connectivity - found")
   # Now let's delete the file
-  file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/cmake_connectivity_test.txt)
+  # file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/cmake_connectivity_test.txt)
   set(NO_CONNECTION FALSE)
 else()
   # Error

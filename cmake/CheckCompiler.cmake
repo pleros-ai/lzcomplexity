@@ -150,10 +150,6 @@ else()
   set(CMAKE_THREAD_FLAG)
 endif()
 
-if(LZ_SHARE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-endif()
-
 #---Setup compiler-specific flags (warning etc)----------------------------------------------
 if(${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
   # AppleClang and Clang proper.
@@ -174,7 +170,9 @@ elseif(WIN32)
   include(SetUpWindows)
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_FLAG}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_FLAG} -fstack-protector-strong")
+
+set(LZ_LINK_FLAGS "-Wl,-z,relro,-z,now,-z,noexecstack")
 
 if(libcxx)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
@@ -206,4 +204,4 @@ message(STATUS "Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 message(STATUS "Architecture: ${LZ_ARCHITECTURE}")
 message(STATUS "Build Type: '${CMAKE_BUILD_TYPE}' (flags = '${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}}')")
 message(STATUS "Compiler Flags: ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}}")
-message(STATUS "Linker Flags: ${CMAKE_CXX_LINK_FLAGS}")
+message(STATUS "Linker Flags: ${CMAKE_CXX_LINK_FLAGS} ${LZ_LINK_FLAGS}")

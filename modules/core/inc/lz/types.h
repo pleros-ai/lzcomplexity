@@ -37,5 +37,13 @@ namespace lz {
       template <typename... SAImpl>
       using sa_type_t = typename sa_type<SAImpl...>::type;
 #endif
+
+      /// An adapter for std::invoke_result that falls back to std::result_of if the former is not available.
+      template <typename F, typename... Args>
+#ifdef __cpp_lib_is_invocable
+      using invoke_result_t = std::invoke_result_t<F, Args...>;
+#else
+      using invoke_result_t = std::result_of_t<F(Args...)>;
+#endif
    }  // namespace utils
 }  // namespace lz

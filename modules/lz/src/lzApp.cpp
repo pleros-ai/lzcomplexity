@@ -43,6 +43,8 @@ namespace lz {
 
       // utils::parallel_for(0, flags.input.size(), fun);
 
+      std::cout << "maxTh: " << tbb::this_task_arena::max_concurrency() << std::endl;
+
       for (sequence& str: flags.input) {
          auto clx = LempelZivFactorization(str, flags.sa_args);
          LZ.complexity.push_back(clx);

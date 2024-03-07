@@ -24,6 +24,7 @@ set(LZ_ALGS ${CORE_SOURCE_DIR}/lempelziv.cpp)
 
 if(LZ_SHARE)
    add_library(${PROJECT_NAME} SHARED)
+   # set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 else()
    add_library(${PROJECT_NAME} STATIC)
 endif()
@@ -60,7 +61,7 @@ set(public_headers
 )
 
 # Compiler flags.
-# target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
+# target_link_options(${PROJECT_NAME} PUBLIC ${CMAKE_CXX_LINK_FLAGS})
 target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
 target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
 

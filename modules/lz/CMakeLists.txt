@@ -24,6 +24,7 @@ set(LZ_ALG ${APP_SOURCE_DIR}/lzApp.cpp)
 
 if(LZ_SHARE)
    add_library(${PROJECT_NAME} SHARED)
+   # set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 else()
    add_library(${PROJECT_NAME} STATIC)
 endif()
@@ -55,9 +56,12 @@ target_include_directories(${PROJECT_NAME}
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
+
 # target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LZ_CORE_LIB})
 # set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${LZ_TBB_LIBS})
+
+# set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${LZ_CORE_LIB})
 
 set(public_headers 
   # LZ app headers

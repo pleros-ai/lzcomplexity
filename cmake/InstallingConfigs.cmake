@@ -3,7 +3,7 @@ install(
     EXPORT "${PROJECT_NAME}Targets"
     FILE "${PROJECT_NAME}Targets.cmake"
     NAMESPACE ${namespace}::
-    DESTINATION cmake/${PROJECT_NAME}
+    DESTINATION cmake/lz
     COMPONENT ${component}
 )
 
@@ -18,14 +18,14 @@ write_basic_package_version_file(
 configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-    INSTALL_DESTINATION cmake/${PROJECT_NAME}
+    INSTALL_DESTINATION cmake/lz
 )
 # install config files
 install(
     FILES
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-    DESTINATION cmake/${PROJECT_NAME}
+    DESTINATION cmake/lz
     COMPONENT ${component}
 )
 # generate the export targets for the build tree

@@ -101,6 +101,10 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
     set(ASAN_EXTRA_SHARED_LINKER_FLAGS "-fsanitize=address -static-libsan -z undefs")
     set(ASAN_EXTRA_EXE_LINKER_FLAGS "-fsanitize=address -static-libsan -z undefs -Wl,--undefined=__asan_default_options -Wl,--undefined=__lsan_default_options -Wl,--undefined=__lsan_default_suppressions")
   endif()
+  
+  if(LZ_SHARE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
+  endif()
 
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL Intel)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd1476")

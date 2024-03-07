@@ -171,6 +171,7 @@ struct lz_options {
    /* Extra args for LZApp functions */
    lz::utils::LZ_Args args;
    /* flags */
+   lz::lz_uint n_jobs = 1;
    bool multiLine = false;
    bool print_factors = false;
    bool find_distance = false;
@@ -184,6 +185,7 @@ struct lz_options {
       multiLine = result["multi-line"].as<bool>();
       print_factors = result["factors"].as<bool>();
       find_distance = result["dlz"].as<bool>();
+      n_jobs = result["jobs"].as<lz::lz_uint>();
       //   preprocess = result["process"].as<bool>();
       is_csv = result["csv"].as<bool>();
       save_results = result["save"].as<bool>();
@@ -280,10 +282,10 @@ lz::lz_int process(lz_options& opt) {
    //     parallel workers\n from this task arena available for execution.");
    // }
 
-   // auto arena = tbb::task_arena();
+   //    auto arena = tbb::task_arena();
    // arena.initialize(maxConcurrency);
 
-   // tbb::task_arena no_ht_arena(std::thread::hardware_concurrency());
+   tbb::task_arena no_ht_arena(opt.n_jobs);
 
    // Core functions
    // auto c = lz::LempelZivFactorization(data2[0]);
@@ -372,8 +374,6 @@ auto main(int argc, char const* argv[]) -> int {
    auto opt_group = options.add_options("lzcomplexity")("h,help", "Show the help of the program.");
    opt_group("p,partitions", "Number of partitions used for the parallel suffix array algorithm.",
              cxxopts::value<lz::lz_int>()->default_value("20"), "num");
-   //    opt_group("m,max-context", "Max context for suffix comparisons (only for caps algorithm).",
-   //              cxxopts::value<lz::lz_int>()->default_value("0"), "num");
    opt_group("o,output", "Output file path for results (json format).",
              cxxopts::value<std::string>()->default_value("result.json"), "file_name");
    opt_group("M,multi-line", "Treat each line in the input stream as a different sequence.");
@@ -382,14 +382,19 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<lz::lz_int>()->default_value("-1"), "value");
    opt_group("E,max-excess", "Maximum iteration value for the excess entropy calculation by shuffling.",
              cxxopts::value<lz::lz_int>()->default_value("0"), "value");
-   //    opt_group("p,process", "Clear input data.");
    opt_group("d,dlz",
              "The LZ distance is calculated between successive sequences. Only valid for multisequence file (-M "
              "option).");
+   opt_group("j,jobs", "Configure number of parallel jobs.",
+             cxxopts::value<lz::lz_uint>()->default_value(std::to_string(std::thread::hardware_concurrency())),
+             "value");
    opt_group("C,csv", "Input file has csv format.");
    opt_group("S,save", "Save results in an output file.");
    opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
 
+   //    opt_group("p,process", "Clear input data.");
+   //    opt_group("m,max-context", "Max context for suffix comparisons (only for caps algorithm).",
+   //              cxxopts::value<lz::lz_int>()->default_value("0"), "num");
    try {
       auto result = options.parse(argc, argv);
 
