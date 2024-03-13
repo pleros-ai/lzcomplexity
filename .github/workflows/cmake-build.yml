@@ -57,13 +57,22 @@ jobs:
           sudo apt-get update
           sudo apt-get -q install libtbb-dev
 
-      # Ubuntu image have problems with clang and stdlib++, so we need to install a newer version
-      - name: Install newer Clang
+      - name: Install LLVM and Clang
         if: matrix.cxx == 'clang++'
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x ./llvm.sh
-          sudo ./llvm.sh 15
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "15.0"
+        # run: |
+        #   sudo apt-get install clang
+        #   clang++ --version
+
+      # Ubuntu image have problems with clang and stdlib++, so we need to install a newer version
+      # - name: Install newer Clang
+      #   if: matrix.cxx == 'clang++'
+      #   run: |
+      #     wget https://apt.llvm.org/llvm.sh
+      #     chmod +x ./llvm.sh
+      #     sudo ./llvm.sh 17
 
       - name: Patch TBB submodule
         run: patch -p0 -f -i patches/tbb.patch
