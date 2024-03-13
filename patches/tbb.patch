@@ -1,5 +1,5 @@
---- ./external/tbb/CMakeLists.txt	2024-03-13 10:40:12
-+++ ./patches/CMakeLists.txt	2024-03-13 10:39:57
+--- external/tbb/CMakeLists.txt	2024-03-13 10:55:18
++++ external/tbb/CMakeLists.txt	2024-03-13 10:57:32
 @@ -12,7 +12,7 @@
  # See the License for the specific language governing permissions and
  # limitations under the License.
@@ -18,15 +18,6 @@
  option(TBB_EXAMPLES "Enable examples" OFF)
  option(TBB_STRICT "Treat compiler warnings as errors" ON)
  option(TBB_WINDOWS_DRIVER "Build as Universal Windows Driver (UWD)" OFF)
-@@ -233,7 +233,7 @@
-     # Allow specifying external TBB to test with.
-     # Do not add main targets and installation instructions in that case.
-     message(STATUS "Using external TBB for testing")
--    find_package(TBB REQUIRED)
-+    # find_package(TBB REQUIRED)
- else()
-     if (TBB_BUILD)
-         add_subdirectory(src/tbb)
 @@ -273,9 +273,9 @@
              DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
              COMPONENT devel)
