@@ -9,8 +9,10 @@
 ### Prerequisites
 ---
 
-- Make sure you have installed CMake version 3.1 (or newer) on your system. LempelZiv uses CMake build configuration.
+- Make sure you have installed CMake version 3.5 (or newer) on your system. LempelZiv uses CMake build configuration.
 - The project uses C++20 features so it needs a compiler compatible with it.
+  - clang >= 17 || apple-clang >= 14
+  - GNU >= 9.4
 
 ### Prepare the workspace
 ---

@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-22.04, ubuntu-20.04]
+        runs-on: [ubuntu-22.04]
         build_type: ["Release"]
         cxx: ["g++", "clang++"]
         builtinTbb: ["ON", "OFF"]
@@ -62,9 +62,6 @@ jobs:
         uses: KyleMayes/install-llvm-action@v1
         with:
           version: "17.0"
-        # run: |
-        #   sudo apt-get install clang
-        #   clang++ --version
 
       # Ubuntu image have problems with clang and stdlib++, so we need to install a newer version
       # - name: Install newer Clang
@@ -99,7 +96,7 @@ jobs:
       matrix:
         runs-on: [macos-latest]
         build_type: ["Release"]
-        cxx: ["g++", "clang++"]
+        cxx: ["g++-13", "clang++"]
         builtinTbb: ["ON", "OFF"]
 
     name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
@@ -110,25 +107,11 @@ jobs:
         with:
           submodules: true
 
-      # - uses: lukka/get-cmake@latest
-      #   with:
-      #     useCloudCache: false
-      #     useLocalCache: true
-
       - name: Install TBB
         if: matrix.builtinTbb == 'OFF'
         run: |
           brew update
           brew install tbb
-
-      # - name: Install LLVM and Clang
-      #   if: runner.os == 'Linux' && matrix.cxx == 'clang++'
-      #   # uses: KyleMayes/install-llvm-action@v1
-      #   # with:
-      #   #   version: "15.0"
-      #   run: |
-      #     sudo apt-get install clang
-      #     clang++ --version
 
       - name: Patch TBB submodule
         run: patch -p0 -i patches/tbb.patch
