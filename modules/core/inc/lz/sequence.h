@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include <lz/general.h>
 #include <lz/myexceptions.h>
 
 #include <set>
@@ -129,8 +130,8 @@ namespace lz {
       lz_uint NoZeroes(void) const;
       std::string toString(void) const;
 
-      char& operator[](std::vector<char>::size_type);
-      const char& operator[](std::vector<char>::size_type) const;
+      char& operator[](lz_size);
+      const char& operator[](lz_size) const;
 
       char& first(void);
       const char& first(void) const;
@@ -138,26 +139,26 @@ namespace lz {
       char& last(void);
       const char& last(void) const;
 
-      char& at(std::vector<char>::size_type);
-      char const_at(std::vector<char>::size_type index) const;
+      char& at(lz_size);
+      char const_at(lz_size index) const;
 
       char Min(void) const;
-      char Min(std::vector<char>::size_type start, std::vector<char>::size_type final) const;
+      char Min(lz_size start, lz_size final) const;
       char Max(void) const;
-      char Max(std::vector<char>::size_type start, std::vector<char>::size_type final) const;
+      char Max(lz_size start, lz_size final) const;
 
-      std::vector<char>::size_type push(char);
-      std::vector<char>::size_type pop(void);
+      lz_size push(char);
+      lz_size pop(void);
       char back(void) const;
 
-      std::vector<char>::size_type size(void) const;
-      std::vector<char>::size_type length(void) const;
+      lz_size size(void) const;
+      lz_size length(void) const;
 
       std::vector<char> SequenceVector(void) const;
 
-      sequence Take(std::vector<char>::size_type l) const;
-      sequence Drop(std::vector<char>::size_type l) const;
-      std::pair<sequence, sequence> Split(std::vector<char>::size_type l) const;
+      sequence Take(lz_size l) const;
+      sequence Drop(lz_size l) const;
+      std::pair<sequence, sequence> Split(lz_size l) const;
       sequence Granularity(lz_uint gr) const;
 
       sequence& pi(void);
@@ -180,8 +181,7 @@ namespace lz {
       friend std::istream& operator>>(std::istream&, sequence&);
 
       friend void swap(sequence&, sequence&);
-      friend void swap(sequence&, std::vector<char>::size_type start1, std::vector<char>::size_type start2,
-                       std::vector<char>::size_type length);
+      friend void swap(sequence&, lz_size start1, lz_size start2, lz_size length);
 
       friend sequence operator+(const sequence&, const sequence&);
       friend bool operator==(const sequence&, const sequence&);
@@ -301,7 +301,7 @@ namespace lz {
 
    inline std::vector<char> sequence::SequenceVector(void) const { return seq; }
 
-   inline char& sequence::operator[](std::vector<char>::size_type index) {
+   inline char& sequence::operator[](lz_size index) {
       if (index >= seq.size()) {
          throw SequenceOutOfBounds();
       }
@@ -309,14 +309,14 @@ namespace lz {
       return seq[index];
    }
 
-   inline const char& sequence::operator[](std::vector<char>::size_type index) const {
+   inline const char& sequence::operator[](lz_size index) const {
       if (index >= seq.size()) {
          throw SequenceOutOfBounds();
       }
       return seq[index];
    }
 
-   inline char& sequence::at(std::vector<char>::size_type index) { return seq.at(index); }
+   inline char& sequence::at(lz_size index) { return seq.at(index); }
 
    // .............................................................................
    // Name: const_at
@@ -333,7 +333,7 @@ namespace lz {
    // Exceptions:
    //            None
    //..............................................................................
-   inline char sequence::const_at(std::vector<char>::size_type index) const { return seq.at(index); }
+   inline char sequence::const_at(lz_size index) const { return seq.at(index); }
 
    inline char& sequence::first(void) { return seq.front(); }
 
@@ -347,17 +347,17 @@ namespace lz {
 
    inline char sequence::Max(void) const { return *std::max_element(seq.begin(), seq.end()); }
 
-   inline char sequence::Min(std::vector<char>::size_type start, std::vector<char>::size_type final) const {
+   inline char sequence::Min(lz_size start, lz_size final) const {
       return *std::min_element(seq.begin() + start, seq.begin() + final);
    }
 
-   inline char sequence::Max(std::vector<char>::size_type start, std::vector<char>::size_type final) const {
+   inline char sequence::Max(lz_size start, lz_size final) const {
       return *std::max_element(seq.begin() + start, seq.begin() + final);
    }
 
    inline char sequence::Min(void) const { return *std::min_element(seq.begin(), seq.end()); }
 
-   inline std::vector<char>::size_type sequence::push(char c) {
+   inline lz_size sequence::push(char c) {
       try {
          seq.push_back(c);
       } catch (std::bad_alloc& ba) {
@@ -367,7 +367,7 @@ namespace lz {
       return seq.size();
    }
 
-   inline std::vector<char>::size_type sequence::pop(void) {
+   inline lz_size sequence::pop(void) {
       seq.pop_back();
 
       return seq.size();
@@ -413,11 +413,11 @@ namespace lz {
       return *this;
    }
 
-   inline std::vector<char>::size_type sequence::size(void) const { return seq.size(); }
+   inline lz_size sequence::size(void) const { return seq.size(); }
 
-   inline std::vector<char>::size_type sequence::length(void) const { return seq.size(); }
+   inline lz_size sequence::length(void) const { return seq.size(); }
 
-   inline sequence sequence::Take(std::vector<char>::size_type l) const {
+   inline sequence sequence::Take(lz_size l) const {
       std::vector<char> temp = seq;
 
       temp.resize(l);
@@ -425,7 +425,7 @@ namespace lz {
       return sequence(temp, alphabet_size);
    }
 
-   inline sequence sequence::Drop(std::vector<char>::size_type l) const {
+   inline sequence sequence::Drop(lz_size l) const {
       std::vector<char> temp;
 
       if (l < seq.size()) {
@@ -441,7 +441,7 @@ namespace lz {
       return sequence(temp, alphabet_size);
    }
 
-   inline std::pair<sequence, sequence> sequence::Split(std::vector<char>::size_type l) const {
+   inline std::pair<sequence, sequence> sequence::Split(lz_size l) const {
       std::vector<char> lhs{seq.begin(), seq.begin() + l};
       std::vector<char> rhs{seq.begin() + l, seq.end()};
 
@@ -478,8 +478,7 @@ namespace lz {
       std::swap(first.seq, second.seq);
    }
 
-   inline void swap(sequence& s, std::vector<char>::size_type start1, std::vector<char>::size_type start2,
-                    std::vector<char>::size_type length) {
+   inline void swap(sequence& s, lz_size start1, lz_size start2, lz_size length) {
 #ifdef __cpp_lib_ranges
       std::ranges::swap_ranges(s.seq.begin() + start1, s.seq.begin() + start1 + length, s.seq.begin() + start2,
                                s.seq.begin() + start2 + length);
