@@ -33,10 +33,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [ubuntu-22.04]
-        build_type: ["Release"]
-        cxx: ["g++", "clang++"]
-        builtinTbb: ["ON", "OFF"]
+        include:
+          - runs-on: ubuntu-22.04
+            build_type: "Release"
+            cxx: g++
+            cc: gcc
+            builtinTbb: ON
+          - runs-on: ubuntu-22.04
+            build_type: "Release"
+            cxx: g++
+            cc: gcc
+            builtinTbb: OFF
+          - runs-on: ubuntu-22.04
+            build_type: "Release"
+            cxx: clang++
+            cc: clang
+            builtinTbb: ON
+          - runs-on: ubuntu-22.04
+            build_type: "Release"
+            cxx: clang++
+            cc: clang
+            builtinTbb: OFF
 
     name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
     runs-on: ${{ matrix.runs-on }}
@@ -77,6 +94,7 @@ jobs:
       - name: Configure cmake
         env:
           CXX: ${{ matrix.cxx }}
+          CC: ${{ matrix.cc }}
         run: |
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF \
@@ -94,10 +112,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runs-on: [macos-latest]
-        build_type: ["Release"]
-        cxx: ["g++-13", "clang++"]
-        builtinTbb: ["ON", "OFF"]
+        include:
+          - runs-on: macos-latest
+            build_type: "Release"
+            cxx: g++-13
+            cc: gcc-13
+            builtinTbb: ON
+          - runs-on: macos-latest
+            build_type: "Release"
+            cxx: g++-13
+            cc: gcc-13
+            builtinTbb: OFF
+          - runs-on: macos-latest
+            build_type: "Release"
+            cxx: clang++
+            cc: clang
+            builtinTbb: ON
+          - runs-on: macos-latest
+            build_type: "Release"
+            cxx: clang++
+            cc: clang
+            builtinTbb: OFF
 
     name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
     runs-on: ${{ matrix.runs-on }}
@@ -119,6 +154,7 @@ jobs:
       - name: Configure cmake
         env:
           CXX: ${{ matrix.cxx }}
+          CC: ${{ matrix.cc }}
         run: |
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF \
