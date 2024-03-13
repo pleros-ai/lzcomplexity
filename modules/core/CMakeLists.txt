@@ -51,7 +51,7 @@ target_include_directories(${PROJECT_NAME}
 
 # possible
 add_dependencies(${PROJECT_NAME} ${LZ_TBB_LIBS})
-target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LZ_TBB_LIBS})
 # set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${LZ_TBB_LIBS})
 
 set(public_headers 

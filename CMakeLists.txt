@@ -50,7 +50,7 @@ endif()
 
 # include(useTbb)
 # message(STATUS "is unix: ${UNIX} and tbb: ${LZ_TBB_LIBS}")
-# link_libraries(Threads::Threads ${LZ_TBB_LIBS})
+link_libraries(Threads::Threads)
 
 # Warning flags.
 if(WIN32)
