@@ -61,7 +61,7 @@ jobs:
         if: matrix.cxx == 'clang++'
         uses: KyleMayes/install-llvm-action@v1
         with:
-          version: "15.0"
+          version: "17.0"
         # run: |
         #   sudo apt-get install clang
         #   clang++ --version
