@@ -1,3 +1,5 @@
+message(STATUS "--- Configurating Suffix Array sources and headers ---")
+
 set(SA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 set(SA_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
@@ -7,9 +9,11 @@ set(SAIS_ALG ${SA_SOURCE_DIR}/sais_lite.cpp)
 
 target_sources(${PROJECT_NAME} PRIVATE ${CAPS_SA_ALG} ${SAIS_ALG})
 
+get_target_property(SOURCES ${PROJECT_NAME} SOURCES)
+message(STATUS "Sources until SA: ${SOURCES}")
+
 target_include_directories(${PROJECT_NAME} 
-   PUBLIC 
-      $<BUILD_INTERFACE:${SA_INCLUDE_DIR}> 
+  PUBLIC $<BUILD_INTERFACE:${SA_INCLUDE_DIR}>
 )
 
 set(public_headers 

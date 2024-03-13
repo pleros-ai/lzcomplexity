@@ -32,12 +32,14 @@
 #pragma once
 
 #include <lz/myexceptions.h>
-#include <lz/utils.h>
-#include <tbb/concurrent_set.h>
 
 #include <set>
 #include <utility>
 
+/**
+ * @file sequence.h
+ * @brief This file contains the declaration of the `sequence` class and related functions.
+ */
 namespace lz {
 
    constexpr lz_int ALPHABET_SIZE = 0x02;
@@ -58,20 +60,64 @@ namespace lz {
       lz_int alphabet_size;
 
      public:
+      /**
+       * @brief Default constructor.
+       */
       sequence(void)
           : alphabet_size(ALPHABET_SIZE){};
+
+      /**
+       * @brief Constructor that sets the alphabet size.
+       * @param alphsize The size of the alphabet.
+       */
       sequence(lz_int alphsize)
           : alphabet_size(alphsize){};
+
+      /**
+       * @brief Constructor that initializes the sequence with a vector of characters.
+       * @param vec The vector of characters.
+       */
       sequence(const std::vector<char> vec);
+
+      /**
+       * @brief Constructor that initializes the sequence with a string.
+       * @param str The string.
+       */
       sequence(const std::string str);
+
+      /**
+       * @brief Constructor that initializes the sequence with a vector of characters and a specified alphabet size.
+       * @param vec The vector of characters.
+       * @param aph The alphabet size.
+       */
       sequence(const std::vector<char> vec, lz_int aph)
           : seq(vec), alphabet_size(aph){};
+
+      /**
+       * @brief Constructor that initializes the sequence with a string and a specified alphabet size.
+       * @param str The string.
+       * @param aph The alphabet size.
+       */
       sequence(const std::string str, lz_int aph)
           : seq(str.begin(), str.end()), alphabet_size(aph){};
+
+      /**
+       * @brief Copy constructor.
+       * @param s The sequence to be copied.
+       */
       sequence(const sequence& s)
           : seq(s.seq), alphabet_size(s.alphabet_size){};
+
+      /**
+       * @brief Move constructor.
+       * @param s The sequence to be moved.
+       */
       sequence(sequence&& s)
           : seq(std::move(s.seq)), alphabet_size(s.alphabet_size){};
+
+      /**
+       * @brief Destructor.
+       */
       ~sequence() {
          alphabet_size = ALPHABET_SIZE;
          seq.clear();
@@ -138,7 +184,6 @@ namespace lz {
                        std::vector<char>::size_type length);
 
       friend sequence operator+(const sequence&, const sequence&);
-      friend sequence& operator+(sequence&, const sequence&);
       friend bool operator==(const sequence&, const sequence&);
       friend bool operator!=(const sequence&, const sequence&);
       friend bool operator>(const sequence&, const sequence&);
@@ -155,26 +200,6 @@ namespace lz {
    sequence Shuffle(sequence& s, lz_uint block_size, lz_uint times);
 
    //.............................................................................................................
-
-   inline sequence::sequence(const std::vector<char> vec) {
-      seq = vec;
-      tbb::concurrent_set<char> aph;
-
-      auto fun = [&](auto i) { aph.insert(vec[i]); };
-      utils::parallel_for(0, vec.size(), fun);
-
-      alphabet_size = aph.size();
-   }
-
-   inline sequence::sequence(const std::string str) {
-      seq = std::vector<char>(str.begin(), str.end());
-      tbb::concurrent_set<char> aph;
-
-      auto fun = [&](auto i) { aph.insert(str[i]); };
-      utils::parallel_for(0, str.size(), fun);
-
-      alphabet_size = aph.size();
-   }
 
    inline lz_uint sequence::NoZeroes(void) const {
       lz_uint acum = 0;
@@ -205,21 +230,10 @@ namespace lz {
    }
 
    inline sequence operator+(const sequence& lhs, const sequence& rhs) {
-      sequence result(std::move(lhs));
+      sequence result = lhs;
       result += rhs.SequenceVector();
 
       return result;
-   }
-
-   inline sequence& operator+(sequence& s1, const sequence& s2) {
-      try {
-         s1 += s2.SequenceVector();
-         return s1;
-      } catch (std::bad_alloc& ba) {
-         throw SequenceBadAlloc();
-      } catch (...) {
-         throw SequenceError();
-      }
    }
 
    inline sequence& sequence::operator+=(const std::vector<char>& s) {

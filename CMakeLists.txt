@@ -43,14 +43,14 @@ include(GNUInstallDirs)
 # Local cmake
 include(ConfigInstallDirs)
 include(CheckCompiler)
-include(useTbb)
 
 if(NOT Threads_FOUND)
     message(FATAL_ERROR "A supported threads library is required. Aborting.")
 endif()
 
-message(STATUS "is unix: ${UNIX} and tbb: ${LZ_TBB_LIBS}")
-link_libraries(Threads::Threads ${LZ_TBB_LIBS})
+# include(useTbb)
+# message(STATUS "is unix: ${UNIX} and tbb: ${LZ_TBB_LIBS}")
+# link_libraries(Threads::Threads ${LZ_TBB_LIBS})
 
 # Warning flags.
 if(WIN32)
@@ -123,7 +123,6 @@ list(APPEND REQUIRED_FEATURES
         cxx_variadic_templates # Variadic templates, as defined in N2242.
 )
 
-
 #--- Set up address sanitizer builds ----------------------------------------------------------
 if(asan)
   if(NOT CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_ID MATCHES Clang)
@@ -168,6 +167,8 @@ if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
 
     # target_link_libraries(${PROJECT_NAME} PRIVATE ${GLOBAL_LZ_TBB_LIBS})
     target_link_libraries(${PROJECT_NAME} PUBLIC LZApp)
+
+    message(STATUS "SA Dir: ${SA_INCLUDE_DIR}")
 
     get_property(APP_INCLUDE_DIR GLOBAL PROPERTY APP_INCLUDE_DIR)
     # Compiler flags for the target.
@@ -229,17 +230,6 @@ if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
     )
-
-    # execute_process (
-    #     COMMAND export \$PATH=\$PATH:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}
-    #     OUTPUT_VARIABLE outVar
-    # )
-    # message(STATUS "Var: ${outVar}")
-    # install(CODE "execute_process(COMMAND cmake/script/export_path.sh)")
-
-    # configure_file(cmake/config/export_path.sh.in ${CMAKE_INSTALL_LIBDIR}/export_path.sh @ONLY)
-    # install(PROGRAMS ${CMAKE_INSTALL_LIBDIR}/export_path.sh DESTINATION script)
-    # install(CODE "execute_process(COMMAND ${CMAKE_INSTALL_PREFIX}/script/export_path.sh WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/script)")
 
     include(packaging)
 endif()

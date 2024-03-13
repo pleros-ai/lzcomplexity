@@ -27,6 +27,8 @@
 
 #include <lz/lempelziv.h>
 
+#include "../../utils/src/lz_tbb_arena.h"
+
 namespace lz {
    //.......................................................................//
    //                            THE BANANA                                 //
@@ -129,9 +131,8 @@ namespace lz {
       result.max_block_size = mm;
 
       auto complex = LempelZivFactorization(str);
-      auto tbb_range = tbb::blocked_range<size_t>(1, mm);
-      auto main_fun = [&](const tbb::blocked_range<size_t>& r, lz_double init) -> lz_double {
-         for (auto m = r.begin(); m <= r.end(); m++) {
+      auto main_fun = [&](const internal::LZ_BlockedRange<size_t>& r, lz_double init) -> lz_double {
+         for (auto m = r.begin(); m < r.end(); m++) {
             sequence rand_seq = Shuffle(
                 str, m, str.size() / 2);  // Shuffling is made for half the size of the sequence, hope that is enough
             auto rand_complexity = LempelZivFactorization(rand_seq);
@@ -147,7 +148,8 @@ namespace lz {
       };
       auto reduce_fun = [&](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
 
-      result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
+      // result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
+      result.excess_value = utils::parallel_reduce(1, mm, 0.0, main_fun, reduce_fun);
       return result;
    }
 
@@ -190,11 +192,11 @@ namespace lz {
 
       utils::LZ_ExcessInfo result;
       result.max_block_size = mm;
+      std::mutex mtx;
 
       auto complex = LempelZivFactorization(str, args);
 
-      auto tbb_range = tbb::blocked_range<size_t>(1, mm + 1);
-      auto main_fun = [&](const tbb::blocked_range<size_t>& r, lz_double init) -> lz_double {
+      auto main_fun = [&](const internal::LZ_BlockedRange<size_t>& r, lz_double init) -> lz_double {
          for (auto m = r.begin(); m < r.end(); m++) {
             sequence rand_seq = Shuffle(
                 str, m, str.size() / 2);  // Shuffling is made for half the size of the sequence, hope that is enough
@@ -203,14 +205,18 @@ namespace lz {
                                (str.size() * std::log(str.alphabetSize()));
             init += eeterm;
 
-            if (args.excess_line >= 0) result.excess_by_terms.push_back(eeterm);
+            if (args.excess_line >= 0) {
+               const std::lock_guard<std::mutex> lock{mtx};
+               result.excess_by_terms.push_back(eeterm);
+            }
             if (m == 1) result.multi_information = eeterm;
          }
          return init;
       };
       auto reduce_fun = [](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
 
-      result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
+      // result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
+      result.excess_value = utils::parallel_reduce(1, mm, 0.0, main_fun, reduce_fun);
       return result;
    }
 

@@ -35,15 +35,15 @@ namespace lz {
       LZ.complexity.clear();
       LZ.complexity.reserve(flags.input.size() + 3);
 
-      // auto fun = [&LZ, &flags](auto&& idx) {
-      //    auto clx = LempelZivFactorization(flags.input[idx], flags.sa_args);
-      //    LZ.complexity[idx] = clx;
-      //    std::cout << "clx: " << clx << " -- " << idx << " -- " << LZ.complexity[idx] << std::endl;
-      // };
+      auto fun = [&LZ, &flags](auto&& idx) {
+         auto clx = LempelZivFactorization(flags.input[idx], flags.sa_args);
+         LZ.complexity[idx] = clx;
+         std::cout << "clx: " << clx << " -- " << idx << " -- " << LZ.complexity[idx] << std::endl;
+      };
 
-      // utils::parallel_for(0, flags.input.size(), fun);
-
-      std::cout << "maxTh: " << tbb::this_task_arena::max_concurrency() << std::endl;
+      utils::parallel_for(0, flags.input.size(), fun);
+      for (auto& x: LZ.complexity) std::cout << x << " ";
+      std::cout << std::endl;
 
       for (sequence& str: flags.input) {
          auto clx = LempelZivFactorization(str, flags.sa_args);

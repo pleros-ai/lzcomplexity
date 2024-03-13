@@ -302,7 +302,8 @@ namespace lz {
                 }
              };
 
-         lz::utils::parallel_for(0, p_, collect_size, 1);  // Collect the individual size of each partition.
+         lz::utils::parallel_for(0, p_, collect_size,
+                                 1);  // Collect the individual size of each partition.
          // Compute inclusive-scan (prefix sum) of the partition sizes.
          lz_int curr_sum = 0;
          for (lz_int j = 0; j < p_; ++j)  // For partition `j`.
@@ -385,7 +386,8 @@ namespace lz {
          };
 
          solved_ = 0;
-         lz::utils::parallel_for(0, p_, sort_part, 1);  // Merge the sorted subarrays in each partitions.
+         lz::utils::parallel_for(0, p_, sort_part,
+                                 1);  // Merge the sorted subarrays in each partitions.
          if (debug) std::cerr << "\n";
 
          const auto t_e = now();

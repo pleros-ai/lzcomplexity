@@ -1,0 +1,47 @@
+{
+   // Use IntelliSense to learn about possible attributes.
+   // Hover to view descriptions of existing attributes.
+   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+   "version": "0.2.0",
+   "configurations": [
+      {
+         "name": "Debug 10 jobs",
+         "type": "cppdbg",
+         "request": "launch",
+         "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+         "args": ["-p", "5", "\"/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/sequence1000.bin\"", "-M", "-d", "-e", "1", "-j", "10"],
+         "stopAtEntry": false,
+         "cwd": "${fileDirname}",
+         "environment": [],
+         "externalConsole": false,
+         "MIMode": "lldb",
+         "additionalSOLibSearchPath": "${workspaceFolder}/lib",
+     },
+      {
+         "name": "Debug 5 jobs",
+         "type": "cppdbg",
+         "request": "launch",
+         "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+         "args": ["-p", "5", "\"/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/sequence1000.bin\"", "-M", "-d", "-j", "5"],
+         "stopAtEntry": false,
+         "cwd": "${fileDirname}",
+         "environment": [],
+         "externalConsole": false,
+         "MIMode": "lldb",
+         "additionalSOLibSearchPath": "${workspaceFolder}/lib",
+     },
+     {
+        "name": "Debug 1 jobs",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+        "args": ["-p", "5", "\"/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/sequence1000.bin\"", "-M", "-d", "-e", "1", "-j", "1"],
+        "stopAtEntry": false,
+        "cwd": "${fileDirname}",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "lldb",
+        "additionalSOLibSearchPath": "${workspaceFolder}/lib",
+    }
+   ]
+}

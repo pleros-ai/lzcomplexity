@@ -83,7 +83,9 @@
     "metal_math": "cpp",
     "stack": "cpp",
     "concepts": "cpp",
-    "ranges": "cpp"
+    "ranges": "cpp",
+    "cassert": "cpp",
+    "utility": "cpp"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/clang++",
   "editor.defaultFormatter": "xaver.clang-format",

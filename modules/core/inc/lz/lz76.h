@@ -32,15 +32,14 @@
 
 #include <assert.h>
 #include <lz/caps.h>
-#include <lz/utils.h>
+#include <lz/parallel_utils.h>
+#include <lz/types.h>
 
-#include <thread>
 #include <vector>
 
 #include "lpf.h"
 #include "sequence.h"
 #include "structures.h"
-#include "types.h"
 
 namespace lz {
    //................................................

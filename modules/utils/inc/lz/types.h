@@ -3,14 +3,18 @@
 #include <lz/caps.h>
 #include <lz/sais_lite.h>
 
-#include "sequence.h"
-
 namespace lz {
    namespace utils {
       template <typename... Ts>
       struct overload : Ts... {
          using Ts::operator()...;
       };
+
+#ifdef __cpp_lib_concepts
+#define __requires(...) requires __VA_ARGS__
+#else  // concepts defined
+#define __requires(...)
+#endif  // concepts defined
 
 #if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
       //---------------------- Concepts -----------------------//

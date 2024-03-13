@@ -32,8 +32,9 @@
 
 #include <assert.h>
 #include <lz/caps.h>
+#include <lz/parallel_utils.h>
 #include <lz/sais_lite.h>
-#include <lz/utils.h>
+#include <lz/types.h>
 
 #include <typeinfo>
 #include <vector>
@@ -42,7 +43,6 @@
 #include "lz76.h"
 #include "sequence.h"
 #include "structures.h"
-#include "types.h"
 
 namespace lz {
    //.........................................................................

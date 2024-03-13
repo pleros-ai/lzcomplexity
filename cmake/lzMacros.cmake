@@ -43,3 +43,22 @@ function(LZ_INSTALL_HEADERS)
       endforeach()
    endif()
 endfunction(LZ_INSTALL_HEADERS)
+
+# Future feature do not use add_subdirectory automatic install for TBB
+function(BUILTIN_TBB_INSTALL)
+   if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+      set(_tbb_compiler compiler=clang)
+   elseif(CMAKE_CXX_COMPILER_ID STREQUAL Intel)
+      set(_tbb_compiler compiler=icc)
+   elseif(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+      set(_tbb_compiler compiler=gcc)
+   endif()
+
+   set(TBB_BUILTIN_DIR ${CMAKE_SOURCE_DIR}/external/tbb)
+
+   if(NOT EXISTS ${TBB_BUILTIN_DIR})
+      message(FATAL_ERROR "TBB source directory not found at ${TBB_BUILTIN_DIR}")
+   endif()
+
+   # execute_process(make ${_tbb_compiler} cpp0x=1 "CXXFLAGS=${_tbb_cxxflags}" CPLUS=${CMAKE_CXX_COMPILER} CONLY=${CMAKE_C_COMPILER} "LDFLAGS=${_tbb_ldflags}")
+endfunction(BUILTIN_TBB_INSTALL)

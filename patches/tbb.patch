@@ -1,5 +1,14 @@
---- external/tbb/CMakeLists.txt	2024-02-10 18:16:26
-+++ external/tbb/MyCMakeLists.txt	2024-02-10 18:15:53
+--- ../external/tbb/CMakeLists.txt	2024-03-13 00:34:43
++++ ../external/tbb/CMakeLists copy.txt	2024-03-13 00:34:39
+@@ -12,7 +12,7 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
+-cmake_minimum_required(VERSION 3.1)
++cmake_minimum_required(VERSION 3.5)
+ 
+ # Enable CMake policies
+ 
 @@ -93,7 +93,7 @@
      set(TBB_ARCH 64)
  endif()
@@ -18,3 +27,16 @@
  else()
      if (TBB_BUILD)
          add_subdirectory(src/tbb)
+@@ -273,9 +273,9 @@
+             DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+             COMPONENT devel)
+ 
+-    install(FILES "README.md"
+-            DESTINATION ${CMAKE_INSTALL_DOCDIR}
+-            COMPONENT devel)
++    # install(FILES "README.md"
++    #         DESTINATION ${CMAKE_INSTALL_DOCDIR}
++    #         COMPONENT devel)
+     # -------------------------------------------------------------------
+ endif()
+ 

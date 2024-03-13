@@ -274,19 +274,6 @@ lz::lz_int process(lz_options& opt) {
    lz::utils::LZ_Output lz;
    lz::utils::LZ_Output lz2;
 
-   //    std::cout << data2.size() << std::endl;
-
-   // auto maxConcurrency = 11;
-   // if (maxConcurrency > tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism)) {
-   //     lz::utils::print_msg(lz::utils::MSG_TYPE::WARRING, "tbb::global_control is active, limiting the number of
-   //     parallel workers\n from this task arena available for execution.");
-   // }
-
-   //    auto arena = tbb::task_arena();
-   // arena.initialize(maxConcurrency);
-
-   tbb::task_arena no_ht_arena(opt.n_jobs);
-
    // Core functions
    // auto c = lz::LempelZivFactorization(data2[0]);
    // auto d = lz::EntropyDensity(data2[0], lz::utils::LZ_Args(8));
@@ -300,6 +287,11 @@ lz::lz_int process(lz_options& opt) {
    // std::cout  << em << "\n";
    // std::cout  << es << "\n";
    // std::cout  << ed << "\n";
+
+   // auto Gptr = lz::utils::GetGlobalTaskArena(2);
+   lz::utils::EnabledMT(opt.n_jobs);
+
+   // std::cout << arena->TaskArenaSize() << std::endl;
 
    // App functions
    lz::LempelZivFactorization(test_flags, lz);
@@ -361,6 +353,7 @@ lz::lz_int process(lz_options& opt) {
 
    if (opt.save_results) save_data(test_flags, lz, opt);
 
+   lz::utils::DisabledMT();
    return EXIT_SUCCESS;
 }
 

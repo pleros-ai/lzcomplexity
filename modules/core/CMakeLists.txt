@@ -19,8 +19,13 @@ set(CORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 set(CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_property(GLOBAL PROPERTY CORE_INCLUDE_DIR ${CORE_INCLUDE_DIR})
 
+include(useTbb)
+message(STATUS "is unix: ${UNIX} and tbb: ${LZ_TBB_LIBS}")
+# link_libraries(Threads::Threads)
+
 set(LZ_LZ76 ${CORE_SOURCE_DIR}/lz76.cpp)
 set(LZ_ALGS ${CORE_SOURCE_DIR}/lempelziv.cpp)
+set(LZ_SEQ ${CORE_SOURCE_DIR}/sequence.cpp)
 
 if(LZ_SHARE)
    add_library(${PROJECT_NAME} SHARED)
@@ -36,22 +41,23 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/modules/sa sa)
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
 message(STATUS "headers for ${PROJECT_NAME}: ${public_headers}")
 
-target_sources(${PROJECT_NAME} PRIVATE ${LZ_LZ76} ${LZ_ALGS})
+target_sources(${PROJECT_NAME} PRIVATE ${LZ_LZ76} ${LZ_ALGS} ${LZ_SEQ})
 target_include_directories(${PROJECT_NAME} 
    PUBLIC 
       $<BUILD_INTERFACE:${CORE_INCLUDE_DIR}>
+      $<BUILD_INTERFACE:${LZ_TBB_INCLUDES}>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 # possible
-# target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
+add_dependencies(${PROJECT_NAME} ${LZ_TBB_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
 # set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${LZ_TBB_LIBS})
 
 set(public_headers 
   # LZ factorization headers
   ${public_headers}
   ${CORE_INCLUDE_DIR}/lz/core.h
-  ${CORE_INCLUDE_DIR}/lz/types.h
   ${CORE_INCLUDE_DIR}/lz/lpf.h
   ${CORE_INCLUDE_DIR}/lz/sequence.h
   ${CORE_INCLUDE_DIR}/lz/structures.h

@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <lz/utils.h>
+#include <lz/parallel_utils.h>
 
 #include <algorithm>
 #include <atomic>

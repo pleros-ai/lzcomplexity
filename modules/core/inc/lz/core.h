@@ -5,4 +5,3 @@
 #include "lz76.h"
 #include "sequence.h"
 #include "structures.h"
-#include "types.h"
