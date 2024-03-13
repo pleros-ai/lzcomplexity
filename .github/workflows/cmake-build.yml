@@ -67,7 +67,7 @@ jobs:
       #     clang++ --version
 
       - name: Patch TBB submodule
-        run: patch -p0 -i patches/tbb.patch
+        run: patch -p0 -f -i patches/tbb.patch
 
       - name: Configure cmake
         env:
