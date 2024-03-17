@@ -62,17 +62,17 @@ namespace lz {
    //.........................................................................
    // Excess entropy as mutual information: E = (C(X) + C(Y) - C(XY))
    //.........................................................................
-   auto ExcessEntropyMi(const sequence&) -> lz_int;
-   auto ExcessEntropyMiNormalized(const sequence&) -> lz_double;
-   auto ExcessEntropyMi(const sequence&, utils::LZ_Args) -> lz_int;
-   auto ExcessEntropyMiNormalized(const sequence&, utils::LZ_Args) -> lz_double;
+   auto LZEffectiveComplexity(const sequence&) -> lz_int;
+   auto LZEffectiveComplexityNormalized(const sequence&) -> lz_double;
+   auto LZEffectiveComplexity(const sequence&, utils::LZ_Args) -> lz_int;
+   auto LZEffectiveComplexityNormalized(const sequence&, utils::LZ_Args) -> lz_double;
 
    //.........................................................................
    // Excess entropy by shuffling.
    //.........................................................................
-   auto ExcessEntropyShuffle(const sequence&) -> utils::LZ_ExcessInfo;
-   auto ExcessEntropyShuffle(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
-   auto ExcessEntropyShuffleSequential(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
+   auto ShuffleEntropyDeficit(const sequence&) -> utils::LZ_ExcessInfo;
+   auto ShuffleEntropyDeficit(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
+   auto ShuffleEntropyDeficitSequential(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
 
    //.........................................................................
    // Excess entropy by distance: E = [1 - d(X,Y)] * max(C(X), C(Y))

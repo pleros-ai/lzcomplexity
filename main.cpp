@@ -1,213 +1,4 @@
-#include <limits>
-#include <string>
-#include <thread>
-#include <vector>
-
-// #include <tbb/task_arena.h>
-#include <csv.h>
-#include <lz/core.h>
-#include <lz/lzApp.h>
-
-#include <cxxopts.hpp>
-#include <json.hpp>
-
-inline auto getColor(lz::utils::MSG_TYPE type) {
-   switch (type) {
-      case lz::utils::MSG_TYPE::ERROR:
-         return lz::RED_COLOR;
-      case lz::utils::MSG_TYPE::WARRING:
-         return lz::YELLOW_COLOR;
-      case lz::utils::MSG_TYPE::INFO:
-         return lz::GREEN_COLOR;
-   }
-   return lz::BLUE_COLOR;
-}
-
-inline std::vector<std::string> split(const std::string& s, char delim) {
-   std::vector<std::string> tokens;
-   std::string token;
-   std::istringstream tokenStream(s);
-   while (std::getline(tokenStream, token, delim)) {
-      tokens.push_back(token);
-   }
-   return tokens;
-}
-
-inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
-   auto color = getColor(type);
-   std::vector<std::string> allLines;
-   std::va_list args;
-
-   std::string topL = "╭──";
-   std::string botL = "╰──";
-   std::string topR = "──╮";
-   std::string botR = "──╯";
-   std::string::size_type maxLen = 0;
-
-   std::string final_msg = "";
-   std::string delimiter = "\n";
-   size_t pos = 0;
-
-   allLines = split(msg, '\n');
-   for (auto tmp: allLines) {
-      maxLen = tmp.length() > maxLen ? tmp.length() : maxLen;
-   }
-
-   auto header = topL + std::string(maxLen - 1, ' ') + topR + "\n";
-   auto bottom = botL + std::string(maxLen - 1, ' ') + botR + "\n";
-
-   for (auto str: allLines) {
-      final_msg += "│ " + str + std::string(maxLen - str.length() + 1, ' ') + " │\n";
-   }
-
-   return color + header + final_msg + bottom + lz::END_COLOR;
-}
-
-// Read a plain text file with one line
-inline std::vector<lz::sequence> read_input(const std::string& ip_path, bool multiline = false) {
-   namespace fs = std::filesystem;
-   std::error_code ec;
-   const auto file_size = fs::file_size(ip_path, ec);
-
-   if (ec) {
-      std::cerr << lz::RED_COLOR << ip_path << " : " << ec.message() << "\n" << lz::END_COLOR;
-      std::exit(EXIT_FAILURE);
-   }
-
-   int num_line = 0;
-   std::ifstream input(ip_path);
-   lz::sequence line;
-   lz::sequence final_str;
-   std::vector<lz::sequence> data;
-
-   while (input.good() && !input.eof()) {
-      input >> line;
-      num_line++;
-      if (num_line % 35 == 0) std::cout << "\r Num of lines read: " << num_line;
-
-      if (line.at(0) == '#' || line.at(0) == '\n' || line.length() == 0) continue;
-
-      data.push_back(line);
-      if (!multiline) break;
-   }
-
-   input.close();
-   return data;
-}
-
-// Read a plain text file with multiple line
-inline void read_multiInputs(const std::string& ip_path, std::vector<lz::sequence>& text_col, bool process = false) {
-   namespace fs = std::filesystem;
-   std::error_code ec;
-
-   const auto file_size = fs::file_size(ip_path, ec);
-   int num_line = 0;
-
-   if (ec) {
-      std::cerr << ip_path << " : " << ec.message() << "\n";
-      std::exit(EXIT_FAILURE);
-   }
-
-   std::ifstream input(ip_path);
-   lz::sequence line;
-   lz::sequence final_str;
-
-   while (input.good() && !input.eof()) {
-      input >> line;
-      num_line++;
-      if (num_line % 35 == 0) std::cout << "\rprocess: " << process << " Num of lines read: " << num_line;
-
-      if (line.at(0) == '#' || line.at(0) == '\n' || line.length() == 0) continue;
-
-      if (process) {
-         final_str += line;
-      } else {
-         text_col.push_back(line);
-      }
-   }
-
-   if (process) text_col.push_back(final_str);
-   input.close();
-   std::cout << "End read\n";
-}
-
-// Read a csv file with multiple columns (date per column)
-inline void read_csv(const std::string& ip_path, std::vector<std::string>& text_col) {
-   namespace fs = std::filesystem;
-   std::error_code ec;
-   const auto file_size = fs::file_size(ip_path, ec);
-   int num_line = 0;
-
-   if (ec) {
-      std::cerr << lz::RED_COLOR << ip_path << " : " << ec.message() << "\n" << lz::END_COLOR;
-      std::exit(EXIT_FAILURE);
-   }
-
-   io::LineReader input(ip_path);
-
-   auto line = input.next_line();
-   std::string str(line);
-   auto rows = split(str, ',');
-   text_col.reserve(rows.size());
-
-   for (auto row: rows) {
-      text_col.push_back(row);
-   }
-
-   double x, y, z;
-   while (auto line = input.next_line()) {
-      std::string str(line);
-      auto rows = split(str, ',');
-      for (size_t i = 0; i < rows.size(); i++) {
-         text_col[i] += rows[i];
-      }
-   }
-   print_msg(lz::utils::MSG_TYPE::INFO, text_col[0]);
-}
-
-struct lz_options {
-   std::string input;                       //? Input filepath.
-   std::string output = "lz_results.json";  //? Output filepath.
-   /* Extra args for LZApp functions */
-   lz::utils::LZ_Args args;
-   /* flags */
-   lz::lz_uint n_jobs = 1;
-   bool multiLine = false;
-   bool print_factors = false;
-   bool find_distance = false;
-   bool preprocess = false;
-   bool is_csv = false;
-   bool save_results = false;
-
-   lz_options(cxxopts::ParseResult result) {
-      input = result.unmatched()[0];
-      output = result["output"].as<std::string>();
-      multiLine = result["multi-line"].as<bool>();
-      print_factors = result["factors"].as<bool>();
-      find_distance = result["dlz"].as<bool>();
-      n_jobs = result["jobs"].as<lz::lz_uint>();
-      //   preprocess = result["process"].as<bool>();
-      is_csv = result["csv"].as<bool>();
-      save_results = result["save"].as<bool>();
-
-      args.chunks = result["partitions"].as<lz::lz_int>();
-      //   args.max_context = result["max-context"].as<lz::lz_int>();
-      args.block_size = result["max-excess"].as<lz::lz_int>();
-      args.excess_line = result["excess"].as<lz::lz_int>();
-   }
-};
-
-lz_options process_args(cxxopts::ParseResult& result) {
-   lz_options options(result);
-
-   namespace fs = std::filesystem;
-   namespace utl = lz::utils;
-   if (!fs::is_regular_file(options.input) && !fs::is_character_file(options.input)) {
-      throw FileNameError("File doesn't exist: " + options.input);
-   }
-
-   return options;
-}
+#include "main/main.h"
 
 void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_options& opt) {
    nlohmann::json out_data;
@@ -224,16 +15,24 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
          out_data["sequences"][i]["entropy_density"] = results.entropy_density[i];
       }
 
-      if (results.excess_entropy_mi.size()) {
-         out_data["sequences"][i]["excess_entropy_mi"] = results.excess_entropy_mi[i];
+      if (results.lz_effective_complexity.size()) {
+         out_data["sequences"][i]["lz_effective_complexity"] = results.lz_effective_complexity[i];
       }
 
-      if (results.excess_entropy_dist.size()) {
-         out_data["sequences"][i]["excess_entropy_by_distance"] = results.excess_entropy_dist[i];
+      // if (results.excess_entropy_dist.size()) {
+      //    out_data["sequences"][i]["excess_entropy_by_distance"] = results.excess_entropy_dist[i];
+      // }
+
+      if (results.shuffle_entropy_deficit.size()) {
+         out_data["sequences"][i]["shuffle_entropy_deficit"]["value"] = results.shuffle_entropy_deficit[i];
+
+         if (results.shuffle_entropy_terms.size() && results.shuffle_entropy_terms[i].line == i + 1) {
+            out_data["sequences"][i]["shuffle_entropy_deficit"]["terms"] = results.shuffle_entropy_terms[i].terms;
+         }
       }
 
-      if (results.excess_entropy_shuffle.size()) {
-         out_data["sequences"][i]["excess_entropy_by_shuffle"] = results.excess_entropy_shuffle[i];
+      if (results.multi_information.size()) {
+         out_data["sequences"][i]["multi_information"] = results.multi_information[i];
       }
 
       if (opt.find_distance && i < flags.input.size() - 1) {
@@ -251,56 +50,48 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
 }
 
 lz::lz_int process(lz_options& opt) {
-   std::vector<std::string> data;
-   std::vector<lz::sequence> data2;
-   std::string text;
-   lz::sequence text2;
+   std::vector<lz::sequence> data;
 
+   auto g_now = now();
+   unsigned short verbose_index = 1;
+   time_point_t init_time;
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2. Processing the data...\n" << lz::END_COLOR;
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Reading input data from: " << lz::END_COLOR
+                << opt.input << std::endl
+                << std::endl;
+   }
    if (opt.is_csv) {
-      read_csv(opt.input, data);
+      // read_csv(opt.input, data);
       exit(0);
    } else {
-      data2 = read_input(opt.input, opt.multiLine);
+      data = read_input(opt.input, opt.multiLine);
    }
-   // read_multiInputs(opt.input, data2, opt.preprocess);
 
-   //    if (data.size()) std::cout << data[0].length() << " str: " << data[0].substr(0, 10) << std::endl;
-   //    if (data2.size()) std::cout << " seq: " << text2.Take(10) << std::endl;
-
-   // lz::utils::sa_type<>::type alg = lz::suffixarray::SAIS();
-   // lz::utils::sa_type<>::type alg = lz::suffixarray::CaPS_SA(opt.args.chunks, opt.args.max_context);
-
-   lz::utils::LZ_Flags test_flags(data2, opt.args);
+   //? Input flags
+   lz::utils::LZ_Flags test_flags(data, opt.args);
+   test_flags.shuffle_init_line = opt.excess_init_line;
+   test_flags.shuffle_end_line = opt.excess_end_line;
+   //? Results
    lz::utils::LZ_Output lz;
-   lz::utils::LZ_Output lz2;
 
-   // Core functions
-   // auto c = lz::LempelZivFactorization(data2[0]);
-   // auto d = lz::EntropyDensity(data2[0], lz::utils::LZ_Args(8));
-   // auto f = lz::InformationDistance(data2[0], data2[0]);
-   // auto es = lz::ExcessEntropyShuffle(data2[0], lz::utils::LZ_Args(8));
-   // auto em = lz::ExcessEntropyMi(data2[0]);
-   // auto ed = lz::ExcessEntropyDistance(data2[0]);
-   // std::cout  << c << "\n";
-   // std::cout  << d << "\n";
-   // std::cout  << f << "\n";
-   // std::cout  << em << "\n";
-   // std::cout  << es << "\n";
-   // std::cout  << ed << "\n";
-
-   // auto Gptr = lz::utils::GetGlobalTaskArena(2);
    lz::utils::EnabledMT(opt.n_jobs);
 
-   // std::cout << arena->TaskArenaSize() << std::endl;
-
    // App functions
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating lz76 factorization\n" << lz::END_COLOR;
+      init_time = now();
+   }
    lz::LempelZivFactorization(test_flags, lz);
-   std::cout << std::endl;
-   std::cout << "Complexity: ";
-   for (auto x: lz.complexity) std::cout << x << " ";
-   std::cout << std::endl;
+   if (opt.verbose) {
+      const auto end_time = now();
+      std::cout << "Complexity: ";
+      for (auto x: lz.complexity) std::cout << x << " ";
+      std::cout << std::endl;
+      std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+   }
 
-   if (opt.print_factors) {
+   if (!opt.factors_output.empty()) {
       for (auto seq: test_flags.input) {
          auto flz = lz::LempelZivFactors(seq);
          std::cout << "Factors: [ ";
@@ -309,80 +100,165 @@ lz::lz_int process(lz_options& opt) {
       }
    }
 
+   // App functions
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating Entropy density\n" << lz::END_COLOR;
+      init_time = now();
+   }
    lz::EntropyDensity(test_flags, lz);
-   std::cout << "Entropy: ";
-   for (auto x: lz.entropy_density) std::cout << x << " ";
-   std::cout << std::endl;
-
-   lz::ExcessEntropyMi(test_flags, lz);
-   std::cout << "Excess entropy as MI: ";
-   for (auto x: lz.excess_entropy_mi) std::cout << x << " ";
-   std::cout << std::endl;
-
-   lz::ExcessEntropyDistance(test_flags, lz);
-   std::cout << "Excess entropy by distance: ";
-   for (auto x: lz.excess_entropy_dist) std::cout << x << " ";
-   std::cout << std::endl;
-
-   lz::ExcessEntropyShuffle(test_flags, lz);
-   std::cout << "Excess entropy by shuffle: ";
-   for (auto x: lz.excess_entropy_shuffle) std::cout << x << " ";
-   // lz::ExcessEntropyShuffleSequential(test_flags, lz2);
-   // std::cout << "\nExcess entropy by shuffle sequential: ";
-   // for (auto x : lz2.excess_entropy_shuffle) std::cout << x << " ";
-   std::cout << std::endl;
-
-   if (opt.args.excess_line >= 0 && opt.args.excess_line < static_cast<lz::lz_int>(test_flags.input.size())) {
-      std::cout << "Excess entropy by terms of line" << opt.args.excess_line << ": ";
-      for (auto x: lz.excess_entropy_terms) std::cout << x << " ";
+   if (opt.verbose) {
+      const auto end_time = now();
+      std::cout << "Entropy: ";
+      for (auto x: lz.entropy_density) std::cout << x << " ";
       std::cout << std::endl;
+      std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
    }
 
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating LZ effective complexity\n"
+                << lz::END_COLOR;
+      init_time = now();
+   }
+   // Excess entropy by distance (mutual information)
+   lz::LZEffectiveComplexity(test_flags, lz);
+   if (opt.verbose) {
+      const auto end_time = now();
+      std::cout << "Excess entropy as MI: ";
+      for (auto x: lz.lz_effective_complexity) std::cout << x << " ";
+      std::cout << std::endl;
+      std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+   }
+
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating excess of entropy using distance\n"
+                << lz::END_COLOR;
+      init_time = now();
+   }
+   // Excess entropy by distance
+   lz::ExcessEntropyDistance(test_flags, lz);
+   if (opt.verbose) {
+      const auto end_time = now();
+      std::cout << "Excess entropy by distance: ";
+      for (auto x: lz.excess_entropy_dist) std::cout << x << " ";
+      std::cout << std::endl;
+      std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+   }
+
+   if (opt.args.block_size >= 0) {
+      if (opt.verbose) {
+         std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating shuffle entropy deficit\n"
+                   << lz::END_COLOR;
+         init_time = now();
+      }
+      // Excess entropy by shuffle
+      lz::ShuffleEntropyDeficit(test_flags, lz);
+      if (opt.verbose) {
+         const auto end_time = now();
+         std::cout << "Shuffle entropy deficit: ";
+         for (auto x: lz.shuffle_entropy_deficit) std::cout << x << " ";
+         // lz::ShuffleEntropyDeficitSequential(test_flags, lz2);
+         // std::cout << "\nExcess entropy by shuffle sequential: ";
+         // for (auto x : lz2.shuffle_entropy_deficit) std::cout << x << " ";
+         std::cout << std::endl;
+
+         for (auto x: lz.shuffle_entropy_terms) {
+            std::cout << "Shuffle entropy terms of line: " << x.line << " [ ";
+            for (auto t: x.terms) std::cout << t << " ";
+            std::cout << "]\n";
+         }
+
+         std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+      }
+   }
+
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating information distance in sequences\n"
+                << lz::END_COLOR;
+      init_time = now();
+   }
    lz::InformationDistanceBySequence(test_flags, lz);
-   std::cout << "Info distance in sequences: ";
-   for (auto x: lz.sequence_info_distance) std::cout << x << " ";
-   std::cout << std::endl;
+   if (opt.verbose) {
+      const auto end_time = now();
+      std::cout << "Info distance in sequences: ";
+      for (auto x: lz.sequence_info_distance) std::cout << x << " ";
+      std::cout << std::endl;
+      std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+   }
 
    if (opt.find_distance) {
+      if (opt.verbose) {
+         std::cout << lz::GREEN_COLOR << "2." << verbose_index++
+                   << ". Calculating information distance between consecutive sequences\n"
+                   << lz::END_COLOR;
+         init_time = now();
+      }
       lz::InformationDistance(test_flags, lz);
 
-      std::cout << "Info distance: ";
-      for (auto x: lz.info_distance) std::cout << x << " ";
-      std::cout << std::endl;
+      if (opt.verbose) {
+         const auto end_time = now();
+         std::cout << "Info distance: ";
+         for (auto x: lz.info_distance) std::cout << x << " ";
+         std::cout << std::endl;
+         std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+      }
    }
 
-   if (opt.save_results) save_data(test_flags, lz, opt);
+   auto g_end = now();
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Saving results in: " << opt.output << std::endl
+                << lz::END_COLOR;
+      init_time = now();
+   }
+   save_data(test_flags, lz, opt);
 
+   if (opt.verbose) {
+      std::cout << "Total time elapsed: " << duration(g_end - g_now) << " s" << std::endl;
+   }
    lz::utils::DisabledMT();
    return EXIT_SUCCESS;
 }
 
 auto main(int argc, char const* argv[]) -> int {
-   cxxopts::Options options("lz",
-                            "lz76 analysis engine v0.6 2023 by EAP.\nSend bug reports to estevez@fisica.uh.cu or "
+   cxxopts::options options("lz",
+                            "lz76 analysis engine v0.8 2024 by EAP.\nSend bug reports to estevez@fisica.uh.cu or "
                             "efrenaragon96@gmail.com.\n");
 
-   options.custom_help("[OPTIONS...] input_data");
+   // clang-format off
+   options.custom_help("[OPTIONS...] input_data")
+          .set_width(120)
+          .set_tab_expansion(true);
    options.allow_unrecognised_options();
-   auto opt_group = options.add_options("lzcomplexity")("h,help", "Show the help of the program.");
-   opt_group("p,partitions", "Number of partitions used for the parallel suffix array algorithm.",
-             cxxopts::value<lz::lz_int>()->default_value("20"), "num");
-   opt_group("o,output", "Output file path for results (json format).",
-             cxxopts::value<std::string>()->default_value("result.json"), "file_name");
-   opt_group("M,multi-line", "Treat each line in the input stream as a different sequence.");
-   opt_group("f,factors", "Print the factors and save them in the output file.");
-   opt_group("e,excess", "Outputs the excess entropy list of a given line.",
-             cxxopts::value<lz::lz_int>()->default_value("-1"), "value");
-   opt_group("E,max-excess", "Maximum iteration value for the excess entropy calculation by shuffling.",
-             cxxopts::value<lz::lz_int>()->default_value("0"), "value");
+   // clang-format on
+   auto opt_group = options.add_options("lzcomplexity");
+   opt_group("a,alphabet", "Alphabet cardinality. If auto it tries to guess the alphabet size. Default is 2",
+             cxxopts::value<std::string>()->default_value("2"), "value");
+   opt_group("C,csv", "Input file has csv format.");
    opt_group("d,dlz",
-             "The LZ distance is calculated between successive sequences. Only valid for multisequence file (-M "
+             "The LZ distance is calculated between consecutive lines. Only valid for multiline files (-m "
              "option).");
-   opt_group("j,jobs", "Configure number of parallel jobs.",
+   opt_group("e,entropy-shuffle",
+             "Computes shuffle entropy deficit and may return the list of shuffle terms for specific lines. format: "
+             "[#|a]:f:#:#, where the first section says the max size of the block for shuffling (a for automatic "
+             "size), second says if save the terms and the last two numbers are the range of lines in the file for it. "
+             "In case of missing  numbers for the range the terms will be save for every line",
+             cxxopts::value<std::vector<std::string>>()->delimiter(':')->default_value(""), "value");
+   opt_group("f,factors", "Save the factorization.", cxxopts::value<std::string>()->default_value(""), "file_name");
+   opt_group("F,format",
+             "Input file format. TXT for raw text format. CSV the input file is a csv array. PBM, PGM and PNM is for "
+             "the family of the graphic formats.",
+             cxxopts::value<std::string>()->default_value("TXT"), "value");
+   opt_group("h,help", "Show the help of the program.");
+   opt_group("j,jobs", "Configure number of threads.",
              cxxopts::value<lz::lz_uint>()->default_value(std::to_string(std::thread::hardware_concurrency())),
              "value");
-   opt_group("C,csv", "Input file has csv format.");
-   opt_group("S,save", "Save results in an output file.");
+   opt_group("l,log-base", "Configure the log base value. The default is the alphabet cardinality.",
+             cxxopts::value<std::string>()->default_value(""), "value");
+   opt_group("m,multi-line", "Treat each line in the input stream as a different sequence.");
+   opt_group("n,entropy-density", "Computes only the entropy density.");
+   opt_group("o,output", "Output filepath for results. Default appends to the end of input file a .json extension",
+             cxxopts::value<std::string>()->default_value(""), "file_name");
+   opt_group("p,partitions", "Number of partitions used for the parallel suffix array algorithm.",
+             cxxopts::value<lz::lz_int>()->default_value("20"), "value");
    opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
 
    //    opt_group("p,process", "Clear input data.");

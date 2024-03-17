@@ -37,6 +37,8 @@ namespace lz {
    using lz_bool = bool;
    using lz_str = std::string;
 
+   constexpr lz_uint ALPHABET_SIZE = 0x02;
+
    template <typename _Ret, typename... _Args>
    class lz_fun : public std::function<_Ret(_Args...)> {};
 

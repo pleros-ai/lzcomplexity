@@ -15,11 +15,16 @@ namespace lz {
       };
 
       struct LZ_Args : public SA_Args {
+         const static lz_int ALL_LINES = -2;
+         const static lz_int UNDEFINED_LINES = -1;
+
          /* Excess entropy by shuffling parameters */
-         lz_int block_size = 0;    //?> Max length of the block for excess of
-                                   //?  entropy by shuffle.
-         lz_int excess_line = -1;  //?> Line where get excess entropy by terms
-                                   //?  (valid for excess of entropy by shuffling).
+         lz_int block_size = -1;             //?> Max length of the block for excess of
+                                             //?  entropy by shuffle (not calculate by default).
+         lz_bool get_shuffle_terms = false;  //?> If true, the shuffle entropy deficit
+                                             //?  will return the excess of entropy by terms.
+         lz_uint alphabet = ALPHABET_SIZE;   //?> Size of the alphabet
+         lz_uint log_base = ALPHABET_SIZE;   //?> base of the logarithm
 
          LZ_Args() = default;
          LZ_Args(lz_int chunks)
@@ -35,13 +40,15 @@ namespace lz {
             std::swap(this->chunks, rhs.chunks);
             std::swap(this->max_context, rhs.max_context);
             std::swap(this->block_size, rhs.block_size);
-            std::swap(this->excess_line, rhs.excess_line);
+            std::swap(this->get_shuffle_terms, rhs.get_shuffle_terms);
+            std::swap(this->alphabet, rhs.alphabet);
+            std::swap(this->log_base, rhs.log_base);
             return *this;
          };
 
          friend bool operator==(LZ_Args sa1, LZ_Args sa2) {
             return sa1.chunks == sa2.chunks && sa1.max_context == sa2.max_context && sa1.block_size == sa2.block_size &&
-                   sa1.excess_line == sa2.excess_line;
+                   sa1.get_shuffle_terms == sa2.get_shuffle_terms && sa1.alphabet == sa2.alphabet;
          };
          friend bool operator!=(LZ_Args sa1, LZ_Args sa2) { return !(sa1 == sa2); };
 
@@ -49,7 +56,9 @@ namespace lz {
             std::swap(sa1.chunks, sa2.chunks);
             std::swap(sa1.max_context, sa2.max_context);
             std::swap(sa1.block_size, sa2.block_size);
-            std::swap(sa1.excess_line, sa2.excess_line);
+            std::swap(sa1.get_shuffle_terms, sa2.get_shuffle_terms);
+            std::swap(sa1.alphabet, sa2.alphabet);
+            std::swap(sa1.log_base, sa2.log_base);
          };
       };
    }  // namespace utils

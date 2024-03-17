@@ -161,6 +161,7 @@ endif()
 
 # Executable for the driver program.
 if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
+    set(MAIN_INCLUDE_DIR ${CMAKE_CURRENT_DIR}/main)
     add_executable(${PROJECT_NAME} main.cpp)
 
     message(STATUS "TBB: ${LZ_TBB_LIBS} and found: ${GLOBAL_LZ_TBB_LIBS}")
@@ -171,6 +172,8 @@ if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     message(STATUS "SA Dir: ${SA_INCLUDE_DIR}")
 
     get_property(APP_INCLUDE_DIR GLOBAL PROPERTY APP_INCLUDE_DIR)
+
+    # target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${MAIN_INCLUDE_DIR}>)
     # Compiler flags for the target.
     target_include_directories(${PROJECT_NAME} 
       PUBLIC 

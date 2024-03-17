@@ -86,7 +86,7 @@ namespace lz {
 
       LZ_Result LempelZiv76::Factorize(const sequence seq) {
          // parameters should come from flags
-         auto max_th = std::thread::hardware_concurrency();
+         auto max_th = utils::num_workers();
          if (seq.size() < max_th) {
             max_th = 1;
          } else if (seq.size() > 1e6) {

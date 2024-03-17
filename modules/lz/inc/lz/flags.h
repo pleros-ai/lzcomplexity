@@ -12,19 +12,23 @@ namespace lz {
       //          Free structures declaration
       //...............................................
       struct LZ_Output {
+         typedef struct {
+            lz_size line;
+            std::vector<lz_double> terms;
+         } shuffle_terms;
+
          // Post process parameters
-         std::vector<lz_int> complexity;                 //!> complexity of the sequence
-         std::vector<lz_int> excess_entropy_mi;          //!> excess of entropy by mutual information of the sequence
-         std::vector<lz_double> entropy_density;         //!> entropy density of the sequence
-         std::vector<lz_double> excess_entropy_dist;     //!> excess of entropy by distance of the sequence
-         std::vector<lz_double> excess_entropy_shuffle;  //!> excess of entropy by shuffling of the sequence
-         std::vector<lz_double> info_distance;           //!> information distance of the two consecutive sequences
-         std::vector<lz_double> sequence_info_distance;  //!> information distance of each sequences
-         std::vector<lz_double> multi_information;       //!> multi information value of each sequence
+         std::vector<lz_int> complexity;                  //!> complexity of the sequence
+         std::vector<lz_int> lz_effective_complexity;     //!> excess of entropy by mutual information of the sequence
+         std::vector<lz_double> entropy_density;          //!> entropy density of the sequence
+         std::vector<lz_double> excess_entropy_dist;      //!> excess of entropy by distance of the sequence
+         std::vector<lz_double> shuffle_entropy_deficit;  //!> excess of entropy by shuffling of the sequence
+         std::vector<lz_double> info_distance;            //!> information distance of the two consecutive sequences
+         std::vector<lz_double> sequence_info_distance;   //!> information distance of each sequences
+         std::vector<lz_double> multi_information;        //!> multi information value of each sequence
 
          //? Variables found in Excess fo entropy by shuffling
-         std::vector<lz_double> excess_entropy_terms;  //!> excess of entropy of each permutation of the sequence
-         lz_double multi_info;                         //!> multi information value
+         std::vector<shuffle_terms> shuffle_entropy_terms;  //!> excess of entropy of each permutation of the sequence
 
          LZ_Output() = default;
          LZ_Output(const LZ_Output& lz) = default;
@@ -32,10 +36,10 @@ namespace lz {
 
          LZ_Output& operator=(LZ_Output rhs) {
             std::swap(this->complexity, rhs.complexity);
-            std::swap(this->excess_entropy_mi, rhs.excess_entropy_mi);
+            std::swap(this->lz_effective_complexity, rhs.lz_effective_complexity);
             std::swap(this->entropy_density, rhs.entropy_density);
             std::swap(this->excess_entropy_dist, rhs.excess_entropy_dist);
-            std::swap(this->excess_entropy_shuffle, rhs.excess_entropy_shuffle);
+            std::swap(this->shuffle_entropy_deficit, rhs.shuffle_entropy_deficit);
             std::swap(this->info_distance, rhs.info_distance);
             std::swap(this->sequence_info_distance, rhs.sequence_info_distance);
             std::swap(this->multi_information, rhs.multi_information);
@@ -53,11 +57,12 @@ namespace lz {
       };
 
       struct LZ_Flags {
-         std::vector<sequence> input;  //!> Input set of sequences
+         lz_int shuffle_init_line = LZ_Args::UNDEFINED_LINES;  //!> Line to start the shuffle entropy deficit
+         lz_int shuffle_end_line = LZ_Args::UNDEFINED_LINES;   //!> Line to end the shuffle entropy deficit
+         lz_int alphabet_size;                                 //!> Length of the alphabet of input sequences
+         LZ_Args sa_args;  //!> Extra arguments for Suffix-array object and core functions
 
-         // In case the selected algorithm is CaPS_SA
-         lz_int alphabet_size;  //!> Length of the alphabet of input sequences
-         LZ_Args sa_args;       //!> Suffix-array extra arguments for LZ core library functions
+         std::vector<sequence> input;  //!> Input set of sequences
 
          LZ_Flags(std::string text, LZ_Args _sa_args)
              : input({text}), alphabet_size(2), sa_args(_sa_args){};
@@ -89,6 +94,8 @@ namespace lz {
             std::swap(this->input, rhs.input);
             std::swap(this->sa_args, rhs.sa_args);
             std::swap(this->alphabet_size, rhs.alphabet_size);
+            std::swap(this->shuffle_init_line, rhs.shuffle_init_line);
+            std::swap(this->shuffle_end_line, rhs.shuffle_end_line);
 
             return *this;
          };

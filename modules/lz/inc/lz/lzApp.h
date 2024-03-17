@@ -53,13 +53,13 @@ namespace lz {
    //.........................................................................
    // Excess entropy as mutual information: E = (C(X) + C(Y) - C(XY))
    //.........................................................................
-   auto ExcessEntropyMi(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+   auto LZEffectiveComplexity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
    //.........................................................................
    // Here comes the excess entropy by shuffling.
    //.........................................................................
-   auto ExcessEntropyShuffle(utils::LZ_Flags&, utils::LZ_Output&) -> utils::LZ_ExcessInfo;
-   auto ExcessEntropyShuffleSequential(utils::LZ_Flags&, utils::LZ_Output&) -> utils::LZ_ExcessInfo;
+   auto ShuffleEntropyDeficit(utils::LZ_Flags&, utils::LZ_Output&) -> utils::LZ_ExcessInfo;
+   auto ShuffleEntropyDeficitSequential(utils::LZ_Flags&, utils::LZ_Output&) -> utils::LZ_ExcessInfo;
 
    //.........................................................................
    // Here comes the excess entropy by distance: E = [1 - d(X,Y)] * max(C(X), C(Y))

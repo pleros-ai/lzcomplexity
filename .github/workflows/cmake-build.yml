@@ -97,8 +97,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
-                -DCMAKE_C_COMPILER=${{ matrix.cc }} -Dasan=OFF -Dbinding_python=OFF \
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF \
                 -Dbuiltin_tbb=${{matrix.builtinTbb}} ..
 
       - name: Build
@@ -158,8 +157,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
-                -DCMAKE_C_COMPILER=${{ matrix.cc }} -Dasan=OFF -Dbinding_python=OFF \
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF \
                 -Dbuiltin_tbb=${{matrix.builtinTbb}} ..
 
       - name: Build

@@ -42,9 +42,6 @@
  * @brief This file contains the declaration of the `sequence` class and related functions.
  */
 namespace lz {
-
-   constexpr lz_int ALPHABET_SIZE = 0x02;
-
    // The error condition exceptions
    class SequenceError : Errors {};
    class SequenceBadAlloc : public SequenceError {};

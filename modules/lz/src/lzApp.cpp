@@ -35,15 +35,15 @@ namespace lz {
       LZ.complexity.clear();
       LZ.complexity.reserve(flags.input.size() + 3);
 
-      auto fun = [&LZ, &flags](auto&& idx) {
-         auto clx = LempelZivFactorization(flags.input[idx], flags.sa_args);
-         LZ.complexity[idx] = clx;
-         std::cout << "clx: " << clx << " -- " << idx << " -- " << LZ.complexity[idx] << std::endl;
-      };
+      // auto fun = [&LZ, &flags](auto&& idx) {
+      //    auto clx = LempelZivFactorization(flags.input[idx], flags.sa_args);
+      //    LZ.complexity[idx] = clx;
+      //    std::cout << "clx: " << clx << " -- " << idx << " -- " << LZ.complexity[idx] << std::endl;
+      // };
 
-      utils::parallel_for(0, flags.input.size(), fun);
-      for (auto& x: LZ.complexity) std::cout << x << " ";
-      std::cout << std::endl;
+      // utils::parallel_for(0, flags.input.size(), fun);
+      // for (auto& x: LZ.complexity) std::cout << x << " ";
+      // std::cout << std::endl;
 
       for (sequence& str: flags.input) {
          auto clx = LempelZivFactorization(str, flags.sa_args);
@@ -53,59 +53,53 @@ namespace lz {
       return EXIT_SUCCESS;
    };
 
-   lz_int ExcessEntropyMi(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
-      // std::vector<lz_int> excess_entropy_mi;
-      LZ.excess_entropy_mi.clear();
-      LZ.excess_entropy_mi.reserve(flags.input.size());
+   lz_int LZEffectiveComplexity(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
+      // std::vector<lz_int> lz_effective_complexity;
+      LZ.lz_effective_complexity.clear();
+      LZ.lz_effective_complexity.reserve(flags.input.size());
 
       for (sequence str: flags.input) {
-         auto res = ExcessEntropyMi(str, flags.sa_args);
+         auto res = LZEffectiveComplexity(str, flags.sa_args);
 
-         LZ.excess_entropy_mi.push_back(res);
+         LZ.lz_effective_complexity.push_back(res);
       }
 
       return EXIT_SUCCESS;
    };
 
-   utils::LZ_ExcessInfo ExcessEntropyShuffle(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
+   template <typename Fun>
+   static utils::LZ_ExcessInfo ShuffleCalc(utils::LZ_Flags& flags, utils::LZ_Output& LZ, Fun&& fun) {
       utils::LZ_ExcessInfo excess_entropy;
-      auto excess_line = flags.sa_args.excess_line;
+      auto init_line = flags.shuffle_init_line;
+      auto end_line = flags.shuffle_end_line;
 
-      for (auto str: flags.input) {
-         if (excess_line >= 0)
-            excess_entropy = ExcessEntropyShuffle(str, flags.sa_args);
-         else {
-            flags.sa_args.excess_line = -1;
-            excess_entropy = ExcessEntropyShuffle(str, flags.sa_args);
+      for (lz_size i = 0; i < flags.input.size(); i++) {
+         auto str = flags.input[i];
+         const auto processAllLines = init_line == utils::LZ_Args::ALL_LINES;
+         const auto processOneLine = i + 1 == init_line && end_line == utils::LZ_Args::UNDEFINED_LINES;
+         const auto processRange = init_line <= i + 1 && end_line >= i + 1;
+
+         if (processAllLines || processOneLine || processRange) {
+            flags.sa_args.get_shuffle_terms = true;
+            excess_entropy = fun(str, flags.sa_args);
+            LZ.shuffle_entropy_terms.push_back(utils::LZ_Output::shuffle_terms{i + 1, excess_entropy.excess_by_terms});
+         } else {
+            excess_entropy = fun(str, flags.sa_args);
          }
 
-         LZ.excess_entropy_shuffle.push_back(excess_entropy.excess_value);
-         LZ.excess_entropy_terms = excess_entropy.excess_by_terms;
-         LZ.multi_info = excess_entropy.multi_information;
+         LZ.shuffle_entropy_deficit.push_back(excess_entropy.excess_value);
+         LZ.multi_information.push_back(excess_entropy.multi_information);
       }
 
       return excess_entropy;
    }
 
-   utils::LZ_ExcessInfo ExcessEntropyShuffleSequential(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
-      utils::LZ_ExcessInfo excess_entropy;
-      auto excess_line = flags.sa_args.excess_line;
+   utils::LZ_ExcessInfo ShuffleEntropyDeficit(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
+      return ShuffleCalc(flags, LZ, [&](sequence s, utils::LZ_Args args) { return ShuffleEntropyDeficit(s, args); });
+   }
 
-      for (auto str: flags.input) {
-         if (excess_line >= 0 && excess_line < static_cast<lz::lz_int>(flags.input.size())) {
-            flags.sa_args.excess_line = excess_line;
-            excess_entropy = ExcessEntropyShuffleSequential(str, flags.sa_args);
-         } else {
-            flags.sa_args.excess_line = -1;
-            excess_entropy = ExcessEntropyShuffleSequential(str, flags.sa_args);
-         }
-
-         LZ.excess_entropy_shuffle.push_back(excess_entropy.excess_value);
-         LZ.excess_entropy_terms = excess_entropy.excess_by_terms;
-         LZ.multi_info = excess_entropy.multi_information;
-      }
-
-      return excess_entropy;
+   utils::LZ_ExcessInfo ShuffleEntropyDeficitSequential(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
+      ShuffleCalc(flags, LZ, [&](sequence s, utils::LZ_Args args) { return ShuffleEntropyDeficitSequential(s, args); });
    }
 
    lz_int ExcessEntropyDistance(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {

@@ -75,7 +75,7 @@ namespace lz {
    }
 
    //-------------------- Excess of entropy functions ----------------------------//
-   lz_int ExcessEntropyMi(const sequence& text) {
+   lz_int LZEffectiveComplexity(const sequence& text) {
       std::vector<char>::size_type mid = text.size() / 2;  // the half of the sequence
 
       lz_int C_, C_fh, C_lh = 0;
@@ -93,14 +93,14 @@ namespace lz {
       return C_fh + C_lh - C_;
    };
 
-   lz_double ExcessEntropyMiNormalized(const sequence& text) {
-      auto excess = ExcessEntropyMi(text);
+   lz_double LZEffectiveComplexityNormalized(const sequence& text) {
+      auto excess = LZEffectiveComplexity(text);
       auto div = (text.size() * std::log(text.alphabetSize())) / std::log(text.size());
 
       return excess / div;
    }
 
-   lz_int ExcessEntropyMi(const sequence& text, utils::LZ_Args args) {
+   lz_int LZEffectiveComplexity(const sequence& text, utils::LZ_Args args) {
       std::vector<char>::size_type mid = text.size() / 2;  // the half of the sequence
 
       lz_int C_, C_fh, C_lh = 0;
@@ -117,14 +117,14 @@ namespace lz {
       return C_fh + C_lh - C_;
    };
 
-   lz_double ExcessEntropyMiNormalized(const sequence& text, utils::LZ_Args args) {
-      auto excess = ExcessEntropyMi(text, args);
+   lz_double LZEffectiveComplexityNormalized(const sequence& text, utils::LZ_Args args) {
+      auto excess = LZEffectiveComplexity(text, args);
       auto div = (text.size() * std::log(text.alphabetSize())) / std::log(text.size());
 
       return excess / div;
    }
 
-   utils::LZ_ExcessInfo ExcessEntropyShuffle(const sequence& str) {
+   utils::LZ_ExcessInfo ShuffleEntropyDeficit(const sequence& str) {
       utils::LZ_ExcessInfo result;
 
       std::size_t mm = utils::max_block_size(str.size());  // the maximum number for the sum in the entropy estimation
@@ -149,11 +149,11 @@ namespace lz {
       auto reduce_fun = [&](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
 
       // result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
-      result.excess_value = utils::parallel_reduce(1, mm, 0.0, main_fun, reduce_fun);
+      result.excess_value = utils::parallel_reduce(1, mm + 1, 0.0, main_fun, reduce_fun);
       return result;
    }
 
-   utils::LZ_ExcessInfo ExcessEntropyShuffleSequential(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_ExcessInfo ShuffleEntropyDeficitSequential(const sequence& str, utils::LZ_Args args) {
       std::size_t mm = args.block_size;
       if (mm <= 0) {
          mm = utils::max_block_size(str.size());  // the maximum number for the sum in the entropy estimation
@@ -175,7 +175,7 @@ namespace lz {
 
          excess_entropy += ee_term;
 
-         if (args.excess_line >= 0) result.excess_by_terms.push_back(ee_term);
+         if (args.get_shuffle_terms) result.excess_by_terms.push_back(ee_term);
          if (m == 1) result.multi_information = ee_term;
       }
 
@@ -183,7 +183,7 @@ namespace lz {
       return result;
    }
 
-   utils::LZ_ExcessInfo ExcessEntropyShuffle(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_ExcessInfo ShuffleEntropyDeficit(const sequence& str, utils::LZ_Args args) {
       std::size_t mm = args.block_size;
       if (mm <= 0) {
          mm = utils::max_block_size(str.size());  // the maximum number for the sum in the entropy estimation
@@ -205,7 +205,7 @@ namespace lz {
                                (str.size() * std::log(str.alphabetSize()));
             init += eeterm;
 
-            if (args.excess_line >= 0) {
+            if (args.get_shuffle_terms) {
                const std::lock_guard<std::mutex> lock{mtx};
                result.excess_by_terms.push_back(eeterm);
             }
@@ -216,7 +216,7 @@ namespace lz {
       auto reduce_fun = [](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
 
       // result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
-      result.excess_value = utils::parallel_reduce(1, mm, 0.0, main_fun, reduce_fun);
+      result.excess_value = utils::parallel_reduce(1, mm + 1, 0.0, main_fun, reduce_fun);
       return result;
    }
 

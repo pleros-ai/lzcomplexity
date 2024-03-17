@@ -1,10 +1,14 @@
 #pragma once
+
 // Local includes
 #include "general.h"
 #include "lzexceptions.h"
 
 namespace lz {
    namespace utils {
+
+      const static char newline_char = '\n';
+      const std::string SBIN_WHITESPACE = " \n\r\t";
 
       enum MSG_TYPE { ERROR, WARRING, INFO };
       /** @deprecated */
@@ -28,6 +32,84 @@ namespace lz {
          }
 
          std::cout << "\n==> Difference: " << diff << std::endl;
+      }
+
+#ifdef __cpp_lib_ranges
+      constexpr inline bool is_space(char q) noexcept {
+         const auto ws = {' ', '\t', '\n', '\v', '\r', '\f'};
+         return std::ranges::any_of(ws, [q](auto p) { return p == q; });
+      };
+#endif
+      // .............................................................................
+      // Name: string_trim_left
+      //
+      // Synopsis: trim left white spaces
+      //
+      // Parameters:
+      //			const std::string& s                   -----> operand
+      //
+      // Returns:
+      //         std::string   -----> The trimmed string
+      //
+      // Exceptions:
+      //            None
+      //..............................................................................
+      inline std::string string_trim_left(const std::string& s) {
+         size_t startpos = (s.size() > 0) ? s.find_first_not_of(SBIN_WHITESPACE) : std::string::npos;
+         return (startpos == std::string::npos) ? "" : s.substr(startpos);
+      }
+
+      // .............................................................................
+      // Name: string_trim_right
+      //
+      // Synopsis: trim right white spaces
+      //
+      // Parameters:
+      //			const std::string& s                   -----> operand
+      //
+      // Returns:
+      //         std::string   -----> The trimmed string
+      //
+      // Exceptions:
+      //            None
+      //..............................................................................
+      inline std::string string_trim_right(const std::string& s) {
+         size_t endpos = (s.size() > 0) ? s.find_last_not_of(SBIN_WHITESPACE) : std::string::npos;
+         return (endpos == std::string::npos) ? "" : s.substr(0, endpos + 1);
+      }
+
+      // .............................................................................
+      // Name: string_trim
+      //
+      // Synopsis: trim starting and ending white spaces
+      //
+      // Parameters:
+      //			const std::string& s                   -----> operand
+      //
+      // Returns:
+      //         std::string   -----> The trimmed string
+      //
+      // Exceptions:
+      //            None
+      //..............................................................................
+      inline std::string string_trim(const std::string& s) {
+#ifdef __cpp_lib_ranges
+         auto view = s | std::views::drop_while(is_space) | std::views::reverse | std::views::drop_while(is_space) |
+                     std::views::reverse;
+         return {view.begin(), view.end()};
+#else
+         return string_trim_right(string_trim_left(s));
+#endif
+      }
+
+      inline std::string to_lowercase(std::string& s) {
+#ifdef __cpp_lib_ranges
+         std::ranges::transform(s, s.begin(), [](unsigned char c) { return std::tolower(c); });
+         return s;
+#else
+         std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
+         return s;
+#endif
       }
 
       //*****************************************************

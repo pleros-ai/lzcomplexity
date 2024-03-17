@@ -39,7 +39,6 @@ namespace lz {
       LZArenaWrapper::LZArenaWrapper(unsigned maxConcurrency)
           : fTBBArena(new internal::LZ_Arena{}) {
          const unsigned tbbDefaultNumberThreads = fTBBArena->max_concurrency();  // not initialized, automatic state
-         std::cout << tbbDefaultNumberThreads << " " << maxConcurrency << std::endl;
          maxConcurrency =
              maxConcurrency > 0 ? std::min(maxConcurrency, tbbDefaultNumberThreads) : tbbDefaultNumberThreads;
          const unsigned bcCpus = internal::CPU_Bandwidth();
