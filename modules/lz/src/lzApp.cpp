@@ -46,7 +46,7 @@ namespace lz {
       // std::cout << std::endl;
 
       for (sequence& str: flags.input) {
-         auto clx = LempelZivFactorization(str, flags.sa_args);
+         auto clx = LempelZivFactorization(str);
          LZ.complexity.push_back(clx);
       }
 
@@ -76,8 +76,9 @@ namespace lz {
       for (lz_size i = 0; i < flags.input.size(); i++) {
          auto str = flags.input[i];
          const auto processAllLines = init_line == utils::LZ_Args::ALL_LINES;
-         const auto processOneLine = i + 1 == init_line && end_line == utils::LZ_Args::UNDEFINED_LINES;
-         const auto processRange = init_line <= i + 1 && end_line >= i + 1;
+         const auto processOneLine =
+             static_cast<lz_int>(i + 1) == init_line && end_line == utils::LZ_Args::UNDEFINED_LINES;
+         const auto processRange = init_line <= static_cast<lz_int>(i + 1) && end_line >= static_cast<lz_int>(i + 1);
 
          if (processAllLines || processOneLine || processRange) {
             flags.sa_args.get_shuffle_terms = true;
@@ -99,7 +100,8 @@ namespace lz {
    }
 
    utils::LZ_ExcessInfo ShuffleEntropyDeficitSequential(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
-      ShuffleCalc(flags, LZ, [&](sequence s, utils::LZ_Args args) { return ShuffleEntropyDeficitSequential(s, args); });
+      return ShuffleCalc(flags, LZ,
+                         [&](sequence s, utils::LZ_Args args) { return ShuffleEntropyDeficitSequential(s, args); });
    }
 
    lz_int ExcessEntropyDistance(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {

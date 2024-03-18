@@ -30,6 +30,7 @@
 
 namespace lz {
 
+   using lz_char = char;
    using lz_int = int;
    using lz_uint = unsigned int;
    using lz_size = std::size_t;

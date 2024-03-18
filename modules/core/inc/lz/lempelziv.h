@@ -49,29 +49,41 @@ namespace lz {
    // Lempel-Ziv 76 factorization
    //.........................................................................
    auto LempelZivFactorization(const sequence&) -> lz_int;
-   auto LempelZivFactors(const sequence&) -> lz76::LZ_Result;
+   auto LempelZivFactorization(const std::string&) -> lz_int;
    auto LempelZivFactorization(const sequence&, utils::LZ_Args) -> lz_int;
+   auto LempelZivFactorization(const std::string&, utils::LZ_Args) -> lz_int;
+
+   auto LempelZivFactors(const sequence&) -> lz76::LZ_Result;
    auto LempelZivFactors(const sequence&, utils::LZ_Args) -> lz76::LZ_Result;
 
    //.........................................................................
    // Entropy density
    //.........................................................................
    auto EntropyDensity(const sequence&) -> lz_double;
+   auto EntropyDensity(const std::string&) -> lz_double;
    auto EntropyDensity(const sequence&, utils::LZ_Args) -> lz_double;
+   auto EntropyDensity(const std::string&, utils::LZ_Args) -> lz_double;
 
    //.........................................................................
-   // Excess entropy as mutual information: E = (C(X) + C(Y) - C(XY))
+   // LZ effective complexity (Excess entropy as mutual information): E = (C(X) + C(Y) - C(XY))
    //.........................................................................
    auto LZEffectiveComplexity(const sequence&) -> lz_int;
+   auto LZEffectiveComplexity(const std::string&) -> lz_int;
    auto LZEffectiveComplexityNormalized(const sequence&) -> lz_double;
+   auto LZEffectiveComplexityNormalized(const std::string&) -> lz_double;
+
    auto LZEffectiveComplexity(const sequence&, utils::LZ_Args) -> lz_int;
+   auto LZEffectiveComplexity(const std::string&, utils::LZ_Args) -> lz_int;
    auto LZEffectiveComplexityNormalized(const sequence&, utils::LZ_Args) -> lz_double;
+   auto LZEffectiveComplexityNormalized(const std::string&, utils::LZ_Args) -> lz_double;
 
    //.........................................................................
-   // Excess entropy by shuffling.
+   // Shuffle entropy deficit (Excess entropy by shuffling.)
    //.........................................................................
    auto ShuffleEntropyDeficit(const sequence&) -> utils::LZ_ExcessInfo;
+   auto ShuffleEntropyDeficit(const std::string&) -> utils::LZ_ExcessInfo;
    auto ShuffleEntropyDeficit(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
+   auto ShuffleEntropyDeficit(const std::string&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
    auto ShuffleEntropyDeficitSequential(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
 
    //.........................................................................
@@ -79,14 +91,24 @@ namespace lz {
    // X -> first half, Y -> second half
    //.........................................................................
    auto ExcessEntropyDistance(const sequence&) -> lz_double;
+   auto ExcessEntropyDistance(const std::string&) -> lz_double;
    auto ExcessEntropyDistance(const sequence&, utils::LZ_Args) -> lz_double;
+   auto ExcessEntropyDistance(const std::string&, utils::LZ_Args) -> lz_double;
 
    //.........................................................................
-   // Information distance between two consecutive sequences
+   // Information distance between two sequences
    //.........................................................................
    auto InformationDistance(const sequence&, const sequence&) -> lz_double;
+   auto InformationDistance(const std::string&, const sequence&) -> lz_double;
+   auto InformationDistance(const sequence&, const std::string&) -> lz_double;
+   auto InformationDistance(const std::string&, const std::string&) -> lz_double;
+
    auto InformationDistance(const sequence&, const lz76::LZ_Result&, const sequence&, const lz76::LZ_Result&)
        -> lz_double;
+
    auto InformationDistance(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+   auto InformationDistance(const std::string&, const sequence&, utils::LZ_Args) -> lz_double;
+   auto InformationDistance(const sequence&, const std::string&, utils::LZ_Args) -> lz_double;
+   auto InformationDistance(const std::string&, const std::string&, utils::LZ_Args) -> lz_double;
 
 }  // namespace lz

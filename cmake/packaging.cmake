@@ -43,7 +43,7 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
 SET(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_SOURCE_DIR}/_packages")
 
 set(CPACK_PACKAGE_RELOCATABLE True)
-set(CPACK_PACKAGE_EXECUTABLES "LempelZiv" "LempelZiv")
+set(CPACK_PACKAGE_EXECUTABLES "lzcomplexity" "lzcomplexity")
 
 if (UNIX)
   if (APPLE)
@@ -99,7 +99,7 @@ if (UNIX)
         if (RPMBUILDER)
         # #construct .rpm
             set(CPACK_GENERATOR "RPM")
-            set(CPACK_RPM_PACKAGE_NAME "LempelZiv")
+            set(CPACK_RPM_PACKAGE_NAME "lzcomplexity")
             set(CPACK_RPM_PACKAGE_VERSION ${VERSION})
             set(CPACK_RPM_PACKAGE_DESCRIPTION "Library for calculate measures based on LemeplZiv-76 complexity.")
         endif (RPMBUILDER)

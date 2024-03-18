@@ -33,6 +33,8 @@ namespace lz {
              : SA_Args(chunks, max_context){};
          LZ_Args(lz_int chunks, lz_int max_context, lz_int block_size)
              : SA_Args(chunks, max_context), block_size(block_size){};
+         LZ_Args(lz_int chunks, lz_int max_context, lz_int block_size, lz_uint alphabet)
+             : SA_Args(chunks, max_context), block_size(block_size), alphabet(alphabet), log_base(alphabet){};
          LZ_Args(const LZ_Args& sa) = default;
          LZ_Args(LZ_Args&& sa) = default;
 

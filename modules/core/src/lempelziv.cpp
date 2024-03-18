@@ -40,21 +40,29 @@ namespace lz {
       L.Factorize(text);
       return L.getFactorization();
    };
+   lz_int LempelZivFactorization(const std::string& text) { return LempelZivFactorization(sequence{text}); };
 
    lz76::LZ_Result LempelZivFactors(const sequence& text) {
       lz76::LempelZiv76 L;
       return L.Factorize(text);
    };
+   lz76::LZ_Result LempelZivFactors(const std::string& text) { return LempelZivFactors(sequence{text}); };
 
    lz_int LempelZivFactorization(const sequence& text, utils::LZ_Args args) {
       lz76::LempelZiv76 L;
       L.Factorize(text, args);
       return L.getFactorization();
    };
+   lz_int LempelZivFactorization(const std::string& text, utils::LZ_Args args) {
+      return LempelZivFactorization(sequence{text}, args);
+   };
 
    lz76::LZ_Result LempelZivFactors(const sequence& text, utils::LZ_Args args) {
       lz76::LempelZiv76 L;
       return L.Factorize(text, args);
+   };
+   lz76::LZ_Result LempelZivFactors(const std::string& text, utils::LZ_Args args) {
+      return LempelZivFactors(sequence{text}, args);
    };
 
    //-------------------- Entropy density functions ----------------------------//
@@ -65,6 +73,7 @@ namespace lz {
 
       return L.getFactorization() / div;
    }
+   lz_double EntropyDensity(const std::string& text) { return EntropyDensity(sequence{text}); }
 
    lz_double EntropyDensity(const sequence& text, utils::LZ_Args args) {
       lz76::LempelZiv76 L;
@@ -73,25 +82,24 @@ namespace lz {
 
       return L.getFactorization() / div;
    }
-
+   lz_double EntropyDensity(const std::string& text, utils::LZ_Args args) {
+      return EntropyDensity(sequence{text}, args);
+   }
    //-------------------- Excess of entropy functions ----------------------------//
    lz_int LZEffectiveComplexity(const sequence& text) {
       std::vector<char>::size_type mid = text.size() / 2;  // the half of the sequence
 
       lz_int C_, C_fh, C_lh = 0;
-      auto [seq_fh, seq_lh] = text.Split(mid);
+      auto sequences = text.Split(mid);
 
-      auto fun_wrapper = [&](const lz::sequence& seq, lz_int& res) {
-         return [&]() { res = LempelZivFactorization(seq); };
-      };
-
-      auto fh_fun = fun_wrapper(seq_fh, C_fh);
-      auto lh_fun = fun_wrapper(seq_lh, C_lh);
-      auto all_fun = fun_wrapper(text, C_);
+      auto fh_fun = [&]() { C_fh = LempelZivFactorization(sequences.first); };
+      auto lh_fun = [&]() { C_lh = LempelZivFactorization(sequences.second); };
+      auto all_fun = [&]() { C_ = LempelZivFactorization(text); };
 
       utils::par_do(all_fun, fh_fun, lh_fun);
       return C_fh + C_lh - C_;
    };
+   lz_int LZEffectiveComplexity(const std::string& text) { return LZEffectiveComplexity(sequence{text}); }
 
    lz_double LZEffectiveComplexityNormalized(const sequence& text) {
       auto excess = LZEffectiveComplexity(text);
@@ -99,29 +107,35 @@ namespace lz {
 
       return excess / div;
    }
+   lz_double LZEffectiveComplexityNormalized(const std::string& text) {
+      return LZEffectiveComplexityNormalized(sequence{text});
+   }
 
    lz_int LZEffectiveComplexity(const sequence& text, utils::LZ_Args args) {
       std::vector<char>::size_type mid = text.size() / 2;  // the half of the sequence
 
       lz_int C_, C_fh, C_lh = 0;
-      auto [seq_fh, seq_lh] = text.Split(mid);
+      auto sequences = text.Split(mid);
 
-      auto fun_wrapper = [&](const lz::sequence& seq, lz_int& res) {
-         return [&]() { res = LempelZivFactorization(seq, args); };
-      };
-      auto fh_fun = fun_wrapper(seq_fh, C_fh);
-      auto lh_fun = fun_wrapper(seq_lh, C_lh);
-      auto all_fun = fun_wrapper(text, C_);
+      auto fh_fun = [&]() { C_fh = LempelZivFactorization(sequences.first, args); };
+      auto lh_fun = [&]() { C_lh = LempelZivFactorization(sequences.second, args); };
+      auto all_fun = [&]() { C_ = LempelZivFactorization(text, args); };
 
       utils::par_do(all_fun, fh_fun, lh_fun);
       return C_fh + C_lh - C_;
    };
+   lz_int LZEffectiveComplexity(const std::string& text, utils::LZ_Args args) {
+      return LZEffectiveComplexity(sequence{text}, args);
+   }
 
    lz_double LZEffectiveComplexityNormalized(const sequence& text, utils::LZ_Args args) {
       auto excess = LZEffectiveComplexity(text, args);
       auto div = (text.size() * std::log(text.alphabetSize())) / std::log(text.size());
 
       return excess / div;
+   }
+   lz_double LZEffectiveComplexityNormalized(const std::string& text, utils::LZ_Args args) {
+      return LZEffectiveComplexityNormalized(sequence{text}, args);
    }
 
    utils::LZ_ExcessInfo ShuffleEntropyDeficit(const sequence& str) {
@@ -152,6 +166,7 @@ namespace lz {
       result.excess_value = utils::parallel_reduce(1, mm + 1, 0.0, main_fun, reduce_fun);
       return result;
    }
+   utils::LZ_ExcessInfo ShuffleEntropyDeficit(const std::string& str) { return ShuffleEntropyDeficit(sequence{str}); }
 
    utils::LZ_ExcessInfo ShuffleEntropyDeficitSequential(const sequence& str, utils::LZ_Args args) {
       std::size_t mm = args.block_size;
@@ -181,6 +196,9 @@ namespace lz {
 
       result.excess_value = excess_entropy;
       return result;
+   }
+   utils::LZ_ExcessInfo ShuffleEntropyDeficitSequential(const std::string& str, utils::LZ_Args args) {
+      return ShuffleEntropyDeficitSequential(sequence{str}, args);
    }
 
    utils::LZ_ExcessInfo ShuffleEntropyDeficit(const sequence& str, utils::LZ_Args args) {
@@ -219,6 +237,9 @@ namespace lz {
       result.excess_value = utils::parallel_reduce(1, mm + 1, 0.0, main_fun, reduce_fun);
       return result;
    }
+   utils::LZ_ExcessInfo ShuffleEntropyDeficit(const std::string& str, utils::LZ_Args args) {
+      return ShuffleEntropyDeficitSequential(sequence{str}, args);
+   }
 
    lz_double ExcessEntropyDistance(const sequence& str) {
       std::vector<char>::size_type mid = str.size() / 2;  // the half of the sequence
@@ -236,6 +257,7 @@ namespace lz {
 
       return (1.0 - dist) * std::fmax(fh_complexity, lh_complexity);
    }
+   lz_double ExcessEntropyDistance(const std::string& str) { return ExcessEntropyDistance(sequence{str}); }
 
    lz_double ExcessEntropyDistance(const sequence& str, utils::LZ_Args args) {
       std::vector<char>::size_type mid = str.size() / 2;  // the half of the sequence
@@ -253,6 +275,9 @@ namespace lz {
 
       return (1.0 - dist) * std::fmax(fh_complexity, lh_complexity);
    }
+   lz_double ExcessEntropyDistance(const std::string& str, utils::LZ_Args args) {
+      return ExcessEntropyDistance(sequence{str}, args);
+   }
 
    //-------------------- Distance functions ----------------------------//
    lz_double InformationDistance(const sequence& T1, const sequence& T2) {
@@ -269,6 +294,15 @@ namespace lz {
       auto res = (C_all - std::fmin(C_t1, C_t2)) * 1.0 / std::fmax(C_t1, C_t2);
 
       return res;
+   }
+   lz_double InformationDistance(const sequence& T1, const std::string& T2) {
+      return InformationDistance(T1, sequence{T2});
+   }
+   lz_double InformationDistance(const std::string& T1, const sequence& T2) {
+      return InformationDistance(sequence{T1}, T2);
+   }
+   lz_double InformationDistance(const std::string& T1, const std::string& T2) {
+      return InformationDistance(sequence{T1}, sequence{T2});
    }
 
    lz_double InformationDistance(const sequence& T1, const lz76::LZ_Result& R1, const sequence& T2,
@@ -297,6 +331,15 @@ namespace lz {
       auto res = (C_all - std::fmin(C_t1, C_t2)) * 1.0 / std::fmax(C_t1, C_t2);
 
       return res;
+   }
+   lz_double InformationDistance(const std::string& T1, const sequence& T2, utils::LZ_Args args) {
+      return InformationDistance(sequence{T1}, T2, args);
+   }
+   lz_double InformationDistance(const sequence& T1, const std::string& T2, utils::LZ_Args args) {
+      return InformationDistance(T1, sequence{T2}, args);
+   }
+   lz_double InformationDistance(const std::string& T1, const std::string& T2, utils::LZ_Args args) {
+      return InformationDistance(sequence{T1}, sequence{T2}, args);
    }
 
 }  // namespace lz

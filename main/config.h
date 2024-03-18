@@ -86,11 +86,11 @@ struct lz_options {
          }
 
          if (excess_args.size() > 1 && excess_args[1] == "f") {
-            if (excess_args.size() > 2) {
-               excess_init_line = std::stoi(excess_args[2]);
-            } else {
+            if (excess_args.size() == 2) {
                excess_init_line = lz::utils::LZ_Args::ALL_LINES;
                excess_end_line = lz::utils::LZ_Args::ALL_LINES;
+            } else if (excess_args.size() > 2) {
+               excess_init_line = std::stoi(excess_args[2]);
             }
             if (excess_args.size() > 3) {
                excess_end_line = std::stoi(excess_args[3]);

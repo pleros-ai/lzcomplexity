@@ -182,11 +182,17 @@ namespace lz {
 
       friend sequence operator+(const sequence&, const sequence&);
       friend bool operator==(const sequence&, const sequence&);
+      friend bool operator==(const sequence&, const std::string&);
       friend bool operator!=(const sequence&, const sequence&);
+      friend bool operator!=(const sequence&, const std::string&);
       friend bool operator>(const sequence&, const sequence&);
+      friend bool operator>(const sequence&, const std::string&);
       friend bool operator>=(const sequence&, const sequence&);
+      friend bool operator>=(const sequence&, const std::string&);
       friend bool operator<(const sequence&, const sequence&);
+      friend bool operator<(const sequence&, const std::string&);
       friend bool operator<=(const sequence&, const sequence&);
+      friend bool operator<=(const sequence&, const std::string&);
 
       sequence map(std::function<char(char)> fn);
       friend sequence map(std::function<char(char)> fn, const sequence& s);
@@ -558,16 +564,22 @@ namespace lz {
    }
 
    inline bool operator==(const sequence& lhs, const sequence& rhs) { return lhs.seq == rhs.seq; }
+   inline bool operator==(const sequence& lhs, const std::string& rhs) { return lhs == sequence(rhs); }
 
    inline bool operator!=(const sequence& lhs, const sequence& rhs) { return !operator==(lhs, rhs); }
+   inline bool operator!=(const sequence& lhs, const std::string& rhs) { return lhs.seq != sequence(rhs).seq; }
 
    inline bool operator<(const sequence& lhs, const sequence& rhs) { return lhs.seq < rhs.seq; }
+   inline bool operator<(const sequence& lhs, const std::string& rhs) { return lhs < sequence(rhs); }
 
    inline bool operator<=(const sequence& lhs, const sequence& rhs) { return !operator>(lhs, rhs); }
+   inline bool operator<=(const sequence& lhs, const std::string& rhs) { return !operator>(lhs, sequence(rhs)); }
 
    inline bool operator>(const sequence& lhs, const sequence& rhs) { return operator<(rhs, lhs); }
+   inline bool operator>(const sequence& lhs, const std::string& rhs) { return operator<(sequence(rhs), lhs); }
 
    inline bool operator>=(const sequence& lhs, const sequence& rhs) { return !operator<(lhs, rhs); }
+   inline bool operator>=(const sequence& lhs, const std::string& rhs) { return !operator<(lhs, sequence(rhs)); }
 
    inline void Shuffle(sequence& s, lz_uint block_size) {
       static std::random_device rd_seed;
