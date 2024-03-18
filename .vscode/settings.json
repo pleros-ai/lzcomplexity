@@ -85,11 +85,13 @@
     "concepts": "cpp",
     "ranges": "cpp",
     "cassert": "cpp",
-    "utility": "cpp"
+    "utility": "cpp",
+    "tbb": "cpp"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/clang++",
   "editor.defaultFormatter": "xaver.clang-format",
   "clang-format.executable": "clang-format",
   "clang-format.style": "file",
   "clang-format.fallbackStyle": "Google",
+  "C_Cpp.errorSquiggles": "enabled",
 }

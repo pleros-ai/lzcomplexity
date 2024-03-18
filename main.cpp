@@ -1,5 +1,7 @@
 #include "main/main.h"
 
+#include <csv.h>
+
 void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_options& opt) {
    nlohmann::json out_data;
 
@@ -45,6 +47,7 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
    std::ofstream out(opt.output);
    if (out.is_open() && out.good()) {
       out << out_data;
+      out_data.clear();
       out.close();
    }
 }

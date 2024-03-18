@@ -50,3 +50,4 @@
 /python/build/**
 /python/dist/**
 /python/src/LempelZiv.egg-info/**
+/python/src/lzcomplexity.egg-info/**
