@@ -42,30 +42,18 @@
      },
      {
         "name": "Debug with 1 jobs",
-        "type": "cppdbg",
+        "type": "lldb",
         "request": "launch",
         "program": "${workspaceFolder}/build/lzcomplexity_dbg",
         "args": ["-p", "5", 
-        "\"/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/sequence1000.bin\"", 
+        "/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/sequence1000.bin", 
         "-m",
         "-v",
         "-d",
         "-e",
         "a",
         "-j", "1"],
-        "stopAtEntry": false,
         "cwd": "${fileDirname}",
-        "environment": [],
-        "externalConsole": false,
-        "linux": {
-            "MIMode": "gdb",
-            "miDebuggerPath": "/usr/bin/gdb"
-         },
-         "osx": {
-            "targetArchitecture": "arm64",
-            "MIMode": "lldb"
-         },
-        "additionalSOLibSearchPath": "${workspaceFolder}/lib",
     },
      {
         "name": "Debug 100M",

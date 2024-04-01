@@ -60,9 +60,7 @@ namespace lz {
       LZArenaWrapper::~LZArenaWrapper() { fNWorkers = 0u; }
 
       unsigned LZArenaWrapper::fNWorkers = 0u;
-      ////////////////////////////////////////////////////////////////////////////////
-      /// Provides access to the wrapped tbb::task_arena.
-      ////////////////////////////////////////////////////////////////////////////////
+
       internal::LZ_Arena& LZArenaWrapper::Access() { return *fTBBArena; }
 
       unsigned LZArenaWrapper::TaskArenaSize() { return fNWorkers; }

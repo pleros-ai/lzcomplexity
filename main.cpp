@@ -30,30 +30,40 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
          out_data["sequences"][i]["extra"]["lz_pearson_coefficient"] = results.extra[i].lz_pearson_coefficient;
       }
 
-      if (results.sequence_info_distance.size()) {
-         out_data["sequences"][i]["info_distance_sequence"] = results.sequence_info_distance[i];
-      }
+      // if (results.sequence_info_distance.size()) {
+      //    out_data["sequences"][i]["info_distance_sequence"] = results.sequence_info_distance[i];
+      // }
 
       // if (results.mutual_information.size()) {
       //    out_data["sequences"][i]["mutual_information"] = results.mutual_information[i];
       // }
 
       if (results.random_shuffle_complexity.size()) {
-         out_data["sequences"][i]["random_shuffle_complexity"] = results.random_shuffle_complexity[i];
+         out_data["sequences"][i]["random_shuffle_complexity"]["value"] = results.random_shuffle_complexity[i].value;
+         out_data["sequences"][i]["random_shuffle_complexity"]["block_size"] =
+             results.random_shuffle_complexity[i].block_size;
+
+         if (results.random_shuffle_complexity[i].terms.line == i + 1) {
+            out_data["sequences"][i]["random_shuffle_complexity"]["terms"] =
+                results.random_shuffle_complexity[i].terms.terms;
+         }
       }
 
       if (results.whole_random_shuffle_complexity.size()) {
          out_data["sequences"][i]["whole_random_shuffle_complexity"]["value"] =
-             results.whole_random_shuffle_complexity[i];
+             results.whole_random_shuffle_complexity[i].value;
+         out_data["sequences"][i]["whole_random_shuffle_complexity"]["block_size"] =
+             results.whole_random_shuffle_complexity[i].block_size;
 
-         if (results.shuffle_entropy_terms.size() && results.shuffle_entropy_terms[i].line == i + 1) {
-            out_data["sequences"][i]["random_shuffle_complexity"]["terms"] = results.shuffle_entropy_terms[i].terms;
+         if (results.whole_random_shuffle_complexity[i].terms.line == i + 1) {
+            out_data["sequences"][i]["whole_random_shuffle_complexity"]["terms"] =
+                results.whole_random_shuffle_complexity[i].terms.terms;
          }
       }
 
-      if (results.multi_information.size()) {
-         out_data["sequences"][i]["multi_information"] = results.multi_information[i];
-      }
+      // if (results.multi_information.size()) {
+      //    out_data["sequences"][i]["multi_information"] = results.multi_information[i];
+      // }
 
       if (opt.find_distance && i < flags.input.size() - 1) {
          out_data["sequences"][i]["info_distance"] = results.info_distance[i];
@@ -122,6 +132,11 @@ lz::lz_int process(lz_options& opt) {
          for (auto f: flz.lzf) std::cout << f << " ";
          std::cout << "]" << std::endl;
 
+         std::cout << "epsilon: " << flz.epsilon << "\n";
+
+         auto en = lz::LZNormalError(seq);
+         auto ep = lz::LZPoisonError(seq);
+         std::cout << "Errors: " << en << " " << ep << std::endl;
          // std::string txt = seq.toString();
          // for (int i = 1; i < flz.lzf.size(); i++) {
          //    std::cout << txt.substr(flz.lzf[i - 1], flz.lzf[i]) + ".";
@@ -199,8 +214,18 @@ lz::lz_int process(lz_options& opt) {
    if (opt.verbose) {
       const auto end_time = now();
       std::cout << "Random shuffle complexity using Z sequence: ";
-      for (auto x: lz.random_shuffle_complexity) std::cout << x << " ";
+      for (auto x: lz.random_shuffle_complexity) std::cout << x.value << " ";
       std::cout << std::endl;
+      for (auto x: lz.random_shuffle_complexity)
+         if (x.terms.terms.size() > 0) {
+            std::cout << "Shuffle entropy terms of line: " << x.terms.line << " [ ";
+            for (auto t: x.terms.terms) std::cout << t << " ";
+            std::cout << "]\n";
+         }
+      std::cout << "Multi information: ";
+      for (auto x: lz.multi_information) std::cout << x << " ";
+      std::cout << std::endl;
+
       std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
    }
 
@@ -216,37 +241,37 @@ lz::lz_int process(lz_options& opt) {
       if (opt.verbose) {
          const auto end_time = now();
          std::cout << "Random shuffle complexity using whole sequence: ";
-         for (auto x: lz.whole_random_shuffle_complexity) std::cout << x << " ";
+         for (auto x: lz.whole_random_shuffle_complexity) std::cout << x.value << " ";
          std::cout << std::endl;
+         for (auto x: lz.whole_random_shuffle_complexity)
+            if (x.terms.terms.size() > 0) {
+               std::cout << "Shuffle entropy terms of line: " << x.terms.line << " [ ";
+               for (auto t: x.terms.terms) std::cout << t << " ";
+               std::cout << "]\n";
+            }
          std::cout << "Multi information: ";
          for (auto x: lz.multi_information) std::cout << x << " ";
          std::cout << std::endl;
-
-         for (auto x: lz.shuffle_entropy_terms) {
-            std::cout << "Shuffle entropy terms of line: " << x.line << " [ ";
-            for (auto t: x.terms) std::cout << t << " ";
-            std::cout << "]\n";
-         }
 
          std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
       }
    }
 
-   if (opt.verbose) {
-      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating information distance in sequences\n"
-                << lz::END_COLOR;
-      init_time = now();
-   }
-   // lz::InformationDistanceBySequence(test_flags, lz);
-   // lz::MutualInformationBySequence(test_flags, lz);
-   lz::RandomShuffleDistanceBySequence(test_flags, lz);
-   if (opt.verbose) {
-      const auto end_time = now();
-      std::cout << "Info distance in sequences: ";
-      for (auto x: lz.sequence_info_distance) std::cout << x << " ";
-      std::cout << std::endl;
-      std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
-   }
+   // if (opt.verbose) {
+   //    std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating information distance in sequences\n"
+   //              << lz::END_COLOR;
+   //    init_time = now();
+   // }
+   // // lz::InformationDistanceBySequence(test_flags, lz);
+   // // lz::MutualInformationBySequence(test_flags, lz);
+   // lz::RandomShuffleDistanceBySequence(test_flags, lz);
+   // if (opt.verbose) {
+   //    const auto end_time = now();
+   //    std::cout << "Info distance in sequences: ";
+   //    for (auto x: lz.sequence_info_distance) std::cout << x << " ";
+   //    std::cout << std::endl;
+   //    std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+   // }
 
    if (opt.find_distance) {
       if (opt.verbose) {
@@ -255,7 +280,8 @@ lz::lz_int process(lz_options& opt) {
                    << lz::END_COLOR;
          init_time = now();
       }
-      lz::InformationDistance(test_flags, lz);
+      // lz::InformationDistance(test_flags, lz);
+      lz::RandomShuffleDistance(test_flags, lz);
 
       if (opt.verbose) {
          const auto end_time = now();

@@ -10,12 +10,7 @@ namespace lz {
       class LZ_Arena;
 
       ////////////////////////////////////////////////////////////////////////////////
-      /// Returns the available number of logical cores.
-      ///
-      ///  - Checks if there is CFS bandwidth control in place (linux, via cgroups,
-      ///    assuming standard paths)
-      ///  - Otherwise, returns the number of logical cores provided by
-      ///    std::thread::hardware_concurrency()
+      /// Same idea behind LogicalCPUBandwithControl function of oneTbb
       ////////////////////////////////////////////////////////////////////////////////
       int CPU_Bandwidth();
    }  // namespace internal
@@ -36,13 +31,6 @@ namespace lz {
          static unsigned fNWorkers;
       };
 
-      ////////////////////////////////////////////////////////////////////////////////
-      /// Factory function returning a shared pointer to the instance of the global
-      /// LZArenaWrapper.
-      ///
-      /// Allows for reinstantiation of the global LZArenaWrapper once all the
-      /// references to the previous one are gone and the object destroyed.
-      ////////////////////////////////////////////////////////////////////////////////
       std::shared_ptr<lz::utils::LZArenaWrapper> GetGlobalTaskArena(unsigned maxConcurrency = 0);
    }  // namespace utils
 

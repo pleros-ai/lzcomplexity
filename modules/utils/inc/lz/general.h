@@ -2,13 +2,18 @@
 
 // Language includes
 #include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <cstdarg>
 #include <cstddef>
+#include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <numeric>
 #include <random>
 #include <sstream>
 #include <string>

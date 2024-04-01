@@ -160,8 +160,8 @@ namespace lz {
       return RandomShuffleComplexity(sequence{str}, args);
    };
    //.........................................................................
-   auto ShuffleEntropyCalculation(const sequence&, const lz_int, const std::vector<lz_int>, lz_int, bool)
-       -> utils::LZ_ExcessInfo;
+   auto ShuffleEntropyCalculation(const sequence&, const utils::LZ_Args, const lz_int, const std::vector<lz_int>,
+                                  lz_int) -> utils::LZ_ExcessInfo;
 
    //.........................................................................
    // Excess entropy by distance: E = [1 - d(X,Y)] * max(C(X), C(Y))
@@ -248,4 +248,27 @@ namespace lz {
    auto LzRajskiDistance(const sequence& T1, const sequence& T2) -> lz_double {
       return LzRajskiDistance(T1, T2, internal::getDefaultArgs(T1));
    };
+
+   //.........................................................................
+   // Errors
+   //.........................................................................
+   auto LZNormalError(const sequence&, utils::LZ_Args) -> lz_double;
+
+   auto LZNormalError(const sequence& seq) -> lz_double {
+      return LZNormalError(seq, internal::getDefaultArgs(seq.size()));
+   };
+   auto LZNormalError(const std::string& seq, utils::LZ_Args args) -> lz_double {
+      return LZNormalError(sequence{seq}, args);
+   };
+   auto LZNormalError(const std::string& seq) -> lz_double { return LZNormalError(sequence{seq}); };
+
+   auto LZPoisonError(const sequence&, utils::LZ_Args) -> lz_double;
+
+   auto LZPoisonError(const sequence& seq) -> lz_double {
+      return LZPoisonError(seq, internal::getDefaultArgs(seq.size()));
+   };
+   auto LZPoisonError(const std::string& seq, utils::LZ_Args args) -> lz_double {
+      return LZPoisonError(sequence{seq}, args);
+   };
+   auto LZPoisonError(const std::string& seq) -> lz_double { return LZPoisonError(sequence{seq}); };
 }  // namespace lz

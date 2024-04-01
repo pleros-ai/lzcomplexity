@@ -25,11 +25,15 @@ LambdaBodyIndentation: Signature
 Cpp11BracedListStyle: true
 NamespaceIndentation: All
 BreakBeforeTernaryOperators: true
+# PPDirectiveIndentStyle: AfterHash
+PPIndentWidth: 2
 
 SpaceBeforeRangeBasedForLoopColon: false
 SpaceBeforeSquareBrackets: false
 SpacesBeforeTrailingComments: 2
 
+SpacesInLineCommentPrefix:
+  Minimum: 1
 
 IntegerLiteralSeparator:
   Binary:          0

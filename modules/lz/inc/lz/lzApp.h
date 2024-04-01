@@ -40,6 +40,8 @@
 
 namespace lz {
 
+   auto LZ(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+
    // using T = std::variant<suffixarray::CaPS_SA, suffixarray::SAIS>;
    //.........................................................................
    // Lempel-Ziv 76 factorization
@@ -82,6 +84,7 @@ namespace lz {
    // Information distance between two consecutive sequences
    //.........................................................................
    auto InformationDistance(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+   auto RandomShuffleDistance(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
    //.........................................................................
    // Information distance into the sequences
@@ -89,5 +92,11 @@ namespace lz {
    auto MutualInformationBySequence(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
    auto InformationDistanceBySequence(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
    auto RandomShuffleDistanceBySequence(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+
+   //.........................................................................
+   // Errors assuming the the stddev of factors size has normal or poison distribution
+   //.........................................................................
+   auto LZNormalError(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+   auto LZPoisonError(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
 }  // namespace lz

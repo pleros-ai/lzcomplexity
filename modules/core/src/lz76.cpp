@@ -33,6 +33,15 @@
 
 #include <lz/lz76.h>
 
+#include "../../utils/src/lz_tbb_arena.h"
+
+#ifdef _LIBCPP_HAS_PARALLEL_ALGORITHMS
+#include <execution>
+#define PAR std::execution::par,
+#else
+#define PAR
+#endif
+
 namespace lz {
 
    namespace lz76 {
@@ -49,6 +58,10 @@ namespace lz {
          std::vector<char>::size_type i = 0;
 
          lzf.clear();
+
+         auto logn = std::log(ALPHABET_SIZE);
+         epsilon = 2 * (1 + std::log(std::log(ALPHABET_SIZE * _SA.SA.size()) / logn) / logn) /
+                   (std::log(_SA.SA.size()) / logn);
 
          try {
             lpf = (lz_int*)std::malloc(_SA.n * sizeof(lz_int));
@@ -78,10 +91,11 @@ namespace lz {
             throw LZError();
          }
 
+         FoundStddev();
          // done !
          std::free(lpf);
          factorization = ((lzf.back() <= _SA.n) ? lzf.size() - 1 : lzf.size() - 2);
-         return LZ_Result{factorization, lzf};
+         return LZ_Result{factorization, epsilon, lzf};
       }
 
       LZ_Result LempelZiv76::Factorize(const sequence seq) {
@@ -100,6 +114,10 @@ namespace lz {
 
          lzf.clear();
 
+         auto logn = std::log(seq.getAlphabetSize());
+         epsilon = 2 * (1 + std::log(std::log(seq.getAlphabetSize() * seq.size()) / logn) / logn) /
+                   (std::log(seq.size()) / logn);
+
          try {
             lpf = (lz_int*)std::malloc(_SA.n * sizeof(lz_int));
          } catch (std::bad_alloc& ba) {
@@ -128,15 +146,20 @@ namespace lz {
             throw LZError();
          }
 
+         FoundStddev();
          // done !
          std::free(lpf);
          factorization = ((lzf.back() <= _SA.n) ? lzf.size() - 1 : lzf.size() - 2);
-         return LZ_Result{factorization, lzf};
+         return LZ_Result{factorization, epsilon, lzf};
       }
 
       LZ_Result LempelZiv76::Factorize(const sequence seq, utils::LZ_Args& sa_args) {
          // parameters should come from flags
          auto _SA = suffixarray::CaPS_SA(sa_args).construct(seq.toString());
+
+         auto logn = std::log(sa_args.log_base);
+         epsilon =
+             2 * (1 + std::log(std::log(sa_args.alphabet * seq.size()) / logn) / logn) / (std::log(seq.size()) / logn);
 
          lzf.reserve(_SA.n);
          lz_int* lpf = NULL;
@@ -172,10 +195,11 @@ namespace lz {
             throw LZError();
          }
 
+         FoundStddev();
          // done !
          std::free(lpf);
          factorization = ((lzf.back() <= _SA.n) ? lzf.size() - 1 : lzf.size() - 2);
-         return LZ_Result{factorization, lzf};
+         return LZ_Result{factorization, epsilon, lzf};
       }
 
 #if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
@@ -185,6 +209,10 @@ namespace lz {
          utils::LZ_SuffixArray _SA;
          std::visit([&](auto&& alg) { _SA = alg.construct(seq.toString()); }, sa_impl);
 
+         auto logn = std::log(seq.getAlphabetSize());
+         epsilon = 2 * (1 + std::log(std::log(seq.getAlphabetSize() * seq.size()) / logn) / logn) /
+                   (std::log(seq.size()) / logn);
+
          lzf.reserve(_SA.n);
          lz_int* lpf = NULL;
          std::vector<char>::size_type i = 0;
@@ -219,12 +247,43 @@ namespace lz {
             throw LZError();
          }
 
+         FoundStddev();
          // done !
          std::free(lpf);
          factorization = ((lzf.back() <= _SA.n) ? lzf.size() - 1 : lzf.size() - 2);
-         return LZ_Result{factorization, lzf};
+         return LZ_Result{factorization, epsilon, lzf};
       }
 #endif
+
+      lz_double LempelZiv76::FoundStddev() {
+         std::vector<lz_uint> factors_length;
+
+         for (auto i = 1ul; i < lzf.size(); i++) {
+            factors_length.push_back(lzf[i] - lzf[i - 1]);
+         }
+
+         lz_double sum = std::accumulate(PAR factors_length.begin(), factors_length.end(), 0.0);
+         lz_double mean = sum / lzf.size();
+
+         // std::vector<lz_double> diff(factors_length.size());
+         // std::transform(PAR lzf.begin(), lzf.end(), diff.begin(), [mean](lz_double x) { return x - mean; });
+         // utils::parallel_for(0, diff.size(), [&](auto idx) { diff[idx] = factors_length[idx] - mean; });
+         // lz_double sq_sum =
+         //     std::transform_reduce(PAR diff.begin(), diff.end(), 0.0, std::plus{}, [](auto val) { return val * val;
+         //     });
+
+         auto body = [&](const auto& rng, auto init) {
+            for (auto i = rng.begin(); i < rng.end(); i++) {
+               auto diff = factors_length[i] - mean;
+               init += diff * diff;
+            }
+            return init;
+         };
+         auto reduce = [](auto a, auto b) { return a + b; };
+         lz_double sq_sum = utils::parallel_reduce(0ul, factors_length.size(), 0.0, body, reduce);
+
+         return factors_stddev = std::sqrt(sq_sum / lzf.size());
+      }
    }  // namespace lz76
 
 }  // namespace lz

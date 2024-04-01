@@ -51,13 +51,13 @@ auto LZEffectiveComplexityNormalizedStringWithArgs(const std::string& seq, utl::
    return lz::LZEffectiveComplexityNormalized(seq, args);
 }
 
-auto ShuffleEntropyDeficitWithoutArgs(const lz::sequence& seq) { return lz::ShuffleEntropyDeficit(seq); }
-auto ShuffleEntropyDeficitStringWithoutArgs(const std::string& seq) { return lz::ShuffleEntropyDeficit(seq); }
+auto ShuffleEntropyDeficitWithoutArgs(const lz::sequence& seq) { return lz::RandomShuffleComplexity(seq); }
+auto ShuffleEntropyDeficitStringWithoutArgs(const std::string& seq) { return lz::RandomShuffleComplexity(seq); }
 auto ShuffleEntropyDeficitWithArgs(const lz::sequence& seq, utl::LZ_Args& args) {
-   return lz::ShuffleEntropyDeficit(seq, args);
+   return lz::RandomShuffleComplexity(seq, args);
 }
 auto ShuffleEntropyDeficitStringWithArgs(const std::string& seq, utl::LZ_Args& args) {
-   return lz::ShuffleEntropyDeficit(seq, args);
+   return lz::RandomShuffleComplexity(seq, args);
 }
 
 auto InformationsDistanceWithoutArgs(const lz::sequence& seq1, const lz::sequence& seq2) {
@@ -70,14 +70,14 @@ auto InformationsDistanceWithArgs(const lz::sequence& seq1, const lz::sequence& 
 void PyLempelZiv(py::module& m) {
    using namespace pybind11::literals;
 
-   py::class_<lz::lz76::LZ_Result> LZ_Result(m, "LZ_Result");
-   LZ_Result.def(py::init())
-       .def("__copy__", [](const lz::lz76::LZ_Result& self) { return lz::lz76::LZ_Result(self); })
+   py::class_<lz::lz76::LZ76_Result> LZ76_Result(m, "LZ76_Result");
+   LZ76_Result.def(py::init())
+       .def("__copy__", [](const lz::lz76::LZ76_Result& self) { return lz::lz76::LZ76_Result(self); })
        .def(
-           "__deepcopy__", [](const lz::lz76::LZ_Result& self, py::dict) { return lz::lz76::LZ_Result(self); },
+           "__deepcopy__", [](const lz::lz76::LZ76_Result& self, py::dict) { return lz::lz76::LZ76_Result(self); },
            "memo"_a)
-       .def_readwrite("factorization", &lz::lz76::LZ_Result::factorization)
-       .def_readwrite("lzf", &lz::lz76::LZ_Result::lzf);
+       .def_readwrite("factorization", &lz::lz76::LZ76_Result::factorization)
+       .def_readwrite("lzf", &lz::lz76::LZ76_Result::lzf);
 
    m.def("LempelZivFactorization", &::LempelZivFactorizationWithoutArgs)
        .def("LempelZivFactorization", &::LempelZivFactorizationWithArgs)

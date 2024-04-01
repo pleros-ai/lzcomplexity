@@ -102,7 +102,8 @@ void PySequence(py::module& m) {
        .def(
            "__deepcopy__", [](const lz::sequence& self, py::dict) { return lz::sequence(self); }, "memo"_a);
 
-   sequence.def_property_readonly("alphabet_size", &lz::sequence::alphabetSize, "Size of the alphabet of the sequence")
+   sequence
+       .def_property_readonly("alphabet_size", &lz::sequence::getAlphabetSize, "Size of the alphabet of the sequence")
        .def_property_readonly("seq", &::SequenceVector, "Vector of characters of the sequence");
 
    m.def("Shuffle", py::overload_cast<lz::sequence&, lz::lz_uint>(&lz::Shuffle), "seq"_a, "block_size"_a);

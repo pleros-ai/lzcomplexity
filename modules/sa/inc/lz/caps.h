@@ -34,15 +34,11 @@
 
 #pragma once
 
+#include <lz/general.h>
 #include <lz/parallel_utils.h>
 
-#include <algorithm>
 #include <atomic>
 #include <cassert>
-#include <chrono>
-#include <cmath>
-#include <cstdint>
-#include <cstdlib>
 #include <new>
 
 #include "sa_structures.h"

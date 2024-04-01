@@ -1,10 +1,37 @@
 #pragma once
 
-#include <lz/caps.h>
-#include <lz/sais_lite.h>
+#include <lz/sa_structures.h>
+
+#include "general.h"
 
 namespace lz {
+
+   namespace suffixarray {
+      class CaPS_SA;
+      class SAIS;
+   }  // namespace suffixarray
+
    namespace utils {
+
+      typedef struct {
+         lz_size line;
+         std::vector<lz_double> terms;
+      } shuffle_terms;
+
+      typedef struct {
+         lz_int block_size;
+         lz_double value;
+         shuffle_terms terms;
+      } shuffle_info;
+
+      typedef struct {
+         lz_double lz_rajski_distance;
+         lz_double redundancy;
+         lz_double fh_uncertainty;
+         lz_double lh_uncertainty;
+         lz_double lz_pearson_coefficient;
+      } LZ_Extra;
+
       template <typename... Ts>
       struct overload : Ts... {
          using Ts::operator()...;

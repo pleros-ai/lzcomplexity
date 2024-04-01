@@ -79,7 +79,7 @@ namespace lz {
          std::vector<char> seq;
          std::map<std::string, char> new_alphabet;
          // for now both sequence have the same alphabet
-         for (auto i = 0ul; i < s1.size(); i++) {
+         for (auto i = 0ul; i < std::min(s1.size(), s2.size()); i++) {
             std::string key{s1[i], s2[i]};
             if (auto val = new_alphabet.find(key); val != new_alphabet.end())
                seq.push_back(val->second);
@@ -94,6 +94,39 @@ namespace lz {
       }
    }  // namespace internal
 
+   utils::LZ_Result LZ(const sequence& seq, utils::LZ_Args args) {
+      lz76::LempelZiv76 L;
+      // factorization, factors, epsilon and factors stddev
+      L.Factorize(seq, args);
+
+      lz_double div = static_cast<double>(seq.size()) / utils::log(seq.size(), args.log_base);
+      // entropy density
+      auto entropy = L.getFactorization() / div;
+      // random shuffle complexity (rsc)
+      utils::LZ_Shuffle rsc;
+      auto rsc_fun = [&rsc, &seq, &args]() { rsc = RandomShuffleComplexity(seq, args); };
+      // whole sequence random shuffle complexity (w_rsc -- optional)
+      utils::LZ_Shuffle w_rsc;
+      auto w_rsc_fun = [&seq, &args, &L]() {
+         auto [H_rand, mm] = ShuffleFactorization(seq, args);
+         utils::LZ_Shuffle w_rsc = ShuffleEntropyCalculation(seq, args, L.getFactorization(), H_rand, mm);
+      };
+      // Extras
+      utils::LZ_Extra extras;
+      auto extra_fun = [&]() { extras = ExtraMeasures(seq, args); };
+
+      utils::par_do(rsc_fun, w_rsc_fun, extra_fun);
+
+      // Error for Normal distribution factors length
+      div = std::sqrt(seq.size() / utils::log(seq.size(), args.log_base));
+      auto normal_error = std::sqrt(entropy * entropy * entropy) * L.getStddev() / div;
+      // Error for Poison distribution factors length
+      auto poison_error = entropy / seq.size();
+
+      return {L.getFactorization(), L.getFactors(), entropy,        w_rsc,         rsc,
+              normal_error,         poison_error,   L.getEpsilon(), L.getStddev(), extras};
+   }
+
    //-------------------- Factorization functions ----------------------------//
    lz_uint LempelZivFactorization(const sequence& text, utils::LZ_Args args) {
       lz76::LempelZiv76 L;
@@ -101,7 +134,7 @@ namespace lz {
       return L.getFactorization();
    };
 
-   lz76::LZ_Result LempelZivFactors(const sequence& text, utils::LZ_Args args) {
+   lz76::LZ76_Result LempelZivFactors(const sequence& text, utils::LZ_Args args) {
       lz76::LempelZiv76 L;
       return L.Factorize(text, args);
    };
@@ -111,7 +144,7 @@ namespace lz {
       lz76::LempelZiv76 L;
       L.Factorize(text, args);
       // lz_double div = text.size() * std::log(text.getAlphabetSize()) / std::log(text.size());
-      lz_double div = static_cast<double>(text.size()) / utils::log(text.size(), text.getAlphabetSize());
+      lz_double div = static_cast<double>(text.size()) / utils::log(text.size(), args.log_base);
 
       return L.getFactorization() / div;
    }
@@ -135,19 +168,19 @@ namespace lz {
    lz_double LZEffectiveComplexityNormalized(const sequence& text, utils::LZ_Args args) {
       auto excess = LZEffectiveComplexity(text, args);
       auto N = text.size() / 2;
-      auto div = (N * std::log(text.getAlphabetSize())) / utils::log(N, text.getAlphabetSize());
+      auto div = (N * utils::log(args.alphabet, args.log_base)) / utils::log(N, args.log_base);
 
       return excess / div;
    }
 
-   utils::LZ_ExcessInfo RandomShuffleComplexitySequential(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_Shuffle RandomShuffleComplexitySequential(const sequence& str, utils::LZ_Args args) {
       std::size_t mm = args.block_size;
       if (mm <= 0) {
          mm = utils::max_block_size(str.size());  // the maximum number for the sum in the entropy estimation
          mm += 10;                                // begin aggressive
       }
 
-      utils::LZ_ExcessInfo result;
+      utils::LZ_Shuffle result;
       result.max_block_size = mm;
       lz_double excess_entropy = 0;
       auto complex = LempelZivFactorization(str, args);
@@ -157,8 +190,9 @@ namespace lz {
              str, m, str.size() / 2);  // Shuffling is made for half the size of the sequence, hope that is enough
          std::vector<unsigned int> slzf;
          auto rand_complexity = LempelZivFactorization(rand_seq, args);
-         lz_double ee_term = std::log(str.size()) * std::fabs((lz_double)rand_complexity - (lz_double)complex) /
-                             (str.size() * std::log(str.getAlphabetSize()));
+         lz_double ee_term = utils::log(str.size(), args.log_base) *
+                             std::fabs((lz_double)rand_complexity - (lz_double)complex) /
+                             (str.size() * utils::log(args.alphabet, args.log_base));
 
          excess_entropy += ee_term;
 
@@ -169,7 +203,7 @@ namespace lz {
       result.excess_value = excess_entropy;
       return result;
    }
-   utils::LZ_ExcessInfo RandomShuffleComplexitySequential(const std::string& str, utils::LZ_Args args) {
+   utils::LZ_Shuffle RandomShuffleComplexitySequential(const std::string& str, utils::LZ_Args args) {
       return RandomShuffleComplexitySequential(sequence{str}, args);
    }
 
@@ -194,35 +228,37 @@ namespace lz {
       return {res, mm};
    }
 
-   utils::LZ_ExcessInfo ShuffleEntropyCalculation(const sequence& str, const lz_int complexity,
-                                                  const std::vector<lz_int> H_rand, lz_int mm, bool save_terms) {
-      utils::LZ_ExcessInfo result;
+   utils::LZ_Shuffle ShuffleEntropyCalculation(const sequence& str, const utils::LZ_Args args, const lz_int complexity,
+                                               const std::vector<lz_int> H_rand, lz_int mm) {
+      utils::LZ_Shuffle result;
       result.max_block_size = mm;
-      std::mutex mtx;
 
-      auto main_fun = [&](const internal::LZ_BlockedRange<size_t>& r, lz_double init) -> lz_double {
-         for (auto idx = r.begin(); idx != r.end(); idx++) {
-            lz_double eeterm = utils::log(str.size(), str.getAlphabetSize()) *
-                               std::fabs((lz_double)H_rand[idx] - (lz_double)complexity) /
-                               (str.size() * std::log(str.getAlphabetSize()));
-            init += eeterm;
+      auto terms = utils::map(H_rand, [&](lz_int val) {
+         return utils::log(str.size(), args.log_base) * std::fabs((lz_double)val - (lz_double)complexity) /
+                (str.size() * utils::log(args.alphabet, args.log_base));
+      });
 
-            if (save_terms) {
-               const std::lock_guard<std::mutex> lock{mtx};
-               result.excess_by_terms.push_back(eeterm);
-            }
-            if (idx == 1) result.multi_information = eeterm;
+      if (args.get_shuffle_terms) {
+         result.excess_by_terms = terms;
+      } else {
+         result.excess_by_terms = std::vector<lz_double>(1);  // minimum vector size
+      }
+      result.multi_information = terms[1];
+
+      auto body = [&terms](const auto& rng, lz_double init) -> lz_double {
+         for (auto idx = rng.begin(); idx != rng.end(); idx++) {
+            init += terms[idx];
          }
          return init;
       };
-      auto reduce_fun = [](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
+      auto reduce = [](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
 
-      // result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, main_fun, reduce_fun);
-      result.excess_value = utils::parallel_reduce(1, mm + 1, 0.0, main_fun, reduce_fun);
+      // result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, body, reduce);
+      result.excess_value = utils::parallel_reduce(1, mm + 1, 0.0, body, reduce);
       return result;
    }
 
-   utils::LZ_ExcessInfo RandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_Shuffle RandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
       auto [past, future] = str.Split(str.size() / 2);
       auto new_seq = internal::MergeSequences(past, future);
 
@@ -236,10 +272,12 @@ namespace lz {
 
       auto [H_rand, mm] = random_run;
 
-      return ShuffleEntropyCalculation(new_seq, complexity, H_rand, mm, args.get_shuffle_terms);
+      args.alphabet = new_seq.getAlphabetSize();
+      args.log_base = new_seq.getAlphabetSize();
+      return ShuffleEntropyCalculation(new_seq, args, complexity, H_rand, mm);
    }
 
-   utils::LZ_ExcessInfo WholeRandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_Shuffle WholeRandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
       std::pair<std::vector<lz_int>, lz_size> random_run;
       lz_int complexity;
 
@@ -250,7 +288,7 @@ namespace lz {
 
       auto [H_rand, mm] = random_run;
 
-      return ShuffleEntropyCalculation(str, complexity, H_rand, mm, args.get_shuffle_terms);
+      return ShuffleEntropyCalculation(str, args, complexity, H_rand, mm);
    }
 
    lz_double ExcessEntropyDistance(const sequence& str, utils::LZ_Args args) {
@@ -271,8 +309,8 @@ namespace lz {
    }
 
    //-------------------- Distance functions ----------------------------//
-   lz_double InformationDistance(const sequence& T1, const lz76::LZ_Result& R1, const sequence& T2,
-                                 const lz76::LZ_Result& R2) {
+   lz_double InformationDistance(const sequence& T1, const lz76::LZ76_Result& R1, const sequence& T2,
+                                 const lz76::LZ76_Result& R2) {
       lz_int C_all = 0;
 
       C_all = LempelZivFactorization(T1 + T2);
@@ -324,18 +362,45 @@ namespace lz {
    }
 
    //-------------------- Other distance functions ----------------------------//
-   lz_double LzRajskiDistance(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
-      lz_int C_t1, C_t2, C_all = 0;
+   lz_double LZNormalError(const sequence& seq, utils::LZ_Args args) {
+      lz76::LempelZiv76 L;
+      L.Factorize(seq, args);
 
-      auto fh_fun = [&]() { C_t1 = LempelZivFactorization(T1, args); };
+      auto entropy = L.getFactorization() * utils::log(seq.size(), args.log_base) / static_cast<double>(seq.size());
 
-      auto lh_fun = [&]() { C_t2 = LempelZivFactorization(T2, args); };
+      auto div = std::sqrt(seq.size() / utils::log(seq.size(), args.log_base));
 
-      auto all_fun = [&]() { C_all = LempelZivFactorization(T1 + T2, args); };
-
-      utils::par_do(fh_fun, lh_fun, all_fun);
-
-      return 2 - (C_t1 + C_t2) / C_all;
+      return std::sqrt(entropy * entropy * entropy) * L.getStddev() / div;
    }
 
+   lz_double LZPoisonError(const sequence& seq, utils::LZ_Args args) {
+      auto entropy = EntropyDensity(seq, args);
+      return entropy / seq.size();
+   }
+
+   //-------------------------------- Extras --------------------------------//
+   utils::LZ_Extra ExtraMeasures(const sequence& str, utils::LZ_Args args) {
+      auto mid = str.size() / 2;  // the half of the sequence
+      auto par_seq = str.Drop(mid);
+      lz_uint lh_complexity = 0;
+      internal::LZ_Factors lz;
+
+      auto lz_fun = [&lz, &str, &args]() { lz = internal::LempelZivFactorization(str, args); };
+      auto lh_fun = [&lh_complexity, &par_seq, &args]() { lh_complexity = LempelZivFactorization(par_seq, args); };
+
+      utils::par_do(lz_fun, lh_fun);
+
+      auto C_lz = static_cast<lz_double>(lz.factorization);
+      auto fh_complexity = static_cast<lz_double>(lz.half_factorization);
+
+      auto MI = fh_complexity + lh_complexity - C_lz;
+
+      auto rajski = 2 - (fh_complexity + lh_complexity) / C_lz;
+      auto fh_uncertainty = MI / fh_complexity;
+      auto lh_uncertainty = MI / lh_complexity;
+      auto redundancy = MI / (fh_complexity + lh_complexity);
+      auto pearson = MI / std::sqrt(fh_complexity * lh_complexity);
+
+      return {rajski, redundancy, fh_uncertainty, lh_uncertainty, pearson};
+   }
 }  // namespace lz

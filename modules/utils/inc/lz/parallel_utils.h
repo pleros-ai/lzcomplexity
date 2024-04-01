@@ -2,6 +2,7 @@
 
 #include "general.h"
 #include "lz_arena.h"
+#include "types.h"
 
 namespace lz {
 
@@ -44,6 +45,29 @@ namespace lz {
 
          return internal::parallel_reduce_impl(init, end, init_value, std::forward<Acc>(acc_fun),
                                                std::forward<ReduceFun>(reduce_fun));
+      }
+
+      template <typename T, typename Fun>
+#ifdef __cpp_concepts
+      requires(std::is_invocable_v<Fun&&, T>)
+#endif
+          inline auto for_each(std::vector<T> vec, Fun&& f, long granularity = 0) {
+         auto lambda = [&vec, &f](unsigned idx) { f(vec[idx]); };
+         internal::parallel_for_impl(0ul, vec.size(), lambda, granularity);
+      }
+
+      template <typename T, typename Fun>
+#ifdef __cpp_concepts
+      requires(std::is_invocable_v<Fun&&, T>)
+#endif
+          inline auto map(std::vector<T> vec, Fun&& fun, long granularity = 0)
+              -> std::vector<utils::invoke_result_t<Fun, T>> {
+         using resType = decltype(fun(*vec.begin()));
+         std::vector<resType> res(vec.size());
+         auto lambda = [&vec, &fun, &res](unsigned idx) { res[idx] = fun(vec[idx]); };
+         internal::parallel_for_impl(0ul, vec.size(), lambda, granularity);
+
+         return res;
       }
 
       template <typename... Fun>

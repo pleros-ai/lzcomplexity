@@ -94,6 +94,8 @@ namespace lz {
              static_cast<lz_int>(i + 1) == init_line && end_line == utils::LZ_Args::UNDEFINED_LINES;
          const auto processRange = init_line <= static_cast<lz_int>(i + 1) && end_line >= static_cast<lz_int>(i + 1);
 
+         utils::LZ_Output::shuffle_terms terms;
+
          if (processAllLines || processOneLine || processRange) {
             flags.sa_args.get_shuffle_terms = true;
          } else {
@@ -104,18 +106,18 @@ namespace lz {
             std::pair<std::vector<lz_int>, lz_size> random_run = ShuffleFactorization(str, flags.sa_args);
             auto [H_rand, mm] = random_run;
 
-            excess_entropy =
-                ShuffleEntropyCalculation(str, LZ.complexity[i], H_rand, mm, flags.sa_args.get_shuffle_terms);
+            excess_entropy = ShuffleEntropyCalculation(str, flags.sa_args, LZ.complexity[i], H_rand, mm);
          } else {
             excess_entropy = fun(str, flags.sa_args);
          }
 
          if (processAllLines || processOneLine || processRange) {
-            LZ.shuffle_entropy_terms.push_back(utils::LZ_Output::shuffle_terms{i + 1, excess_entropy.excess_by_terms});
+            terms = {i + 1, excess_entropy.excess_by_terms};
          }
 
-         LZ.whole_random_shuffle_complexity.push_back(excess_entropy.excess_value);
-         LZ.multi_information.push_back(excess_entropy.multi_information);
+         LZ.whole_random_shuffle_complexity.push_back(
+             {excess_entropy.max_block_size, excess_entropy.excess_value, terms});
+         // LZ.multi_information.push_back(excess_entropy.multi_information);
       }
 
       return EXIT_SUCCESS;
@@ -138,6 +140,8 @@ namespace lz {
              static_cast<lz_int>(i + 1) == init_line && end_line == utils::LZ_Args::UNDEFINED_LINES;
          const auto processRange = init_line <= static_cast<lz_int>(i + 1) && end_line >= static_cast<lz_int>(i + 1);
 
+         utils::LZ_Output::shuffle_terms terms;
+
          if (processAllLines || processOneLine || processRange) {
             flags.sa_args.get_shuffle_terms = true;
          } else {
@@ -147,11 +151,11 @@ namespace lz {
          excess_entropy = RandomShuffleComplexity(str, flags.sa_args);
 
          if (processAllLines || processOneLine || processRange) {
-            LZ.shuffle_entropy_terms.push_back(utils::LZ_Output::shuffle_terms{i + 1, excess_entropy.excess_by_terms});
+            terms = {i + 1, excess_entropy.excess_by_terms};
          }
 
-         LZ.random_shuffle_complexity.push_back(excess_entropy.excess_value);
-         // LZ.multi_information.push_back(excess_entropy.multi_information);
+         LZ.random_shuffle_complexity.push_back({excess_entropy.max_block_size, excess_entropy.excess_value, terms});
+         LZ.multi_information.push_back(excess_entropy.multi_information);
       }
 
       return EXIT_SUCCESS;
@@ -246,7 +250,8 @@ namespace lz {
          double density = 0.0;
 
          if (LZ.factor_calculated[i]) {
-            lz_double div = str.size() * std::log(flags.alphabet_size) / std::log(str.size());
+            lz_double div = str.size() * utils::log(flags.alphabet_size, flags.sa_args.log_base) /
+                            utils::log(str.size(), flags.sa_args.log_base);
 
             density = LZ.complexity[i] / div;
          } else {
@@ -278,6 +283,23 @@ namespace lz {
          } else {
             res = InformationDistance(text[i - 1], text[i], flags.sa_args);
          }
+         LZ.info_distance.push_back(res);
+      }
+
+      return EXIT_SUCCESS;
+   }
+
+   lz_int RandomShuffleDistance(utils::LZ_Flags& flags, utils::LZ_Output& LZ) {
+      if (flags.input.size() == 1) {
+         LZ.info_distance = {0};
+         return EXIT_SUCCESS;
+      }
+
+      LZ.info_distance.clear();
+      lz_double res = 0.0;
+      std::vector<sequence> text = flags.input;
+      for (std::size_t i = 1; i < text.size(); i++) {
+         res = RandomShuffleDistance(text[i - 1], text[i], flags.sa_args);
          LZ.info_distance.push_back(res);
       }
 

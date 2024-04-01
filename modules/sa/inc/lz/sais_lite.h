@@ -40,11 +40,10 @@
 
 #pragma once
 
+#include <lz/general.h>
 #include <lz/utils.h>
 
-#include <iostream>
 #include <limits>
-#include <vector>
 
 #include "sa_structures.h"
 
