@@ -60,140 +60,140 @@ class Errors {
 class OutOfBounds : public Errors {
   public:
    OutOfBounds(void)
-       : Errors() {
+       : Errors("Out of bounds") {
       type = OUT_OF_BOUNDS;
    };
 };
 class BadInitialization : public Errors {
   public:
    BadInitialization(void)
-       : Errors() {
+       : Errors("Bad initialization") {
       type = BAD_INITIALIZATION;
    };
 };
 class NullPointer : public Errors {
   public:
    NullPointer(void)
-       : Errors() {
+       : Errors("Null pointer") {
       type = NULL_POINTER;
    };
 };
 class BadAssignment : public Errors {
   public:
    BadAssignment(void)
-       : Errors() {
+       : Errors("Bad assignment") {
       type = BAD_ASSIGNMENT;
    };
 };
 class BadOperation : public Errors {
   public:
    BadOperation(void)
-       : Errors() {
+       : Errors("Bad operation") {
       type = BAD_OPERATION;
    };
 };
 class BadInternalCondition : public Errors {
   public:
    BadInternalCondition(void)
-       : Errors() {
+       : Errors("Bad internal condition") {
       type = BAD_INTERNAL_CONDITION;
    };
 };
 class BadSize : public Errors {
   public:
    BadSize(void)
-       : Errors() {
+       : Errors("Bad size") {
       type = BAD_SIZE;
    };
 };
 class NotEqualSize : public Errors {
   public:
    NotEqualSize(void)
-       : Errors() {
+       : Errors("Nor equal size") {
       type = NOT_EQUAL_SIZE;
    };
 };
 class OutOfChoices : public Errors {
   public:
    OutOfChoices(void)
-       : Errors() {
+       : Errors("Out of choices") {
       type = OUT_OF_CHOICES;
    };
 };
 class BadAlloc : public Errors {
   public:
    BadAlloc(void)
-       : Errors() {
+       : Errors("Bad alloc") {
       type = BAD_ALLOC;
    };
 };
 class BadMemoryLimits : public Errors {
   public:
    BadMemoryLimits(void)
-       : Errors() {
+       : Errors("Bad memory limits") {
       type = MEMORY_MAX_LIMIT;
    };
 };
 class BadString : public Errors {
   public:
    BadString(void)
-       : Errors() {
+       : Errors("Bad string") {
       type = BAD_STRING;
    };
 };
 class Singular : public Errors {
   public:
    Singular(void)
-       : Errors() {
+       : Errors("Singular") {
       type = SINGULAR;
    };
 };
 class OverUnderFlow : public Errors {
   public:
    OverUnderFlow(void)
-       : Errors() {
+       : Errors("Over-Under flow") {
       type = OVER_UNDER_FLOW;
    };
 };
 class OverFlow : public Errors {
   public:
    OverFlow(void)
-       : Errors() {
+       : Errors("Over flow") {
       type = OVER_FLOW;
    };
 };
 class UnderFlow : public Errors {
   public:
    UnderFlow(void)
-       : Errors() {
+       : Errors("Under flow") {
       type = UNDER_FLOW;
    };
 };
 class OutOfDegree : public Errors {
   public:
    OutOfDegree(void)
-       : Errors() {
+       : Errors("Out of degree") {
       type = OUT_OF_BOUNDS;
    };
 };
 class LossOfData : public Errors {
   public:
    LossOfData(void)
-       : Errors() {
+       : Errors("Loss of data") {
       type = LOSS_OF_DATA;
    };
 };
 class ConfigFileError : public Errors {
   public:
    ConfigFileError(void)
-       : Errors() {
+       : Errors("Config file error") {
       type = CONFIG_FILE_ERROR;
    };
 };
 class NormFileError : public Errors {
   public:
    NormFileError(void)
-       : Errors() {
+       : Errors("Norm file error") {
       type = NORM_FILE_ERROR;
    };
 };
@@ -211,21 +211,21 @@ class FileNameError : public Errors {
 class FileFormatError : public Errors {
   public:
    FileFormatError(void)
-       : Errors() {
+       : Errors("File format error") {
       type = FILE_FORMAT_ERROR;
    };
 };
 class IntervalWithoutPoints : public Errors {
   public:
    IntervalWithoutPoints(void)
-       : Errors() {
+       : Errors("Interval without points") {
       type = INTERVAL_WITHOUT_POINTS;
    };
 };
 class UnknownError : public Errors {
   public:
    UnknownError(void)
-       : Errors() {
+       : Errors("Unknow error") {
       type = UNKNOWN_ERROR;
    };
 };

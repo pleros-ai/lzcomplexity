@@ -82,7 +82,10 @@ namespace lz {
          ~LempelZiv76();  //!> Destructor.
 
          constexpr auto getFactorization(void) const;  //!> Returns the LZ76 complexity of the string.
-         auto getFactors(void) const;                  //!> Returns the LZ76 factors
+         std::vector<lz_uint> getFactors(void) const;  //!> Returns the LZ76 factors
+
+         auto getFactorsBegin() const { return lzf.begin(); }
+         auto getFactorsEnd() const { return lzf.end(); }
 
          LempelZiv76& operator=(LempelZiv76);
          LempelZiv76& operator=(const LempelZiv76&);
@@ -130,7 +133,7 @@ namespace lz {
       /// @brief
       /// Returns the Lempel-Ziv factors of the sequence
       /// @return The array of Lempel-Ziv factors
-      inline auto LempelZiv76::getFactors(void) const { return lzf; }
+      inline std::vector<lz_uint> LempelZiv76::getFactors(void) const { return lzf; }
 
       //............................ Assignment operator  ..........................
 

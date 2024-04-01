@@ -34,6 +34,8 @@ namespace lz {
          std::cout << "\n==> Difference: " << diff << std::endl;
       }
 
+      inline lz_double log(auto num, auto base = ALPHABET_SIZE) { return std::log(num) / std::log(base); };
+
 #ifdef __cpp_lib_ranges
       constexpr inline bool is_space(char q) noexcept {
          const auto ws = {' ', '\t', '\n', '\v', '\r', '\f'};

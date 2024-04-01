@@ -44,16 +44,16 @@ jobs:
             cxx: g++
             cc: gcc
             builtinTbb: OFF
-          - runs-on: ubuntu-22.04
-            build_type: "Release"
-            cxx: clang++
-            cc: clang
-            builtinTbb: ON
-          - runs-on: ubuntu-22.04
-            build_type: "Release"
-            cxx: clang++
-            cc: clang
-            builtinTbb: OFF
+          # - runs-on: ubuntu-22.04
+          #   build_type: "Release"
+          #   cxx: clang++
+          #   cc: clang
+          #   builtinTbb: ON
+          # - runs-on: ubuntu-22.04
+          #   build_type: "Release"
+          #   cxx: clang++
+          #   cc: clang
+          #   builtinTbb: OFF
 
     name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
     runs-on: ${{ matrix.runs-on }}

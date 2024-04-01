@@ -50,6 +50,8 @@
         "-m",
         "-v",
         "-d",
+        "-e",
+        "a",
         "-j", "1"],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",
@@ -64,6 +66,54 @@
             "MIMode": "lldb"
          },
         "additionalSOLibSearchPath": "${workspaceFolder}/lib",
-    }
+    },
+     {
+        "name": "Debug 100M",
+        "type": "lldb",
+        "request": "launch",
+        "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+        "args": ["-p", "5", 
+        "/Users/efren_aragon/Documents/Work/Investigacion/Softwares/AlgoritmBenchmark/seq_100000000",
+        "-v",
+        "-d",
+        "-j", "10"],
+        "cwd": "${fileDirname}"
+    },
+    {
+       "name": "Debug symetric data 0.001",
+       "type": "lldb",
+       "request": "launch",
+       "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+       "args": ["-p", "10", 
+       "/Users/efren_aragon/Documents/Work/Investigacion/Data/data_symmetric_two_state_process/fsa_twostatesymmetricProcess_g0.001_size10e6_entropydensity0.0114078_excessentropy0.988592.dat",
+       "-v",
+       "-d",
+       "-j", "10"],
+       "cwd": "${fileDirname}"
+   },
+   {
+      "name": "Debug symetric data 0.5",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+      "args": ["-p", "10", 
+      "/Users/efren_aragon/Documents/Work/Investigacion/Data/data_symmetric_two_state_process/fsa_twostatesymmetricProcess_g0.5_size10e6_entropydensity1._excessentropy0.dat",
+      "-v",
+      "-d",
+      "-j", "10"],
+      "cwd": "${fileDirname}"
+  },
+  {
+     "name": "Debug symetric data 300",
+     "type": "lldb",
+     "request": "launch",
+     "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+     "args": ["-p", "10", 
+     "/Users/efren_aragon/Documents/Work/Investigacion/Data/data_symmetric_two_state_process/fsa_twostatesymmetricProcess_g0.001__size300.dat",
+     "-v",
+     "-d",
+     "-j", "10"],
+     "cwd": "${fileDirname}"
+ }
    ]
 }

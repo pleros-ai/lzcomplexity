@@ -165,11 +165,11 @@ namespace lz {
       };
 
       // The error condition exceptions
-      class PNMBadFileFormat : FileFormatError {};
-      class PNMBadFileOperation : BadOperation {};
-      class PNMDepth : Errors {};
-      class PNMUnknownError : UnknownError {};
-      class PNMInsuficientData : Errors {};
+      class PNMBadFileFormat : public FileFormatError {};
+      class PNMBadFileOperation : public BadOperation {};
+      class PNMDepth : public Errors {};
+      class PNMUnknownError : public UnknownError {};
+      class PNMInsuficientData : public Errors {};
 
       // .............................................................................
       // Name: operator=

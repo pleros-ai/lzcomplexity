@@ -22,7 +22,7 @@ struct lz_options {
        lz::utils::LZ_Args::UNDEFINED_LINES;  //?> Final line where get shuffle entropy deficit
                                              //? terms (valid for excess of entropy by shuffling).
    lz::lz_uint n_jobs = 1;
-   lz::lz_int input_format = MagickNumber::PNM_RAWTXT;
+   MagickNumber input_format = MagickNumber::PNM_RAWTXT;
    bool entropy_density = false;
    bool multiLine = false;
    bool find_distance = true;
@@ -44,6 +44,7 @@ struct lz_options {
       is_csv = result["csv"].as<bool>();
       verbose = result["verbose"].as<bool>();
       entropy_density = result["entropy-density"].as<bool>();
+      preprocess = result["process"].as<bool>();
 
       auto opt_format = result["format"].as<std::string>();
       lz::utils::to_lowercase(opt_format);

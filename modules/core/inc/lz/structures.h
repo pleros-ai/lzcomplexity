@@ -18,6 +18,8 @@ namespace lz {
          const static lz_int ALL_LINES = -2;
          const static lz_int UNDEFINED_LINES = -1;
 
+         lz_bool calculate_lz = true;  //?> Flag for calculate the factorization of all sequence or not
+
          /* Excess entropy by shuffling parameters */
          lz_int block_size = -1;             //?> Max length of the block for excess of
                                              //?  entropy by shuffle (not calculate by default).

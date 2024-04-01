@@ -1,7 +1,5 @@
 #include "main/main.h"
 
-#include <csv.h>
-
 void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_options& opt) {
    nlohmann::json out_data;
 
@@ -17,19 +15,39 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
          out_data["sequences"][i]["entropy_density"] = results.entropy_density[i];
       }
 
-      if (results.lz_effective_complexity.size()) {
-         out_data["sequences"][i]["lz_effective_complexity"] = results.lz_effective_complexity[i];
-      }
-
-      // if (results.excess_entropy_dist.size()) {
-      //    out_data["sequences"][i]["excess_entropy_by_distance"] = results.excess_entropy_dist[i];
+      // if (results.lz_effective_complexity.size()) {
+      //    out_data["sequences"][i]["lz_effective_complexity"] = results.lz_effective_complexity[i];
       // }
 
-      if (results.shuffle_entropy_deficit.size()) {
-         out_data["sequences"][i]["shuffle_entropy_deficit"]["value"] = results.shuffle_entropy_deficit[i];
+      // if (results.excess_entropy_dist.size()) {
+      //    out_data["sequences"][i]["excess_entropy_dist"] = results.excess_entropy_dist[i];
+      // }
+      if (results.extra.size()) {
+         out_data["sequences"][i]["extra"]["lz_rajski_distance"] = results.extra[i].lz_rajski_distance;
+         out_data["sequences"][i]["extra"]["fh_uncertainty"] = results.extra[i].fh_uncertainty;
+         out_data["sequences"][i]["extra"]["lh_uncertainty"] = results.extra[i].lh_uncertainty;
+         out_data["sequences"][i]["extra"]["redundancy"] = results.extra[i].redundancy;
+         out_data["sequences"][i]["extra"]["lz_pearson_coefficient"] = results.extra[i].lz_pearson_coefficient;
+      }
+
+      if (results.sequence_info_distance.size()) {
+         out_data["sequences"][i]["info_distance_sequence"] = results.sequence_info_distance[i];
+      }
+
+      // if (results.mutual_information.size()) {
+      //    out_data["sequences"][i]["mutual_information"] = results.mutual_information[i];
+      // }
+
+      if (results.random_shuffle_complexity.size()) {
+         out_data["sequences"][i]["random_shuffle_complexity"] = results.random_shuffle_complexity[i];
+      }
+
+      if (results.whole_random_shuffle_complexity.size()) {
+         out_data["sequences"][i]["whole_random_shuffle_complexity"]["value"] =
+             results.whole_random_shuffle_complexity[i];
 
          if (results.shuffle_entropy_terms.size() && results.shuffle_entropy_terms[i].line == i + 1) {
-            out_data["sequences"][i]["shuffle_entropy_deficit"]["terms"] = results.shuffle_entropy_terms[i].terms;
+            out_data["sequences"][i]["random_shuffle_complexity"]["terms"] = results.shuffle_entropy_terms[i].terms;
          }
       }
 
@@ -57,6 +75,7 @@ lz::lz_int process(lz_options& opt) {
 
    auto g_now = now();
    unsigned short verbose_index = 1;
+
    time_point_t init_time;
    if (opt.verbose) {
       std::cout << lz::GREEN_COLOR << "2. Processing the data...\n" << lz::END_COLOR;
@@ -67,8 +86,10 @@ lz::lz_int process(lz_options& opt) {
    if (opt.is_csv) {
       // read_csv(opt.input, data);
       exit(0);
+   } else if (opt.preprocess) {
+      multiLineToOneLine(opt.input, data, true);
    } else {
-      data = read_input(opt.input, opt.multiLine);
+      data = read_input(opt.input, opt.multiLine, opt.input_format);
    }
 
    //? Input flags
@@ -100,6 +121,12 @@ lz::lz_int process(lz_options& opt) {
          std::cout << "Factors: [ ";
          for (auto f: flz.lzf) std::cout << f << " ";
          std::cout << "]" << std::endl;
+
+         // std::string txt = seq.toString();
+         // for (int i = 1; i < flz.lzf.size(); i++) {
+         //    std::cout << txt.substr(flz.lzf[i - 1], flz.lzf[i]) + ".";
+         // }
+         // std::cout << "]" << std::endl;
       }
    }
 
@@ -117,51 +144,82 @@ lz::lz_int process(lz_options& opt) {
       std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
    }
 
-   if (opt.verbose) {
-      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating LZ effective complexity\n"
-                << lz::END_COLOR;
-      init_time = now();
-   }
-   // Excess entropy by distance (mutual information)
-   lz::LZEffectiveComplexity(test_flags, lz);
-   if (opt.verbose) {
-      const auto end_time = now();
-      std::cout << "Excess entropy as MI: ";
-      for (auto x: lz.lz_effective_complexity) std::cout << x << " ";
-      std::cout << std::endl;
-      std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
-   }
+   // if (opt.verbose) {
+   //    std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating LZ effective complexity\n"
+   //              << lz::END_COLOR;
+   //    init_time = now();
+   // }
+   // // Excess entropy by distance (mutual information)
+   // lz::LZEffectiveComplexity(test_flags, lz);
+   // // lz::LZEffectiveComplexityNormalized(test_flags, lz);
+   // if (opt.verbose) {
+   //    const auto end_time = now();
+   //    std::cout << "Excess entropy as MI: ";
+   //    for (auto x: lz.lz_effective_complexity) std::cout << x << " ";
+   //    std::cout << std::endl;
+   //    std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+   // }
 
    if (opt.verbose) {
-      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating excess of entropy using distance\n"
-                << lz::END_COLOR;
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating extra measures\n" << lz::END_COLOR;
       init_time = now();
    }
    // Excess entropy by distance
-   lz::ExcessEntropyDistance(test_flags, lz);
+   // lz::ExcessEntropyDistance(test_flags, lz);
+   lz::ExtraMeasures(test_flags, lz);
    if (opt.verbose) {
       const auto end_time = now();
-      std::cout << "Excess entropy by distance: ";
-      for (auto x: lz.excess_entropy_dist) std::cout << x << " ";
+      // std::cout << "Excess entropy by distance: ";
+      // for (auto x: lz.excess_entropy_dist) std::cout << x << " ";
+      // std::cout << std::endl;
+      std::cout << "LZ Rajski distance: ";
+      for (auto x: lz.extra) std::cout << x.lz_rajski_distance << " ";
+      std::cout << std::endl;
+      std::cout << "FH Uncertainly: ";
+      for (auto x: lz.extra) std::cout << x.fh_uncertainty << " ";
+      std::cout << std::endl;
+      std::cout << "LH Uncertainly: ";
+      for (auto x: lz.extra) std::cout << x.lh_uncertainty << " ";
+      std::cout << std::endl;
+      std::cout << "LZ Redundancy: ";
+      for (auto x: lz.extra) std::cout << x.redundancy << " ";
+      std::cout << std::endl;
+      std::cout << "LZ Pearson coefficient: ";
+      for (auto x: lz.extra) std::cout << x.lz_pearson_coefficient << " ";
+      std::cout << std::endl;
+      std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+   }
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++
+                << ". Calculating random shuffle complexity using Z sequence\n"
+                << lz::END_COLOR;
+      init_time = now();
+   }
+   lz::RandomShuffleComplexity(test_flags, lz);
+   if (opt.verbose) {
+      const auto end_time = now();
+      std::cout << "Random shuffle complexity using Z sequence: ";
+      for (auto x: lz.random_shuffle_complexity) std::cout << x << " ";
       std::cout << std::endl;
       std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
    }
 
    if (opt.args.block_size >= 0) {
       if (opt.verbose) {
-         std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating shuffle entropy deficit\n"
+         std::cout << lz::GREEN_COLOR << "2." << verbose_index++
+                   << ". Calculating random shuffle complexity using whole sequence\n"
                    << lz::END_COLOR;
          init_time = now();
       }
       // Excess entropy by shuffle
-      lz::ShuffleEntropyDeficit(test_flags, lz);
+      lz::WholeRandomShuffleComplexity(test_flags, lz);
       if (opt.verbose) {
          const auto end_time = now();
-         std::cout << "Shuffle entropy deficit: ";
-         for (auto x: lz.shuffle_entropy_deficit) std::cout << x << " ";
-         // lz::ShuffleEntropyDeficitSequential(test_flags, lz2);
-         // std::cout << "\nExcess entropy by shuffle sequential: ";
-         // for (auto x : lz2.shuffle_entropy_deficit) std::cout << x << " ";
+         std::cout << "Random shuffle complexity using whole sequence: ";
+         for (auto x: lz.whole_random_shuffle_complexity) std::cout << x << " ";
+         std::cout << std::endl;
+         std::cout << "Multi information: ";
+         for (auto x: lz.multi_information) std::cout << x << " ";
          std::cout << std::endl;
 
          for (auto x: lz.shuffle_entropy_terms) {
@@ -179,7 +237,9 @@ lz::lz_int process(lz_options& opt) {
                 << lz::END_COLOR;
       init_time = now();
    }
-   lz::InformationDistanceBySequence(test_flags, lz);
+   // lz::InformationDistanceBySequence(test_flags, lz);
+   // lz::MutualInformationBySequence(test_flags, lz);
+   lz::RandomShuffleDistanceBySequence(test_flags, lz);
    if (opt.verbose) {
       const auto end_time = now();
       std::cout << "Info distance in sequences: ";
@@ -264,7 +324,7 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<lz::lz_int>()->default_value("20"), "value");
    opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
 
-   //    opt_group("p,process", "Clear input data.");
+   opt_group("r,process", "Clear input data.");
    //    opt_group("m,max-context", "Max context for suffix comparisons (only for caps algorithm).",
    //              cxxopts::value<lz::lz_int>()->default_value("0"), "num");
    try {

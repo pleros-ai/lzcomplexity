@@ -43,7 +43,7 @@
  */
 namespace lz {
    // The error condition exceptions
-   class SequenceError : Errors {};
+   class SequenceError : public Errors {};
    class SequenceBadAlloc : public SequenceError {};
    class SequenceNoMatchSize : public SequenceError {};
    class SequenceOutOfBounds : public SequenceError {};
@@ -55,7 +55,8 @@ namespace lz {
    class sequence {
      protected:
       std::vector<char> seq;  //!< the sequence
-      lz_int alphabet_size;
+      std::vector<char> alphabet;
+      lz_uint alphabet_size;
 
      public:
       /**
@@ -88,30 +89,34 @@ namespace lz {
        * @param vec The vector of characters.
        * @param aph The alphabet size.
        */
-      sequence(const std::vector<char> vec, lz_int aph)
-          : seq(vec), alphabet_size(aph){};
+      sequence(const std::vector<char> vec, lz_uint aph)
+          : seq(vec), alphabet_size(aph) {
+         DetermineAlphabet();
+      };
 
       /**
        * @brief Constructor that initializes the sequence with a string and a specified alphabet size.
        * @param str The string.
        * @param aph The alphabet size.
        */
-      sequence(const std::string str, lz_int aph)
-          : seq(str.begin(), str.end()), alphabet_size(aph){};
+      sequence(const std::string str, lz_uint aph)
+          : seq(str.begin(), str.end()), alphabet_size(aph) {
+         DetermineAlphabet();
+      };
 
       /**
        * @brief Copy constructor.
        * @param s The sequence to be copied.
        */
       sequence(const sequence& s)
-          : seq(s.seq), alphabet_size(s.alphabet_size){};
+          : seq(s.seq), alphabet(s.alphabet), alphabet_size(s.alphabet_size){};
 
       /**
        * @brief Move constructor.
        * @param s The sequence to be moved.
        */
       sequence(sequence&& s)
-          : seq(std::move(s.seq)), alphabet_size(s.alphabet_size){};
+          : seq(std::move(s.seq)), alphabet(std::move(s.alphabet)), alphabet_size(s.alphabet_size){};
 
       /**
        * @brief Destructor.
@@ -119,10 +124,16 @@ namespace lz {
       ~sequence() {
          alphabet_size = ALPHABET_SIZE;
          seq.clear();
+         alphabet.clear();
       };
 
-      constexpr lz_int alphabetSize(void) const { return alphabet_size; };
-      lz_int SetAlphabetSize(void);
+      constexpr lz_uint getAlphabetSize(void) const { return alphabet_size; };
+      lz_uint setAlphabetSize(void);
+      void setAlphabetSize(lz_uint);
+
+      std::vector<char> getAlphabet(void) const { return alphabet; };
+      std::vector<char> setAlphabet(void);
+      void setAlphabet(std::vector<char>);
 
       lz_uint NoZeroes(void) const;
       std::string toString(void) const;
@@ -278,6 +289,7 @@ namespace lz {
 
       return *this;
    }
+
    inline std::vector<char> sequence::DetermineAlphabet(void) {
       std::vector<char> al = seq;
 
@@ -291,16 +303,30 @@ namespace lz {
       al.resize(last - al.begin());
 #endif
 
-      return al;
+      return alphabet = al;
    }
 
-   inline lz_int sequence::SetAlphabetSize(void) {
-      std::vector<char> al;
+   inline lz_uint sequence::setAlphabetSize(void) {
+      DetermineAlphabet();
 
-      al = DetermineAlphabet();
+      if (alphabet.size() < alphabet_size) {
+         // See with what complete the alphabet
+      } else {
+         alphabet_size = alphabet.size();
+      }
 
-      return alphabet_size = al.size();
+      return alphabet_size;
    }
+
+   inline void sequence::setAlphabetSize(lz_uint _alphabet_size) { alphabet_size = _alphabet_size; }
+
+   inline std::vector<char> sequence::setAlphabet(void) {
+      DetermineAlphabet();
+
+      return alphabet;
+   }
+
+   inline void sequence::setAlphabet(std::vector<char> alph) { alphabet = alph; }
 
    inline std::vector<char> sequence::SequenceVector(void) const { return seq; }
 
@@ -539,6 +565,9 @@ namespace lz {
    }
 
    inline std::ostream& operator<<(std::ostream& os, const sequence& obj) {
+      os << "Alphabet size: " << obj.alphabet_size << " Alphabet: [";
+      for (auto c: obj.alphabet) os << c << " ";
+      os << "]\n";
       for (auto c: obj.seq) os << c;
 
       return os;

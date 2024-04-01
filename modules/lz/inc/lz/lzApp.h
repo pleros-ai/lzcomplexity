@@ -39,6 +39,7 @@
 #include "flags.h"
 
 namespace lz {
+
    // using T = std::variant<suffixarray::CaPS_SA, suffixarray::SAIS>;
    //.........................................................................
    // Lempel-Ziv 76 factorization
@@ -51,21 +52,31 @@ namespace lz {
    auto EntropyDensity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
    //.........................................................................
+   // Here comes the excess entropy by shuffling.
+   //.........................................................................
+   auto WholeRandomShuffleComplexity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+   auto RandomShuffleComplexity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+   auto RandomShuffleComplexitySequential(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+
+   //.........................................................................
    // Excess entropy as mutual information: E = (C(X) + C(Y) - C(XY))
    //.........................................................................
    auto LZEffectiveComplexity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
-
-   //.........................................................................
-   // Here comes the excess entropy by shuffling.
-   //.........................................................................
-   auto ShuffleEntropyDeficit(utils::LZ_Flags&, utils::LZ_Output&) -> utils::LZ_ExcessInfo;
-   auto ShuffleEntropyDeficitSequential(utils::LZ_Flags&, utils::LZ_Output&) -> utils::LZ_ExcessInfo;
-
    //.........................................................................
    // Here comes the excess entropy by distance: E = [1 - d(X,Y)] * max(C(X), C(Y))
    // X -> first half, Y -> second half
    //.........................................................................
    auto ExcessEntropyDistance(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+
+   //.........................................................................
+   // Extra measures
+   // - rajski distance
+   // - first half uncertainty
+   // - last half uncertainty
+   // - redundancy
+   // - pearson coefficient
+   //.........................................................................
+   auto ExtraMeasures(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
    //.........................................................................
    // Information distance between two consecutive sequences
@@ -75,6 +86,8 @@ namespace lz {
    //.........................................................................
    // Information distance into the sequences
    //.........................................................................
+   auto MutualInformationBySequence(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
    auto InformationDistanceBySequence(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+   auto RandomShuffleDistanceBySequence(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
 }  // namespace lz

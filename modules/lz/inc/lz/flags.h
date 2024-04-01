@@ -17,15 +17,29 @@ namespace lz {
             std::vector<lz_double> terms;
          } shuffle_terms;
 
+         typedef struct {
+            lz_double lz_rajski_distance;
+            lz_double redundancy;
+            lz_double fh_uncertainty;
+            lz_double lh_uncertainty;
+            lz_double lz_pearson_coefficient;
+         } LZ_Extra;
+
+         std::vector<lz_bool> factor_calculated;  //!> complexity calculated for the sequence in the index i
          // Post process parameters
-         std::vector<lz_int> complexity;                  //!> complexity of the sequence
-         std::vector<lz_int> lz_effective_complexity;     //!> excess of entropy by mutual information of the sequence
+         std::vector<lz_uint> complexity;                 //!> complexity of the sequence
+         std::vector<lz_uint> half_complexity;            //!> complexity of the first half of the sequence
+         std::vector<lz_double> lz_effective_complexity;  //!> excess of entropy by mutual information of the sequence
          std::vector<lz_double> entropy_density;          //!> entropy density of the sequence
          std::vector<lz_double> excess_entropy_dist;      //!> excess of entropy by distance of the sequence
-         std::vector<lz_double> shuffle_entropy_deficit;  //!> excess of entropy by shuffling of the sequence
-         std::vector<lz_double> info_distance;            //!> information distance of the two consecutive sequences
-         std::vector<lz_double> sequence_info_distance;   //!> information distance of each sequences
-         std::vector<lz_double> multi_information;        //!> multi information value of each sequence
+         std::vector<lz_double> whole_random_shuffle_complexity;  //!> excess of entropy by shuffling of the sequence
+         std::vector<lz_double> random_shuffle_complexity;  //!> excess of entropy by shuffling of the merged sequence
+         std::vector<lz_double> mutual_information;         //!> mutual information of two half of the sequences
+         std::vector<lz_double> info_distance;              //!> information distance of the two consecutive sequences
+         std::vector<lz_double> sequence_info_distance;     //!> information distance of each sequences
+         std::vector<lz_double> multi_information;          //!> multi information value of each sequence
+
+         std::vector<LZ_Extra> extra;
 
          //? Variables found in Excess fo entropy by shuffling
          std::vector<shuffle_terms> shuffle_entropy_terms;  //!> excess of entropy of each permutation of the sequence
@@ -39,7 +53,7 @@ namespace lz {
             std::swap(this->lz_effective_complexity, rhs.lz_effective_complexity);
             std::swap(this->entropy_density, rhs.entropy_density);
             std::swap(this->excess_entropy_dist, rhs.excess_entropy_dist);
-            std::swap(this->shuffle_entropy_deficit, rhs.shuffle_entropy_deficit);
+            std::swap(this->random_shuffle_complexity, rhs.random_shuffle_complexity);
             std::swap(this->info_distance, rhs.info_distance);
             std::swap(this->sequence_info_distance, rhs.sequence_info_distance);
             std::swap(this->multi_information, rhs.multi_information);
