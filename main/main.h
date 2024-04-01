@@ -9,27 +9,24 @@
 #include "config.h"
 
 typedef std::chrono::high_resolution_clock::time_point time_point_t;
-constexpr inline auto now = std::chrono::high_resolution_clock::now;
-constexpr inline auto duration = [](const std::chrono::nanoseconds& d) {
+constexpr inline auto                                  now      = std::chrono::high_resolution_clock::now;
+constexpr inline auto                                  duration = [](const std::chrono::nanoseconds& d) {
    return std::chrono::duration_cast<std::chrono::duration<double>>(d).count();
 };
 
 inline auto getColor(lz::utils::MSG_TYPE type) {
    switch (type) {
-      case lz::utils::MSG_TYPE::ERROR:
-         return lz::RED_COLOR;
-      case lz::utils::MSG_TYPE::WARRING:
-         return lz::YELLOW_COLOR;
-      case lz::utils::MSG_TYPE::INFO:
-         return lz::GREEN_COLOR;
+      case lz::utils::MSG_TYPE::ERROR: return lz::RED_COLOR;
+      case lz::utils::MSG_TYPE::WARRING: return lz::YELLOW_COLOR;
+      case lz::utils::MSG_TYPE::INFO: return lz::GREEN_COLOR;
    }
    return lz::BLUE_COLOR;
 }
 
 inline std::vector<std::string> split(const std::string& s, char delim) {
    std::vector<std::string> tokens;
-   std::string token;
-   std::istringstream tokenStream(s);
+   std::string              token;
+   std::istringstream       tokenStream(s);
    while (std::getline(tokenStream, token, delim)) {
       tokens.push_back(token);
    }
@@ -37,19 +34,19 @@ inline std::vector<std::string> split(const std::string& s, char delim) {
 }
 
 inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
-   auto color = getColor(type);
+   auto                     color = getColor(type);
    std::vector<std::string> allLines;
-   std::va_list args;
+   std::va_list             args;
 
-   std::string topL = "╭──";
-   std::string botL = "╰──";
-   std::string topR = "──╮";
-   std::string botR = "──╯";
+   std::string            topL   = "╭──";
+   std::string            botL   = "╰──";
+   std::string            topR   = "──╮";
+   std::string            botR   = "──╯";
    std::string::size_type maxLen = 0;
 
    std::string final_msg = "";
    std::string delimiter = "\n";
-   size_t pos = 0;
+   size_t      pos       = 0;
 
    allLines = split(msg, '\n');
    for (auto tmp: allLines) {
@@ -71,29 +68,14 @@ inline void read_multi_line(std::ifstream& in, std::vector<lz::sequence>& seq_ve
 
    try {
       switch (format) {
-         case AUTO:
-            parser.ReadPNM(in, seq_vec);
-            break;
-         case PNM_P1:
-            parser.ReadPBM(in, seq_vec, false);
-            break;
-         case PNM_P4:
-            parser.ReadPBM(in, seq_vec, true);
-            break;
-         case PNM_P2:
-            parser.ReadPGM(in, seq_vec, false);
-            break;
-         case PNM_P5:
-            parser.ReadPGM(in, seq_vec, true);
-            break;
-         case PNM_RAWTXT:
-            parser.ReadRAW(in, seq_vec, false);
-            break;
-         case PNM_RAWBIN:
-            parser.ReadRAW(in, seq_vec, true);
-            break;
-         default:
-            parser.ReadPNM(in, seq_vec);
+         case AUTO: parser.ReadPNM(in, seq_vec); break;
+         case PNM_P1: parser.ReadPBM(in, seq_vec, false); break;
+         case PNM_P4: parser.ReadPBM(in, seq_vec, true); break;
+         case PNM_P2: parser.ReadPGM(in, seq_vec, false); break;
+         case PNM_P5: parser.ReadPGM(in, seq_vec, true); break;
+         case PNM_RAWTXT: parser.ReadRAW(in, seq_vec, false); break;
+         case PNM_RAWBIN: parser.ReadRAW(in, seq_vec, true); break;
+         default: parser.ReadPNM(in, seq_vec);
       }
    } catch (BadAlloc& err) {
       std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
@@ -111,29 +93,14 @@ inline void read_one_line(std::ifstream& in, lz::sequence& seq, MagickNumber for
 
    try {
       switch (format) {
-         case AUTO:
-            parser.ReadPNM(in, seq);
-            break;
-         case PNM_P1:
-            parser.ReadPBM(in, seq, false);
-            break;
-         case PNM_P4:
-            parser.ReadPBM(in, seq, true);
-            break;
-         case PNM_P2:
-            parser.ReadPGM(in, seq, false);
-            break;
-         case PNM_P5:
-            parser.ReadPGM(in, seq, true);
-            break;
-         case PNM_RAWTXT:
-            parser.ReadRAW(in, seq, false);
-            break;
-         case PNM_RAWBIN:
-            parser.ReadRAW(in, seq, true);
-            break;
-         default:
-            parser.ReadPNM(in, seq);
+         case AUTO: parser.ReadPNM(in, seq); break;
+         case PNM_P1: parser.ReadPBM(in, seq, false); break;
+         case PNM_P4: parser.ReadPBM(in, seq, true); break;
+         case PNM_P2: parser.ReadPGM(in, seq, false); break;
+         case PNM_P5: parser.ReadPGM(in, seq, true); break;
+         case PNM_RAWTXT: parser.ReadRAW(in, seq, false); break;
+         case PNM_RAWBIN: parser.ReadRAW(in, seq, true); break;
+         default: parser.ReadPNM(in, seq);
       }
    } catch (BadAlloc& err) {
       std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
@@ -146,22 +113,22 @@ inline void read_one_line(std::ifstream& in, lz::sequence& seq, MagickNumber for
    }
 }
 // Read a plain text file with one line
-inline std::vector<lz::sequence> read_input(const std::string& ip_path, bool multiline = false,
-                                            MagickNumber format = MagickNumber::PNM_RAWTXT) {
+inline std::vector<lz::sequence>
+   read_input(const std::string& ip_path, bool multiline = false, MagickNumber format = MagickNumber::PNM_RAWTXT) {
    namespace fs = std::filesystem;
    std::error_code ec;
-   const auto file_size = fs::file_size(ip_path, ec);
+   const auto      file_size = fs::file_size(ip_path, ec);
 
    if (ec) {
       std::cerr << lz::RED_COLOR << ip_path << " : " << ec.message() << "\n" << lz::END_COLOR;
       std::exit(EXIT_FAILURE);
    }
 
-   int num_line = 0;
+   int           num_line = 0;
    std::ifstream input(ip_path);
 
-   lz::utils::pnm parser;
-   lz::sequence oneLine;
+   lz::utils::pnm            parser;
+   lz::sequence              oneLine;
    std::vector<lz::sequence> data{};
 
    if (multiline)
@@ -181,7 +148,7 @@ inline void multiLineToOneLine(const std::string& ip_path, std::vector<lz::seque
    std::error_code ec;
 
    const auto file_size = fs::file_size(ip_path, ec);
-   int num_line = 0;
+   int        num_line  = 0;
 
    if (ec) {
       std::cerr << ip_path << " : " << ec.message() << "\n";
@@ -189,15 +156,17 @@ inline void multiLineToOneLine(const std::string& ip_path, std::vector<lz::seque
    }
 
    std::ifstream input(ip_path);
-   lz::sequence line;
-   lz::sequence final_str;
+   lz::sequence  line;
+   lz::sequence  final_str;
 
    while (input.good() && !input.eof()) {
       input >> line;
       num_line++;
-      if (num_line % 35 == 0) std::cout << "\rprocess: " << process << " Num of lines read: " << num_line;
+      if (num_line % 35 == 0)
+         std::cout << "\rprocess: " << process << " Num of lines read: " << num_line;
 
-      if (line.at(0) == '#' || line.at(0) == '>' || line.at(0) == '\n' || line.length() == 0) continue;
+      if (line.at(0) == '#' || line.at(0) == '>' || line.at(0) == '\n' || line.length() == 0)
+         continue;
 
       if (process) {
          final_str += line.Take(line.size() - 1);
@@ -206,7 +175,8 @@ inline void multiLineToOneLine(const std::string& ip_path, std::vector<lz::seque
       }
    }
 
-   if (process) text_col.push_back(final_str);
+   if (process)
+      text_col.push_back(final_str);
    input.close();
    std::cout << "End read: size --> " << final_str.size() << "\n";
 }
@@ -215,8 +185,8 @@ inline void multiLineToOneLine(const std::string& ip_path, std::vector<lz::seque
 inline void read_csv(const std::string& ip_path, std::vector<std::string>& text_col) {
    namespace fs = std::filesystem;
    std::error_code ec;
-   const auto file_size = fs::file_size(ip_path, ec);
-   int num_line = 0;
+   const auto      file_size = fs::file_size(ip_path, ec);
+   int             num_line  = 0;
 
    if (ec) {
       std::cerr << lz::RED_COLOR << ip_path << " : " << ec.message() << "\n" << lz::END_COLOR;
@@ -225,9 +195,9 @@ inline void read_csv(const std::string& ip_path, std::vector<std::string>& text_
 
    io::LineReader input(ip_path);
 
-   auto line = input.next_line();
+   auto        line = input.next_line();
    std::string str(line);
-   auto rows = split(str, ',');
+   auto        rows = split(str, ',');
    text_col.reserve(rows.size());
 
    for (auto row: rows) {
@@ -237,10 +207,73 @@ inline void read_csv(const std::string& ip_path, std::vector<std::string>& text_
    double x, y, z;
    while (auto line = input.next_line()) {
       std::string str(line);
-      auto rows = split(str, ',');
+      auto        rows = split(str, ',');
       for (size_t i = 0; i < rows.size(); i++) {
          text_col[i] += rows[i];
       }
    }
    print_msg(lz::utils::MSG_TYPE::INFO, text_col[0]);
+}
+
+std::vector<std::pair<std::string, std::vector<int>>> read_csv(std::string filename) {
+   // Reads a CSV file into a vector of <string, vector<int>> pairs where
+   // each pair represents <column name, column values>
+
+   // Create a vector of <string, int vector> pairs to store the result
+   std::vector<std::pair<std::string, std::vector<int>>> result;
+
+   // Create an input filestream
+   std::ifstream myFile(filename);
+
+   // Make sure the file is open
+   if (!myFile.is_open())
+      throw std::runtime_error("Could not open file");
+
+   // Helper vars
+   std::string line, colname;
+   int         val;
+
+   // Read the column names
+   if (myFile.good()) {
+      // Extract the first line in the file
+      std::getline(myFile, line);
+
+      // Create a stringstream from line
+      std::stringstream ss(line);
+
+      // Extract each column name
+      while (std::getline(ss, colname, ',')) {
+
+         // Initialize and add <colname, int vector> pairs to result
+         result.push_back({colname, std::vector<int>{}});
+      }
+   }
+
+   // Read data, line by line
+   while (std::getline(myFile, line)) {
+      // Create a stringstream of the current line
+      std::stringstream ss(line);
+
+      // Keep track of the current column index
+      int colIdx = 0;
+
+      // Extract each integer
+      while (ss >> val) {
+
+         // Add the current integer to the 'colIdx' column's values vector
+         result.at(colIdx).second.push_back(val);
+
+         // If the next token is a comma, ignore it and move on
+         if (ss.peek() == ',')
+            ss.ignore();
+
+         // Increment the column index
+         colIdx++;
+      }
+   }
+
+   // Close file
+   myFile.close();
+
+   return result;
 }

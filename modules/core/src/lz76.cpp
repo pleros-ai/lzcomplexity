@@ -54,13 +54,13 @@ namespace lz {
        */
       LZ_Result LempelZiv76::Factorize(const utils::LZ_SuffixArray _SA) {
          lzf.reserve(_SA.n);
-         lz_int* lpf = NULL;
-         std::vector<char>::size_type i = 0;
+         lz_int*                      lpf = NULL;
+         std::vector<char>::size_type i   = 0;
 
          lzf.clear();
 
          auto logn = std::log(ALPHABET_SIZE);
-         epsilon = 2 * (1 + std::log(std::log(ALPHABET_SIZE * _SA.SA.size()) / logn) / logn) /
+         epsilon   = 2 * (1 + std::log(std::log(ALPHABET_SIZE * _SA.SA.size()) / logn) / logn) /
                    (std::log(_SA.SA.size()) / logn);
 
          try {
@@ -71,7 +71,7 @@ namespace lz {
          }
 
          try {
-            lz::utils::LPF(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);  // Largest prefix factor.
+            lz::utils::LPF_opt(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);  // Largest prefix factor.
 
             // Lets build the factorization table
             i = 1;
@@ -109,13 +109,13 @@ namespace lz {
          auto _SA = suffixarray::CaPS_SA(max_th).construct(seq.toString());
 
          lzf.reserve(_SA.n);
-         lz_int* lpf = NULL;
-         std::vector<char>::size_type i = 0;
+         lz_int*                      lpf = NULL;
+         std::vector<char>::size_type i   = 0;
 
          lzf.clear();
 
          auto logn = std::log(seq.getAlphabetSize());
-         epsilon = 2 * (1 + std::log(std::log(seq.getAlphabetSize() * seq.size()) / logn) / logn) /
+         epsilon   = 2 * (1 + std::log(std::log(seq.getAlphabetSize() * seq.size()) / logn) / logn) /
                    (std::log(seq.size()) / logn);
 
          try {
@@ -126,7 +126,7 @@ namespace lz {
          }
 
          try {
-            lz::utils::LPF(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);  // Largest prefix factor.
+            lz::utils::LPF_opt(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);  // Largest prefix factor.
 
             // Lets build the factorization table
             i = 1;
@@ -159,11 +159,11 @@ namespace lz {
 
          auto logn = std::log(sa_args.log_base);
          epsilon =
-             2 * (1 + std::log(std::log(sa_args.alphabet * seq.size()) / logn) / logn) / (std::log(seq.size()) / logn);
+            2 * (1 + std::log(std::log(sa_args.alphabet * seq.size()) / logn) / logn) / (std::log(seq.size()) / logn);
 
          lzf.reserve(_SA.n);
-         lz_int* lpf = NULL;
-         std::vector<char>::size_type i = 0;
+         lz_int*                      lpf = NULL;
+         std::vector<char>::size_type i   = 0;
 
          lzf.clear();
 
@@ -175,7 +175,7 @@ namespace lz {
          }
 
          try {
-            lz::utils::LPF(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);  // Largest prefix factor.
+            lz::utils::LPF_opt(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);  // Largest prefix factor.
 
             // Lets build the factorization table
             i = 1;
@@ -202,58 +202,59 @@ namespace lz {
          return LZ_Result{factorization, epsilon, lzf};
       }
 
-#if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
-      template <typename... SAImpl>
-      LZ_Result LempelZiv76::Factorize(const sequence seq, utils::sa_type_t<SAImpl...> sa_impl) {
-         // parameters should come from flags
-         utils::LZ_SuffixArray _SA;
-         std::visit([&](auto&& alg) { _SA = alg.construct(seq.toString()); }, sa_impl);
+      // #if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
+      //       template <typename... SAImpl>
+      //       LZ_Result LempelZiv76::Factorize(const sequence seq, utils::sa_type_t<SAImpl...> sa_impl) {
+      //          // parameters should come from flags
+      //          utils::LZ_SuffixArray _SA;
+      //          std::visit([&](auto&& alg) { _SA = alg.construct(seq.toString()); }, sa_impl);
 
-         auto logn = std::log(seq.getAlphabetSize());
-         epsilon = 2 * (1 + std::log(std::log(seq.getAlphabetSize() * seq.size()) / logn) / logn) /
-                   (std::log(seq.size()) / logn);
+      //          auto logn = std::log(seq.getAlphabetSize());
+      //          epsilon = 2 * (1 + std::log(std::log(seq.getAlphabetSize() * seq.size()) / logn) / logn) /
+      //                    (std::log(seq.size()) / logn);
 
-         lzf.reserve(_SA.n);
-         lz_int* lpf = NULL;
-         std::vector<char>::size_type i = 0;
+      //          lzf.reserve(_SA.n);
+      //          lz_int* lpf = NULL;
+      //          std::vector<char>::size_type i = 0;
 
-         lzf.clear();
+      //          lzf.clear();
 
-         try {
-            lpf = (lz_int*)std::malloc(_SA.n * sizeof(lz_int));
-         } catch (std::bad_alloc& ba) {
-            std::free(lpf);
-            throw LZBadAlloc();
-         }
+      //          try {
+      //             lpf = (lz_int*)std::malloc(_SA.n * sizeof(lz_int));
+      //          } catch (std::bad_alloc& ba) {
+      //             std::free(lpf);
+      //             throw LZBadAlloc();
+      //          }
 
-         try {
-            lz::utils::LPF(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);  // Largest prefix factor.
+      //          try {
+      //             lz::utils::LPF(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);  // Largest prefix
+      //             factor.
 
-            // Lets build the factorization table
-            i = 1;
-            lzf.push_back(0);
-            lzf.push_back(1);
+      //             // Lets build the factorization table
+      //             i = 1;
+      //             lzf.push_back(0);
+      //             lzf.push_back(1);
 
-            while (i < _SA.n) {
-               i = lzf.back() + lpf[i] + 1;
-               lzf.push_back(i);
-            }
+      //             while (i < _SA.n) {
+      //                i = lzf.back() + lpf[i] + 1;
+      //                lzf.push_back(i);
+      //             }
 
-         } catch (std::bad_alloc& ba) {
-            std::free(lpf);
-            throw LZBadAlloc();
-         } catch (...) {
-            std::free(lpf);
-            throw LZError();
-         }
+      //          } catch (std::bad_alloc& ba) {
+      //             std::free(lpf);
+      //             throw LZBadAlloc();
+      //          } catch (...) {
+      //             std::free(lpf);
+      //             throw LZError();
+      //          }
 
-         FoundStddev();
-         // done !
-         std::free(lpf);
-         factorization = ((lzf.back() <= _SA.n) ? lzf.size() - 1 : lzf.size() - 2);
-         return LZ_Result{factorization, epsilon, lzf};
-      }
-#endif
+      //          FoundStddev();
+      //          // done !
+      //          std::free(lpf);
+      //          factorization = ((lzf.back() <= _SA.n) ? lzf.size() - 1 : lzf.size() - 2);
+      //          return LZ_Result{factorization, epsilon, lzf};
+      //       }
+      // #endif
 
       lz_double LempelZiv76::FoundStddev() {
          std::vector<lz_uint> factors_length;
@@ -262,7 +263,7 @@ namespace lz {
             factors_length.push_back(lzf[i] - lzf[i - 1]);
          }
 
-         lz_double sum = std::accumulate(PAR factors_length.begin(), factors_length.end(), 0.0);
+         lz_double sum  = std::accumulate(PAR factors_length.begin(), factors_length.end(), 0.0);
          lz_double mean = sum / lzf.size();
 
          // std::vector<lz_double> diff(factors_length.size());
@@ -279,7 +280,7 @@ namespace lz {
             }
             return init;
          };
-         auto reduce = [](auto a, auto b) { return a + b; };
+         auto      reduce = [](auto a, auto b) { return a + b; };
          lz_double sq_sum = utils::parallel_reduce(0ul, factors_length.size(), 0.0, body, reduce);
 
          return factors_stddev = std::sqrt(sq_sum / lzf.size());

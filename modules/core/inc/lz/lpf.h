@@ -40,11 +40,11 @@ namespace lz {
 
          stack_element(void) { len = pos = 0; };
          stack_element(int l, int p)
-             : len(l), pos(p){};
+           : len(l), pos(p){};
          stack_element(const stack_element& s)
-             : len(s.len), pos(s.pos){};
+           : len(s.len), pos(s.pos){};
          stack_element(stack_element&& s)
-             : len(std::exchange(s.len, 0)), pos(std::exchange(s.pos, 0)){};
+           : len(std::exchange(s.len, 0)), pos(std::exchange(s.pos, 0)){};
 
          ~stack_element(void){};
 
@@ -77,10 +77,10 @@ namespace lz {
       //.....................................................
       /// \brief class defines a simple stack
       class LPFStack {
-        protected:
+     protected:
          std::vector<struct stack_element> element;  //!< The elements of the stack
 
-        public:
+     public:
          LPFStack(void);       //!< Default constructor
          LPFStack(lz_size n);  //!< Constructor. Allocates memory according to n.
          ~LPFStack();          //!< Destructor.
@@ -96,7 +96,7 @@ namespace lz {
          lz_size length(void) const;  //!< Returns the number of elements in the stack.
          lz_size No(void) const;      //!< Returns the number of elements in the stack.
          lz_size size(void) const;    //!< Returns the number of elements in the stack.
-         bool empty(void) const;      //!< Returns True if stack is empty, False otherwise.
+         bool    empty(void) const;   //!< Returns True if stack is empty, False otherwise.
 
          void clear(void);  //!< clears the stack
       };
@@ -115,13 +115,17 @@ namespace lz {
          element.reserve(n);
       }
 
-      inline LPFStack::LPFStack(void) { element.clear(); }
+      inline LPFStack::LPFStack(void) {
+         element.clear();
+      }
 
       /// \brief
       /// Destructor. Frees memory.
       /// \return none.
       /// \sa LPFStack()
-      inline LPFStack::~LPFStack() { element.clear(); }
+      inline LPFStack::~LPFStack() {
+         element.clear();
+      }
 
       /// \brief
       /// Adds an element to the stack.
@@ -146,17 +150,23 @@ namespace lz {
       /// \return The top element
       /// \sa pop()
       /// \sa push()
-      inline struct stack_element LPFStack::Top(void) const { return element.back(); }
+      inline struct stack_element LPFStack::Top(void) const {
+         return element.back();
+      }
 
       /// \brief
       /// Returns the len value of the top element from the stack, without popping.
       /// \return The len value of the top element
-      inline int LPFStack::TopLen(void) const { return element.back().len; }
+      inline int LPFStack::TopLen(void) const {
+         return element.back().len;
+      }
 
       /// \brief
       /// Returns the pos value of the top element from the stack, without popping.
       /// \return The pos value of the top element
-      inline int LPFStack::TopPos(void) const { return element.back().pos; }
+      inline int LPFStack::TopPos(void) const {
+         return element.back().pos;
+      }
 
       /// \brief
       /// Pops an element from the stack.
@@ -170,25 +180,33 @@ namespace lz {
       /// \brief
       /// Returns True if stack is empty, False otherwise.
       /// \return bool value.
-      inline bool LPFStack::empty(void) const { return element.empty(); }
+      inline bool LPFStack::empty(void) const {
+         return element.empty();
+      }
 
       /// \brief
       /// Returns the number of elements in the stack
       /// \return number of elements in the stack
       /// \sa No()
-      inline lz_size LPFStack::length(void) const { return element.size(); }
+      inline lz_size LPFStack::length(void) const {
+         return element.size();
+      }
 
       /// \brief
       /// Returns the number of elements in the stack
       /// \return number of elements in the stack
       /// \sa length()
-      inline lz_size LPFStack::No(void) const { return length(); }
+      inline lz_size LPFStack::No(void) const {
+         return length();
+      }
 
       /// \brief
       /// Returns the number of elements in the stack
       /// \return number of elements in the stack
       /// \sa length()
-      inline lz_size LPFStack::size(void) const { return length(); }
+      inline lz_size LPFStack::size(void) const {
+         return length();
+      }
 
       //-------------------------------------------------
       //                  Friend functions
@@ -216,15 +234,16 @@ namespace lz {
             return -1;
          }
          if (n <= 1) {
-            if (n == 1) lpf[0] = 0;
+            if (n == 1)
+               lpf[0] = 0;
             return 0;
          }
 
          LPFStack stack;
-         lz_int lcp = 0;
+         lz_int   lcp = 0;
 
          // SA and LCP must have allocated size n+1	!!!
-         SA[n] = -1;
+         SA[n]  = -1;
          LCP[n] = 0;
 
          stack.push(0, SA[0]);
@@ -234,11 +253,12 @@ namespace lz {
 
             while (!stack.empty() && SA[i] < stack.TopPos()) {
                lpf[stack.TopPos()] = std::max(stack.TopLen(), lcp);
-               lcp = std::min(stack.TopLen(), lcp);
+               lcp                 = std::min(stack.TopLen(), lcp);
                stack.pop();
             }
 
-            if (i < n) stack.push(lcp, SA[i]);
+            if (i < n)
+               stack.push(lcp, SA[i]);
          }
 
          return n;
@@ -260,13 +280,14 @@ namespace lz {
             return -1;
          }
          if (n <= 1) {
-            if (n == 1) lpf[0] = 0;
+            if (n == 1)
+               lpf[0] = 0;
             return 0;
          }
 
-         lz_int lcp = 0;
-         SA[n] = -1;
-         LCP[n] = 0;
+         lz_int lcp                = 0;
+         SA[n]                     = -1;
+         LCP[n]                    = 0;
          std::vector<lz_int> stack = {0};
 
          for (lz_size i = 1; i < n; i++) {
@@ -275,13 +296,14 @@ namespace lz {
                    (SA[i] < SA[stack.back()] || (SA[i] > SA[stack.back()] && LCP[i] <= LCP[stack.back()]))) {
                if (SA[i] < SA[stack.back()]) {
                   lpf[SA[stack.back()]] = std::max(LCP[i], LCP[stack.back()]);
-                  LCP[i] = std::min(LCP[i], LCP[stack.back()]);
+                  LCP[i]                = std::min(LCP[i], LCP[stack.back()]);
                } else {
                   lpf[SA[stack.back()]] = LCP[stack.back()];
                }
                stack.pop_back();
             }
-            if (i < n) stack.push_back(i);
+            if (i < n)
+               stack.push_back(i);
          }
 
          return n;

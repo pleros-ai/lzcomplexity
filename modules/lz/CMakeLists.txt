@@ -21,6 +21,7 @@ set_property(GLOBAL PROPERTY APP_INCLUDE_DIR ${APP_INCLUDE_DIR})
 
 # set(LZ_LZ76 ${APP_SOURCE_DIR}/lz76.cpp)
 set(LZ_ALG ${APP_SOURCE_DIR}/lzApp.cpp)
+set(LZ_FLAGS ${APP_SOURCE_DIR}/flags.cpp)
 
 if(LZ_SHARE)
    add_library(${PROJECT_NAME} SHARED)
@@ -48,7 +49,7 @@ endif()
 
 # add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
 
-target_sources(${PROJECT_NAME} PRIVATE ${LZ_ALG})
+target_sources(${PROJECT_NAME} PRIVATE ${LZ_ALG} ${LZ_FLAGS})
 target_include_directories(${PROJECT_NAME} 
    PUBLIC 
       $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>

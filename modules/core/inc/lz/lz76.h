@@ -33,9 +33,6 @@
 #include <assert.h>
 #include <lz/caps.h>
 #include <lz/parallel_utils.h>
-#include <lz/types.h>
-
-#include <vector>
 
 #include "lpf.h"
 #include "sequence.h"
@@ -48,25 +45,25 @@ namespace lz {
    namespace lz76 {
 
       struct LZ_Result {
-         lz_uint factorization;     //!> The factorization (Lempel-Ziv 76 complexity)
-         lz_double epsilon;         //!> The epsilon value for the sequence
-         std::vector<lz_uint> lzf;  //!> The factors vector.
+         lz_uint              factorization;  //!> The factorization (Lempel-Ziv 76 complexity)
+         lz_double            epsilon;        //!> The epsilon value for the sequence
+         std::vector<lz_uint> lzf;            //!> The factors vector.
       };
 
       class LempelZiv76 {
-        private:
+     private:
          void FreshStart(void);
 
-        protected:
-         lz_uint factorization;     //!> The LZ76 factorization.
-         std::vector<lz_uint> lzf;  //!> The factorization vector.
+     protected:
+         lz_uint              factorization;  //!> The LZ76 factorization.
+         std::vector<lz_uint> lzf;            //!> The factorization vector.
 
          lz_double epsilon;
          lz_double factors_stddev;
 
-        public:
+     public:
          LempelZiv76()
-             : factorization(0){};                   //!> default constructor.
+           : factorization(0){};                     //!> default constructor.
          LempelZiv76(const utils::LZ_SuffixArray&);  //!> default constructor.
          LempelZiv76(const LempelZiv76&);            //!> copy constructor.
          LempelZiv76(LempelZiv76&&);                 //!> move constructor.
@@ -76,11 +73,13 @@ namespace lz {
                                                                 //! using CaPS with the parameters specified.
          LZ_Result Factorize(const utils::LZ_SuffixArray);      //!> Find the factors and calculate the lz76 complexity
 
-#if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
-         template <typename... SAImpl>
-         LZ_Result Factorize(const sequence, utils::sa_type_t<SAImpl...>);  //!> Find the factors and calculate the
-                                                                            //! lz76 complexity using a SA algorithm.
-#endif
+         // #if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
+         //          template <typename... SAImpl>
+         //          LZ_Result Factorize(const sequence, utils::sa_type_t<SAImpl...>);  //!> Find the factors and
+         //          calculate the
+         //                                                                             //! lz76 complexity using a SA
+         //                                                                             algorithm.
+         // #endif
 
          lz_double FoundStddev(void);
 
@@ -88,7 +87,7 @@ namespace lz {
          ~LempelZiv76();  //!> Destructor.
 
          constexpr auto getFactorization(void) const;  //!> Returns the LZ76 complexity of the string.
-         auto getFactors(void) const;                  //!> Returns the LZ76 factors
+         auto           getFactors(void) const;        //!> Returns the LZ76 factors
          constexpr auto getEpsilon(void) const;
          constexpr auto getStddev(void) const;
 
@@ -108,7 +107,9 @@ namespace lz {
       };
 
       //................. Constructors  .................................
-      inline void LempelZiv76::FreshStart(void) { factorization = 0; }
+      inline void LempelZiv76::FreshStart(void) {
+         factorization = 0;
+      }
 
       inline LempelZiv76::LempelZiv76(const utils::LZ_SuffixArray& SA) {
          FreshStart();
@@ -116,42 +117,54 @@ namespace lz {
       }
 
       inline LempelZiv76::LempelZiv76(const LempelZiv76& lz)
-          : factorization(lz.factorization), lzf(lz.lzf) {}
+        : factorization(lz.factorization), lzf(lz.lzf) {}
 
       inline LempelZiv76::LempelZiv76(LempelZiv76&& lz)
-          : factorization(lz.factorization), lzf(std::move(lz.lzf)) {}
+        : factorization(lz.factorization), lzf(std::move(lz.lzf)) {}
 
       /// @brief
       /// Destructor. Frees all allocated memory
       /// @sa LempelZiv76()
-      inline LempelZiv76::~LempelZiv76() { LempelZiv76::Clear(); }
+      inline LempelZiv76::~LempelZiv76() {
+         LempelZiv76::Clear();
+      }
 
       //....................................... End constructors ...........................................
 
       /// @brief
       /// Frees all allocated memory
       /// @sa ~LempelZiv76()
-      inline void LempelZiv76::Clear() { lzf.clear(); }
+      inline void LempelZiv76::Clear() {
+         lzf.clear();
+      }
 
       /// @brief
       /// Returns the factorization of the sequence
       /// @return The factorization  of the sequence
-      inline constexpr auto LempelZiv76::getFactorization(void) const { return factorization; }
+      inline constexpr auto LempelZiv76::getFactorization(void) const {
+         return factorization;
+      }
 
       /// @brief
       /// Returns the Lempel-Ziv factors of the sequence
       /// @return The array of Lempel-Ziv factors
-      inline auto LempelZiv76::getFactors(void) const { return lzf; }
+      inline auto LempelZiv76::getFactors(void) const {
+         return lzf;
+      }
 
       /// @brief
       /// Returns the Lempel-Ziv factors of the sequence
       /// @return The array of Lempel-Ziv factors
-      inline constexpr auto LempelZiv76::getEpsilon(void) const { return epsilon; }
+      inline constexpr auto LempelZiv76::getEpsilon(void) const {
+         return epsilon;
+      }
 
       /// @brief
       /// Returns standard deviation of the factors
       /// @return The value of standard deviation
-      inline constexpr auto LempelZiv76::getStddev(void) const { return factors_stddev; }
+      inline constexpr auto LempelZiv76::getStddev(void) const {
+         return factors_stddev;
+      }
 
       //............................ Assignment operator  ..........................
 
@@ -178,16 +191,22 @@ namespace lz {
       //............................ Logical operators  ..........................
 
       /// @brief
-      /// logical equality operator. Compares factorizations, not complexities.
-      /// @param lz the source
+      /// logical non-equality operator. Compares factorizations, not complexities.
+      /// @param lhs one of the source
+      /// @param rhs another source
       /// @return *this
-      inline bool operator==(const LempelZiv76& lhs, const LempelZiv76& rhs) { return lhs.lzf == rhs.lzf; }
+      inline bool operator==(const LempelZiv76& lhs, const LempelZiv76& rhs) {
+         return lhs.lzf == rhs.lzf;
+      }
 
       /// @brief
       /// logical non-equality operator. Compares factorizations, not complexities.
-      /// @param lz the source
+      /// @param lhs one of the source
+      /// @param rhs another source
       /// @return *this
-      inline bool operator!=(const LempelZiv76& lhs, const LempelZiv76& rhs) { return !(lhs == rhs); }
+      inline bool operator!=(const LempelZiv76& lhs, const LempelZiv76& rhs) {
+         return !(lhs == rhs);
+      }
 
       /**
        * @brief

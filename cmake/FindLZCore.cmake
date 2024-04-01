@@ -2,13 +2,13 @@
 INCLUDE (FindPackageHandleStandardArgs)
 
 FIND_PATH (LZ_CORE_DIR
-  NAMES include/lz/core.h
+  NAMES include/lz/lz.h
   PATHS ENV PATH
         # /opt/homebrew/Cellar/gcc/13.2.0/include/
   DOC "LZCore root directory")
 
 FIND_PATH (LZ_CORE_INCLUDE_DIR
-  NAMES lz/core.h
+  NAMES lz/lz.h
   HINTS ${LZ_CORE_DIR}
   PATH_SUFFIXES include
   DOC "LZCore include directory")

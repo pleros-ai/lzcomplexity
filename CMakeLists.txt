@@ -123,6 +123,7 @@ list(APPEND REQUIRED_FEATURES
         cxx_variadic_templates # Variadic templates, as defined in N2242.
 )
 
+# add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-v>)
 #--- Set up address sanitizer builds ----------------------------------------------------------
 if(asan)
   if(NOT CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_ID MATCHES Clang)
@@ -238,5 +239,12 @@ if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
 endif()
 
 if(binding_python)
-    add_subdirectory(python)
+    # add_subdirectory(python)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+    install(CODE
+    "execute_process(
+      COMMAND ${Python3_EXECUTABLE} setup.py install
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})"
+  )
 endif()

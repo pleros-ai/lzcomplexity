@@ -6,7 +6,7 @@ import copy
 # assert(lz.__version__ == "0.7.0")
 
 # Test lz structures
-shuffle = lz.LZ_ExcessInfo(10, 0.24, 0.002)
+shuffle = lz.LZ_Shuffle(10, 0.24, 0.002)
 args = lz.LZ_Args(_chunks=5, _max_context=0, _block_size=17)
 
 args2 = copy.deepcopy(args)
@@ -88,3 +88,10 @@ distance_same = lz.InformationDistance(b, b_copy, args)
 print("information distance (same sequence): ", distance_same)
 distance_diff = lz.InformationDistance(b, c, args)
 print("information distance (diff sequence): ", distance_diff)
+
+res = lz.LZ(b, args)
+print(res.complexity)
+print(res.entropy)
+print(res.random_shuffle_complexity.excess_value)
+print(res.factors)
+print(res.extras.redundancy)

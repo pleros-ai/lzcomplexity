@@ -57,7 +57,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${LZ_TBB_LIBS})
 set(public_headers 
   # LZ factorization headers
   ${public_headers}
-  ${CORE_INCLUDE_DIR}/lz/core.h
+  ${CORE_INCLUDE_DIR}/lz/lz.h
   ${CORE_INCLUDE_DIR}/lz/lpf.h
   ${CORE_INCLUDE_DIR}/lz/sequence.h
   ${CORE_INCLUDE_DIR}/lz/structures.h

@@ -30,35 +30,31 @@
 
 #pragma once
 
-#include <assert.h>
-#include <lz/caps.h>
-#include <lz/parallel_utils.h>
-#include <lz/sais_lite.h>
-#include <lz/types.h>
-
 #include <typeinfo>
-#include <vector>
 
-#include "lpf.h"
 #include "lz76.h"
-#include "sequence.h"
 #include "structures.h"
 
 namespace lz {
 
    namespace internal {
 
-      struct LZ_Factors {
-         lz_uint factorization;
-         lz_int half_factorization;
+      struct LZ_Data {
+         lz_uint   factorization;
+         lz_int    half_factorization;
+         lz_double factors_stddev;
+         lz_double epsilon;
       };
 
       auto getDefaultArgs(const sequence&) -> utils::LZ_Args;
 
-      auto LempelZivFactorization(const sequence&) -> LZ_Factors;
-      auto LempelZivFactorization(const sequence&, utils::LZ_Args) -> LZ_Factors;
+      auto LempelZivFactorization(const sequence&) -> LZ_Data;
+      auto LempelZivFactorization(const sequence&, utils::LZ_Args) -> LZ_Data;
       auto MergeSequences(sequence s1, sequence s2) -> sequence;
    }  // namespace internal
+
+   auto LZ(const sequence&, utils::LZ_Args) -> utils::LempelZiv;
+
    //.........................................................................
    // Lempel-Ziv 76 factorization
    //.........................................................................
@@ -67,7 +63,9 @@ namespace lz {
    auto LempelZivFactorization(const sequence& text) -> lz_uint {
       return LempelZivFactorization(text, internal::getDefaultArgs(text));
    };
-   auto LempelZivFactorization(const std::string& text) -> lz_uint { return LempelZivFactorization(sequence{text}); };
+   auto LempelZivFactorization(const std::string& text) -> lz_uint {
+      return LempelZivFactorization(sequence{text});
+   };
    auto LempelZivFactorization(const std::string& text, utils::LZ_Args args) -> lz_uint {
       return LempelZivFactorization(sequence{text}, args);
    };
@@ -77,7 +75,9 @@ namespace lz {
    auto LempelZivFactors(const sequence& text) -> lz76::LZ_Result {
       return LempelZivFactors(text, internal::getDefaultArgs(text));
    };
-   auto LempelZivFactors(const std::string& text) -> lz76::LZ_Result { return LempelZivFactors(sequence{text}); };
+   auto LempelZivFactors(const std::string& text) -> lz76::LZ_Result {
+      return LempelZivFactors(sequence{text});
+   };
    auto LempelZivFactors(const std::string& text, utils::LZ_Args args) -> lz76::LZ_Result {
       return LempelZivFactors(sequence{text}, args);
    };
@@ -90,7 +90,9 @@ namespace lz {
    auto EntropyDensity(const sequence& text) -> lz_double {
       return EntropyDensity(text, internal::getDefaultArgs(text));
    };
-   auto EntropyDensity(const std::string& text) -> lz_double { return EntropyDensity(sequence{text}); };
+   auto EntropyDensity(const std::string& text) -> lz_double {
+      return EntropyDensity(sequence{text});
+   };
    auto EntropyDensity(const std::string& text, utils::LZ_Args args) -> lz_double {
       return EntropyDensity(sequence{text}, args);
    };
@@ -105,7 +107,9 @@ namespace lz {
    auto LZEffectiveComplexity(const sequence& text) -> lz_int {
       return LZEffectiveComplexity(text, internal::getDefaultArgs(text));
    };
-   auto LZEffectiveComplexity(const std::string& text) -> lz_int { return LZEffectiveComplexity(sequence{text}); };
+   auto LZEffectiveComplexity(const std::string& text) -> lz_int {
+      return LZEffectiveComplexity(sequence{text});
+   };
    auto LZEffectiveComplexityNormalized(const sequence& text) -> lz_double {
       return LZEffectiveComplexityNormalized(text, internal::getDefaultArgs(text));
    };
@@ -136,32 +140,33 @@ namespace lz {
    // --> Z Random Shuffle Complexity use the Z sequence (the merge of both half)
    //.........................................................................
    // Main functions
-   auto WholeRandomShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
-   auto RandomShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
-   auto RandomShuffleComplexitySequential(const sequence&, utils::LZ_Args) -> utils::LZ_ExcessInfo;
+   auto WholeRandomShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
+   auto RandomShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
+   auto RandomShuffleComplexitySequential(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
    // Variants
-   auto WholeRandomShuffleComplexity(const sequence& str) -> utils::LZ_ExcessInfo {
+   auto WholeRandomShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
       return WholeRandomShuffleComplexity(str, internal::getDefaultArgs(str));
    };
-   auto WholeRandomShuffleComplexity(const std::string& str) -> utils::LZ_ExcessInfo {
+   auto WholeRandomShuffleComplexity(const std::string& str) -> utils::LZ_Shuffle {
       return WholeRandomShuffleComplexity(sequence{str});
    };
-   auto WholeRandomShuffleComplexity(const std::string& str, utils::LZ_Args args) -> utils::LZ_ExcessInfo {
+   auto WholeRandomShuffleComplexity(const std::string& str, utils::LZ_Args args) -> utils::LZ_Shuffle {
       return WholeRandomShuffleComplexity(sequence{str}, args);
    };
 
-   auto RandomShuffleComplexity(const sequence& str) -> utils::LZ_ExcessInfo {
+   auto RandomShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
       return RandomShuffleComplexity(str, internal::getDefaultArgs(str));
    };
-   auto RandomShuffleComplexity(const std::string& str) -> utils::LZ_ExcessInfo {
+   auto RandomShuffleComplexity(const std::string& str) -> utils::LZ_Shuffle {
       return RandomShuffleComplexity(sequence{str});
    };
-   auto RandomShuffleComplexity(const std::string& str, utils::LZ_Args args) -> utils::LZ_ExcessInfo {
+   auto RandomShuffleComplexity(const std::string& str, utils::LZ_Args args) -> utils::LZ_Shuffle {
       return RandomShuffleComplexity(sequence{str}, args);
    };
    //.........................................................................
-   auto ShuffleEntropyCalculation(const sequence&, const utils::LZ_Args, const lz_int, const std::vector<lz_int>,
-                                  lz_int) -> utils::LZ_ExcessInfo;
+   auto
+      ShuffleEntropyCalculation(const sequence&, const utils::LZ_Args, const lz_int, const std::vector<lz_int>, lz_int)
+         -> utils::LZ_Shuffle;
 
    //.........................................................................
    // Excess entropy by distance: E = [1 - d(X,Y)] * max(C(X), C(Y))
@@ -173,7 +178,9 @@ namespace lz {
    auto ExcessEntropyDistance(const sequence& str) -> lz_double {
       return ExcessEntropyDistance(str, internal::getDefaultArgs(str));
    };
-   auto ExcessEntropyDistance(const std::string& str) -> lz_double { return ExcessEntropyDistance(sequence{str}); };
+   auto ExcessEntropyDistance(const std::string& str) -> lz_double {
+      return ExcessEntropyDistance(sequence{str});
+   };
    auto ExcessEntropyDistance(const std::string& str, utils::LZ_Args args) -> lz_double {
       return ExcessEntropyDistance(sequence{str}, args);
    };
@@ -183,9 +190,10 @@ namespace lz {
    //.........................................................................
    // Main functions
    auto InformationDistance(const sequence&, const lz76::LZ_Result&, const sequence&, const lz76::LZ_Result&)
-       -> lz_double;
+      -> lz_double;
 
    auto InformationDistance(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+   auto InformationDistanceZ(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
    // Variants
    auto InformationDistance(const sequence& T1, const sequence& T2) -> lz_double {
       return InformationDistance(T1, T2, internal::getDefaultArgs(T1));
@@ -241,12 +249,18 @@ namespace lz {
    };
 
    //.........................................................................
-   // Other distances
+   // Extras
    //.........................................................................
-   auto LzRajskiDistance(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+   auto ExtraMeasures(const sequence&, utils::LZ_Args) -> utils::LZ_Extra;
 
-   auto LzRajskiDistance(const sequence& T1, const sequence& T2) -> lz_double {
-      return LzRajskiDistance(T1, T2, internal::getDefaultArgs(T1));
+   auto ExtraMeasures(const sequence& seq) -> utils::LZ_Extra {
+      return ExtraMeasures(seq, internal::getDefaultArgs(seq.size()));
+   };
+   auto ExtraMeasures(const std::string& seq) -> utils::LZ_Extra {
+      return ExtraMeasures(sequence{seq}, internal::getDefaultArgs(seq.size()));
+   };
+   auto ExtraMeasures(const std::string& seq, utils::LZ_Args args) -> utils::LZ_Extra {
+      return ExtraMeasures(sequence{seq}, args);
    };
 
    //.........................................................................
@@ -260,7 +274,9 @@ namespace lz {
    auto LZNormalError(const std::string& seq, utils::LZ_Args args) -> lz_double {
       return LZNormalError(sequence{seq}, args);
    };
-   auto LZNormalError(const std::string& seq) -> lz_double { return LZNormalError(sequence{seq}); };
+   auto LZNormalError(const std::string& seq) -> lz_double {
+      return LZNormalError(sequence{seq});
+   };
 
    auto LZPoisonError(const sequence&, utils::LZ_Args) -> lz_double;
 
@@ -270,5 +286,7 @@ namespace lz {
    auto LZPoisonError(const std::string& seq, utils::LZ_Args args) -> lz_double {
       return LZPoisonError(sequence{seq}, args);
    };
-   auto LZPoisonError(const std::string& seq) -> lz_double { return LZPoisonError(sequence{seq}); };
+   auto LZPoisonError(const std::string& seq) -> lz_double {
+      return LZPoisonError(sequence{seq});
+   };
 }  // namespace lz

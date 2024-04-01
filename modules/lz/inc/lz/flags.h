@@ -1,5 +1,6 @@
 #pragma once
 
+#include <lz/sequence.h>
 #include <lz/structures.h>
 #include <lz/types.h>
 
@@ -12,45 +13,45 @@ namespace lz {
       //          Free structures declaration
       //...............................................
       struct LZ_Output {
-         typedef struct {
-            lz_size line;
-            std::vector<lz_double> terms;
-         } shuffle_terms;
+         std::vector<LempelZiv> data;
 
-         typedef struct {
-            lz_int block_size;
-            lz_double value;
-            shuffle_terms terms;
-         } shuffle_info;
-
-         typedef struct {
-            lz_double lz_rajski_distance;
-            lz_double redundancy;
-            lz_double fh_uncertainty;
-            lz_double lh_uncertainty;
-            lz_double lz_pearson_coefficient;
-         } LZ_Extra;
-
-         std::vector<lz_bool> factor_calculated;  //!> complexity calculated for the sequence in the index i
+         std::vector<lz_bool> calculated_complexity;  //!> complexity calculated for the sequence in the index i
          // Post process parameters
-         std::vector<lz_uint> complexity;                 //!> complexity of the sequence
-         std::vector<lz_uint> half_complexity;            //!> complexity of the first half of the sequence
+         std::vector<lz_uint>   complexity;               //!> complexity of the sequence
+         std::vector<lz_uint>   half_complexity;          //!> complexity of the first half of the sequence
          std::vector<lz_double> lz_effective_complexity;  //!> excess of entropy by mutual information of the sequence
          std::vector<lz_double> entropy_density;          //!> entropy density of the sequence
          std::vector<lz_double> excess_entropy_dist;      //!> excess of entropy by distance of the sequence
          std::vector<shuffle_info> whole_random_shuffle_complexity;  //!> excess of entropy by shuffling of the sequence
          std::vector<shuffle_info>
-             random_shuffle_complexity;                  //!> excess of entropy by shuffling of the merged sequence
-         std::vector<lz_double> mutual_information;      //!> mutual information of two half of the sequences
-         std::vector<lz_double> info_distance;           //!> information distance of the two consecutive sequences
-         std::vector<lz_double> sequence_info_distance;  //!> information distance of each sequences
-         std::vector<lz_double> multi_information;       //!> multi information value of each sequence
+                                random_shuffle_complexity;  //!> excess of entropy by shuffling of the merged sequence
+         std::vector<lz_double> mutual_information;         //!> mutual information of two half of the sequences
+         std::vector<lz_double> info_distance;              //!> information distance of the two consecutive sequences
+         std::vector<lz_double> sequence_info_distance;     //!> information distance of each sequences
+         std::vector<lz_double> multi_information;          //!> multi information value of each sequence
 
          std::vector<LZ_Extra> extra;
 
          LZ_Output() = default;
+         LZ_Output(lz_size size) {
+            data                  = std::vector<LempelZiv>{size};
+            calculated_complexity = std::vector<bool>(size, false);
+         };
          LZ_Output(const LZ_Output& lz) = default;
-         LZ_Output(LZ_Output&& lz) = default;
+         LZ_Output(LZ_Output&& lz)      = default;
+
+         auto setComplexity(lz_size, lz_uint) -> void;
+         auto setEntropyDensity(lz_size, lz_double) -> void;
+         auto setFactors(lz_size, std::vector<lz_uint>) -> void;
+         auto setRandomShuffleComplexity(lz_size, LZ_Shuffle) -> void;
+         auto setWholeRandomShuffleComplexity(lz_size, LZ_Shuffle) -> void;
+         auto setEpsilon(lz_size, lz_double) -> void;
+         auto setFactorsStddev(lz_size, lz_double) -> void;
+         auto setNormalError(lz_size, lz_double) -> void;
+         auto setPoisonError(lz_size, lz_double) -> void;
+         auto setExtras(lz_size, LZ_Extra) -> void;
+
+         auto checkCapacity(lz_size) -> void;
 
          LZ_Output& operator=(LZ_Output rhs) {
             std::swap(this->complexity, rhs.complexity);
@@ -75,27 +76,27 @@ namespace lz {
       };
 
       struct LZ_Flags {
-         lz_int shuffle_init_line = LZ_Args::UNDEFINED_LINES;  //!> Line to start the shuffle entropy deficit
-         lz_int shuffle_end_line = LZ_Args::UNDEFINED_LINES;   //!> Line to end the shuffle entropy deficit
-         lz_int alphabet_size;                                 //!> Length of the alphabet of input sequences
+         lz_int  shuffle_init_line = LZ_Args::UNDEFINED_LINES;  //!> Line to start the shuffle entropy deficit
+         lz_int  shuffle_end_line  = LZ_Args::UNDEFINED_LINES;  //!> Line to end the shuffle entropy deficit
+         lz_int  alphabet_size;                                 //!> Length of the alphabet of input sequences
          LZ_Args sa_args;  //!> Extra arguments for Suffix-array object and core functions
 
          std::vector<sequence> input;  //!> Input set of sequences
 
          LZ_Flags(std::string text, LZ_Args _sa_args)
-             : input({text}), alphabet_size(2), sa_args(_sa_args){};
+           : input({text}), alphabet_size(2), sa_args(_sa_args){};
          LZ_Flags(sequence text, LZ_Args _sa_args)
-             : input({text}), alphabet_size(2), sa_args(_sa_args){};
+           : input({text}), alphabet_size(2), sa_args(_sa_args){};
          LZ_Flags(std::vector<sequence> data, LZ_Args _sa_args)
-             : input(data), alphabet_size(2), sa_args(_sa_args){};
+           : input(data), alphabet_size(2), sa_args(_sa_args){};
          // Copy construct
          LZ_Flags(const LZ_Flags& flags)
-             : input(flags.input), alphabet_size(flags.alphabet_size), sa_args(flags.sa_args){};
+           : input(flags.input), alphabet_size(flags.alphabet_size), sa_args(flags.sa_args){};
          // Move constructor
          LZ_Flags(LZ_Flags&& flags)
-             : input(std::move(flags.input)),
-               alphabet_size(std::exchange(flags.alphabet_size, 0)),
-               sa_args(std::move(flags.sa_args)){};
+           : input(std::move(flags.input))
+           , alphabet_size(std::exchange(flags.alphabet_size, 0))
+           , sa_args(std::move(flags.sa_args)){};
 
          ~LZ_Flags(){};
 

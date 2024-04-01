@@ -1,5 +1,5 @@
-#include <lz/core.h>
 #include <lz/general.h>
+#include <lz/lz.h>
 #include <lz/pnm.h>
 
 #include <cxxopts.hpp>
@@ -9,42 +9,42 @@
 std::string print_msg(lz::utils::MSG_TYPE type, std::string msg);
 
 struct lz_options {
-   std::string input;                       //? Input filepath.
-   std::string output = "lz_results.json";  //? Output filepath.
-   std::string factors_output = "";         //? Output filepath for factors.
+   std::string input;                               //? Input filepath.
+   std::string output         = "lz_results.json";  //? Output filepath.
+   std::string factors_output = "";                 //? Output filepath for factors.
    /* Extra args for LZApp functions */
    lz::utils::LZ_Args args;
    /* flags */
    lz::lz_int excess_init_line =
-       lz::utils::LZ_Args::UNDEFINED_LINES;  //?> Initial line where get shuffle entropy deficit terms
-                                             //?  (valid for excess of entropy by shuffling).
+      lz::utils::LZ_Args::UNDEFINED_LINES;  //?> Initial line where get shuffle entropy deficit terms
+                                            //?  (valid for excess of entropy by shuffling).
    lz::lz_int excess_end_line =
-       lz::utils::LZ_Args::UNDEFINED_LINES;  //?> Final line where get shuffle entropy deficit
-                                             //? terms (valid for excess of entropy by shuffling).
-   lz::lz_uint n_jobs = 1;
-   MagickNumber input_format = MagickNumber::PNM_RAWTXT;
-   bool entropy_density = false;
-   bool multiLine = false;
-   bool find_distance = true;
-   bool preprocess = false;
-   bool is_csv = false;
-   bool save_results = false;  //! @deprecated --> remove in final version
-   bool verbose = false;
+      lz::utils::LZ_Args::UNDEFINED_LINES;  //?> Final line where get shuffle entropy deficit
+                                            //? terms (valid for excess of entropy by shuffling).
+   lz::lz_uint  n_jobs          = 1;
+   MagickNumber input_format    = MagickNumber::PNM_RAWTXT;
+   bool         entropy_density = false;
+   bool         multiLine       = false;
+   bool         find_distance   = true;
+   bool         preprocess      = false;
+   bool         is_csv          = false;
+   bool         save_results    = false;  //! @deprecated --> remove in final version
+   bool         verbose         = false;
 
    lz_options(cxxopts::parse_result result) {
-      input = result.unmatched()[0];
-      output = result["output"].as<std::string>();
-      output = output.empty() ? input + ".json" : output;
+      input          = result.unmatched()[0];
+      output         = result["output"].as<std::string>();
+      output         = output.empty() ? input + ".json" : output;
       factors_output = result["factors"].as<std::string>();
 
       // flags
-      multiLine = result["multi-line"].as<bool>();
-      find_distance = result["dlz"].as<bool>();
-      n_jobs = result["jobs"].as<lz::lz_uint>();
-      is_csv = result["csv"].as<bool>();
-      verbose = result["verbose"].as<bool>();
+      multiLine       = result["multi-line"].as<bool>();
+      find_distance   = result["dlz"].as<bool>();
+      n_jobs          = result["jobs"].as<lz::lz_uint>();
+      is_csv          = result["csv"].as<bool>();
+      verbose         = result["verbose"].as<bool>();
       entropy_density = result["entropy-density"].as<bool>();
-      preprocess = result["process"].as<bool>();
+      preprocess      = result["process"].as<bool>();
 
       auto opt_format = result["format"].as<std::string>();
       lz::utils::to_lowercase(opt_format);
@@ -73,9 +73,9 @@ struct lz_options {
          input_format = MagickNumber::AUTO;
 
       // args for SA and Core functions
-      args.chunks = result["partitions"].as<lz::lz_int>();
+      args.chunks   = result["partitions"].as<lz::lz_int>();
       args.alphabet = std::stoi(result["alphabet"].as<std::string>());
-      auto lg = result["log-base"].as<std::string>();
+      auto lg       = result["log-base"].as<std::string>();
       args.log_base = lg.empty() ? args.alphabet : std::stoi(lg);
 
       auto excess_args = result["entropy-shuffle"].as<std::vector<std::string>>();
@@ -89,7 +89,7 @@ struct lz_options {
          if (excess_args.size() > 1 && excess_args[1] == "f") {
             if (excess_args.size() == 2) {
                excess_init_line = lz::utils::LZ_Args::ALL_LINES;
-               excess_end_line = lz::utils::LZ_Args::ALL_LINES;
+               excess_end_line  = lz::utils::LZ_Args::ALL_LINES;
             } else if (excess_args.size() > 2) {
                excess_init_line = std::stoi(excess_args[2]);
             }
@@ -101,7 +101,7 @@ struct lz_options {
                excess_init_line = std::stoi(excess_args[1]);
             } else {
                excess_init_line = lz::utils::LZ_Args::ALL_LINES;
-               excess_end_line = lz::utils::LZ_Args::ALL_LINES;
+               excess_end_line  = lz::utils::LZ_Args::ALL_LINES;
             }
             if (excess_args.size() > 2) {
                excess_end_line = std::stoi(excess_args[2]);
@@ -160,7 +160,7 @@ struct lz_options {
 lz_options process_args(cxxopts::parse_result& result) {
    lz_options options(result);
 
-   namespace fs = std::filesystem;
+   namespace fs  = std::filesystem;
    namespace utl = lz::utils;
    if (!fs::is_regular_file(options.input) && !fs::is_character_file(options.input)) {
       throw FileNameError("File doesn't exist: " + options.input);
@@ -180,9 +180,11 @@ lz_options process_args(cxxopts::parse_result& result) {
       iss << " - Entropy density\n";
       iss << " - LZ effective complexity\n";
       iss << " - Excess of entropy by distance\n";  // possible remove (same as LZ effective complexity)
-      if (options.args.block_size >= 0) iss << " - Shuffle entropy deficit\n";
+      if (options.args.block_size >= 0)
+         iss << " - Shuffle entropy deficit\n";
       iss << " - Information distance inside the sequence\n";
-      if (options.find_distance) iss << " - Information distance between consecutive sequences\n";
+      if (options.find_distance)
+         iss << " - Information distance between consecutive sequences\n";
 
       std::cout << print_msg(msg::INFO, iss.str()) << std::endl;
    }

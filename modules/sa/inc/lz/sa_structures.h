@@ -10,16 +10,16 @@ namespace lz {
 
       struct SA_Args {
          /* Args for CaPS class */
-         lz_int chunks = 0;       //?> Number of chunks to divide the sequence (use by CaPS)
+         lz_int chunks      = 0;  //?> Number of chunks to divide the sequence (use by CaPS)
          lz_int max_context = 0;  //?> Max length to compare prefix for generate the LCP (use by CaPS)
 
          SA_Args() = default;
          SA_Args(lz_int chunks)
-             : chunks(chunks){};
+           : chunks(chunks){};
          SA_Args(lz_int chunks, lz_int max_context)
-             : chunks(chunks), max_context(max_context){};
+           : chunks(chunks), max_context(max_context){};
          SA_Args(const SA_Args& sa) = default;
-         SA_Args(SA_Args&& sa) = default;
+         SA_Args(SA_Args&& sa)      = default;
 
          SA_Args& operator=(SA_Args rhs) {
             std::swap(this->chunks, rhs.chunks);
@@ -41,28 +41,28 @@ namespace lz {
       struct LZ_SuffixArray {
          std::vector<lz_uint> SA;   //!> Suffix array values
          std::vector<lz_uint> LCP;  //!> Longest Common Prefix values
-         lz_uint n;                 //!> Length of the string (n+1 size of the vectors)
+         lz_uint              n;    //!> Length of the string (n+1 size of the vectors)
 
          LZ_SuffixArray(void)
-             : SA(), LCP(), n(0){};
+           : SA(), LCP(), n(0){};
          LZ_SuffixArray(std::vector<lz_uint> SA_, std::vector<lz_uint> LCP_, const lz_uint n_)
-             : SA(std::move(SA_)), LCP(std::move(LCP_)), n(n_){};
+           : SA(std::move(SA_)), LCP(std::move(LCP_)), n(n_){};
          LZ_SuffixArray(std::vector<lz_uint> SA_, const lz_uint n_)
-             : SA(std::move(SA_)), LCP(), n(n_){};
+           : SA(std::move(SA_)), LCP(), n(n_){};
          LZ_SuffixArray(lz_uint* const SA_, lz_uint* const LCP_, lz_uint n_)
-             : n(n_) {
-            SA = std::vector<lz_uint>(SA_, SA_ + n_);
+           : n(n_) {
+            SA  = std::vector<lz_uint>(SA_, SA_ + n_);
             LCP = std::vector<lz_uint>(LCP_, LCP_ + n_);
          }
          LZ_SuffixArray(lz_int* const SA_, lz_int* const LCP_, lz_int n_)
-             : n(n_) {
-            SA = std::vector<lz_uint>(SA_, SA_ + n_);
+           : n(n_) {
+            SA  = std::vector<lz_uint>(SA_, SA_ + n_);
             LCP = std::vector<lz_uint>(LCP_, LCP_ + n_);
          }
          LZ_SuffixArray(const LZ_SuffixArray& oth)
-             : SA(oth.SA), LCP(oth.LCP), n(oth.n) {}
+           : SA(oth.SA), LCP(oth.LCP), n(oth.n) {}
          LZ_SuffixArray(LZ_SuffixArray&& oth) noexcept
-             : SA(std::move(oth.SA)), LCP(std::move(oth.LCP)), n(std::move(oth.n)) {}
+           : SA(std::move(oth.SA)), LCP(std::move(oth.LCP)), n(std::move(oth.n)) {}
 
          void Clear() {
             SA.clear();
@@ -82,10 +82,12 @@ namespace lz {
          bool operator==(const LZ_SuffixArray& arr) const {
             bool same = n == arr.n;
 
-            if (!same) return false;
+            if (!same)
+               return false;
 
             lz_uint i = 0;
-            while ((same = SA[i] == arr.SA[i]) && i < n) i++;
+            while ((same = SA[i] == arr.SA[i]) && i < n)
+               i++;
             return same;
          };
          bool operator!=(const LZ_SuffixArray& arr) const { return !operator==(arr); };

@@ -53,24 +53,24 @@ namespace lz {
    //.....................................................
    /// \brief structure that stores the actual sequence data
    class sequence {
-     protected:
+  protected:
       std::vector<char> seq;  //!< the sequence
       std::vector<char> alphabet;
-      lz_uint alphabet_size;
+      lz_uint           alphabet_size;
 
-     public:
+  public:
       /**
        * @brief Default constructor.
        */
       sequence(void)
-          : alphabet_size(ALPHABET_SIZE){};
+        : alphabet_size(ALPHABET_SIZE){};
 
       /**
        * @brief Constructor that sets the alphabet size.
        * @param alphsize The size of the alphabet.
        */
       sequence(lz_int alphsize)
-          : alphabet_size(alphsize){};
+        : alphabet_size(alphsize){};
 
       /**
        * @brief Constructor that initializes the sequence with a vector of characters.
@@ -90,7 +90,7 @@ namespace lz {
        * @param aph The alphabet size.
        */
       sequence(const std::vector<char> vec, lz_uint aph)
-          : seq(vec), alphabet_size(aph) {
+        : seq(vec), alphabet_size(aph) {
          DetermineAlphabet();
       };
 
@@ -100,7 +100,7 @@ namespace lz {
        * @param aph The alphabet size.
        */
       sequence(const std::string str, lz_uint aph)
-          : seq(str.begin(), str.end()), alphabet_size(aph) {
+        : seq(str.begin(), str.end()), alphabet_size(aph) {
          DetermineAlphabet();
       };
 
@@ -109,14 +109,14 @@ namespace lz {
        * @param s The sequence to be copied.
        */
       sequence(const sequence& s)
-          : seq(s.seq), alphabet(s.alphabet), alphabet_size(s.alphabet_size){};
+        : seq(s.seq), alphabet(s.alphabet), alphabet_size(s.alphabet_size){};
 
       /**
        * @brief Move constructor.
        * @param s The sequence to be moved.
        */
       sequence(sequence&& s)
-          : seq(std::move(s.seq)), alphabet(std::move(s.alphabet)), alphabet_size(s.alphabet_size){};
+        : seq(std::move(s.seq)), alphabet(std::move(s.alphabet)), alphabet_size(s.alphabet_size){};
 
       /**
        * @brief Destructor.
@@ -128,27 +128,27 @@ namespace lz {
       };
 
       constexpr lz_uint getAlphabetSize(void) const { return alphabet_size; };
-      lz_uint setAlphabetSize(void);
-      void setAlphabetSize(lz_uint);
+      lz_uint           setAlphabetSize(void);
+      void              setAlphabetSize(lz_uint);
 
       std::vector<char> getAlphabet(void) const { return alphabet; };
       std::vector<char> setAlphabet(void);
-      void setAlphabet(std::vector<char>);
+      void              setAlphabet(std::vector<char>);
 
-      lz_uint NoZeroes(void) const;
+      lz_uint     NoZeroes(void) const;
       std::string toString(void) const;
 
       char& operator[](lz_size);
       const char& operator[](lz_size) const;
 
-      char& first(void);
+      char&       first(void);
       const char& first(void) const;
 
-      char& last(void);
+      char&       last(void);
       const char& last(void) const;
 
       char& at(lz_size);
-      char const_at(lz_size index) const;
+      char  const_at(lz_size index) const;
 
       char Min(void) const;
       char Min(lz_size start, lz_size final) const;
@@ -157,17 +157,17 @@ namespace lz {
 
       lz_size push(char);
       lz_size pop(void);
-      char back(void) const;
+      char    back(void) const;
 
       lz_size size(void) const;
       lz_size length(void) const;
 
       std::vector<char> SequenceVector(void) const;
 
-      sequence Take(lz_size l) const;
-      sequence Drop(lz_size l) const;
+      sequence                      Take(lz_size l) const;
+      sequence                      Drop(lz_size l) const;
       std::pair<sequence, sequence> Split(lz_size l) const;
-      sequence Granularity(lz_uint gr) const;
+      sequence                      Granularity(lz_uint gr) const;
 
       sequence& pi(void);
       sequence& reverse(void);
@@ -192,25 +192,25 @@ namespace lz {
       friend void swap(sequence&, lz_size start1, lz_size start2, lz_size length);
 
       friend sequence operator+(const sequence&, const sequence&);
-      friend bool operator==(const sequence&, const sequence&);
-      friend bool operator==(const sequence&, const std::string&);
-      friend bool operator!=(const sequence&, const sequence&);
-      friend bool operator!=(const sequence&, const std::string&);
-      friend bool operator>(const sequence&, const sequence&);
-      friend bool operator>(const sequence&, const std::string&);
-      friend bool operator>=(const sequence&, const sequence&);
-      friend bool operator>=(const sequence&, const std::string&);
-      friend bool operator<(const sequence&, const sequence&);
-      friend bool operator<(const sequence&, const std::string&);
-      friend bool operator<=(const sequence&, const sequence&);
-      friend bool operator<=(const sequence&, const std::string&);
+      friend bool     operator==(const sequence&, const sequence&);
+      friend bool     operator==(const sequence&, const std::string&);
+      friend bool     operator!=(const sequence&, const sequence&);
+      friend bool     operator!=(const sequence&, const std::string&);
+      friend bool     operator>(const sequence&, const sequence&);
+      friend bool     operator>(const sequence&, const std::string&);
+      friend bool     operator>=(const sequence&, const sequence&);
+      friend bool     operator>=(const sequence&, const std::string&);
+      friend bool     operator<(const sequence&, const sequence&);
+      friend bool     operator<(const sequence&, const std::string&);
+      friend bool     operator<=(const sequence&, const sequence&);
+      friend bool     operator<=(const sequence&, const std::string&);
 
-      sequence map(std::function<char(char)> fn);
+      sequence        map(std::function<char(char)> fn);
       friend sequence map(std::function<char(char)> fn, const sequence& s);
       friend sequence map(const sequence& s, std::function<char(char)> fn);
    };
 
-   void Shuffle(sequence& s, lz_uint block_size);
+   void     Shuffle(sequence& s, lz_uint block_size);
    sequence Shuffle(sequence& s, lz_uint block_size, lz_uint times);
 
    //.............................................................................................................
@@ -218,12 +218,15 @@ namespace lz {
    inline lz_uint sequence::NoZeroes(void) const {
       lz_uint acum = 0;
 
-      for (auto s: seq) acum += (s == 0) ? 1 : 0;
+      for (auto s: seq)
+         acum += (s == 0) ? 1 : 0;
 
       return acum;
    }
 
-   inline std::string sequence::toString(void) const { return std::string{seq.begin(), seq.end()}; }
+   inline std::string sequence::toString(void) const {
+      return std::string{seq.begin(), seq.end()};
+   }
 
    inline sequence& sequence::operator=(sequence s) {
       swap(*this, s);
@@ -265,7 +268,8 @@ namespace lz {
    inline sequence& sequence::operator^=(const sequence& s) {
       std::vector<char>::const_iterator iterseq = s.seq.begin();
 
-      if (s.seq.size() != seq.size()) throw SequenceNoMatchSize();
+      if (s.seq.size() != seq.size())
+         throw SequenceNoMatchSize();
 
       for (auto c: seq) {
          if (c == *iterseq)
@@ -318,7 +322,9 @@ namespace lz {
       return alphabet_size;
    }
 
-   inline void sequence::setAlphabetSize(lz_uint _alphabet_size) { alphabet_size = _alphabet_size; }
+   inline void sequence::setAlphabetSize(lz_uint _alphabet_size) {
+      alphabet_size = _alphabet_size;
+   }
 
    inline std::vector<char> sequence::setAlphabet(void) {
       DetermineAlphabet();
@@ -326,9 +332,13 @@ namespace lz {
       return alphabet;
    }
 
-   inline void sequence::setAlphabet(std::vector<char> alph) { alphabet = alph; }
+   inline void sequence::setAlphabet(std::vector<char> alph) {
+      alphabet = alph;
+   }
 
-   inline std::vector<char> sequence::SequenceVector(void) const { return seq; }
+   inline std::vector<char> sequence::SequenceVector(void) const {
+      return seq;
+   }
 
    inline char& sequence::operator[](lz_size index) {
       if (index >= seq.size()) {
@@ -345,7 +355,9 @@ namespace lz {
       return seq[index];
    }
 
-   inline char& sequence::at(lz_size index) { return seq.at(index); }
+   inline char& sequence::at(lz_size index) {
+      return seq.at(index);
+   }
 
    // .............................................................................
    // Name: const_at
@@ -362,19 +374,33 @@ namespace lz {
    // Exceptions:
    //            None
    //..............................................................................
-   inline char sequence::const_at(lz_size index) const { return seq.at(index); }
+   inline char sequence::const_at(lz_size index) const {
+      return seq.at(index);
+   }
 
-   inline char& sequence::first(void) { return seq.front(); }
+   inline char& sequence::first(void) {
+      return seq.front();
+   }
 
-   inline const char& sequence::first(void) const { return seq.front(); }
+   inline const char& sequence::first(void) const {
+      return seq.front();
+   }
 
-   inline char& sequence::last(void) { return seq.back(); }
+   inline char& sequence::last(void) {
+      return seq.back();
+   }
 
-   inline const char& sequence::last() const { return seq.back(); }
+   inline const char& sequence::last() const {
+      return seq.back();
+   }
 
-   inline char sequence::back(void) const { return last(); }
+   inline char sequence::back(void) const {
+      return last();
+   }
 
-   inline char sequence::Max(void) const { return *std::max_element(seq.begin(), seq.end()); }
+   inline char sequence::Max(void) const {
+      return *std::max_element(seq.begin(), seq.end());
+   }
 
    inline char sequence::Min(lz_size start, lz_size final) const {
       return *std::min_element(seq.begin() + start, seq.begin() + final);
@@ -384,7 +410,9 @@ namespace lz {
       return *std::max_element(seq.begin() + start, seq.begin() + final);
    }
 
-   inline char sequence::Min(void) const { return *std::min_element(seq.begin(), seq.end()); }
+   inline char sequence::Min(void) const {
+      return *std::min_element(seq.begin(), seq.end());
+   }
 
    inline lz_size sequence::push(char c) {
       try {
@@ -442,9 +470,13 @@ namespace lz {
       return *this;
    }
 
-   inline lz_size sequence::size(void) const { return seq.size(); }
+   inline lz_size sequence::size(void) const {
+      return seq.size();
+   }
 
-   inline lz_size sequence::length(void) const { return seq.size(); }
+   inline lz_size sequence::length(void) const {
+      return seq.size();
+   }
 
    inline sequence sequence::Take(lz_size l) const {
       std::vector<char> temp = seq;
@@ -459,7 +491,7 @@ namespace lz {
 
       if (l < seq.size()) {
          std::vector<char>::const_iterator iterseq = seq.cbegin() + l;
-         char c = 0;
+         char                              c       = 0;
 
          while (iterseq != seq.cend()) {
             c = *iterseq++;
@@ -480,16 +512,16 @@ namespace lz {
    }
 
    inline sequence sequence::Granularity(lz_uint gr) const {
-      char temp = 0;
+      char              temp = 0;
       std::vector<char> ns;
-      std::set<char> alphabet;
-      lz_uint count = 0;
+      std::set<char>    alphabet;
+      lz_uint           count = 0;
 
       for (auto c: seq) {
          if (count == gr - 1) {
             ns.push_back(temp);
             alphabet.insert(temp);
-            temp = 0;
+            temp  = 0;
             count = 0;
          }
          temp += c;
@@ -509,7 +541,9 @@ namespace lz {
 
    inline void swap(sequence& s, lz_size start1, lz_size start2, lz_size length) {
 #ifdef __cpp_lib_ranges
-      std::ranges::swap_ranges(s.seq.begin() + start1, s.seq.begin() + start1 + length, s.seq.begin() + start2,
+      std::ranges::swap_ranges(s.seq.begin() + start1,
+                               s.seq.begin() + start1 + length,
+                               s.seq.begin() + start2,
                                s.seq.begin() + start2 + length);
 #else
       std::swap_ranges(s.seq.begin() + start1, s.seq.begin() + start1 + length, s.seq.begin() + start2);
@@ -566,9 +600,11 @@ namespace lz {
 
    inline std::ostream& operator<<(std::ostream& os, const sequence& obj) {
       os << "Alphabet size: " << obj.alphabet_size << " Alphabet: [";
-      for (auto c: obj.alphabet) os << c << " ";
+      for (auto c: obj.alphabet)
+         os << c << " ";
       os << "]\n";
-      for (auto c: obj.seq) os << c;
+      for (auto c: obj.seq)
+         os << c;
 
       return os;
    }
@@ -582,7 +618,8 @@ namespace lz {
       try {
          obj.seq.reserve(line.size());
 
-         for (auto c: line) obj.seq.push_back(c);
+         for (auto c: line)
+            obj.seq.push_back(c);
       } catch (std::bad_alloc& ba) {
          throw SequenceBadAlloc();
       } catch (...) {
@@ -592,30 +629,54 @@ namespace lz {
       return is;
    }
 
-   inline bool operator==(const sequence& lhs, const sequence& rhs) { return lhs.seq == rhs.seq; }
-   inline bool operator==(const sequence& lhs, const std::string& rhs) { return lhs == sequence(rhs); }
+   inline bool operator==(const sequence& lhs, const sequence& rhs) {
+      return lhs.seq == rhs.seq;
+   }
+   inline bool operator==(const sequence& lhs, const std::string& rhs) {
+      return lhs == sequence(rhs);
+   }
 
-   inline bool operator!=(const sequence& lhs, const sequence& rhs) { return !operator==(lhs, rhs); }
-   inline bool operator!=(const sequence& lhs, const std::string& rhs) { return lhs.seq != sequence(rhs).seq; }
+   inline bool operator!=(const sequence& lhs, const sequence& rhs) {
+      return !operator==(lhs, rhs);
+   }
+   inline bool operator!=(const sequence& lhs, const std::string& rhs) {
+      return lhs.seq != sequence(rhs).seq;
+   }
 
-   inline bool operator<(const sequence& lhs, const sequence& rhs) { return lhs.seq < rhs.seq; }
-   inline bool operator<(const sequence& lhs, const std::string& rhs) { return lhs < sequence(rhs); }
+   inline bool operator<(const sequence& lhs, const sequence& rhs) {
+      return lhs.seq < rhs.seq;
+   }
+   inline bool operator<(const sequence& lhs, const std::string& rhs) {
+      return lhs < sequence(rhs);
+   }
 
-   inline bool operator<=(const sequence& lhs, const sequence& rhs) { return !operator>(lhs, rhs); }
-   inline bool operator<=(const sequence& lhs, const std::string& rhs) { return !operator>(lhs, sequence(rhs)); }
+   inline bool operator<=(const sequence& lhs, const sequence& rhs) {
+      return !operator>(lhs, rhs);
+   }
+   inline bool operator<=(const sequence& lhs, const std::string& rhs) {
+      return !operator>(lhs, sequence(rhs));
+   }
 
-   inline bool operator>(const sequence& lhs, const sequence& rhs) { return operator<(rhs, lhs); }
-   inline bool operator>(const sequence& lhs, const std::string& rhs) { return operator<(sequence(rhs), lhs); }
+   inline bool operator>(const sequence& lhs, const sequence& rhs) {
+      return operator<(rhs, lhs);
+   }
+   inline bool operator>(const sequence& lhs, const std::string& rhs) {
+      return operator<(sequence(rhs), lhs);
+   }
 
-   inline bool operator>=(const sequence& lhs, const sequence& rhs) { return !operator<(lhs, rhs); }
-   inline bool operator>=(const sequence& lhs, const std::string& rhs) { return !operator<(lhs, sequence(rhs)); }
+   inline bool operator>=(const sequence& lhs, const sequence& rhs) {
+      return !operator<(lhs, rhs);
+   }
+   inline bool operator>=(const sequence& lhs, const std::string& rhs) {
+      return !operator<(lhs, sequence(rhs));
+   }
 
    inline void Shuffle(sequence& s, lz_uint block_size) {
       static std::random_device rd_seed;
-      static std::mt19937 random_engine(rd_seed());
+      static std::mt19937       random_engine(rd_seed());
 
       std::uniform_int_distribution<> dis(0, (s.size() - block_size - 0x01) / block_size);
-      lz_uint op1 = s.size() + 0x03, op2 = s.size() + 0x03;
+      lz_uint                         op1 = s.size() + 0x03, op2 = s.size() + 0x03;
 
       while (op1 > s.size() - block_size - 0x01)  // this goes on until we get a valid index
          op1 = block_size * dis(random_engine);   // the index for the first block
@@ -634,7 +695,8 @@ namespace lz {
    inline sequence Shuffle(const sequence& s, lz_uint block_size, lz_uint times) {
       sequence seq(s);
 
-      for (lz_uint i = 0; i < times; i++) Shuffle(seq, block_size);
+      for (lz_uint i = 0; i < times; i++)
+         Shuffle(seq, block_size);
 
       return seq;
    }

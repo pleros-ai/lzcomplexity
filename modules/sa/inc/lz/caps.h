@@ -55,7 +55,7 @@ using std::hardware_destructive_interference_size;
 #else
 // 64 bytes on x86-64 │ L1_CACHE_BYTES │ L1_CACHE_SHIFT │ __cacheline_aligned │ ...
 constexpr std::size_t hardware_constructive_interference_size = 64;
-constexpr std::size_t hardware_destructive_interference_size = 64;
+constexpr std::size_t hardware_destructive_interference_size  = 64;
 #endif
 
 namespace lz {
@@ -64,31 +64,31 @@ namespace lz {
       // The Suffix Array (SA) and the Longest Common Prefix (LCP) array constructor
       // class for some given sequence.
       class CaPS_SA {
-        private:
-         const char* T_;                //!> The input text.
-         lz_int n_;                     //!> Length of the input text.
-         lz_int* SA_;                   //!> The suffix array.
-         lz_int* LCP_;                  //!> The LCP array.
-         lz_int* SA_w;                  //!> Working space for the SA construction.
-         lz_int* LCP_w;                 //!> Working space for the LCP construction.
+     private:
+         const char*  T_;               //!> The input text.
+         lz_int       n_;               //!> Length of the input text.
+         lz_int*      SA_;              //!> The suffix array.
+         lz_int*      LCP_;             //!> The LCP array.
+         lz_int*      SA_w;             //!> Working space for the SA construction.
+         lz_int*      LCP_w;            //!> Working space for the LCP construction.
          const lz_int p_;               //!> Count of subproblems used in construction.
-         lz_int max_context;            //!> Maximum prefix-context length for comparing suffixes.
-         lz_int* pivot_;                //!> Pivots for the global suffix array.
+         lz_int       max_context;      //!> Maximum prefix-context length for comparing suffixes.
+         lz_int*      pivot_;           //!> Pivots for the global suffix array.
          const lz_int pivot_per_part_;  //!> Number of pivots to sample per sub-array.
-         lz_int* part_size_scan_;       //!> Inclusive scan (prefix sum) of the sizes of the pivoted final
+         lz_int*      part_size_scan_;  //!> Inclusive scan (prefix sum) of the sizes of the pivoted final
                                         //! partitions containing appropriate sorted sub-subarrays.
          lz_int* part_ruler_;           //!> "Ruler" for the partitions—contains the indices of each
                                         //! sub-sub-array in each partition.
          std::atomic_uint64_t solved_;  //!> Progress tracker—number of subproblems solved in some step.
-         lz_int c;                      //!> constant for select the number of pivots by partitions
+         lz_int               c;        //!> constant for select the number of pivots by partitions
 
          static constexpr lz_int default_subproblem_count = 8192;  //!> Default subproblem-count to use in construction.
-         static constexpr lz_int nested_par_grain_size = (100);    //!> Granularity for nested parallelism to kick in.
+         static constexpr lz_int nested_par_grain_size    = (100);  //!> Granularity for nested parallelism to kick in.
 
          // Fields for profiling time.
          typedef std::chrono::high_resolution_clock::time_point time_point_t;
-         constexpr static auto now = std::chrono::high_resolution_clock::now;
-         constexpr static auto duration = [](const std::chrono::nanoseconds& d) {
+         constexpr static auto                                  now      = std::chrono::high_resolution_clock::now;
+         constexpr static auto                                  duration = [](const std::chrono::nanoseconds& d) {
             return std::chrono::duration_cast<std::chrono::duration<double>>(d).count();
          };
 
@@ -109,8 +109,14 @@ namespace lz {
          // Merges the sorted collections of suffixes, `X` and `Y`, with lengths
          // `len_x` and `len_y` and LCP arrays `LCP_x` and `LCP_y` respectively, into
          // `Z`. Also constructs `Z`'s LCP array in `LCP_z`.
-         void merge(const lz_int* X, lz_int len_x, const lz_int* Y, lz_int len_y, const lz_int* LCP_x,
-                    const lz_int* LCP_y, lz_int* Z, lz_int* LCP_z) const;
+         void merge(const lz_int* X,
+                    lz_int        len_x,
+                    const lz_int* Y,
+                    lz_int        len_y,
+                    const lz_int* LCP_x,
+                    const lz_int* LCP_y,
+                    lz_int*       Z,
+                    lz_int*       LCP_z) const;
 
          // Merge-sorts the suffix collection `X` of length `n` into `Y`. Also
          // constructs the LCP array of `X` in `LCP`, using `W` as working space.
@@ -171,7 +177,7 @@ namespace lz {
          // Returns true iff `X` is a valid (partial) suffix array with size `n`.
          bool is_sorted(const lz_int* X, lz_int n) const;
 
-        public:
+     public:
          bool debug;
          // Constructs a suffix array object for the input text `T` of size
          // `n`. Optionally, the number of subproblems to decompose the original
@@ -245,21 +251,22 @@ namespace lz {
 
       inline lz_int CaPS_SA::lcp(const char* const x, const char* const y, const lz_int min_len) {
          lz_int l = 0;
-         while (l < min_len && x[l] == y[l]) l++;
+         while (l < min_len && x[l] == y[l])
+            l++;
 
          return l;
       }
 
 #if (defined(__i386__) || defined(__x86_64__)) && defined(__AVX2__)
       inline lz_int CaPS_SA::lcp_opt_avx(const char* str1, const char* str2, const lz_int len_in) {
-         int64_t i = 0;
+         int64_t i   = 0;
          int64_t len = static_cast<int64_t>(len_in);
          if (len >= 32) {
             for (; i <= len - 32; i += 32) {
-               __m256i v1 = _mm256_loadu_si256((__m256i*)(str1 + i));
-               __m256i v2 = _mm256_loadu_si256((__m256i*)(str2 + i));
-               __m256i cmp = _mm256_cmpeq_epi8(v1, v2);
-               int mask = _mm256_movemask_epi8(cmp);
+               __m256i v1   = _mm256_loadu_si256((__m256i*)(str1 + i));
+               __m256i v2   = _mm256_loadu_si256((__m256i*)(str2 + i));
+               __m256i cmp  = _mm256_cmpeq_epi8(v1, v2);
+               int     mask = _mm256_movemask_epi8(cmp);
                if (mask != 0xFFFFFFFF) {
                   int j = __builtin_ctz(~mask) + i;
                   return static_cast<lz_int>(j);
@@ -276,12 +283,13 @@ namespace lz {
 #endif
 
       inline lz_int CaPS_SA::lcp_opt(const char* const x, const char* const y, const lz_int min_len) {
-         auto const X = reinterpret_cast<const uint64_t*>(x);
-         auto const Y = reinterpret_cast<const uint64_t*>(y);
+         auto const X          = reinterpret_cast<const uint64_t*>(x);
+         auto const Y          = reinterpret_cast<const uint64_t*>(y);
          const auto word_count = (min_len >> 3);
 
          lz_int i = 0;
-         while (i < word_count && X[i] == Y[i]) i++;
+         while (i < word_count && X[i] == Y[i])
+            i++;
 
          return (i << 3) + lcp(x + (i << 3), y + (i << 3), min_len - (i << 3));
       };

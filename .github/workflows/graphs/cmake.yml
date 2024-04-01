@@ -1,0 +1,77 @@
+entry: gh-start
+executions:
+  - src:
+      node: gh-start
+      port: exec-on-push
+    dst:
+      node: gh-checkout
+      port: exec
+  - src:
+      node: gh-checkout
+      port: exec
+    dst:
+      node: switch-platform-v1-yellow-mango-parrot
+      port: exec
+  - src:
+      node: switch-platform-v1-yellow-mango-parrot
+      port: exec-win
+    dst:
+      node: switch-arch-v1-peach-grape-peach
+      port: exec
+  - src:
+      node: switch-platform-v1-yellow-mango-parrot
+      port: exec-macos
+    dst:
+      node: switch-arch-v1-peach-grape-peach
+      port: exec
+  - src:
+      node: switch-platform-v1-yellow-mango-parrot
+      port: exec-linux
+    dst:
+      node: switch-arch-v1-peach-grape-peach
+      port: exec
+  - src:
+      node: switch-arch-v1-peach-grape-peach
+      port: exec-x64
+    dst:
+      node: gh-actions-setup-python-brown-strawberry-penguin
+      port: exec
+connections: []
+nodes:
+  - id: gh-start
+    type: gh-start@v1
+    position:
+      x: 10
+      y: 10
+    settings:
+      folded: true
+  - id: gh-checkout
+    type: github.com/actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+    position:
+      x: 320
+      y: 190
+    settings:
+      folded: false
+  - id: gh-actions-setup-python-brown-strawberry-penguin
+    type: github.com/actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+    position:
+      x: 1170
+      y: 980
+    settings:
+      folded: false
+  - id: switch-platform-v1-yellow-mango-parrot
+    type: switch-platform@v1
+    position:
+      x: 740
+      y: 1010
+    settings:
+      folded: false
+  - id: switch-arch-v1-peach-grape-peach
+    type: switch-arch@v1
+    position:
+      x: 960
+      y: 1020
+    settings:
+      folded: false
+registries: []
+description: ''
