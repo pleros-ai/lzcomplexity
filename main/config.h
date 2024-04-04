@@ -32,16 +32,25 @@ struct lz_options {
    bool         verbose         = false;
 
    lz_options(cxxopts::parse_result result) {
-      input          = result.unmatched()[0];
-      output         = result["output"].as<std::string>();
-      output         = output.empty() ? input + ".json" : output;
-      factors_output = result["factors"].as<std::string>();
+      input = result.unmatched()[0];
+
+      if (result.count("output")) {
+         output = result["output"].as<std::string>();
+         output = output.empty() ? input + ".json" : output;
+      } else {
+         output = input + ".json";
+      }
+
+      if (result.count("factors")) {
+         factors_output = result["factors"].as<std::string>();
+      } else {
+         factors_output = "";
+      }
 
       // flags
       multiLine       = result["multi-line"].as<bool>();
       find_distance   = result["dlz"].as<bool>();
       n_jobs          = result["jobs"].as<lz::lz_uint>();
-      is_csv          = result["csv"].as<bool>();
       verbose         = result["verbose"].as<bool>();
       entropy_density = result["entropy-density"].as<bool>();
       // preprocess      = result["process"].as<bool>();
@@ -75,10 +84,19 @@ struct lz_options {
       // args for SA and Core functions
       args.chunks   = result["partitions"].as<lz::lz_int>();
       args.alphabet = std::stoi(result["alphabet"].as<std::string>());
-      auto lg       = result["log-base"].as<std::string>();
-      args.log_base = lg.empty() ? args.alphabet : std::stoi(lg);
 
-      auto excess_args = result["entropy-shuffle"].as<std::vector<std::string>>();
+      if (result.count("log-base")) {
+         auto lg       = result["log-base"].as<std::string>();
+         args.log_base = lg.empty() ? args.alphabet : std::stoi(lg);
+      } else {
+         args.log_base = args.alphabet;
+      }
+
+      std::vector<std::string> excess_args;
+      if (result.count("entropy-shuffle")) {
+         excess_args = result["entropy-shuffle"].as<std::vector<std::string>>();
+      }
+
       if (!excess_args.empty() && !excess_args[0].empty()) {
          if (excess_args[0] != "a" && excess_args[0] != "f") {
             args.block_size = std::stoi(excess_args[0]);

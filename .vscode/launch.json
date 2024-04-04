@@ -100,6 +100,16 @@
      "-d",
      "-j", "10"],
      "cwd": "${fileDirname}"
- }
+ },
+ {
+    "name": "Debug PBM",
+    "type": "lldb",
+    "request": "launch",
+    "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+    "args": ["-p", "5", 
+    "/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/43.perturbed.pbm", 
+    "-m", "-v", "-d", "-F", "auto", "-j", "1"],
+    "cwd": "${fileDirname}",
+}
    ]
 }

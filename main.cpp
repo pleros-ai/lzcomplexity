@@ -3,6 +3,10 @@
 void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_options& opt) {
    nlohmann::json out_data;
 
+   out_data["filename"] = opt.input;
+   out_data["format"]   = opt.input_format;
+   out_data["size"]     = flags.input.size();
+
    for (std::size_t i = 0; i < flags.input.size(); i++) {
       // out_data["input"] = opt.input;
       out_data["sequences"][i]["size"] = flags.input[i].size();
@@ -27,59 +31,7 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
       out_data["sequences"][i]["lz76Extra"]["redundancy"]             = lz_result.getExtras().redundancy;
       out_data["sequences"][i]["lz76Extra"]["lz_pearson_coefficient"] = lz_result.getExtras().lz_pearson_coefficient;
 
-      // if (results.complexity.size()) {
-      //    out_data["sequences"][i]["complexity"] = results.complexity[i];
-      // }
-
-      // if (results.entropy_density.size()) {
-      //    out_data["sequences"][i]["entropy_density"] = results.entropy_density[i];
-      // }
-
-      // if (results.lz_effective_complexity.size()) {
-      //    out_data["sequences"][i]["lz_effective_complexity"] = results.lz_effective_complexity[i];
-      // }
-
-      // if (results.excess_entropy_dist.size()) {
-      //    out_data["sequences"][i]["excess_entropy_dist"] = results.excess_entropy_dist[i];
-      // }
-      // if (results.extra.size()) {
-      //    out_data["sequences"][i]["extra"]["lz_rajski_distance"]     = results.extra[i].lz_rajski_distance;
-      //    out_data["sequences"][i]["extra"]["fh_uncertainty"]         = results.extra[i].fh_uncertainty;
-      //    out_data["sequences"][i]["extra"]["lh_uncertainty"]         = results.extra[i].lh_uncertainty;
-      //    out_data["sequences"][i]["extra"]["redundancy"]             = results.extra[i].redundancy;
-      //    out_data["sequences"][i]["extra"]["lz_pearson_coefficient"] = results.extra[i].lz_pearson_coefficient;
-      // }
-
-      // if (results.sequence_info_distance.size()) {
-      //    out_data["sequences"][i]["info_distance_sequence"] = results.sequence_info_distance[i];
-      // }
-
-      // if (results.mutual_information.size()) {
-      //    out_data["sequences"][i]["mutual_information"] = results.mutual_information[i];
-      // }
-
-      // if (results.random_shuffle_complexity.size()) {
-      //    out_data["sequences"][i]["random_shuffle_complexity"]["value"] = results.random_shuffle_complexity[i].value;
-      //    out_data["sequences"][i]["random_shuffle_complexity"]["block_size"] =
-      //       results.random_shuffle_complexity[i].block_size;
-
-      //    if (results.random_shuffle_complexity[i].terms.line == i + 1) {
-      //       out_data["sequences"][i]["random_shuffle_complexity"]["terms"] =
-      //          results.random_shuffle_complexity[i].terms.terms;
-      //    }
-      // }
-
       if (opt.args.block_size >= 0) {
-         // out_data["sequences"][i]["whole_random_shuffle_complexity"]["value"] =
-         //    results.whole_random_shuffle_complexity[i].value;
-         // out_data["sequences"][i]["whole_random_shuffle_complexity"]["block_size"] =
-         //    results.whole_random_shuffle_complexity[i].block_size;
-
-         // if (results.whole_random_shuffle_complexity[i].terms.line == i + 1) {
-         //    out_data["sequences"][i]["whole_random_shuffle_complexity"]["terms"] =
-         //       results.whole_random_shuffle_complexity[i].terms.terms;
-         // }
-
          auto w_rsc = lz_result.getAllRandomShuffleComplexity();
 
          out_data["sequences"][i]["lz76AllRandomShuffleComplexity"]["value"]             = w_rsc.excess_value;
@@ -89,10 +41,6 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
             out_data["sequences"][i]["lz76AllRandomShuffleComplexity"]["summands"] = w_rsc.summands;
          }
       }
-
-      // if (results.multi_information.size()) {
-      //    out_data["sequences"][i]["multi_information"] = results.multi_information[i];
-      // }
 
       if (!opt.multiLine)
          break;
@@ -111,6 +59,25 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
    }
 }
 
+void save_factors(lz::utils::LZ_Flags& flags, std::vector<lz::internal::LZ_Result> data, lz_options& opt) {
+   nlohmann::json out_data;
+
+   out_data["filename"] = opt.input;
+   out_data["format"]   = opt.input_format;
+   out_data["size"]     = flags.input.size();
+
+   for (auto i = 0ul; i < data.size(); i++) {
+      out_data["factors"][i] = data[i].lzf;
+   }
+
+   std::ofstream out(opt.factors_output);
+   if (out.is_open() && out.good()) {
+      out << out_data;
+      out_data.clear();
+      out.close();
+   }
+}
+
 lz::lz_int process(lz_options& opt) {
    std::vector<lz::sequence> data;
 
@@ -121,8 +88,7 @@ lz::lz_int process(lz_options& opt) {
    if (opt.verbose) {
       std::cout << lz::GREEN_COLOR << "2. Processing the data...\n" << lz::END_COLOR;
       std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Reading input data from: " << lz::END_COLOR
-                << opt.input << std::endl
-                << std::endl;
+                << opt.input << std::endl;
    }
    if (opt.is_csv) {
       // read_csv(opt.input, data);
@@ -131,6 +97,10 @@ lz::lz_int process(lz_options& opt) {
       multiLineToOneLine(opt.input, data, true);
    } else {
       data = read_input(opt.input, opt.multiLine, opt.input_format);
+   }
+
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "Sequence to process: " << data.size() << std::endl << std::endl << lz::END_COLOR;
    }
 
    //? Input flags
@@ -158,8 +128,10 @@ lz::lz_int process(lz_options& opt) {
    }
 
    if (!opt.factors_output.empty()) {
+      std::vector<lz::internal::LZ_Result> f;
       for (auto seq: test_flags.input) {
          auto flz = lz::lz76Factors(seq);
+         f.push_back(flz);
          std::cout << "Factors: [ ";
          for (auto f: flz.lzf)
             std::cout << f << " ";
@@ -176,6 +148,8 @@ lz::lz_int process(lz_options& opt) {
          // }
          // std::cout << "]" << std::endl;
       }
+
+      save_factors(test_flags, f, opt);
    }
 
    // App functions
@@ -341,7 +315,8 @@ lz::lz_int process(lz_options& opt) {
 
 auto main(int argc, char const* argv[]) -> int {
    cxxopts::options options("lz",
-                            "lz76 analysis engine v0.8 2024 by EAP.\nSend bug reports to estevez@fisica.uh.cu or "
+                            "LempelZiv-76 complexity utilities as a library and also a standalone software. Suited for "
+                            "complexity analysis of time series.\nSend bug reports to estevez@fisica.uh.cu or "
                             "efrenaragon96@gmail.com.\n");
 
    // clang-format off
@@ -355,7 +330,6 @@ auto main(int argc, char const* argv[]) -> int {
              "Alphabet cardinality. If auto it tries to guess the alphabet size. Default is 2",
              cxxopts::value<std::string>()->default_value("2"),
              "value");
-   opt_group("C,csv", "Input file has csv format.");
    opt_group("d,dlz",
              "The LZ distance is calculated between consecutive lines. Only valid for multiline files (-m "
              "option).");
@@ -364,13 +338,13 @@ auto main(int argc, char const* argv[]) -> int {
              "[#|a]:f:#:#, where the first section says the max size of the block for shuffling (a for automatic "
              "size), second says if save the terms and the last two numbers are the range of lines in the file for it. "
              "In case of missing  numbers for the range the terms will be save for every line",
-             cxxopts::value<std::vector<std::string>>()->delimiter(':')->default_value(""),
+             cxxopts::value<std::vector<std::string>>()->delimiter(':'),
              "value");
-   opt_group("f,factors", "Save the factorization.", cxxopts::value<std::string>()->default_value(""), "file_name");
+   opt_group("f,factors", "Save the factorization.", cxxopts::value<std::string>(), "file_name");
    opt_group("F,format",
              "Input file format. TXT for raw text format. CSV the input file is a csv array. PBM, PGM and PNM is for "
              "the family of the graphic formats.",
-             cxxopts::value<std::string>()->default_value("TXT"),
+             cxxopts::value<std::string>()->default_value("AUTO"),
              "value");
    opt_group("h,help", "Show the help of the program.");
    opt_group("j,jobs",
@@ -379,13 +353,13 @@ auto main(int argc, char const* argv[]) -> int {
              "value");
    opt_group("l,log-base",
              "Configure the log base value. The default is the alphabet cardinality.",
-             cxxopts::value<std::string>()->default_value(""),
+             cxxopts::value<std::string>(),
              "value");
    opt_group("m,multi-line", "Treat each line in the input stream as a different sequence.");
    opt_group("n,entropy-density", "Computes only the entropy density.");
    opt_group("o,output",
              "Output filepath for results. Default appends to the end of input file a .json extension",
-             cxxopts::value<std::string>()->default_value(""),
+             cxxopts::value<std::string>(),
              "file_name");
    opt_group("p,partitions",
              "Number of partitions used for the parallel suffix array algorithm.",

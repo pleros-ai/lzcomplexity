@@ -11,6 +11,8 @@ string(TOLOWER ${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}_${CMAKE_BUILD_TYPE} CPACK
 
 set(CPACK_PACKAGE_CONTACT "efrenaragon96@gmail.com")
 
+set(LZ_DESCRIPTION "LempelZiv-76 complexity utilities as a library and also a standalone software. Suited for complexity analysis of time series.")
+
 configure_file(LICENSE LICENSE.txt COPYONLY)
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_BINARY_DIR}/LICENSE.txt")
 if (APPLE)
@@ -32,7 +34,7 @@ endif()
 # https://unix.stackexchange.com/a/11552/254512
 set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local/")#/${CMAKE_PROJECT_VERSION}")
 # which is useful in case of packing only selected components instead of the whole thing
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Library for calculate measures based on LemeplZiv-76 complexity."
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${LZ_DESCRIPTION}
     CACHE STRING "Lempel-Ziv calculation"
 )
 # set(CPACK_PACKAGE_VENDOR "DySAG")
@@ -62,7 +64,7 @@ if (UNIX)
         set(CPACK_DEBIAN_PACKAGE_MAINTAINER "earagon") #required
         set(CPACK_DEBIAN_PACKAGE_VERSION ${VERSION})
         set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Efren Aragon")
-        set(CPACK_PACKAGE_DESCRIPTION "Library for calculate measures based on LemeplZiv-76 complexity.")
+        set(CPACK_PACKAGE_DESCRIPTION ${LZ_DESCRIPTION})
         # package name for deb. If set, then instead of some-application-0.9.2-Linux.deb
         # you'll get some-application_0.9.2_amd64.deb (note the underscores too)
         set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
@@ -101,7 +103,7 @@ if (UNIX)
             set(CPACK_GENERATOR "RPM")
             set(CPACK_RPM_PACKAGE_NAME "lzcomplexity")
             set(CPACK_RPM_PACKAGE_VERSION ${VERSION})
-            set(CPACK_RPM_PACKAGE_DESCRIPTION "Library for calculate measures based on LemeplZiv-76 complexity.")
+            set(CPACK_RPM_PACKAGE_DESCRIPTION ${LZ_DESCRIPTION})
         endif (RPMBUILDER)
     endif (FEDORA_FOUND)
 
@@ -116,7 +118,7 @@ if (UNIX)
             set(CPACK_GENERATOR "RPM")
             set(CPACK_RPM_PACKAGE_NAME "lz")
             set(CPACK_RPM_PACKAGE_VERSION ${VERSION})
-            set(CPACK_RPM_PACKAGE_DESCRIPTION "Library for calculate lz76 factorization and suffix-array structures.")
+            set(CPACK_RPM_PACKAGE_DESCRIPTION ${LZ_DESCRIPTION})
         endif (RPMBUILDER)
     endif (REDHAT_FOUND)
     
