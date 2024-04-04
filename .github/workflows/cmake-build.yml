@@ -103,15 +103,16 @@ jobs:
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
                 -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=${{matrix.builtinTbb}} \
-                -S ${{ github.workspace }} ..
+                -S ${{ github.workspace }}
 
       - name: Build
         run: |
-          cd build
           cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }}
       
       - name: Packaging
-        run: cpack
+        run: |
+          cd build
+          cpack
 
       - uses: actions/upload-artifact@v4
         with:
@@ -177,7 +178,7 @@ jobs:
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
                 -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=${{matrix.builtinTbb}} \
-                -S ${{ github.workspace }} ..
+                -S ${{ github.workspace }}
 
       - name: Build
         run: |
@@ -185,7 +186,9 @@ jobs:
           cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }}
       
       - name: Packaging
-        run: cpack
+        run: |
+          cd build
+          cpack
 
       - uses: actions/upload-artifact@v4
         with:
