@@ -71,18 +71,18 @@ c = sequence("01001010101101010101110101110001010000100101011")
 cpx = lz.LempelZivFactorization("01001010101101010101110101010101010000100101011", args)
 print("factorization: ", cpx)
 
-cpx = lz.LempelZivFactors(sequence("01001010101101010101110101010101010000100101011"), args)
+cpx = lz.LempelZivFactors("01001010101101010101110101010101010000100101011", args)
 print("factorization: ", cpx.factorization)
 print("factors: ", cpx.lzf)
 
 entropy = lz.EntropyDensity(b, args)
 print("entropy: ", entropy)
 
-lz_effective = lz.LZEffectiveComplexity(b, args)
-print("lz effective complexity: ", lz_effective)
+# lz_effective = lz.LZEffectiveComplexity(b, args)
+# print("lz effective complexity: ", lz_effective)
 
-shuffle = lz.ShuffleEntropyDeficit(b, args)
-print("shuffle entropy deficit: ", shuffle)
+# shuffle = lz.ShuffleEntropyDeficit(b, args)
+# print("shuffle entropy deficit: ", shuffle)
 
 distance_same = lz.InformationDistance(b, b_copy, args)
 print("information distance (same sequence): ", distance_same)
@@ -90,6 +90,7 @@ distance_diff = lz.InformationDistance(b, c, args)
 print("information distance (diff sequence): ", distance_diff)
 
 res = lz.LZ(b, args)
+print("Result LZ:")
 print(res.complexity)
 print(res.entropy)
 print(res.random_shuffle_complexity.excess_value)

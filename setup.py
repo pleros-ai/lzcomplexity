@@ -52,6 +52,7 @@ class CMakeBuild(build_ext):
             f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
         ]
         build_args = []
+
         # Adding CMake arguments set as environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)
         if "CMAKE_ARGS" in os.environ:
@@ -117,7 +118,7 @@ class CMakeBuild(build_ext):
         if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
-        cmake_args += ["-DLZ_ONLY_CORE=ON", "-Dbinding_python=ON", "-Dbuiltin_tbb=OFF"]
+        cmake_args += ["-DLZ_ONLY_CORE=ON", "-Dbinding_python=ON"]
 
         subprocess.run(
             ["cmake", ext.sourcedir, *cmake_args], cwd=build_temp, check=True
