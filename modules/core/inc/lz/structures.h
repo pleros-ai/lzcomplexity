@@ -7,11 +7,11 @@
 namespace lz {
    namespace utils {
       struct LZ_Shuffle {
-         lz_int                 max_block_size;     //? The value used in excess of entropy by shuffling
-         lz_double              excess_value;       //? The excess of entropy value
-         lz_double              multi_information;  //? The multi information value
-         std::vector<lz_double> excess_by_terms;    //? The vector of excess fo entropy
-                                                    //? for each term (size == mm_value)
+         lz_int                 max_block_size    = -1;  //? The value used in excess of entropy by shuffling
+         lz_double              excess_value      = 0;   //? The excess of entropy value
+         lz_double              multi_information = 0;   //? The multi information value
+         std::vector<lz_double> excess_by_terms;         //? The vector of excess fo entropy
+                                                         //? for each term (size == mm_value)
       };
 
       struct LZ_Args : public SA_Args {
