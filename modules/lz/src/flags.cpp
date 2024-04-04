@@ -31,9 +31,9 @@ namespace lz {
          data[idx].random_shuffle_complexity = shuffle;
       };
 
-      auto LZ_Output::setWholeRandomShuffleComplexity(lz_size idx, LZ_Shuffle shuffle) -> void {
+      auto LZ_Output::setAllRandomShuffleComplexity(lz_size idx, LZ_Shuffle shuffle) -> void {
          checkCapacity(idx);
-         data[idx].whole_random_shuffle_complexity = shuffle;
+         data[idx].all_random_shuffle_complexity = shuffle;
       };
 
       auto LZ_Output::setEpsilon(lz_size idx, lz_double eps) -> void {

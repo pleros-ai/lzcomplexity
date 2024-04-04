@@ -31,23 +31,23 @@ namespace lz {
    //.......................................................................
    //                            THE BANANA
    //.......................................................................
-   lz_int LZ(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       for (auto& seq: flags.input) {
-         auto res = LZ(seq, flags.sa_args);
+         auto res = lz76(seq, flags.sa_args);
          lz.data.push_back(res);
       }
 
       return EXIT_SUCCESS;
    };
 
-   lz_int LempelZivFactorization(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76Factorization(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       // lz.complexity.clear();
       // lz.complexity.reserve(flags.input.size() + 3);
       lz.calculated_complexity = std::vector<lz_bool>(flags.input.size() + 3, false);
 
       for (lz_size idx = 0; idx < flags.input.size(); idx++) {
          auto str = flags.input[idx];
-         auto clx = internal::LempelZivFactorization(str);
+         auto clx = internal::lz76Factorization(str);
          // lz.complexity.push_back(clx.factorization);
          lz.half_complexity.push_back(clx.half_factorization);
          lz.calculated_complexity[idx] = true;
@@ -60,7 +60,7 @@ namespace lz {
       return EXIT_SUCCESS;
    };
 
-   lz_int LZEffectiveComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76EffectiveComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       // std::vector<lz_int> lz_effective_complexity;
       lz.lz_effective_complexity.clear();
       lz.lz_effective_complexity.reserve(flags.input.size());
@@ -76,16 +76,16 @@ namespace lz {
             auto      sequences = str.Split(mid);
             auto      new_seq   = internal::MergeSequences(sequences.first, sequences.second);
 
-            // C_lh = LempelZivFactorization(sequences.second, flags.sa_args);
-            auto fh_fun  = [&]() { C_fh = EntropyDensity(sequences.first, flags.sa_args); };
-            auto lh_fun  = [&]() { C_lh = EntropyDensity(sequences.second, flags.sa_args); };
-            auto new_fun = [&]() { C_ = EntropyDensity(new_seq, flags.sa_args); };
+            // C_lh = lz76Factorization(sequences.second, flags.sa_args);
+            auto fh_fun  = [&]() { C_fh = lz76EntropyDensity(sequences.first, flags.sa_args); };
+            auto lh_fun  = [&]() { C_lh = lz76EntropyDensity(sequences.second, flags.sa_args); };
+            auto new_fun = [&]() { C_ = lz76EntropyDensity(new_seq, flags.sa_args); };
 
             utils::par_do(new_fun, fh_fun, lh_fun);
             // res = (C_fh + C_lh - 2 * C_) * std::log(mid) / (mid * std::log(str.getAlphabetSize()));
             res = C_fh + C_lh - C_;
          } else {
-            res = LZEffectiveComplexityNormalized(str, flags.sa_args);
+            res = lz76EffectiveComplexityNormalized(str, flags.sa_args);
          }
 
          lz.lz_effective_complexity.push_back(res);
@@ -125,25 +125,25 @@ namespace lz {
          }
 
          if (processAllLines || processOneLine || processRange) {
-            terms = {i + 1, excess_entropy.excess_by_terms};
+            terms = {i + 1, excess_entropy.summands};
          }
 
          // lz.whole_random_shuffle_complexity.push_back(
          //    {excess_entropy.max_block_size, excess_entropy.excess_value, terms});
          // lz.multi_information.push_back(excess_entropy.multi_information);
 
-         lz.setWholeRandomShuffleComplexity(i, excess_entropy);
+         lz.setAllRandomShuffleComplexity(i, excess_entropy);
       }
 
       return EXIT_SUCCESS;
    }
 
-   lz_int WholeRandomShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76AllRandomShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       return ShuffleCalc(
-         flags, lz, [&](sequence s, utils::LZ_Args args) { return WholeRandomShuffleComplexity(s, args); });
+         flags, lz, [&](sequence s, utils::LZ_Args args) { return lz76AllRandomShuffleComplexity(s, args); });
    }
 
-   lz_int RandomShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76RandomShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       utils::LZ_Shuffle excess_entropy;
       auto              init_line = flags.shuffle_init_line;
       auto              end_line  = flags.shuffle_end_line;
@@ -163,10 +163,10 @@ namespace lz {
             flags.sa_args.get_shuffle_terms = false;
          }
 
-         excess_entropy = RandomShuffleComplexity(str, flags.sa_args);
+         excess_entropy = lz76RandomShuffleComplexity(str, flags.sa_args);
 
          if (processAllLines || processOneLine || processRange) {
-            terms = {i + 1, excess_entropy.excess_by_terms};
+            terms = {i + 1, excess_entropy.summands};
          }
 
          // lz.random_shuffle_complexity.push_back({excess_entropy.max_block_size, excess_entropy.excess_value, terms});
@@ -178,12 +178,12 @@ namespace lz {
       return EXIT_SUCCESS;
    }
 
-   lz_int RandomShuffleComplexitySequential(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76RandomShuffleComplexitySequential(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       return ShuffleCalc(
-         flags, lz, [&](sequence s, utils::LZ_Args args) { return RandomShuffleComplexitySequential(s, args); });
+         flags, lz, [&](sequence s, utils::LZ_Args args) { return lz76RandomShuffleComplexitySequential(s, args); });
    }
 
-   lz_int ExcessEntropyDistance(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76ExcessEntropyDistance(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       // std::vector<lz_int> excess_entropy_dist;
       lz.excess_entropy_dist.clear();
       lz.excess_entropy_dist.reserve(flags.input.size());
@@ -199,15 +199,15 @@ namespace lz {
             lz_int    lh_complexity = 0;
             auto      par_seq       = str.Drop(mid);
 
-            lh_complexity = LempelZivFactorization(par_seq, flags.sa_args);
+            lh_complexity = lz76Factorization(par_seq, flags.sa_args);
             // auto fh = str.Take(mid);
-            // auto fh_complexity2 = LempelZivFactorization(fh, flags.sa_args);
+            // auto fh_complexity2 = lz76Factorization(fh, flags.sa_args);
             // distance
             auto dist = (C_lz - std::fmin(fh_complexity, lh_complexity)) / std::fmax(fh_complexity, lh_complexity);
 
             res = (1.0 - dist) * std::fmax(lz.half_complexity[i], lh_complexity);
          } else {
-            res = ExcessEntropyDistance(str, flags.sa_args);
+            res = lz76ExcessEntropyDistance(str, flags.sa_args);
          }
 
          lz.excess_entropy_dist.push_back(res);
@@ -216,7 +216,7 @@ namespace lz {
       return EXIT_SUCCESS;
    }
 
-   lz_int ExtraMeasures(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76ExtraMeasures(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       // std::vector<lz_int> excess_entropy_dist;
       lz.excess_entropy_dist.clear();
       lz.excess_entropy_dist.reserve(flags.input.size());
@@ -233,7 +233,7 @@ namespace lz {
             C_lz          = lz.data[i].getComplexity();
             fh_complexity = static_cast<lz_double>(lz.half_complexity[i]);
          } else {
-            auto lz       = internal::LempelZivFactorization(str, flags.sa_args);
+            auto lz       = internal::lz76Factorization(str, flags.sa_args);
             C_lz          = lz.factorization;
             fh_complexity = lz.half_factorization;
          }
@@ -241,7 +241,7 @@ namespace lz {
          lz_size mid     = str.size() / 2;  // the half of the sequence
          auto    par_seq = str.Drop(mid);
 
-         lh_complexity = LempelZivFactorization(par_seq, flags.sa_args);
+         lh_complexity = lz76Factorization(par_seq, flags.sa_args);
 
          auto MI = fh_complexity + lh_complexity - C_lz;
 
@@ -258,7 +258,7 @@ namespace lz {
       return EXIT_SUCCESS;
    }
 
-   lz_int EntropyDensity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76EntropyDensity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       // lz.entropy_density.clear();
       // lz.entropy_density.reserve(flags.input.size());
 
@@ -272,7 +272,7 @@ namespace lz {
 
             density = lz.data[i].getComplexity() / div;
          } else {
-            density = EntropyDensity(str, flags.sa_args);
+            density = lz76EntropyDensity(str, flags.sa_args);
          }
 
          // lz.entropy_density.push_back(density);
@@ -282,7 +282,7 @@ namespace lz {
       return EXIT_SUCCESS;
    }
 
-   lz_int InformationDistance(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76InformationDistance(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       if (flags.input.size() == 1) {
          lz.info_distance = {0};
          return EXIT_SUCCESS;
@@ -300,11 +300,11 @@ namespace lz {
             auto args_cpy     = flags.sa_args;
             args_cpy.alphabet = z.getAlphabetSize();
             args_cpy.log_base = z.getAlphabetSize();
-            auto _C           = LempelZivFactorization(z, args_cpy);
+            auto _C           = lz76Factorization(z, args_cpy);
 
             res = (_C - std::fmin(C_t1, C_t2)) * 1.0 / std::fmax(C_t1, C_t2);
          } else {
-            res = InformationDistanceZ(text[i - 1], text[i], flags.sa_args);
+            res = lz76InformationDistanceZ(text[i - 1], text[i], flags.sa_args);
          }
          lz.info_distance.push_back(res);
       }
@@ -312,7 +312,7 @@ namespace lz {
       return EXIT_SUCCESS;
    }
 
-   lz_int RandomShuffleDistance(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76RandomShuffleDistance(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       if (flags.input.size() == 1) {
          lz.info_distance = {0};
          return EXIT_SUCCESS;
@@ -322,14 +322,14 @@ namespace lz {
       lz_double             res  = 0.0;
       std::vector<sequence> text = flags.input;
       for (std::size_t i = 1; i < text.size(); i++) {
-         res = RandomShuffleDistance(text[i - 1], text[i], flags.sa_args);
+         res = lz76RandomShuffleDistance(text[i - 1], text[i], flags.sa_args);
          lz.random_shuffle_distance.push_back(res);
       }
 
       return EXIT_SUCCESS;
    }
 
-   lz_int InformationDistanceBySequence(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76InformationDistanceBySequence(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       std::vector<sequence> text = flags.input;
       lz.sequence_info_distance.clear();
       lz.sequence_info_distance.reserve(flags.input.size() + 3);
@@ -343,13 +343,13 @@ namespace lz {
             lz_uint C_t1, C_t2;
             auto    _C = lz.data[i].getComplexity();
 
-            auto fh_fun = [&]() { C_t1 = LempelZivFactorization(sequences.first, flags.sa_args); };
-            auto lh_fun = [&]() { C_t2 = LempelZivFactorization(sequences.second, flags.sa_args); };
+            auto fh_fun = [&]() { C_t1 = lz76Factorization(sequences.first, flags.sa_args); };
+            auto lh_fun = [&]() { C_t2 = lz76Factorization(sequences.second, flags.sa_args); };
             utils::par_do(fh_fun, lh_fun);
 
             res = (_C - std::fmin(C_t1, C_t2)) * 1.0 / std::fmax(C_t1, C_t2);
          } else {
-            res = InformationDistance(sequences.first, sequences.second, flags.sa_args);
+            res = lz76InformationDistance(sequences.first, sequences.second, flags.sa_args);
          }
          lz.sequence_info_distance.push_back(res);
       }
@@ -357,7 +357,7 @@ namespace lz {
       return EXIT_SUCCESS;
    }
 
-   lz_int RandomShuffleDistanceBySequence(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76RandomShuffleDistanceBySequence(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       std::vector<sequence> text = flags.input;
       lz.sequence_info_distance.clear();
       lz.sequence_info_distance.reserve(flags.input.size() + 3);
@@ -375,7 +375,7 @@ namespace lz {
 
          //    auto t1_fun = [&]() { t1_cpx = EntropyDensity(sequences.first, flags.sa_args); };
          //    auto t2_fun = [&]() { t2_cpx = EntropyDensity(sequences.second, flags.sa_args); };
-         //    // auto factor_fun = [&]() { complexity = LempelZivFactorization(str, flags.sa_args); };
+         //    // auto factor_fun = [&]() { complexity = lz76Factorization(str, flags.sa_args); };
          //    auto rand_fun = [&]() { random_run = ShuffleFactorization(str, flags.sa_args); };
 
          //    utils::par_do(rand_fun, t1_fun, t2_fun);
@@ -386,7 +386,7 @@ namespace lz {
 
          //    res = 1.0 - shuffle.excess_value / std::fmax(t1_cpx, t2_cpx);
          // } else {
-         res = RandomShuffleDistance(sequences.first, sequences.second, flags.sa_args);
+         res = lz76RandomShuffleDistance(sequences.first, sequences.second, flags.sa_args);
          // }
          lz.sequence_info_distance.push_back(res);
       }
@@ -394,7 +394,7 @@ namespace lz {
       return EXIT_SUCCESS;
    }
 
-   lz_int MutualInformationBySequence(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76MutualInformationBySequence(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       std::vector<sequence> text = flags.input;
       lz.sequence_info_distance.clear();
       lz.sequence_info_distance.reserve(flags.input.size() + 3);
@@ -412,7 +412,7 @@ namespace lz {
 
          //    auto t1_fun = [&]() { t1_cpx = EntropyDensity(sequences.first, flags.sa_args); };
          //    auto t2_fun = [&]() { t2_cpx = EntropyDensity(sequences.second, flags.sa_args); };
-         //    // auto factor_fun = [&]() { complexity = LempelZivFactorization(str, flags.sa_args); };
+         //    // auto factor_fun = [&]() { complexity = lz76Factorization(str, flags.sa_args); };
          //    auto rand_fun = [&]() { random_run = ShuffleFactorization(str, flags.sa_args); };
 
          //    utils::par_do(rand_fun, t1_fun, t2_fun);

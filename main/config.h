@@ -44,7 +44,7 @@ struct lz_options {
       is_csv          = result["csv"].as<bool>();
       verbose         = result["verbose"].as<bool>();
       entropy_density = result["entropy-density"].as<bool>();
-      preprocess      = result["process"].as<bool>();
+      // preprocess      = result["process"].as<bool>();
 
       auto opt_format = result["format"].as<std::string>();
       lz::utils::to_lowercase(opt_format);

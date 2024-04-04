@@ -46,7 +46,7 @@
         "request": "launch",
         "program": "${workspaceFolder}/build/lzcomplexity_dbg",
         "args": ["-p", "5", 
-        "/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/sequence1000.bin", 
+        "/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/periodic_2.dat", 
         "-m",
         "-v",
         "-d",

@@ -5,27 +5,27 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
 
    for (std::size_t i = 0; i < flags.input.size(); i++) {
       // out_data["input"] = opt.input;
-      out_data["sequences"][i]["sequence_size"] = flags.input[i].size();
+      out_data["sequences"][i]["size"] = flags.input[i].size();
 
       auto lz_result = results.data[i];
 
-      out_data["sequences"][i]["complexity"]      = lz_result.getComplexity();
-      out_data["sequences"][i]["entropy_density"] = lz_result.getEntropyDensity();
+      out_data["sequences"][i]["lz76Complexity"]     = lz_result.getComplexity();
+      out_data["sequences"][i]["lz76EntropyDensity"] = lz_result.getEntropyDensity();
 
       auto rsc = lz_result.getRandomShuffleComplexity();
 
-      out_data["sequences"][i]["random_shuffle_complexity"]["value"]             = rsc.excess_value;
-      out_data["sequences"][i]["random_shuffle_complexity"]["block_size"]        = rsc.max_block_size;
-      out_data["sequences"][i]["random_shuffle_complexity"]["multi_information"] = rsc.multi_information;
-      if (rsc.excess_by_terms.size() > 0) {
-         out_data["sequences"][i]["random_shuffle_complexity"]["terms"] = rsc.excess_by_terms;
+      out_data["sequences"][i]["lz76RandomShuffleComplexity"]["value"]             = rsc.excess_value;
+      out_data["sequences"][i]["lz76RandomShuffleComplexity"]["max_block_size"]    = rsc.max_block_size;
+      out_data["sequences"][i]["lz76RandomShuffleComplexity"]["multi_information"] = rsc.multi_information;
+      if (rsc.summands.size() > 0) {
+         out_data["sequences"][i]["lz76RandomShuffleComplexity"]["summands"] = rsc.summands;
       }
 
-      out_data["sequences"][i]["extra"]["lz_rajski_distance"]     = lz_result.getExtras().lz_rajski_distance;
-      out_data["sequences"][i]["extra"]["fh_uncertainty"]         = lz_result.getExtras().fh_uncertainty;
-      out_data["sequences"][i]["extra"]["lh_uncertainty"]         = lz_result.getExtras().lh_uncertainty;
-      out_data["sequences"][i]["extra"]["redundancy"]             = lz_result.getExtras().redundancy;
-      out_data["sequences"][i]["extra"]["lz_pearson_coefficient"] = lz_result.getExtras().lz_pearson_coefficient;
+      out_data["sequences"][i]["lz76Extra"]["lz_rajski_distance"]     = lz_result.getExtras().lz_rajski_distance;
+      out_data["sequences"][i]["lz76Extra"]["fh_uncertainty"]         = lz_result.getExtras().fh_uncertainty;
+      out_data["sequences"][i]["lz76Extra"]["lh_uncertainty"]         = lz_result.getExtras().lh_uncertainty;
+      out_data["sequences"][i]["lz76Extra"]["redundancy"]             = lz_result.getExtras().redundancy;
+      out_data["sequences"][i]["lz76Extra"]["lz_pearson_coefficient"] = lz_result.getExtras().lz_pearson_coefficient;
 
       // if (results.complexity.size()) {
       //    out_data["sequences"][i]["complexity"] = results.complexity[i];
@@ -80,13 +80,13 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
          //       results.whole_random_shuffle_complexity[i].terms.terms;
          // }
 
-         auto w_rsc = lz_result.getWholeRandomShuffleComplexity();
+         auto w_rsc = lz_result.getAllRandomShuffleComplexity();
 
-         out_data["sequences"][i]["whole_random_shuffle_complexity"]["value"]             = w_rsc.excess_value;
-         out_data["sequences"][i]["whole_random_shuffle_complexity"]["block_size"]        = w_rsc.max_block_size;
-         out_data["sequences"][i]["whole_random_shuffle_complexity"]["multi_information"] = w_rsc.multi_information;
-         if (w_rsc.excess_by_terms.size() > 0) {
-            out_data["sequences"][i]["whole_random_shuffle_complexity"]["terms"] = w_rsc.excess_by_terms;
+         out_data["sequences"][i]["lz76AllRandomShuffleComplexity"]["value"]             = w_rsc.excess_value;
+         out_data["sequences"][i]["lz76AllRandomShuffleComplexity"]["max_block_size"]    = w_rsc.max_block_size;
+         out_data["sequences"][i]["lz76AllRandomShuffleComplexity"]["multi_information"] = w_rsc.multi_information;
+         if (w_rsc.summands.size() > 0) {
+            out_data["sequences"][i]["lz76AllRandomShuffleComplexity"]["summands"] = w_rsc.summands;
          }
       }
 
@@ -99,8 +99,8 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
    }
 
    if (opt.find_distance) {
-      out_data["distance"]["random_shuffle_distance"] = results.random_shuffle_distance;
-      out_data["distance"]["information_distance"]    = results.info_distance;
+      out_data["lz76Distance"]["RandomShuffleDistance"] = results.random_shuffle_distance;
+      out_data["lz76Distance"]["InformationDistance"]   = results.info_distance;
    }
 
    std::ofstream out(opt.output);
@@ -147,7 +147,7 @@ lz::lz_int process(lz_options& opt) {
       std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating lz76 factorization\n" << lz::END_COLOR;
       init_time = now();
    }
-   lz::LempelZivFactorization(test_flags, lz);
+   lz::lz76Factorization(test_flags, lz);
    if (opt.verbose) {
       const auto end_time = now();
       std::cout << "Complexity: ";
@@ -159,7 +159,7 @@ lz::lz_int process(lz_options& opt) {
 
    if (!opt.factors_output.empty()) {
       for (auto seq: test_flags.input) {
-         auto flz = lz::LempelZivFactors(seq);
+         auto flz = lz::lz76Factors(seq);
          std::cout << "Factors: [ ";
          for (auto f: flz.lzf)
             std::cout << f << " ";
@@ -167,8 +167,8 @@ lz::lz_int process(lz_options& opt) {
 
          std::cout << "epsilon: " << flz.epsilon << "\n";
 
-         auto en = lz::LZNormalError(seq);
-         auto ep = lz::LZPoisonError(seq);
+         auto en = lz::lz76NormalError(seq);
+         auto ep = lz::lz76PoisonError(seq);
          std::cout << "Errors: " << en << " " << ep << std::endl;
          // std::string txt = seq.toString();
          // for (int i = 1; i < flz.lzf.size(); i++) {
@@ -183,7 +183,7 @@ lz::lz_int process(lz_options& opt) {
       std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating Entropy density\n" << lz::END_COLOR;
       init_time = now();
    }
-   lz::EntropyDensity(test_flags, lz);
+   lz::lz76EntropyDensity(test_flags, lz);
    if (opt.verbose) {
       const auto end_time = now();
       std::cout << "Entropy: ";
@@ -193,35 +193,14 @@ lz::lz_int process(lz_options& opt) {
       std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
    }
 
-   // if (opt.verbose) {
-   //    std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating LZ effective complexity\n"
-   //              << lz::END_COLOR;
-   //    init_time = now();
-   // }
-   // // Excess entropy by distance (mutual information)
-   // lz::LZEffectiveComplexity(test_flags, lz);
-   // // lz::LZEffectiveComplexityNormalized(test_flags, lz);
-   // if (opt.verbose) {
-   //    const auto end_time = now();
-   //    std::cout << "Excess entropy as MI: ";
-   //    for (auto x: lz.lz_effective_complexity)
-   //       std::cout << x << " ";
-   //    std::cout << std::endl;
-   //    std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
-   // }
-
    if (opt.verbose) {
       std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating extra measures\n" << lz::END_COLOR;
       init_time = now();
    }
    // Excess entropy by distance
-   // lz::ExcessEntropyDistance(test_flags, lz);
-   lz::ExtraMeasures(test_flags, lz);
+   lz::lz76ExtraMeasures(test_flags, lz);
    if (opt.verbose) {
       const auto end_time = now();
-      // std::cout << "Excess entropy by distance: ";
-      // for (auto x: lz.excess_entropy_dist) std::cout << x << " ";
-      // std::cout << std::endl;
       std::cout << "LZ Rajski distance: ";
       for (auto x: lz.data)
          std::cout << x.getExtras().lz_rajski_distance << " ";
@@ -250,7 +229,7 @@ lz::lz_int process(lz_options& opt) {
                 << lz::END_COLOR;
       init_time = now();
    }
-   lz::RandomShuffleComplexity(test_flags, lz);
+   lz::lz76RandomShuffleComplexity(test_flags, lz);
    if (opt.verbose) {
       const auto end_time = now();
       std::cout << "Random shuffle complexity using Z sequence: ";
@@ -259,9 +238,9 @@ lz::lz_int process(lz_options& opt) {
       std::cout << std::endl;
       for (auto i = 0ul; i < lz.data.size(); i++) {
          auto x = lz.data[i];
-         if (x.getRandomShuffleComplexity().excess_by_terms.size() > 0) {
+         if (x.getRandomShuffleComplexity().summands.size() > 0) {
             std::cout << "Shuffle entropy terms of line: " << i + 1 << " [ ";
-            for (auto t: x.getRandomShuffleComplexity().excess_by_terms)
+            for (auto t: x.getRandomShuffleComplexity().summands)
                std::cout << t << " ";
             std::cout << "]\n";
          }
@@ -282,47 +261,30 @@ lz::lz_int process(lz_options& opt) {
          init_time = now();
       }
       // Excess entropy by shuffle
-      lz::WholeRandomShuffleComplexity(test_flags, lz);
+      lz::lz76AllRandomShuffleComplexity(test_flags, lz);
       if (opt.verbose) {
          const auto end_time = now();
          std::cout << "Random shuffle complexity using whole sequence: ";
          for (auto x: lz.data)
-            std::cout << x.getWholeRandomShuffleComplexity().excess_value << " ";
+            std::cout << x.getAllRandomShuffleComplexity().excess_value << " ";
          std::cout << std::endl;
          for (auto i = 0ul; i < lz.data.size(); i++) {
             auto x = lz.data[i];
-            if (x.getWholeRandomShuffleComplexity().excess_by_terms.size() > 0) {
+            if (x.getAllRandomShuffleComplexity().summands.size() > 0) {
                std::cout << "Shuffle entropy terms of line: " << i + 1 << " [ ";
-               for (auto t: x.getWholeRandomShuffleComplexity().excess_by_terms)
+               for (auto t: x.getAllRandomShuffleComplexity().summands)
                   std::cout << t << " ";
                std::cout << "]\n";
             }
          }
          std::cout << "Multi information: ";
          for (auto x: lz.data)
-            std::cout << x.getWholeRandomShuffleComplexity().multi_information << " ";
+            std::cout << x.getAllRandomShuffleComplexity().multi_information << " ";
          std::cout << std::endl;
 
          std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
       }
    }
-
-   // if (opt.verbose) {
-   //    std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating information distance in
-   //    sequences\n"
-   //              << lz::END_COLOR;
-   //    init_time = now();
-   // }
-   // // lz::InformationDistanceBySequence(test_flags, lz);
-   // // lz::MutualInformationBySequence(test_flags, lz);
-   // lz::RandomShuffleDistanceBySequence(test_flags, lz);
-   // if (opt.verbose) {
-   //    const auto end_time = now();
-   //    std::cout << "Info distance in sequences: ";
-   //    for (auto x: lz.sequence_info_distance) std::cout << x << " ";
-   //    std::cout << std::endl;
-   //    std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
-   // }
 
    if (opt.find_distance) {
       if (opt.verbose) {
@@ -334,8 +296,8 @@ lz::lz_int process(lz_options& opt) {
       std::vector<double> rand_dist;
 
       // lz::InformationDistance(test_flags, lz);
-      lz::InformationDistance(test_flags, lz);
-      lz::RandomShuffleDistance(test_flags, lz);
+      lz::lz76InformationDistance(test_flags, lz);
+      lz::lz76RandomShuffleDistance(test_flags, lz);
 
       // for (int i = 10; i <= 60; i += 5) {
       //    test_flags.sa_args.block_size = i;
@@ -431,7 +393,7 @@ auto main(int argc, char const* argv[]) -> int {
              "value");
    opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
 
-   opt_group("r,process", "Clear input data.");
+   // opt_group("r,process", "Clear input data.");
    //    opt_group("m,max-context", "Max context for suffix comparisons (only for caps algorithm).",
    //              cxxopts::value<lz::lz_int>()->default_value("0"), "num");
    try {

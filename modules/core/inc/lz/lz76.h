@@ -42,7 +42,7 @@ namespace lz {
    //................................................
    //             Lempel-Ziv 76
    //...............................................
-   namespace lz76 {
+   namespace internal {
 
       struct LZ_Result {
          lz_uint              factorization;  //!> The factorization (Lempel-Ziv 76 complexity)
@@ -230,6 +230,6 @@ namespace lz {
          return os;
       }
 
-   }  // namespace lz76
+   }  // namespace internal
 
 }  // namespace lz

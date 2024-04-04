@@ -10,7 +10,7 @@ namespace lz {
          lz_int                 max_block_size    = -1;  //? The value used in excess of entropy by shuffling
          lz_double              excess_value      = 0;   //? The excess of entropy value
          lz_double              multi_information = 0;   //? The multi information value
-         std::vector<lz_double> excess_by_terms;         //? The vector of excess fo entropy
+         std::vector<lz_double> summands;                //? The vector of excess fo entropy
                                                          //? for each term (size == mm_value)
       };
 
@@ -76,9 +76,9 @@ namespace lz {
          lz_double entropy_density;  //!> entropy density of the sequence
          // lz_double lz_effective_complexity;             //!> excess of entropy by mutual information of the sequence
          // lz_double excess_entropy_dist;                 //!> excess of entropy by distance of the sequence
-         LZ_Shuffle whole_random_shuffle_complexity;  //!> excess of entropy by shuffling of the sequence
-         LZ_Shuffle random_shuffle_complexity;        //!> excess of entropy by shuffling
-                                                      //!> of the merged sequence
+         LZ_Shuffle all_random_shuffle_complexity;  //!> excess of entropy by shuffling of the sequence
+         LZ_Shuffle random_shuffle_complexity;      //!> excess of entropy by shuffling
+                                                    //!> of the merged sequence
          // lz_double mutual_information;                  //!> mutual information of two half of the sequences
          // lz_double info_distance;                       //!> information distance of the two consecutive sequences
          // lz_double sequence_info_distance;              //!> information distance of each sequences
@@ -97,7 +97,7 @@ namespace lz {
          LempelZiv(lz_uint              _complexity,
                    std::vector<lz_uint> lzf,
                    lz_double            _entropy_density,
-                   LZ_Shuffle           _whole_random_shuffle_complexity,
+                   LZ_Shuffle           _all_random_shuffle_complexity,
                    LZ_Shuffle           _random_shuffle_complexity,
                    lz_double            _lz_normal_errors,
                    lz_double            _lz_poison_errors,
@@ -106,7 +106,7 @@ namespace lz {
                    LZ_Extra             _extra)
            : complexity{_complexity}
            , entropy_density{_entropy_density}
-           , whole_random_shuffle_complexity{_whole_random_shuffle_complexity}
+           , all_random_shuffle_complexity{_all_random_shuffle_complexity}
            , random_shuffle_complexity{_random_shuffle_complexity}
            , lz_normal_errors{_lz_normal_errors}
            , lz_poison_errors{_lz_poison_errors}
@@ -118,7 +118,7 @@ namespace lz {
          LempelZiv(const LempelZiv& r)
            : complexity{r.complexity}
            , entropy_density{r.entropy_density}
-           , whole_random_shuffle_complexity{r.whole_random_shuffle_complexity}
+           , all_random_shuffle_complexity{r.all_random_shuffle_complexity}
            , random_shuffle_complexity{r.random_shuffle_complexity}
            , lz_normal_errors{r.lz_normal_errors}
            , lz_poison_errors{r.lz_poison_errors}
@@ -130,7 +130,7 @@ namespace lz {
          LempelZiv(LempelZiv&& r)
            : complexity{r.complexity}
            , entropy_density{r.entropy_density}
-           , whole_random_shuffle_complexity{r.whole_random_shuffle_complexity}
+           , all_random_shuffle_complexity{r.all_random_shuffle_complexity}
            , random_shuffle_complexity{r.random_shuffle_complexity}
            , lz_normal_errors{r.lz_normal_errors}
            , lz_poison_errors{r.lz_poison_errors}
@@ -163,7 +163,7 @@ namespace lz {
          auto getComplexity(void) const { return complexity; };
          auto getEntropyDensity(void) const { return entropy_density; };
          auto getRandomShuffleComplexity(void) const { return random_shuffle_complexity; };
-         auto getWholeRandomShuffleComplexity(void) const { return whole_random_shuffle_complexity; };
+         auto getAllRandomShuffleComplexity(void) const { return all_random_shuffle_complexity; };
          // auto getInformationDistance(void) const { return info_distance; };
          auto getNormalError(void) const { return lz_normal_errors; };
          auto getPoisonError(void) const { return lz_poison_errors; };

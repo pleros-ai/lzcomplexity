@@ -44,7 +44,7 @@
 
 namespace lz {
 
-   namespace lz76 {
+   namespace internal {
 
       /**
        * @brief
@@ -271,6 +271,6 @@ namespace lz {
 
          return factors_stddev = std::sqrt(sq_sum / max_factor_size);
       }
-   }  // namespace lz76
+   }  // namespace internal
 
 }  // namespace lz

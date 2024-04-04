@@ -47,7 +47,7 @@ namespace lz {
          auto setEntropyDensity(lz_size, lz_double) -> void;
          auto setFactors(lz_size, std::vector<lz_uint>) -> void;
          auto setRandomShuffleComplexity(lz_size, LZ_Shuffle) -> void;
-         auto setWholeRandomShuffleComplexity(lz_size, LZ_Shuffle) -> void;
+         auto setAllRandomShuffleComplexity(lz_size, LZ_Shuffle) -> void;
          auto setEpsilon(lz_size, lz_double) -> void;
          auto setFactorsStddev(lz_size, lz_double) -> void;
          auto setNormalError(lz_size, lz_double) -> void;

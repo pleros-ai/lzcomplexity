@@ -60,12 +60,12 @@ namespace lz {
          return args;
       }
 
-      LZ_Data LempelZivFactorization(const sequence& text) {
-         return internal::LempelZivFactorization(text, getDefaultArgs(text));
+      LZ_Data lz76Factorization(const sequence& text) {
+         return internal::lz76Factorization(text, getDefaultArgs(text));
       };
 
-      LZ_Data LempelZivFactorization(const sequence& text, utils::LZ_Args args) {
-         lz76::LempelZiv76 L;
+      LZ_Data lz76Factorization(const sequence& text, utils::LZ_Args args) {
+         internal::LempelZiv76 L;
          L.Factorize(text, args);
 
          auto pos =
@@ -94,8 +94,8 @@ namespace lz {
       }
    }  // namespace internal
 
-   utils::LempelZiv LZ(const sequence& seq, utils::LZ_Args args) {
-      lz76::LempelZiv76 L;
+   utils::LempelZiv lz76(const sequence& seq, utils::LZ_Args args) {
+      internal::LempelZiv76 L;
       // factorization, factors, epsilon and factors stddev
       L.Factorize(seq, args);
 
@@ -104,7 +104,7 @@ namespace lz {
       auto entropy = L.getFactorization() / div;
       // random shuffle complexity (rsc)
       utils::LZ_Shuffle rsc;
-      auto              rsc_fun = [&rsc, &seq, &args]() { rsc = RandomShuffleComplexity(seq, args); };
+      auto              rsc_fun = [&rsc, &seq, &args]() { rsc = lz76RandomShuffleComplexity(seq, args); };
       // whole sequence random shuffle complexity (w_rsc -- optional)
       utils::LZ_Shuffle w_rsc;
       auto              w_rsc_fun = [&seq, &args, &L]() {
@@ -113,7 +113,7 @@ namespace lz {
       };
       // Extras
       utils::LZ_Extra extras;
-      auto            extra_fun = [&]() { extras = ExtraMeasures(seq, args); };
+      auto            extra_fun = [&]() { extras = lz76ExtraMeasures(seq, args); };
 
       utils::par_do(rsc_fun, w_rsc_fun, extra_fun);
 
@@ -136,20 +136,20 @@ namespace lz {
    }
 
    //-------------------- Factorization functions ----------------------------//
-   lz_uint LempelZivFactorization(const sequence& text, utils::LZ_Args args) {
-      lz76::LempelZiv76 L;
+   lz_uint lz76Factorization(const sequence& text, utils::LZ_Args args) {
+      internal::LempelZiv76 L;
       L.Factorize(text, args);
       return L.getFactorization();
    };
 
-   lz76::LZ_Result LempelZivFactors(const sequence& text, utils::LZ_Args args) {
-      lz76::LempelZiv76 L;
+   internal::LZ_Result lz76Factors(const sequence& text, utils::LZ_Args args) {
+      internal::LempelZiv76 L;
       return L.Factorize(text, args);
    };
 
    //-------------------- Entropy density functions ----------------------------//
-   lz_double EntropyDensity(const sequence& text, utils::LZ_Args args) {
-      lz76::LempelZiv76 L;
+   lz_double lz76EntropyDensity(const sequence& text, utils::LZ_Args args) {
+      internal::LempelZiv76 L;
       L.Factorize(text, args);
       // lz_double div = text.size() * std::log(text.getAlphabetSize()) / std::log(text.size());
       lz_double div = static_cast<double>(text.size()) / utils::log(text.size(), args.log_base);
@@ -158,35 +158,35 @@ namespace lz {
    }
 
    //-------------------- Excess of entropy functions ----------------------------//
-   lz_int LZEffectiveComplexity(const sequence& text, utils::LZ_Args args) {
+   lz_int lz76EffectiveComplexity(const sequence& text, utils::LZ_Args args) {
       std::vector<char>::size_type mid = text.size() / 2;  // the half of the sequence
 
       lz_int C_, C_fh, C_lh = 0;
       auto   sequences = text.Split(mid);
       auto   new_seq   = internal::MergeSequences(sequences.first, sequences.second);
 
-      auto fh_fun  = [&]() { C_fh = LempelZivFactorization(sequences.first, args); };
-      auto lh_fun  = [&]() { C_lh = LempelZivFactorization(sequences.second, args); };
+      auto fh_fun  = [&]() { C_fh = lz76Factorization(sequences.first, args); };
+      auto lh_fun  = [&]() { C_lh = lz76Factorization(sequences.second, args); };
       auto all_fun = [&C_, &new_seq, &args]() {
          auto cpy     = args;
          cpy.alphabet = new_seq.getAlphabetSize();
          cpy.log_base = new_seq.getAlphabetSize();
-         C_           = LempelZivFactorization(new_seq, cpy);
+         C_           = lz76Factorization(new_seq, cpy);
       };
 
       utils::par_do(all_fun, fh_fun, lh_fun);
       return C_fh + C_lh - 2 * C_;
    };
 
-   lz_double LZEffectiveComplexityNormalized(const sequence& text, utils::LZ_Args args) {
-      auto excess = LZEffectiveComplexity(text, args);
+   lz_double lz76EffectiveComplexityNormalized(const sequence& text, utils::LZ_Args args) {
+      auto excess = lz76EffectiveComplexity(text, args);
       auto N      = text.size() / 2;
       auto div    = (N * utils::log(args.alphabet, args.log_base)) / utils::log(N, args.log_base);
 
       return excess / div;
    }
 
-   utils::LZ_Shuffle RandomShuffleComplexitySequential(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_Shuffle lz76RandomShuffleComplexitySequential(const sequence& str, utils::LZ_Args args) {
       std::size_t mm = args.block_size;
       if (mm <= 0) {
          mm = utils::max_block_size(str.size());  // the maximum number for the sum in the entropy estimation
@@ -196,13 +196,13 @@ namespace lz {
       utils::LZ_Shuffle result;
       result.max_block_size    = mm;
       lz_double excess_entropy = 0;
-      auto      complex        = LempelZivFactorization(str, args);
+      auto      complex        = lz76Factorization(str, args);
 
       for (unsigned int m = 1; m <= mm; m++) {
          sequence rand_seq = Shuffle(
             str, m, str.size() / 2);  // Shuffling is made for half the size of the sequence, hope that is enough
          std::vector<unsigned int> slzf;
-         auto                      rand_complexity = LempelZivFactorization(rand_seq, args);
+         auto                      rand_complexity = lz76Factorization(rand_seq, args);
          lz_double                 ee_term         = utils::log(str.size(), args.log_base) *
                              std::fabs((lz_double)rand_complexity - (lz_double)complex) /
                              (str.size() * utils::log(args.alphabet, args.log_base));
@@ -210,16 +210,13 @@ namespace lz {
          excess_entropy += ee_term;
 
          if (args.get_shuffle_terms)
-            result.excess_by_terms.push_back(ee_term);
+            result.summands.push_back(ee_term);
          if (m == 1)
             result.multi_information = ee_term;
       }
 
       result.excess_value = excess_entropy;
       return result;
-   }
-   utils::LZ_Shuffle RandomShuffleComplexitySequential(const std::string& str, utils::LZ_Args args) {
-      return RandomShuffleComplexitySequential(sequence{str}, args);
    }
 
    std::pair<std::vector<lz_int>, lz_size> ShuffleFactorization(const sequence& str, utils::LZ_Args args) {
@@ -234,7 +231,7 @@ namespace lz {
       auto fun = [&](lz_size idx) {
          sequence rand_seq = Shuffle(str, idx, str.size() / 2);  // Shuffling is made for half the
                                                                  // size of the sequence, hope that is enough
-         auto rand_complexity = LempelZivFactorization(rand_seq, args);
+         auto rand_complexity = lz76Factorization(rand_seq, args);
          res[idx]             = rand_complexity;
       };
 
@@ -257,7 +254,7 @@ namespace lz {
       });
 
       if (args.get_shuffle_terms) {
-         result.excess_by_terms = terms;
+         result.summands = terms;
       }
 
       result.multi_information = terms[1];
@@ -275,7 +272,7 @@ namespace lz {
       return result;
    }
 
-   utils::LZ_Shuffle RandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_Shuffle lz76RandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
       auto [past, future] = str.Split(str.size() / 2);
       auto new_seq        = internal::MergeSequences(past, future);
 
@@ -285,7 +282,7 @@ namespace lz {
       args.alphabet = new_seq.getAlphabetSize();
       args.log_base = new_seq.getAlphabetSize();
 
-      auto factor_fun = [&]() { complexity = LempelZivFactorization(new_seq, args); };
+      auto factor_fun = [&]() { complexity = lz76Factorization(new_seq, args); };
       auto rand_fun   = [&]() { random_run = ShuffleFactorization(new_seq, args); };
 
       utils::par_do(factor_fun, rand_fun);
@@ -295,11 +292,11 @@ namespace lz {
       return ShuffleEntropyCalculation(new_seq, args, complexity, H_rand, mm);
    }
 
-   utils::LZ_Shuffle WholeRandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_Shuffle lz76AllRandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
       std::pair<std::vector<lz_int>, lz_size> random_run;
       lz_int                                  complexity;
 
-      auto factor_fun = [&]() { complexity = LempelZivFactorization(str, args); };
+      auto factor_fun = [&]() { complexity = lz76Factorization(str, args); };
       auto rand_fun   = [&]() { random_run = ShuffleFactorization(str, args); };
 
       utils::par_do(factor_fun, rand_fun);
@@ -309,7 +306,7 @@ namespace lz {
       return ShuffleEntropyCalculation(str, args, complexity, H_rand, mm);
    }
 
-   lz_double ExcessEntropyDistance(const sequence& str, utils::LZ_Args args) {
+   lz_double lz76ExcessEntropyDistance(const sequence& str, utils::LZ_Args args) {
       std::vector<char>::size_type mid = str.size() / 2;  // the half of the sequence
 
       lz_double dist          = 0;
@@ -317,9 +314,9 @@ namespace lz {
       lz_int    lh_complexity = 0;
       auto      par_seq       = str.Split(mid);
 
-      auto fh_fun   = [&]() { fh_complexity = LempelZivFactorization(par_seq.first, args); };
-      auto lh_fun   = [&]() { lh_complexity = LempelZivFactorization(par_seq.second, args); };
-      auto dist_fun = [&]() { dist = InformationDistance(par_seq.first, par_seq.second, args); };
+      auto fh_fun   = [&]() { fh_complexity = lz76Factorization(par_seq.first, args); };
+      auto lh_fun   = [&]() { lh_complexity = lz76Factorization(par_seq.second, args); };
+      auto dist_fun = [&]() { dist = lz76InformationDistance(par_seq.first, par_seq.second, args); };
 
       utils::par_do(dist_fun, fh_fun, lh_fun);
 
@@ -327,13 +324,13 @@ namespace lz {
    }
 
    //-------------------- Distance functions ----------------------------//
-   lz_double InformationDistance(const sequence&        T1,
-                                 const lz76::LZ_Result& R1,
-                                 const sequence&        T2,
-                                 const lz76::LZ_Result& R2) {
+   lz_double lz76InformationDistance(const sequence&            T1,
+                                     const internal::LZ_Result& R1,
+                                     const sequence&            T2,
+                                     const internal::LZ_Result& R2) {
       lz_int C_all = 0;
 
-      C_all = LempelZivFactorization(T1 + T2);
+      C_all = lz76Factorization(T1 + T2);
 
       auto res =
          (C_all - std::fmin(R1.factorization, R2.factorization)) * 1.0 / std::fmax(R1.factorization, R2.factorization);
@@ -341,14 +338,14 @@ namespace lz {
       return res;
    }
 
-   lz_double InformationDistance(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
+   lz_double lz76InformationDistance(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
       lz_int C_t1, C_t2, C_all = 0;
 
-      auto fh_fun = [&C_t1, &T1, &args]() { C_t1 = LempelZivFactorization(T1, args); };
+      auto fh_fun = [&C_t1, &T1, &args]() { C_t1 = lz76Factorization(T1, args); };
 
-      auto lh_fun = [&C_t2, &T2, &args]() { C_t2 = LempelZivFactorization(T2, args); };
+      auto lh_fun = [&C_t2, &T2, &args]() { C_t2 = lz76Factorization(T2, args); };
 
-      auto all_fun = [&C_all, &T1, &T2, &args]() { C_all = LempelZivFactorization(T1 + T2, args); };
+      auto all_fun = [&C_all, &T1, &T2, &args]() { C_all = lz76Factorization(T1 + T2, args); };
 
       utils::par_do(fh_fun, lh_fun, all_fun);
 
@@ -357,20 +354,20 @@ namespace lz {
       return res;
    }
 
-   lz_double InformationDistanceZ(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
+   lz_double lz76InformationDistanceZ(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
       lz_int C_t1, C_t2, C_all = 0;
 
       auto z = internal::MergeSequences(T1, T2);
 
-      auto fh_fun = [&C_t1, &T1, &args]() { C_t1 = LempelZivFactorization(T1, args); };
+      auto fh_fun = [&C_t1, &T1, &args]() { C_t1 = lz76Factorization(T1, args); };
 
-      auto lh_fun = [&C_t2, &T2, &args]() { C_t2 = LempelZivFactorization(T2, args); };
+      auto lh_fun = [&C_t2, &T2, &args]() { C_t2 = lz76Factorization(T2, args); };
 
       auto all_fun = [&C_all, &z, &args]() {
          auto args_cpy     = args;
          args_cpy.alphabet = z.getAlphabetSize();
          args_cpy.log_base = z.getAlphabetSize();
-         C_all             = LempelZivFactorization(z, args_cpy);
+         C_all             = lz76Factorization(z, args_cpy);
       };
 
       utils::par_do(fh_fun, lh_fun, all_fun);
@@ -386,13 +383,13 @@ namespace lz {
       std::pair<std::vector<lz_int>, lz_size> random_run;
       lz_uint                                 complexity;
 
-      // auto s1_c = LempelZivFactorization(s1, args);
-      // auto s2_c = LempelZivFactorization(s2, args);
+      // auto s1_c = lz76Factorization(s1, args);
+      // auto s2_c = lz76Factorization(s2, args);
 
       args.alphabet = seq.getAlphabetSize();
       args.log_base = seq.getAlphabetSize();
 
-      auto factor_fun = [&]() { complexity = LempelZivFactorization(seq, args); };
+      auto factor_fun = [&]() { complexity = lz76Factorization(seq, args); };
       auto rand_fun   = [&]() { random_run = ShuffleFactorization(seq, args); };
 
       utils::par_do(factor_fun, rand_fun);
@@ -405,14 +402,14 @@ namespace lz {
       return 1.0 - ((lz_double)random_run.second * (lz_double)complexity) / random_sum;
    }
 
-   lz_double RandomShuffleDistance(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
+   lz_double lz76RandomShuffleDistance(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
       auto MI = MutualInformation(T1, T2, args);
       return 1 - MI;
    }
 
    //-------------------- Other distance functions ----------------------------//
-   lz_double LZNormalError(const sequence& seq, utils::LZ_Args args) {
-      lz76::LempelZiv76 L;
+   lz_double lz76NormalError(const sequence& seq, utils::LZ_Args args) {
+      internal::LempelZiv76 L;
       L.Factorize(seq, args);
 
       auto entropy = L.getFactorization() * utils::log(seq.size(), args.log_base) / static_cast<double>(seq.size());
@@ -423,20 +420,20 @@ namespace lz {
       return num * L.getStddev();
    }
 
-   lz_double LZPoisonError(const sequence& seq, utils::LZ_Args args) {
-      auto entropy = EntropyDensity(seq, args);
+   lz_double lz76PoisonError(const sequence& seq, utils::LZ_Args args) {
+      auto entropy = lz76EntropyDensity(seq, args);
       return entropy / seq.size();
    }
 
    //-------------------------------- Extras --------------------------------//
-   utils::LZ_Extra ExtraMeasures(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_Extra lz76ExtraMeasures(const sequence& str, utils::LZ_Args args) {
       auto              mid           = str.size() / 2;  // the half of the sequence
       auto              par_seq       = str.Drop(mid);
       lz_uint           lh_complexity = 0;
       internal::LZ_Data lz;
 
-      auto lz_fun = [&lz, &str, &args]() { lz = internal::LempelZivFactorization(str, args); };
-      auto lh_fun = [&lh_complexity, &par_seq, &args]() { lh_complexity = LempelZivFactorization(par_seq, args); };
+      auto lz_fun = [&lz, &str, &args]() { lz = internal::lz76Factorization(str, args); };
+      auto lh_fun = [&lh_complexity, &par_seq, &args]() { lh_complexity = lz76Factorization(par_seq, args); };
 
       utils::par_do(lz_fun, lh_fun);
 

@@ -29,8 +29,7 @@ void PyStructures(py::module& m) {
       .def_readwrite("excess_value", &utl::LZ_Shuffle::excess_value, "Shuffle entropy deficit value.")
       .def_readwrite(
          "multi_information", &utl::LZ_Shuffle::multi_information, "Multi information value (block_size = 1).")
-      .def_readwrite(
-         "excess_by_terms", &utl::LZ_Shuffle::excess_by_terms, "The terms form shuffle entropy deficit sum.");
+      .def_readwrite("summands", &utl::LZ_Shuffle::summands, "The terms form shuffle entropy deficit sum.");
 
    py::class_<utl::LZ_Args> LZ_Args(m, "LZ_Args");
    // Define constructors and methods
