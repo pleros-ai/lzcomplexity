@@ -39,11 +39,11 @@ jobs:
             cxx: g++
             cc: gcc
             builtinTbb: ON
-          - runs-on: ubuntu-22.04
-            build_type: "Release"
-            cxx: g++
-            cc: gcc
-            builtinTbb: OFF
+          # - runs-on: ubuntu-22.04
+          #   build_type: "Release"
+          #   cxx: g++
+          #   cc: gcc
+          #   builtinTbb: OFF
           # - runs-on: ubuntu-22.04
           #   build_type: "Release"
           #   cxx: clang++
@@ -128,26 +128,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runs-on: macos-latest
-            build_type: "Release"
-            cxx: g++-13
-            cc: gcc-13
-            builtinTbb: ON
-          - runs-on: macos-latest
-            build_type: "Release"
-            cxx: g++-13
-            cc: gcc-13
-            builtinTbb: OFF
-          - runs-on: macos-latest
-            build_type: "Release"
-            cxx: clang++
-            cc: clang
-            builtinTbb: ON
+          # - runs-on: macos-latest
+          #   build_type: "Release"
+          #   cxx: g++-13
+          #   cc: gcc-13
+          #   builtinTbb: ON
+          # - runs-on: macos-latest
+          #   build_type: "Release"
+          #   cxx: g++-13
+          #   cc: gcc-13
+          #   builtinTbb: OFF
           - runs-on: macos-latest
             build_type: "Release"
             cxx: clang++
             cc: clang
-            builtinTbb: OFF
+            builtinTbb: ON
+          # - runs-on: macos-latest
+          #   build_type: "Release"
+          #   cxx: clang++
+          #   cc: clang
+          #   builtinTbb: OFF
 
     name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
     runs-on: ${{ matrix.runs-on }}
