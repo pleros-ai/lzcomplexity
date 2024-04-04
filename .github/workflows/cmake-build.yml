@@ -68,6 +68,11 @@ jobs:
       #     useCloudCache: false
       #     useLocalCache: true
 
+      - name: Set reusable strings
+        id: build_path
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPU
+
       - name: Install TBB
         if: matrix.builtinTbb == 'OFF'
         run: |
@@ -96,14 +101,23 @@ jobs:
           CXX: ${{ matrix.cxx }}
           CC: ${{ matrix.cc }}
         run: |
-          mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF \
-                -Dbuiltin_tbb=${{matrix.builtinTbb}} ..
+          cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=${{matrix.builtinTbb}} \
+                -S ${{ github.workspace }} ..
 
       - name: Build
         run: |
           cd build
-          cmake --build . --config ${{ matrix.build_type }}
+          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      
+      - name: Packaging
+        run: cpack
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{matrix.runs-on}}-${{matrix.cxx}}-package
+          path: ./_packages
+          retention-days: 1
 
   build-mac:
     defaults:
@@ -142,6 +156,11 @@ jobs:
         with:
           submodules: true
 
+      - name: Set reusable strings
+        id: build_path
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPU
+      
       - name: Install TBB
         if: matrix.builtinTbb == 'OFF'
         run: |
@@ -156,14 +175,23 @@ jobs:
           CXX: ${{ matrix.cxx }}
           CC: ${{ matrix.cc }}
         run: |
-          mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -Dasan=OFF -Dbinding_python=OFF \
-                -Dbuiltin_tbb=${{matrix.builtinTbb}} ..
+          cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=${{matrix.builtinTbb}} \
+                -S ${{ github.workspace }} ..
 
       - name: Build
         run: |
           cd build
-          cmake --build . --config ${{ matrix.build_type }}
+          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      
+      - name: Packaging
+        run: cpack
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{matrix.runs-on}}-${{matrix.cxx}}-package
+          path: ./_packages
+          retention-days: 1
 
   # Test red hat compile
   # install-runner:
