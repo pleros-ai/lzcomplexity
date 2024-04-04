@@ -71,7 +71,7 @@ jobs:
       - name: Set reusable strings
         id: build_path
         run: |
-          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPU
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPU"
 
       - name: Install TBB
         if: matrix.builtinTbb == 'OFF'
@@ -159,7 +159,7 @@ jobs:
       - name: Set reusable strings
         id: build_path
         run: |
-          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPU
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPU"
       
       - name: Install TBB
         if: matrix.builtinTbb == 'OFF'
