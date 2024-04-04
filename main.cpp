@@ -7,23 +7,25 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
       // out_data["input"] = opt.input;
       out_data["sequences"][i]["sequence_size"] = flags.input[i].size();
 
-      out_data["sequences"][i]["complexity"]      = results.data[i].getComplexity();
-      out_data["sequences"][i]["entropy_density"] = results.data[i].getEntropyDensity();
+      auto lz_result = results.data[i];
 
-      auto rsc = results.data[i].getRandomShuffleComplexity();
+      out_data["sequences"][i]["complexity"]      = lz_result.getComplexity();
+      out_data["sequences"][i]["entropy_density"] = lz_result.getEntropyDensity();
 
-      out_data["sequences"][i]["random_shuffle_complexity"]["value"]      = rsc.excess_value;
-      out_data["sequences"][i]["random_shuffle_complexity"]["block_size"] = rsc.max_block_size;
-      out_data["sequences"][i]["multi_information"]                       = rsc.multi_information;
+      auto rsc = lz_result.getRandomShuffleComplexity();
+
+      out_data["sequences"][i]["random_shuffle_complexity"]["value"]             = rsc.excess_value;
+      out_data["sequences"][i]["random_shuffle_complexity"]["block_size"]        = rsc.max_block_size;
+      out_data["sequences"][i]["random_shuffle_complexity"]["multi_information"] = rsc.multi_information;
       if (rsc.excess_by_terms.size() > 0) {
          out_data["sequences"][i]["random_shuffle_complexity"]["terms"] = rsc.excess_by_terms;
       }
 
-      out_data["sequences"][i]["extra"]["lz_rajski_distance"]     = results.data[i].getExtras().lz_rajski_distance;
-      out_data["sequences"][i]["extra"]["fh_uncertainty"]         = results.data[i].getExtras().fh_uncertainty;
-      out_data["sequences"][i]["extra"]["lh_uncertainty"]         = results.data[i].getExtras().lh_uncertainty;
-      out_data["sequences"][i]["extra"]["redundancy"]             = results.data[i].getExtras().redundancy;
-      out_data["sequences"][i]["extra"]["lz_pearson_coefficient"] = results.data[i].getExtras().lz_pearson_coefficient;
+      out_data["sequences"][i]["extra"]["lz_rajski_distance"]     = lz_result.getExtras().lz_rajski_distance;
+      out_data["sequences"][i]["extra"]["fh_uncertainty"]         = lz_result.getExtras().fh_uncertainty;
+      out_data["sequences"][i]["extra"]["lh_uncertainty"]         = lz_result.getExtras().lh_uncertainty;
+      out_data["sequences"][i]["extra"]["redundancy"]             = lz_result.getExtras().redundancy;
+      out_data["sequences"][i]["extra"]["lz_pearson_coefficient"] = lz_result.getExtras().lz_pearson_coefficient;
 
       // if (results.complexity.size()) {
       //    out_data["sequences"][i]["complexity"] = results.complexity[i];
@@ -67,7 +69,7 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
       //    }
       // }
 
-      if (flags.sa_args.block_size >= 0) {
+      if (opt.args.block_size >= 0) {
          // out_data["sequences"][i]["whole_random_shuffle_complexity"]["value"] =
          //    results.whole_random_shuffle_complexity[i].value;
          // out_data["sequences"][i]["whole_random_shuffle_complexity"]["block_size"] =
@@ -78,12 +80,13 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
          //       results.whole_random_shuffle_complexity[i].terms.terms;
          // }
 
-         auto w_rsc = results.data[i].getWholeRandomShuffleComplexity();
+         auto w_rsc = lz_result.getWholeRandomShuffleComplexity();
 
-         out_data["sequences"][i]["random_shuffle_complexity"]["value"]      = w_rsc.excess_value;
-         out_data["sequences"][i]["random_shuffle_complexity"]["block_size"] = w_rsc.max_block_size;
+         out_data["sequences"][i]["whole_random_shuffle_complexity"]["value"]             = w_rsc.excess_value;
+         out_data["sequences"][i]["whole_random_shuffle_complexity"]["block_size"]        = w_rsc.max_block_size;
+         out_data["sequences"][i]["whole_random_shuffle_complexity"]["multi_information"] = w_rsc.multi_information;
          if (w_rsc.excess_by_terms.size() > 0) {
-            out_data["sequences"][i]["random_shuffle_complexity"]["terms"] = w_rsc.excess_by_terms;
+            out_data["sequences"][i]["whole_random_shuffle_complexity"]["terms"] = w_rsc.excess_by_terms;
          }
       }
 
@@ -91,12 +94,13 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
       //    out_data["sequences"][i]["multi_information"] = results.multi_information[i];
       // }
 
-      if (opt.find_distance && i < flags.input.size() - 1) {
-         out_data["sequences"][i]["info_distance"] = results.info_distance[i];
-      }
-
       if (!opt.multiLine)
          break;
+   }
+
+   if (opt.find_distance) {
+      out_data["distance"]["random_shuffle_distance"] = results.random_shuffle_distance;
+      out_data["distance"]["information_distance"]    = results.info_distance;
    }
 
    std::ofstream out(opt.output);
@@ -263,8 +267,8 @@ lz::lz_int process(lz_options& opt) {
          }
       }
       std::cout << "Multi information: ";
-      for (auto x: lz.multi_information)
-         std::cout << x << " ";
+      for (auto x: lz.data)
+         std::cout << x.getRandomShuffleComplexity().multi_information << " ";
       std::cout << std::endl;
 
       std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
@@ -295,8 +299,8 @@ lz::lz_int process(lz_options& opt) {
             }
          }
          std::cout << "Multi information: ";
-         for (auto x: lz.multi_information)
-            std::cout << x << " ";
+         for (auto x: lz.data)
+            std::cout << x.getWholeRandomShuffleComplexity().multi_information << " ";
          std::cout << std::endl;
 
          std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
@@ -327,13 +331,31 @@ lz::lz_int process(lz_options& opt) {
                    << lz::END_COLOR;
          init_time = now();
       }
+      std::vector<double> rand_dist;
+
       // lz::InformationDistance(test_flags, lz);
+      lz::InformationDistance(test_flags, lz);
       lz::RandomShuffleDistance(test_flags, lz);
+
+      // for (int i = 10; i <= 60; i += 5) {
+      //    test_flags.sa_args.block_size = i;
+
+      //    lz::RandomShuffleDistance(test_flags, lz);
+      //    rand_dist.push_back(lz.random_shuffle_distance[0]);
+      // }
+
+      // for (auto x: rand_dist)
+      //    std::cout << x << " ";
+      // std::cout << std::endl;
 
       if (opt.verbose) {
          const auto end_time = now();
          std::cout << "Info distance: ";
          for (auto x: lz.info_distance)
+            std::cout << x << " ";
+         std::cout << std::endl;
+         std::cout << "Random info distance: ";
+         for (auto x: lz.random_shuffle_distance)
             std::cout << x << " ";
          std::cout << std::endl;
          std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;

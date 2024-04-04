@@ -27,6 +27,8 @@ set(LZ_LZ76 ${CORE_SOURCE_DIR}/lz76.cpp)
 set(LZ_ALGS ${CORE_SOURCE_DIR}/lempelziv.cpp)
 set(LZ_SEQ ${CORE_SOURCE_DIR}/sequence.cpp)
 
+set(SOURCES ${LZ_SEQ} ${LZ_LZ76} ${LZ_ALGS})
+
 if(LZ_SHARE)
    add_library(${PROJECT_NAME} SHARED)
    # set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -41,7 +43,7 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/modules/sa sa)
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
 message(STATUS "headers for ${PROJECT_NAME}: ${public_headers}")
 
-target_sources(${PROJECT_NAME} PRIVATE ${LZ_LZ76} ${LZ_ALGS} ${LZ_SEQ})
+target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
 target_include_directories(${PROJECT_NAME} 
    PUBLIC 
       $<BUILD_INTERFACE:${CORE_INCLUDE_DIR}>

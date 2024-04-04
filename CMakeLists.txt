@@ -239,12 +239,12 @@ if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
 endif()
 
 if(binding_python)
-    # add_subdirectory(python)
-    find_package(Python3 REQUIRED COMPONENTS Interpreter)
-
-    install(CODE
-    "execute_process(
-      COMMAND ${Python3_EXECUTABLE} setup.py install
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})"
-  )
+    add_subdirectory(python)
+  #   find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    
+  #   install(CODE
+  #   "execute_process(
+  #     COMMAND ${Python3_EXECUTABLE} setup.py install
+  #     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})"
+  # )
 endif()

@@ -282,6 +282,9 @@ namespace lz {
       std::pair<std::vector<lz_int>, lz_size> random_run;
       lz_int                                  complexity;
 
+      args.alphabet = new_seq.getAlphabetSize();
+      args.log_base = new_seq.getAlphabetSize();
+
       auto factor_fun = [&]() { complexity = LempelZivFactorization(new_seq, args); };
       auto rand_fun   = [&]() { random_run = ShuffleFactorization(new_seq, args); };
 
@@ -289,8 +292,6 @@ namespace lz {
 
       auto [H_rand, mm] = random_run;
 
-      args.alphabet = new_seq.getAlphabetSize();
-      args.log_base = new_seq.getAlphabetSize();
       return ShuffleEntropyCalculation(new_seq, args, complexity, H_rand, mm);
    }
 
@@ -385,6 +386,12 @@ namespace lz {
       std::pair<std::vector<lz_int>, lz_size> random_run;
       lz_uint                                 complexity;
 
+      // auto s1_c = LempelZivFactorization(s1, args);
+      // auto s2_c = LempelZivFactorization(s2, args);
+
+      args.alphabet = seq.getAlphabetSize();
+      args.log_base = seq.getAlphabetSize();
+
       auto factor_fun = [&]() { complexity = LempelZivFactorization(seq, args); };
       auto rand_fun   = [&]() { random_run = ShuffleFactorization(seq, args); };
 
@@ -410,9 +417,10 @@ namespace lz {
 
       auto entropy = L.getFactorization() * utils::log(seq.size(), args.log_base) / static_cast<double>(seq.size());
 
-      auto div = std::sqrt(seq.size() / utils::log(seq.size(), args.log_base));
+      auto entropy_c = entropy * entropy * entropy;
+      auto num       = std::sqrt(entropy_c * utils::log(seq.size(), args.log_base) / seq.size());
 
-      return std::sqrt(entropy * entropy * entropy) * L.getStddev() / div;
+      return num * L.getStddev();
    }
 
    lz_double LZPoisonError(const sequence& seq, utils::LZ_Args args) {
