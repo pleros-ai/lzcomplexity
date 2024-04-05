@@ -58,28 +58,43 @@ struct lz_options {
       auto opt_format = result["format"].as<std::string>();
       lz::utils::to_lowercase(opt_format);
 
-      if (opt_format == "pbm")
-         input_format = MagickNumber::PNM_P4;
-      else if (opt_format == "pgm")
-         input_format = MagickNumber::PNM_P5;
-      else if (opt_format == "pbmtxt")
-         input_format = MagickNumber::PNM_P1;
-      else if (opt_format == "pbmbin")
-         input_format = MagickNumber::PNM_P4;
-      else if (opt_format == "pgmtxt")
-         input_format = MagickNumber::PNM_P2;
-      else if (opt_format == "pgmbin")
-         input_format = MagickNumber::PNM_P5;
-      else if (opt_format == "raw")
-         input_format = MagickNumber::PNM_RAWBIN;
-      else if (opt_format == "rawbin")
-         input_format = MagickNumber::PNM_RAWBIN;
-      else if (opt_format == "rawtxt")
-         input_format = MagickNumber::PNM_RAWTXT;
-      else if (opt_format == "csv")
-         input_format = MagickNumber::CSV;
-      else
-         input_format = MagickNumber::AUTO;
+      namespace utl = lz::utils;
+      switch (utl::hash(opt_format)) {
+         case utl::hash("pbm"):
+         case utl::hash("pbmbin"): input_format = MagickNumber::PNM_P4; break;
+         case utl::hash("pbmtxt"): input_format = MagickNumber::PNM_P1; break;
+         case utl::hash("pgm"):
+         case utl::hash("pgmbin"): input_format = MagickNumber::PNM_P5; break;
+         case utl::hash("pgmtxt"): input_format = MagickNumber::PNM_P2; break;
+         case utl::hash("raw"):
+         case utl::hash("rawbin"): input_format = MagickNumber::PNM_RAWBIN; break;
+         case utl::hash("rawtxt"): input_format = MagickNumber::PNM_RAWTXT; break;
+         case utl::hash("csv"): input_format = MagickNumber::CSV; break;
+         default: input_format = MagickNumber::AUTO; break;
+      }
+
+      // if (opt_format == "pbm")
+      //    input_format = MagickNumber::PNM_P4;
+      // else if (opt_format == "pgm")
+      //    input_format = MagickNumber::PNM_P5;
+      // else if (opt_format == "pbmtxt")
+      //    input_format = MagickNumber::PNM_P1;
+      // else if (opt_format == "pbmbin")
+      //    input_format = MagickNumber::PNM_P4;
+      // else if (opt_format == "pgmtxt")
+      //    input_format = MagickNumber::PNM_P2;
+      // else if (opt_format == "pgmbin")
+      //    input_format = MagickNumber::PNM_P5;
+      // else if (opt_format == "raw")
+      //    input_format = MagickNumber::PNM_RAWBIN;
+      // else if (opt_format == "rawbin")
+      //    input_format = MagickNumber::PNM_RAWBIN;
+      // else if (opt_format == "rawtxt")
+      //    input_format = MagickNumber::PNM_RAWTXT;
+      // else if (opt_format == "csv")
+      //    input_format = MagickNumber::CSV;
+      // else
+      //    input_format = MagickNumber::AUTO;
 
       // args for SA and Core functions
       args.chunks   = result["partitions"].as<lz::lz_int>();

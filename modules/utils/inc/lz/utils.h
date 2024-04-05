@@ -7,7 +7,7 @@
 namespace lz {
    namespace utils {
 
-      const static char newline_char = '\n';
+      const static char newline_char    = '\n';
       const std::string SBIN_WHITESPACE = " \n\r\t";
 
       enum MSG_TYPE { ERROR, WARRING, INFO };
@@ -34,7 +34,9 @@ namespace lz {
          std::cout << "\n==> Difference: " << diff << std::endl;
       }
 
-      inline lz_double log(auto num, auto base = ALPHABET_SIZE) { return std::log(num) / std::log(base); };
+      inline lz_double log(auto num, auto base = ALPHABET_SIZE) {
+         return std::log(num) / std::log(base);
+      };
 
 #ifdef __cpp_lib_ranges
       constexpr inline bool is_space(char q) noexcept {
@@ -124,8 +126,8 @@ namespace lz {
        *  @return std::vector<char>::lz_sizeype
        */
       inline lz_size max_block_size(lz_size size) {
-         lz_size M = 10;
-         lz_size Mold = 1;
+         lz_size      M     = 10;
+         lz_size      Mold  = 1;
          unsigned int count = 0;
 
          //? The next iteration is solving the non linear equation N=M 2^M for M. This estimate is
@@ -136,7 +138,8 @@ namespace lz {
          while (count < 100) {
             M = std::lround(std::log(((double)size) / ((double)Mold)) / std::log(2));
             count++;
-            if (M == Mold) break;
+            if (M == Mold)
+               break;
 
             Mold = M;
          }
@@ -145,9 +148,18 @@ namespace lz {
       }
 
       // Returns pointer to a memory-allocation for `size` elements of type `T_`.
-      template <typename T>
+      template<typename T>
       inline T* allocate(unsigned int size) {
          return static_cast<T*>(std::malloc(size * sizeof(T)));
+      }
+
+      constexpr uint32_t hash(std::string_view data) noexcept {
+         uint32_t hash = 5381;
+
+         for (const char c: data)
+            hash = ((hash << 5) + hash) + (unsigned char)c;
+
+         return hash;
       }
    }  // namespace utils
 }  // namespace lz

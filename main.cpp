@@ -327,38 +327,37 @@ auto main(int argc, char const* argv[]) -> int {
    // clang-format on
    auto opt_group = options.add_options("lzcomplexity");
    opt_group("a,alphabet",
-             "Alphabet cardinality. If auto it tries to guess the alphabet size. Default is 2",
+             "Alphabet cardinality. If auto it tries to guess the alphabet size.",
              cxxopts::value<std::string>()->default_value("2"),
              "value");
    opt_group("d,dlz",
              "The LZ distance is calculated between consecutive lines. Only valid for multiline files (-m "
              "option).");
-   opt_group("e,entropy-shuffle",
-             "Computes shuffle entropy deficit and may return the list of shuffle terms for specific lines. format: "
-             "[#|a]:f:#:#, where the first section says the max size of the block for shuffling (a for automatic "
-             "size), second says if save the terms and the last two numbers are the range of lines in the file for it. "
-             "In case of missing  numbers for the range the terms will be save for every line",
-             cxxopts::value<std::vector<std::string>>()->delimiter(':'),
-             "value");
-   opt_group("f,factors", "Save the factorization.", cxxopts::value<std::string>(), "file_name");
+   opt_group(
+      "e,entropy-shuffle",
+      "Random shuffle complexity with whole sequence. v1: maximum value for block shuffling, f: summands output, v2: "
+      "starting line for summands output, v3: ending line for summands output. All values are optionals",
+      cxxopts::value<std::vector<std::string>>()->delimiter(':')->implicit_value("a"),
+      "[v1]:[f]:[v2]:[v3]");
+   opt_group("f,factors", "Saves the factorization.", cxxopts::value<std::string>(), "file_name");
    opt_group("F,format",
              "Input file format. TXT for raw text format. CSV the input file is a csv array. PBM, PGM and PNM is for "
              "the family of the graphic formats.",
              cxxopts::value<std::string>()->default_value("AUTO"),
              "value");
-   opt_group("h,help", "Show the help of the program.");
+   opt_group("h,help", "Show this message.");
    opt_group("j,jobs",
-             "Configure number of threads.",
+             "Number of threads.",
              cxxopts::value<lz::lz_uint>()->default_value(std::to_string(std::thread::hardware_concurrency())),
              "value");
    opt_group("l,log-base",
-             "Configure the log base value. The default is the alphabet cardinality.",
+             "The log base value. The default is the alphabet cardinality.",
              cxxopts::value<std::string>(),
              "value");
    opt_group("m,multi-line", "Treat each line in the input stream as a different sequence.");
    opt_group("n,entropy-density", "Computes only the entropy density.");
    opt_group("o,output",
-             "Output filepath for results. Default appends to the end of input file a .json extension",
+             "Output filename. Default appends to the end of input file a .json extension",
              cxxopts::value<std::string>(),
              "file_name");
    opt_group("p,partitions",
