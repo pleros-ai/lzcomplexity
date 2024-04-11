@@ -1,3 +1,6 @@
+#include <lz/lzApp.h>
+
+#include "main/config.h"
 #include "main/main.h"
 
 void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_options& opt) {
@@ -34,11 +37,11 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
       if (opt.args.block_size >= 0) {
          auto w_rsc = lz_result.getAllRandomShuffleComplexity();
 
-         out_data["sequences"][i]["lz76AllRandomShuffleComplexity"]["value"]             = w_rsc.excess_value;
-         out_data["sequences"][i]["lz76AllRandomShuffleComplexity"]["max_block_size"]    = w_rsc.max_block_size;
-         out_data["sequences"][i]["lz76AllRandomShuffleComplexity"]["multi_information"] = w_rsc.multi_information;
+         out_data["sequences"][i]["lz76WholeRandomShuffleComplexity"]["value"]             = w_rsc.excess_value;
+         out_data["sequences"][i]["lz76WholeRandomShuffleComplexity"]["max_block_size"]    = w_rsc.max_block_size;
+         out_data["sequences"][i]["lz76WholeRandomShuffleComplexity"]["multi_information"] = w_rsc.multi_information;
          if (w_rsc.summands.size() > 0) {
-            out_data["sequences"][i]["lz76AllRandomShuffleComplexity"]["summands"] = w_rsc.summands;
+            out_data["sequences"][i]["lz76WholeRandomShuffleComplexity"]["summands"] = w_rsc.summands;
          }
       }
 
@@ -90,10 +93,7 @@ lz::lz_int process(lz_options& opt) {
       std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Reading input data from: " << lz::END_COLOR
                 << opt.input << std::endl;
    }
-   if (opt.is_csv) {
-      // read_csv(opt.input, data);
-      exit(0);
-   } else if (opt.preprocess) {
+   if (opt.preprocess) {
       multiLineToOneLine(opt.input, data, true);
    } else {
       data = read_input(opt.input, opt.multiLine, opt.input_format);
@@ -235,7 +235,7 @@ lz::lz_int process(lz_options& opt) {
          init_time = now();
       }
       // Excess entropy by shuffle
-      lz::lz76AllRandomShuffleComplexity(test_flags, lz);
+      lz::lz76WholeRandomShuffleComplexity(test_flags, lz);
       if (opt.verbose) {
          const auto end_time = now();
          std::cout << "Random shuffle complexity using whole sequence: ";

@@ -138,9 +138,9 @@ namespace lz {
       return EXIT_SUCCESS;
    }
 
-   lz_int lz76AllRandomShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76WholeRandomShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       return ShuffleCalc(
-         flags, lz, [&](sequence s, utils::LZ_Args args) { return lz76AllRandomShuffleComplexity(s, args); });
+         flags, lz, [&](sequence s, utils::LZ_Args args) { return lz76WholeRandomShuffleComplexity(s, args); });
    }
 
    lz_int lz76RandomShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {

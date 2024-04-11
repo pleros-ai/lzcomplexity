@@ -1,12 +1,11 @@
 #include <csv.h>
-#include <lz/lzApp.h>
 
 #ifdef __cpp_lib_format
 #include <format>
 #endif
-#include <limits>
+#include <lz/pnm.h>
 
-#include "config.h"
+#include <limits>
 
 typedef std::chrono::high_resolution_clock::time_point time_point_t;
 constexpr inline auto                                  now      = std::chrono::high_resolution_clock::now;
@@ -68,7 +67,6 @@ inline void read_multi_line(std::ifstream& in, std::vector<lz::sequence>& seq_ve
 
    try {
       switch (format) {
-         case AUTO: parser.ReadPNM(in, seq_vec); break;
          case PNM_P1: parser.ReadPBM(in, seq_vec, false); break;
          case PNM_P4: parser.ReadPBM(in, seq_vec, true); break;
          case PNM_P2: parser.ReadPGM(in, seq_vec, false); break;
@@ -93,7 +91,6 @@ inline void read_one_line(std::ifstream& in, lz::sequence& seq, MagickNumber for
 
    try {
       switch (format) {
-         case AUTO: parser.ReadPNM(in, seq); break;
          case PNM_P1: parser.ReadPBM(in, seq, false); break;
          case PNM_P4: parser.ReadPBM(in, seq, true); break;
          case PNM_P2: parser.ReadPGM(in, seq, false); break;
@@ -112,6 +109,43 @@ inline void read_one_line(std::ifstream& in, lz::sequence& seq, MagickNumber for
       std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
    }
 }
+
+// Read a csv file with multiple columns (date per column)
+inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text_col) {
+   namespace fs = std::filesystem;
+   std::error_code ec;
+   const auto      file_size = fs::file_size(ip_path, ec);
+   int             num_line  = 0;
+
+   if (ec) {
+      std::cerr << lz::RED_COLOR << ip_path << " : " << ec.message() << "\n" << lz::END_COLOR;
+      std::exit(EXIT_FAILURE);
+   }
+
+   io::LineReader input(ip_path);
+
+   auto        line = input.next_line();
+   std::string str(line);
+   auto        rows = split(str, ',');
+   text_col.reserve(rows.size());
+
+   for (auto row: rows) {
+      text_col.push_back(row);
+   }
+
+   // std::vector<std::vector<std::string>> data_frame(rows.size());
+
+   while (auto line = input.next_line()) {
+      std::string str(line);
+      auto        rows = split(str, ',');
+      for (size_t i = 0; i < rows.size(); i++) {
+         text_col[i] += rows[i];
+      }
+   }
+   // std::cout.setf(std::ios::left, std::ios::adjustfield);
+   // std::cout << text_col[0];
+}
+
 // Read a plain text file with one line
 inline std::vector<lz::sequence>
    read_input(const std::string& ip_path, bool multiline = false, MagickNumber format = MagickNumber::PNM_RAWTXT) {
@@ -131,7 +165,9 @@ inline std::vector<lz::sequence>
    lz::sequence              oneLine;
    std::vector<lz::sequence> data{};
 
-   if (multiline)
+   if (format == CSV) {
+      read_csv(ip_path, data);
+   } else if (multiline)
       read_multi_line(input, data, format);
    else {
       read_one_line(input, oneLine, format);
@@ -179,40 +215,6 @@ inline void multiLineToOneLine(const std::string& ip_path, std::vector<lz::seque
       text_col.push_back(final_str);
    input.close();
    std::cout << "End read: size --> " << final_str.size() << "\n";
-}
-
-// Read a csv file with multiple columns (date per column)
-inline void read_csv(const std::string& ip_path, std::vector<std::string>& text_col) {
-   namespace fs = std::filesystem;
-   std::error_code ec;
-   const auto      file_size = fs::file_size(ip_path, ec);
-   int             num_line  = 0;
-
-   if (ec) {
-      std::cerr << lz::RED_COLOR << ip_path << " : " << ec.message() << "\n" << lz::END_COLOR;
-      std::exit(EXIT_FAILURE);
-   }
-
-   io::LineReader input(ip_path);
-
-   auto        line = input.next_line();
-   std::string str(line);
-   auto        rows = split(str, ',');
-   text_col.reserve(rows.size());
-
-   for (auto row: rows) {
-      text_col.push_back(row);
-   }
-
-   double x, y, z;
-   while (auto line = input.next_line()) {
-      std::string str(line);
-      auto        rows = split(str, ',');
-      for (size_t i = 0; i < rows.size(); i++) {
-         text_col[i] += rows[i];
-      }
-   }
-   print_msg(lz::utils::MSG_TYPE::INFO, text_col[0]);
 }
 
 std::vector<std::pair<std::string, std::vector<int>>> read_csv(std::string filename) {

@@ -292,7 +292,7 @@ namespace lz {
       return ShuffleEntropyCalculation(new_seq, args, complexity, H_rand, mm);
    }
 
-   utils::LZ_Shuffle lz76AllRandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_Shuffle lz76WholeRandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
       std::pair<std::vector<lz_int>, lz_size> random_run;
       lz_int                                  complexity;
 

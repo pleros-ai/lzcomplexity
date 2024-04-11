@@ -56,7 +56,7 @@ namespace lz {
    //.........................................................................
    // Here comes the excess entropy by shuffling.
    //.........................................................................
-   auto lz76AllRandomShuffleComplexity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+   auto lz76WholeRandomShuffleComplexity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
    auto lz76RandomShuffleComplexity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
    auto lz76RandomShuffleComplexitySequential(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 

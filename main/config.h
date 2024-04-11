@@ -73,29 +73,6 @@ struct lz_options {
          default: input_format = MagickNumber::AUTO; break;
       }
 
-      // if (opt_format == "pbm")
-      //    input_format = MagickNumber::PNM_P4;
-      // else if (opt_format == "pgm")
-      //    input_format = MagickNumber::PNM_P5;
-      // else if (opt_format == "pbmtxt")
-      //    input_format = MagickNumber::PNM_P1;
-      // else if (opt_format == "pbmbin")
-      //    input_format = MagickNumber::PNM_P4;
-      // else if (opt_format == "pgmtxt")
-      //    input_format = MagickNumber::PNM_P2;
-      // else if (opt_format == "pgmbin")
-      //    input_format = MagickNumber::PNM_P5;
-      // else if (opt_format == "raw")
-      //    input_format = MagickNumber::PNM_RAWBIN;
-      // else if (opt_format == "rawbin")
-      //    input_format = MagickNumber::PNM_RAWBIN;
-      // else if (opt_format == "rawtxt")
-      //    input_format = MagickNumber::PNM_RAWTXT;
-      // else if (opt_format == "csv")
-      //    input_format = MagickNumber::CSV;
-      // else
-      //    input_format = MagickNumber::AUTO;
-
       // args for SA and Core functions
       args.chunks   = result["partitions"].as<lz::lz_int>();
       args.alphabet = std::stoi(result["alphabet"].as<std::string>());

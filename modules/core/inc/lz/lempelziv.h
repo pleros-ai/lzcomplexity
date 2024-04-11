@@ -104,17 +104,17 @@ namespace lz {
    };
 
    //.........................................................................
-   // Shuffle entropy deficit (Excess entropy by shuffling.)
+   // Random shuffle complexity (Excess entropy by shuffling.)
    // --> Random Shuffle Complexity use all the sequence
    // --> Z Random Shuffle Complexity use the Z sequence (the merge of both half)
    //.........................................................................
    // Main functions
-   auto lz76AllRandomShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
+   auto lz76WholeRandomShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
    auto lz76RandomShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
    auto lz76RandomShuffleComplexitySequential(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
    // Variants
-   auto lz76AllRandomShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
-      return lz76AllRandomShuffleComplexity(str, internal::getDefaultArgs(str));
+   auto lz76WholeRandomShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
+      return lz76WholeRandomShuffleComplexity(str, internal::getDefaultArgs(str));
    };
    auto lz76RandomShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
       return lz76RandomShuffleComplexity(str, internal::getDefaultArgs(str));

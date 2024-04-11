@@ -110,6 +110,16 @@
     "/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/43.perturbed.pbm", 
     "-m", "-v", "-d", "-F", "auto", "-j", "1"],
     "cwd": "${fileDirname}",
+},
+ {
+    "name": "Debug CSV",
+    "type": "lldb",
+    "request": "launch",
+    "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+    "args": ["-p", "10", 
+    "/Users/efren_aragon/Documents/Work/Investigacion/Lorenz_dt0.02_steps30000_t-end600.0_seed16970.csv", 
+    "-m", "-v", "-d", "-F", "CSV", "-j", "1"],
+    "cwd": "${fileDirname}",
 }
    ]
 }

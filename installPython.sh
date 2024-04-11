@@ -1,7 +1,7 @@
-mkdir build && cd build
-
-cmake -Dbinding_python=ON ..
-
-make install
-
-cd .. && rm -rf build
+if command -v pip &> /dev/null
+then
+   pip install .
+elif command -v pip3 &> /dev/null
+then
+   pip3 install .
+fi
