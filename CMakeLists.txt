@@ -143,9 +143,9 @@ if(asan)
 #   set(LZ_LINK_SANITIZE "${LZ_LINK_SANITIZE} ${ASAN_EXTRA_SHARED_LINKER_FLAGS}")
 endif()
 
-# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#     set(CMAKE_VERBOSE_MAKEFILE ON)
-# endif()
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_VERBOSE_MAKEFILE ON)
+endif()
 
 # add module subdirectory
 add_subdirectory(modules)
@@ -163,7 +163,7 @@ endif()
 # Executable for the driver program.
 if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     set(MAIN_INCLUDE_DIR ${CMAKE_CURRENT_DIR}/main)
-    add_executable(${PROJECT_NAME} main.cpp)
+    add_executable(${PROJECT_NAME} lzcomplexity.cpp)
 
     message(STATUS "TBB: ${LZ_TBB_LIBS} and found: ${GLOBAL_LZ_TBB_LIBS}")
 
@@ -211,7 +211,7 @@ if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     #     # MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/customtemplate.plist.in
     # )
 
-    message(STATUS "Paths for install:")
+    message(STATUS "Paths for install lzcomplexity:")
     message(STATUS "Prefix install dir: ${CMAKE_INSTALL_PREFIX}")
     message(STATUS "Library dir: ${CMAKE_INSTALL_LIBDIR}")
     message(STATUS "Inlude dir: ${CMAKE_INSTALL_INCLUDEDIR}")
@@ -242,6 +242,7 @@ if(binding_python)
     add_subdirectory(python)
   #   find_package(Python3 REQUIRED COMPONENTS Interpreter)
     
+  #   message(STATUS "python: ${Python3_FOUND}")
   #   install(CODE
   #   "execute_process(
   #     COMMAND ${Python3_EXECUTABLE} setup.py install
