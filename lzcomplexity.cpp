@@ -167,36 +167,55 @@ lz::lz_int process(lz_options& opt) {
       std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
    }
 
-   if (opt.verbose) {
-      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating extra measures\n" << lz::END_COLOR;
-      init_time = now();
+   if (opt.entropy_density) {
+      auto g_end = now();
+      if (opt.verbose) {
+         std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Saving results in: " << opt.output << std::endl
+                   << lz::END_COLOR;
+         init_time = now();
+      }
+      save_data(test_flags, lz, opt);
+
+      if (opt.verbose) {
+         std::cout << "Total time elapsed: " << duration(g_end - g_now) << " s" << std::endl;
+      }
+      lz::utils::DisabledMT();
+      return EXIT_SUCCESS;
    }
-   // Excess entropy by distance
-   lz::lz76ExtraMeasures(test_flags, lz);
-   if (opt.verbose) {
-      const auto end_time = now();
-      std::cout << "LZ Rajski distance: ";
-      for (auto x: lz.data)
-         std::cout << x.getExtras().lz_rajski_distance << " ";
-      std::cout << std::endl;
-      std::cout << "FH Uncertainly: ";
-      for (auto x: lz.data)
-         std::cout << x.getExtras().fh_uncertainty << " ";
-      std::cout << std::endl;
-      std::cout << "LH Uncertainly: ";
-      for (auto x: lz.data)
-         std::cout << x.getExtras().lh_uncertainty << " ";
-      std::cout << std::endl;
-      std::cout << "LZ Redundancy: ";
-      for (auto x: lz.data)
-         std::cout << x.getExtras().redundancy << " ";
-      std::cout << std::endl;
-      std::cout << "LZ Pearson coefficient: ";
-      for (auto x: lz.data)
-         std::cout << x.getExtras().lz_pearson_coefficient << " ";
-      std::cout << std::endl;
-      std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+
+   if (opt.extras) {
+      if (opt.verbose) {
+         std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating extra measures\n" << lz::END_COLOR;
+         init_time = now();
+      }
+      // Excess entropy by distance
+      lz::lz76ExtraMeasures(test_flags, lz);
+      if (opt.verbose) {
+         const auto end_time = now();
+         std::cout << "LZ Rajski distance: ";
+         for (auto x: lz.data)
+            std::cout << x.getExtras().lz_rajski_distance << " ";
+         std::cout << std::endl;
+         std::cout << "FH Uncertainly: ";
+         for (auto x: lz.data)
+            std::cout << x.getExtras().fh_uncertainty << " ";
+         std::cout << std::endl;
+         std::cout << "LH Uncertainly: ";
+         for (auto x: lz.data)
+            std::cout << x.getExtras().lh_uncertainty << " ";
+         std::cout << std::endl;
+         std::cout << "LZ Redundancy: ";
+         for (auto x: lz.data)
+            std::cout << x.getExtras().redundancy << " ";
+         std::cout << std::endl;
+         std::cout << "LZ Pearson coefficient: ";
+         for (auto x: lz.data)
+            std::cout << x.getExtras().lz_pearson_coefficient << " ";
+         std::cout << std::endl;
+         std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+      }
    }
+
    if (opt.verbose) {
       std::cout << lz::GREEN_COLOR << "2." << verbose_index++
                 << ". Calculating random shuffle complexity using Z sequence\n"
@@ -365,6 +384,10 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<lz::lz_int>()->default_value("20"),
              "value");
    opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
+   opt_group("x,extras",
+             "Computes extra lz based measures (rajski distance, the uncertainty of both halves, pearson coefficient "
+             "and redundancy).",
+             cxxopts::value<bool>()->default_value("false"));
 
    // opt_group("r,process", "Clear input data.");
    //    opt_group("m,max-context", "Max context for suffix comparisons (only for caps algorithm).",

@@ -120,6 +120,15 @@
     "/Users/efren_aragon/Documents/Work/Investigacion/Lorenz_dt0.02_steps30000_t-end600.0_seed16970.csv", 
     "-m", "-v", "-d", "-F", "CSV", "-j", "1"],
     "cwd": "${fileDirname}",
+},
+{
+   "name": "Debug small data",
+   "type": "lldb",
+   "request": "launch",
+   "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+   "args": ["-v",
+        "/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/banana"],
+   "cwd": "${fileDirname}",
 }
    ]
 }

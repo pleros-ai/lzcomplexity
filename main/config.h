@@ -27,7 +27,7 @@ struct lz_options {
    bool         multiLine       = false;
    bool         find_distance   = true;
    bool         preprocess      = false;
-   bool         is_csv          = false;
+   bool         extras          = false;
    bool         save_results    = false;  //! @deprecated --> remove in final version
    bool         verbose         = false;
 
@@ -53,6 +53,7 @@ struct lz_options {
       n_jobs          = result["jobs"].as<lz::lz_uint>();
       verbose         = result["verbose"].as<bool>();
       entropy_density = result["entropy-density"].as<bool>();
+      extras          = result["extras"].as<bool>();
       // preprocess      = result["process"].as<bool>();
 
       auto opt_format = result["format"].as<std::string>();
