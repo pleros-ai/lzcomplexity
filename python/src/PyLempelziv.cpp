@@ -23,11 +23,11 @@ auto lz76FactorizationWithArgs(const seq_type& seq, utl::LZ_Args& args) {
 
 // Python style function
 auto lz76Factorization(const seq_type& seq,
-                       lz::lz_int      chunks   = 0,
-                       lz::lz_uint     alphabet = lz::ALPHABET_SIZE,
-                       lz::lz_uint     log_base = lz::ALPHABET_SIZE) {
+                       lz::lz_int      partitions = 1,
+                       lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
+                       lz::lz_uint     log_base   = lz::ALPHABET_SIZE) {
    utl::LZ_Args args;
-   args.chunks     = chunks;
+   args.chunks     = partitions;
    args.alphabet   = alphabet;
    args.log_base   = log_base;
    lz::lz_uint cpx = 0;
@@ -51,11 +51,11 @@ auto lz76FactorsWithArgs(const seq_type& seq, utl::LZ_Args& args) {
 
 // Python style function
 auto lz76Factors(const seq_type& seq,
-                 lz::lz_int      chunks   = 0,
-                 lz::lz_uint     alphabet = lz::ALPHABET_SIZE,
-                 lz::lz_uint     log_base = lz::ALPHABET_SIZE) {
+                 lz::lz_int      partitions = 1,
+                 lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
+                 lz::lz_uint     log_base   = lz::ALPHABET_SIZE) {
    utl::LZ_Args args;
-   args.chunks   = chunks;
+   args.chunks   = partitions;
    args.alphabet = alphabet;
    args.log_base = log_base;
    lz::internal::LZ_Result cpx;
@@ -79,11 +79,11 @@ auto lz76EntropyDensityWithArgs(const seq_type& seq, utl::LZ_Args& args) {
 
 // Python style function
 auto lz76EntropyDensity(const seq_type& seq,
-                        lz::lz_int      chunks   = 0,
-                        lz::lz_uint     alphabet = lz::ALPHABET_SIZE,
-                        lz::lz_uint     log_base = lz::ALPHABET_SIZE) {
+                        lz::lz_int      partitions = 1,
+                        lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
+                        lz::lz_uint     log_base   = lz::ALPHABET_SIZE) {
    utl::LZ_Args args;
-   args.chunks       = chunks;
+   args.chunks       = partitions;
    args.alphabet     = alphabet;
    args.log_base     = log_base;
    lz::lz_double cpx = 0;
@@ -107,12 +107,12 @@ auto lz76RandomShuffleComplexityWithArgs(const seq_type& seq, utl::LZ_Args& args
 
 // Python style function
 auto lz76RandomShuffleComplexity(const seq_type& seq,
-                                 lz::lz_int      chunks         = 0,
+                                 lz::lz_int      partitions     = 1,
                                  lz::lz_uint     alphabet       = lz::ALPHABET_SIZE,
                                  lz::lz_uint     log_base       = lz::ALPHABET_SIZE,
                                  lz::lz_int      max_block_size = -1) {
    utl::LZ_Args args;
-   args.chunks     = chunks;
+   args.chunks     = partitions;
    args.alphabet   = alphabet;
    args.log_base   = log_base;
    args.block_size = max_block_size;
@@ -138,11 +138,11 @@ auto lz76InformationDistanceWithArgs(const seq_type& seq1, const seq_type& seq2,
 // Python style function
 auto lz76InformationDistance(const seq_type& seq1,
                              const seq_type& seq2,
-                             lz::lz_int      chunks   = 0,
-                             lz::lz_uint     alphabet = lz::ALPHABET_SIZE,
-                             lz::lz_uint     log_base = lz::ALPHABET_SIZE) {
+                             lz::lz_int      partitions = 1,
+                             lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
+                             lz::lz_uint     log_base   = lz::ALPHABET_SIZE) {
    utl::LZ_Args args;
-   args.chunks   = chunks;
+   args.chunks   = partitions;
    args.alphabet = alphabet;
    args.log_base = log_base;
    lz::lz_double cpx;
@@ -167,11 +167,11 @@ auto lz76RandomShuffleDistanceWithArgs(const seq_type& seq1, const seq_type& seq
 // Python style function
 auto lz76RandomShuffleDistance(const seq_type& seq1,
                                const seq_type& seq2,
-                               lz::lz_int      chunks   = 0,
-                               lz::lz_uint     alphabet = lz::ALPHABET_SIZE,
-                               lz::lz_uint     log_base = lz::ALPHABET_SIZE) {
+                               lz::lz_int      partitions = 1,
+                               lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
+                               lz::lz_uint     log_base   = lz::ALPHABET_SIZE) {
    utl::LZ_Args args;
-   args.chunks   = chunks;
+   args.chunks   = partitions;
    args.alphabet = alphabet;
    args.log_base = log_base;
    lz::lz_double cpx;
@@ -242,22 +242,22 @@ void PyLempelZiv(py::module& m) {
       .def("lz76Factorization", &::lz76FactorizationWithoutArgs, "seq"_a)
       .def("lz76Factorization", &::lz76FactorizationWithArgs, "seq"_a, "args"_a)
       //!> Function with all args
-      .def("lz76Factorization", &::lz76Factorization, "seq"_a, "partitions"_a = 0, "alphabet"_a = 2, "log_base"_a = 2)
+      .def("lz76Factorization", &::lz76Factorization, "seq"_a, "partitions"_a = 1, "alphabet"_a = 2, "log_base"_a = 2)
       //!> Factor function
       .def("lz76Factors", &::lz76FactorsWithoutArgs, "seq"_a)
       .def("lz76Factors", &::lz76FactorsWithArgs, "seq"_a, "args"_a)
-      .def("lz76Factors", &::lz76Factors, "seq"_a, "partitions"_a = 0, "alphabet"_a = 2, "log_base"_a = 2)
+      .def("lz76Factors", &::lz76Factors, "seq"_a, "partitions"_a = 1, "alphabet"_a = 2, "log_base"_a = 2)
       //!> Entropy density
       .def("lz76EntropyDensity", &::lz76EntropyDensityWithoutArgs, "seq"_a)
       .def("lz76EntropyDensity", &::lz76EntropyDensityWithArgs, "seq"_a, "args"_a)
-      .def("lz76EntropyDensity", &::lz76EntropyDensity, "seq"_a, "partitions"_a = 0, "alphabet"_a = 2, "log_base"_a = 2)
+      .def("lz76EntropyDensity", &::lz76EntropyDensity, "seq"_a, "partitions"_a = 1, "alphabet"_a = 2, "log_base"_a = 2)
       //!> Shuffle entropy deficit
       .def("lz76RandomShuffleComplexity", &::lz76RandomShuffleComplexityWithoutArgs, "seq"_a)
       .def("lz76RandomShuffleComplexity", &::lz76RandomShuffleComplexityWithArgs, "seq"_a, "args"_a)
       .def("lz76RandomShuffleComplexity",
            &::lz76RandomShuffleComplexity,
            "seq"_a,
-           "partitions"_a     = 0,
+           "partitions"_a     = 1,
            "alphabet"_a       = 2,
            "log_base"_a       = 2,
            "max_block_size"_a = -1)
@@ -268,7 +268,7 @@ void PyLempelZiv(py::module& m) {
            &::lz76InformationDistance,
            "seq1"_a,
            "seq2"_a,
-           "partitions"_a = 0,
+           "partitions"_a = 1,
            "alphabet"_a   = 2,
            "log_base"_a   = 2)
       //!> Information distance
@@ -278,7 +278,7 @@ void PyLempelZiv(py::module& m) {
            &::lz76RandomShuffleDistance,
            "seq1"_a,
            "seq2"_a,
-           "partitions"_a = 0,
+           "partitions"_a = 1,
            "alphabet"_a   = 2,
            "log_base"_a   = 2);
 }
