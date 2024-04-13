@@ -216,34 +216,49 @@ lz::lz_int process(lz_options& opt) {
       }
    }
 
-   if (opt.verbose) {
-      std::cout << lz::GREEN_COLOR << "2." << verbose_index++
-                << ". Calculating random shuffle complexity using Z sequence\n"
-                << lz::END_COLOR;
-      init_time = now();
+   std::atomic_bool makeShuffleComplexity = true;
+   if (test_flags.input.size() < 1000) {
+      for (auto&& dat: test_flags.input)
+         if (dat.length() < 100)
+            makeShuffleComplexity = false;
+   } else {
+      lz::utils::parallel_for(0, test_flags.input.size(), [&](lz::lz_size idx) {
+         if (test_flags.input[idx].size() < 100)
+            makeShuffleComplexity = false;
+      });
    }
-   lz::lz76RandomShuffleComplexity(test_flags, lz);
-   if (opt.verbose) {
-      const auto end_time = now();
-      std::cout << "Random shuffle complexity using Z sequence: ";
-      for (auto x: lz.data)
-         std::cout << x.getRandomShuffleComplexity().excess_value << " ";
-      std::cout << std::endl;
-      for (auto i = 0ul; i < lz.data.size(); i++) {
-         auto x = lz.data[i];
-         if (x.getRandomShuffleComplexity().summands.size() > 0) {
-            std::cout << "Shuffle entropy terms of line: " << i + 1 << " [ ";
-            for (auto t: x.getRandomShuffleComplexity().summands)
-               std::cout << t << " ";
-            std::cout << "]\n";
-         }
-      }
-      std::cout << "Multi information: ";
-      for (auto x: lz.data)
-         std::cout << x.getRandomShuffleComplexity().multi_information << " ";
-      std::cout << std::endl;
 
-      std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+   if (makeShuffleComplexity.load()) {
+
+      if (opt.verbose) {
+         std::cout << lz::GREEN_COLOR << "2." << verbose_index++
+                   << ". Calculating random shuffle complexity using Z sequence\n"
+                   << lz::END_COLOR;
+         init_time = now();
+      }
+      lz::lz76RandomShuffleComplexity(test_flags, lz);
+      if (opt.verbose) {
+         const auto end_time = now();
+         std::cout << "Random shuffle complexity using Z sequence: ";
+         for (auto x: lz.data)
+            std::cout << x.getRandomShuffleComplexity().excess_value << " ";
+         std::cout << std::endl;
+         for (auto i = 0ul; i < lz.data.size(); i++) {
+            auto x = lz.data[i];
+            if (x.getRandomShuffleComplexity().summands.size() > 0) {
+               std::cout << "Shuffle entropy terms of line: " << i + 1 << " [ ";
+               for (auto t: x.getRandomShuffleComplexity().summands)
+                  std::cout << t << " ";
+               std::cout << "]\n";
+            }
+         }
+         std::cout << "Multi information: ";
+         for (auto x: lz.data)
+            std::cout << x.getRandomShuffleComplexity().multi_information << " ";
+         std::cout << std::endl;
+
+         std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+      }
    }
 
    if (opt.args.block_size >= 0) {
@@ -333,18 +348,18 @@ lz::lz_int process(lz_options& opt) {
 }
 
 auto main(int argc, char const* argv[]) -> int {
-   cxxopts::options options("lz",
+   cxxopts::options options("lzcomplexity",
                             "LempelZiv-76 complexity utilities as a library and also a standalone software. Suited for "
-                            "complexity analysis of time series.\nSend bug reports to estevez@fisica.uh.cu or "
+                            "complexity analysis of time series. Send bug reports to estevez@fisica.uh.cu or "
                             "efrenaragon96@gmail.com.\n");
 
    // clang-format off
-   options.custom_help("[OPTIONS...] input_data")
+   options.custom_help("[OPTIONS] <file>")
           .set_width(120)
           .set_tab_expansion(true);
    options.allow_unrecognised_options();
    // clang-format on
-   auto opt_group = options.add_options("lzcomplexity");
+   auto opt_group = options.add_options("OPTIONS: ");
    opt_group("a,alphabet",
              "Alphabet cardinality. If auto it tries to guess the alphabet size.",
              cxxopts::value<std::string>()->default_value("2"),
@@ -384,10 +399,11 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<lz::lz_int>()->default_value("20"),
              "value");
    opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
-   opt_group("x,extras",
-             "Computes extra lz based measures (rajski distance, the uncertainty of both halves, pearson coefficient "
-             "and redundancy).",
-             cxxopts::value<bool>()->default_value("false"));
+   opt_group(
+      "x,extras",
+      "Computes additional measures based on lz (rajski distance, the uncertainty of both halves, pearson coefficient "
+      "and redundancy).",
+      cxxopts::value<bool>()->default_value("false"));
 
    // opt_group("r,process", "Clear input data.");
    //    opt_group("m,max-context", "Max context for suffix comparisons (only for caps algorithm).",
