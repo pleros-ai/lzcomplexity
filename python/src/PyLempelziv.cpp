@@ -242,25 +242,25 @@ void PyLempelZiv(py::module& m) {
       .def("lz76Factorization", &::lz76FactorizationWithoutArgs, "seq"_a)
       .def("lz76Factorization", &::lz76FactorizationWithArgs, "seq"_a, "args"_a)
       //!> Function with all args
-      .def("lz76Factorization", &::lz76Factorization, "seq"_a, "partitions"_a, "alphabet"_a, "log_base"_a)
+      .def("lz76Factorization", &::lz76Factorization, "seq"_a, "partitions"_a = 0, "alphabet"_a = 2, "log_base"_a = 2)
       //!> Factor function
       .def("lz76Factors", &::lz76FactorsWithoutArgs, "seq"_a)
       .def("lz76Factors", &::lz76FactorsWithArgs, "seq"_a, "args"_a)
-      .def("lz76Factors", &::lz76Factors, "seq"_a, "partitions"_a, "alphabet"_a, "log_base"_a)
+      .def("lz76Factors", &::lz76Factors, "seq"_a, "partitions"_a = 0, "alphabet"_a = 2, "log_base"_a = 2)
       //!> Entropy density
       .def("lz76EntropyDensity", &::lz76EntropyDensityWithoutArgs, "seq"_a)
       .def("lz76EntropyDensity", &::lz76EntropyDensityWithArgs, "seq"_a, "args"_a)
-      .def("lz76EntropyDensity", &::lz76EntropyDensity, "seq"_a, "partitions"_a, "alphabet"_a, "log_base"_a)
+      .def("lz76EntropyDensity", &::lz76EntropyDensity, "seq"_a, "partitions"_a = 0, "alphabet"_a = 2, "log_base"_a = 2)
       //!> Shuffle entropy deficit
       .def("lz76RandomShuffleComplexity", &::lz76RandomShuffleComplexityWithoutArgs, "seq"_a)
       .def("lz76RandomShuffleComplexity", &::lz76RandomShuffleComplexityWithArgs, "seq"_a, "args"_a)
       .def("lz76RandomShuffleComplexity",
            &::lz76RandomShuffleComplexity,
            "seq"_a,
-           "partitions"_a,
-           "alphabet"_a,
-           "log_base"_a,
-           "max_block_size"_a)
+           "partitions"_a     = 0,
+           "alphabet"_a       = 2,
+           "log_base"_a       = 2,
+           "max_block_size"_a = -1)
       //!> Information distance
       .def("lz76InformationDistance", &::lz76InformationDistanceWithoutArgs, "seq1"_a, "seq2"_a)
       .def("lz76InformationDistance", &::lz76InformationDistanceWithArgs, "seq1"_a, "seq2"_a, "args"_a)
@@ -268,9 +268,9 @@ void PyLempelZiv(py::module& m) {
            &::lz76InformationDistance,
            "seq1"_a,
            "seq2"_a,
-           "partitions"_a,
-           "alphabet"_a,
-           "log_base"_a)
+           "partitions"_a = 0,
+           "alphabet"_a   = 2,
+           "log_base"_a   = 2)
       //!> Information distance
       .def("lz76RandomShuffleDistance", &::lz76RandomShuffleDistanceWithoutArgs, "seq1"_a, "seq2"_a)
       .def("lz76RandomShuffleDistance", &::lz76RandomShuffleDistanceWithArgs, "seq1"_a, "seq2"_a, "args"_a)
@@ -278,7 +278,7 @@ void PyLempelZiv(py::module& m) {
            &::lz76RandomShuffleDistance,
            "seq1"_a,
            "seq2"_a,
-           "partitions"_a,
-           "alphabet"_a,
-           "log_base"_a);
+           "partitions"_a = 0,
+           "alphabet"_a   = 2,
+           "log_base"_a   = 2);
 }
