@@ -64,13 +64,13 @@ auto lz76Factors(const seq_type& seq,
    return cpx;
 }
 
-auto lz76EntropyDensityWithoutArgs(const seq_type& seq) {
+auto lz76EntropyDensityWithoutArgs(const seq_type seq) {
    lz::lz_double cpx = 0;
 
    std::visit([&](auto&& s) { cpx = lz::lz76EntropyDensity(s); }, seq);
    return cpx;
 }
-auto lz76EntropyDensityWithArgs(const seq_type& seq, utl::LZ_Args& args) {
+auto lz76EntropyDensityWithArgs(const seq_type seq, utl::LZ_Args& args) {
    lz::lz_double cpx = 0;
 
    std::visit([&](auto&& s) { cpx = lz::lz76EntropyDensity(s, args); }, seq);
@@ -78,10 +78,10 @@ auto lz76EntropyDensityWithArgs(const seq_type& seq, utl::LZ_Args& args) {
 }
 
 // Python style function
-auto lz76EntropyDensity(const seq_type& seq,
-                        lz::lz_int      partitions = 1,
-                        lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
-                        lz::lz_uint     log_base   = lz::ALPHABET_SIZE) {
+auto lz76EntropyDensity(const seq_type seq,
+                        lz::lz_int     partitions = 2,
+                        lz::lz_uint    alphabet   = lz::ALPHABET_SIZE,
+                        lz::lz_uint    log_base   = lz::ALPHABET_SIZE) {
    utl::LZ_Args args;
    args.chunks       = partitions;
    args.alphabet     = alphabet;

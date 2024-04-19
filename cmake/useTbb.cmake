@@ -1,4 +1,12 @@
 if(TARGET TBB::tbb)
+  set(LZ_TBB_LIBS TBB::tbb)
+
+  if(TBB_INCLUDE_DIRS)
+    set(LZ_TBB_INCLUDES ${TBB_INCLUDE_DIRS})  
+  else()
+    set(LZ_TBB_INCLUDES ${CMAKE_SOURCE_DIR}/external/tbb/include)
+  endif()
+
   return()
 endif()
 

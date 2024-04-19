@@ -216,20 +216,15 @@ lz::lz_int process(lz_options& opt) {
       }
    }
 
-   std::atomic_bool makeShuffleComplexity = true;
-   if (test_flags.input.size() < 1000) {
-      for (auto&& dat: test_flags.input)
-         if (dat.length() < 100)
-            makeShuffleComplexity = false;
-   } else {
-      lz::utils::parallel_for(0, test_flags.input.size(), [&](lz::lz_size idx) {
-         if (test_flags.input[idx].size() < 100)
-            makeShuffleComplexity = false;
-      });
+   bool makeShuffleComplexity = true;
+   for (auto&& dat: test_flags.input) {
+      if (dat.length() < 100) {
+         makeShuffleComplexity = false;
+         break;
+      }
    }
 
-   if (makeShuffleComplexity.load()) {
-
+   if (makeShuffleComplexity && !opt.entropy_density) {
       if (opt.verbose) {
          std::cout << lz::GREEN_COLOR << "2." << verbose_index++
                    << ". Calculating random shuffle complexity using Z sequence\n"
@@ -306,17 +301,6 @@ lz::lz_int process(lz_options& opt) {
       // lz::InformationDistance(test_flags, lz);
       lz::lz76InformationDistance(test_flags, lz);
       lz::lz76RandomShuffleDistance(test_flags, lz);
-
-      // for (int i = 10; i <= 60; i += 5) {
-      //    test_flags.sa_args.block_size = i;
-
-      //    lz::RandomShuffleDistance(test_flags, lz);
-      //    rand_dist.push_back(lz.random_shuffle_distance[0]);
-      // }
-
-      // for (auto x: rand_dist)
-      //    std::cout << x << " ";
-      // std::cout << std::endl;
 
       if (opt.verbose) {
          const auto end_time = now();
@@ -396,7 +380,7 @@ auto main(int argc, char const* argv[]) -> int {
              "file_name");
    opt_group("p,partitions",
              "Number of partitions used for the parallel suffix array algorithm.",
-             cxxopts::value<lz::lz_int>()->default_value("20"),
+             cxxopts::value<lz::lz_int>()->default_value("4"),
              "value");
    opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
    opt_group(

@@ -88,7 +88,7 @@ namespace lz {
          return LZ_Result{factorization, epsilon, lzf};
       }
 
-      LZ_Result LempelZiv76::Factorize(const sequence seq) {
+      LZ_Result LempelZiv76::Factorize(const sequence& seq) {
          // parameters should come from flags
          auto max_th = utils::num_workers();
          if (seq.size() < max_th * 10) {
@@ -96,7 +96,9 @@ namespace lz {
          } else if (seq.size() > 1e6) {
             max_th = 100;
          }
-         auto _SA = suffixarray::CaPS_SA(max_th).construct(seq.toString());
+
+         suffixarray::CaPS_SA alg(max_th);
+         auto                 _SA = alg.construct(seq.toString());
 
          lzf.reserve(_SA.n);
          std::vector<lz_int>          lpf(_SA.n);
@@ -110,7 +112,8 @@ namespace lz {
 
          try {
             // Largest prefix factor.
-            lz::utils::LPF_opt(&lpf[0], (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);
+            lz::utils::LPF(
+               &lpf[0], reinterpret_cast<lz_int*>(_SA.SA.data()), reinterpret_cast<lz_int*>(_SA.LCP.data()), _SA.n);
 
             // Lets build the factorization table
             i = 1;
@@ -134,9 +137,10 @@ namespace lz {
          return LZ_Result{factorization, epsilon, lzf};
       }
 
-      LZ_Result LempelZiv76::Factorize(const sequence seq, utils::LZ_Args& sa_args) {
+      LZ_Result LempelZiv76::Factorize(const sequence& seq, utils::LZ_Args& sa_args) {
          // parameters should come from flags
-         auto _SA = suffixarray::CaPS_SA(sa_args).construct(seq.toString());
+         suffixarray::CaPS_SA  alg(sa_args);
+         utils::LZ_SuffixArray _SA = alg.construct(seq.toString());
 
          auto logn = std::log(sa_args.log_base);
          epsilon =
@@ -150,7 +154,8 @@ namespace lz {
 
          try {
             // Largest prefix factor.
-            lz::utils::LPF_opt(&lpf[0], (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);
+            lz::utils::LPF(
+               &lpf[0], reinterpret_cast<lz_int*>(_SA.SA.data()), reinterpret_cast<lz_int*>(_SA.LCP.data()), _SA.n);
 
             // Lets build the factorization table
             i = 1;
@@ -171,7 +176,13 @@ namespace lz {
          FoundStddev();
          // done !
          factorization = ((lzf.back() <= _SA.n) ? lzf.size() - 1 : lzf.size() - 2);
-         return LZ_Result{factorization, epsilon, lzf};
+
+         LZ_Result res;
+         res.factorization = factorization;
+         res.epsilon       = epsilon;
+         res.lzf           = lzf;
+
+         return res;
       }
 
       // #if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
@@ -199,8 +210,8 @@ namespace lz {
       //          }
 
       //          try {
-      //             lz::utils::LPF(lpf, (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);  // Largest prefix
-      //             factor.
+      //             lz::utils::LPF(lpf, reinterpret_cast<lz_int*>(_SA.SA.data()),
+      //             reinterpret_cast<lz_int*>(_SA.LCP.data()), _SA.n);  // Largest prefix factor.
 
       //             // Lets build the factorization table
       //             i = 1;

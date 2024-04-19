@@ -129,6 +129,15 @@
    "args": ["-v",
         "/Users/efren_aragon/Documents/Work/Investigacion/Softwares/library/data/banana"],
    "cwd": "${fileDirname}",
+},
+{
+   "name": "Debug small data 2",
+   "type": "lldb",
+   "request": "launch",
+   "program": "${workspaceFolder}/build/lzcomplexity_dbg",
+   "args": ["-v", "-n",
+        "/Users/efren_aragon/Documents/Work/Investigacion/Softwares/AlgoritmBenchmark/data/even256.0_prob0.50"],
+   "cwd": "${fileDirname}",
 }
    ]
 }

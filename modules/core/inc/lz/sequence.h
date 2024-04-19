@@ -35,7 +35,6 @@
 #include <lz/myexceptions.h>
 
 #include <set>
-#include <utility>
 
 /**
  * @file sequence.h

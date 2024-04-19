@@ -35,6 +35,15 @@ message(STATUS "LZ_DIRS: ${LZ_DIRS}")
 
 find_package(LZCore REQUIRED)
 
+# if(NOT LZCore_FOUND)
+#    add_subdirectory(${CMAKE_SOURCE_DIR}/modules/core core)
+#    get_property(CORE_INCLUDE_DIR GLOBAL PROPERTY CORE_INCLUDE_DIR)
+
+#    message(STATUS "LZCore path: ${CORE_INCLUDE_DIR}")
+#    set(LZCore_INCLUDE_DIR ${CORE_INCLUDE_DIR})
+#    set(LZCore_LIB LZCore)
+# endif()
+
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/pybind11 pybind11)
 pybind11_add_module(${PROJECT_NAME} MODULE OPT_SIZE ${PYTHON_FILES})
 

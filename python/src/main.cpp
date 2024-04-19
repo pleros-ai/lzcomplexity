@@ -4,7 +4,9 @@
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
 // #define VERSION_INFO 0.7.0
 
-int add(int i, int j) { return i + j; }
+int add(int i, int j) {
+   return i + j;
+}
 
 namespace py = pybind11;
 
@@ -25,11 +27,11 @@ PYBIND11_MODULE(lzcomplexity, m) {
 
     )pbdoc";
 
-   m.def("add", &add, R"pbdoc(
-        Add two numbers
+   // m.def("add", &add, R"pbdoc(
+   //      Add two numbers
 
-        Some other explanation about the add function.
-    )pbdoc");
+   //      Some other explanation about the add function.
+   //  )pbdoc");
 
    // Utils bindings
    PyUtils(m);

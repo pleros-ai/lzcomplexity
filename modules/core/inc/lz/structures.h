@@ -127,17 +127,7 @@ namespace lz {
            , factors{r.factors}
            , extra{r.extra} {};
          // Move constructor
-         LempelZiv(LempelZiv&& r)
-           : complexity{r.complexity}
-           , entropy_density{r.entropy_density}
-           , all_random_shuffle_complexity{r.all_random_shuffle_complexity}
-           , random_shuffle_complexity{r.random_shuffle_complexity}
-           , lz_normal_errors{r.lz_normal_errors}
-           , lz_poison_errors{r.lz_poison_errors}
-           , epsilon{r.epsilon}
-           , factors_stddev{r.factors_stddev}
-           , factors{std::move(r.factors)}
-           , extra{r.extra} {};
+         LempelZiv(LempelZiv&& r) { *this = std::move(r); };
 
          ~LempelZiv() {}
 

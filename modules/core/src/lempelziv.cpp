@@ -65,6 +65,7 @@ namespace lz {
       };
 
       LZ_Data lz76Factorization(const sequence& text, utils::LZ_Args args) {
+
          internal::LempelZiv76 L;
          L.Factorize(text, args);
 
@@ -154,7 +155,8 @@ namespace lz {
       // lz_double div = text.size() * std::log(text.getAlphabetSize()) / std::log(text.size());
       lz_double div = static_cast<double>(text.size()) / utils::log(text.size(), args.log_base);
 
-      return L.getFactorization() / div;
+      lz_double res = L.getFactorization() / div;
+      return res;
    }
 
    //-------------------- Excess of entropy functions ----------------------------//

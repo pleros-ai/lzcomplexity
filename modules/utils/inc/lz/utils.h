@@ -150,7 +150,7 @@ namespace lz {
       // Returns pointer to a memory-allocation for `size` elements of type `T_`.
       template<typename T>
       inline T* allocate(unsigned int size) {
-         return static_cast<T*>(std::malloc(size * sizeof(T)));
+         return reinterpret_cast<T*>(std::malloc(size * sizeof(T)));
       }
 
       constexpr uint32_t hash(std::string_view data) noexcept {

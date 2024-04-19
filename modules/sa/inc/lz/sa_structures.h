@@ -53,28 +53,38 @@ namespace lz {
            : n(n_) {
             SA  = std::vector<lz_uint>(SA_, SA_ + n_);
             LCP = std::vector<lz_uint>(LCP_, LCP_ + n_);
-         }
+         };
          LZ_SuffixArray(lz_int* const SA_, lz_int* const LCP_, lz_int n_)
            : n(n_) {
             SA  = std::vector<lz_uint>(SA_, SA_ + n_);
             LCP = std::vector<lz_uint>(LCP_, LCP_ + n_);
-         }
+         };
          LZ_SuffixArray(const LZ_SuffixArray& oth)
-           : SA(oth.SA), LCP(oth.LCP), n(oth.n) {}
-         LZ_SuffixArray(LZ_SuffixArray&& oth) noexcept
-           : SA(std::move(oth.SA)), LCP(std::move(oth.LCP)), n(std::move(oth.n)) {}
+           : SA(oth.SA), LCP(oth.LCP), n(oth.n){};
+         LZ_SuffixArray(LZ_SuffixArray&& oth) noexcept { *this = std::move(oth); };
 
          void Clear() {
             SA.clear();
             LCP.clear();
             n = 0;
          };
-         ~LZ_SuffixArray(){};
 
-         LZ_SuffixArray& operator=(LZ_SuffixArray rhs) {
-            std::swap((*this).SA, rhs.SA);
-            std::swap((*this).LCP, rhs.LCP);
-            std::swap((*this).n, rhs.n);
+         ~LZ_SuffixArray(){
+            // Clear();
+         };
+
+         LZ_SuffixArray& operator=(LZ_SuffixArray& rhs) {
+            if (*this != rhs) {
+               std::swap(*this, rhs);
+            }
+
+            return *this;
+         };
+
+         LZ_SuffixArray& operator=(LZ_SuffixArray&& rhs) {
+            SA  = std::move(rhs.SA);
+            LCP = std::move(rhs.LCP);
+            n   = std::exchange(rhs.n, std::numeric_limits<lz_uint>::max());
 
             return *this;
          };

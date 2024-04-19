@@ -45,9 +45,9 @@ namespace lz {
    namespace internal {
 
       struct LZ_Result {
-         lz_uint              factorization;  //!> The factorization (Lempel-Ziv 76 complexity)
-         lz_double            epsilon;        //!> The epsilon value for the sequence
-         std::vector<lz_uint> lzf;            //!> The factors vector.
+         lz_uint              factorization;  //!> factorization (Lempel-Ziv 76 complexity)
+         lz_double            epsilon;        //!> epsilon value for the sequence
+         std::vector<lz_uint> lzf;            //!> vector of factors.
       };
 
       class LempelZiv76 {
@@ -68,10 +68,10 @@ namespace lz {
          LempelZiv76(const LempelZiv76&);            //!> copy constructor.
          LempelZiv76(LempelZiv76&&);                 //!> move constructor.
 
-         LZ_Result Factorize(const sequence);  //!> Find the factors and calculate the lz76 complexity using CaPS.
-         LZ_Result Factorize(const sequence, utils::LZ_Args&);  //!> Find the factors and calculate the lz76 complexity
-                                                                //! using CaPS with the parameters specified.
-         LZ_Result Factorize(const utils::LZ_SuffixArray);      //!> Find the factors and calculate the lz76 complexity
+         LZ_Result Factorize(const sequence&);  //!> Find the factors and calculate the lz76 complexity using CaPS.
+         LZ_Result Factorize(const sequence&, utils::LZ_Args&);  //!> Find the factors and calculate the lz76 complexity
+                                                                 //! using CaPS with the parameters specified.
+         LZ_Result Factorize(const utils::LZ_SuffixArray);       //!> Find the factors and calculate the lz76 complexity
 
          // #if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
          //          template <typename... SAImpl>
@@ -94,8 +94,9 @@ namespace lz {
          auto getFactorsBegin() const { return lzf.begin(); }
          auto getFactorsEnd() const { return lzf.end(); }
 
-         LempelZiv76& operator=(LempelZiv76);
+         // LempelZiv76& operator=(LempelZiv76);
          LempelZiv76& operator=(const LempelZiv76&);
+         LempelZiv76& operator=(LempelZiv76&&);
 
          friend bool operator==(const LempelZiv76&, const LempelZiv76&);
          friend bool operator!=(const LempelZiv76&, const LempelZiv76&);
@@ -117,10 +118,11 @@ namespace lz {
       }
 
       inline LempelZiv76::LempelZiv76(const LempelZiv76& lz)
-        : factorization(lz.factorization), lzf(lz.lzf) {}
+        : factorization(lz.factorization), lzf(lz.lzf), epsilon(lz.epsilon), factors_stddev(lz.factors_stddev) {}
 
-      inline LempelZiv76::LempelZiv76(LempelZiv76&& lz)
-        : factorization(lz.factorization), lzf(std::move(lz.lzf)) {}
+      inline LempelZiv76::LempelZiv76(LempelZiv76&& lz) {
+         *this = std::move(lz);
+      }
 
       /// @brief
       /// Destructor. Frees all allocated memory
@@ -172,19 +174,28 @@ namespace lz {
       /// Copy operator
       /// @param lz the source
       /// @return *this
-      inline LempelZiv76& LempelZiv76::operator=(LempelZiv76 lz) {
-         if (this != &lz) {
+      // inline LempelZiv76& LempelZiv76::operator=(LempelZiv76 lz) {
+      //    if (this != &lz) {
+      //       this->~LempelZiv76();
+      //       new (this) LempelZiv76(lz);
+      //    }
+      //    return *this;
+      // }
+
+      inline LempelZiv76& LempelZiv76::operator=(const LempelZiv76& lz) {
+         if (*this != lz) {
             this->~LempelZiv76();
             new (this) LempelZiv76(lz);
          }
          return *this;
-      }
+      };
 
-      inline LempelZiv76& LempelZiv76::operator=(const LempelZiv76& lz) {
-         if (this != &lz) {
-            this->~LempelZiv76();
-            new (this) LempelZiv76(lz);
-         }
+      inline LempelZiv76& LempelZiv76::operator=(LempelZiv76&& lz) {
+         factorization  = std::exchange(lz.factorization, std::numeric_limits<lz_uint>::max());
+         epsilon        = std::exchange(lz.epsilon, 0.0);
+         factors_stddev = std::exchange(lz.factors_stddev, 0.0);
+         lzf            = std::move(lz.lzf);
+
          return *this;
       };
 
@@ -216,6 +227,8 @@ namespace lz {
        */
       inline void swap(LempelZiv76& lhs, LempelZiv76& rhs) {
          std::swap(lhs.factorization, rhs.factorization);
+         std::swap(lhs.epsilon, rhs.epsilon);
+         std::swap(lhs.factors_stddev, rhs.factors_stddev);
          std::swap(lhs.lzf, rhs.lzf);
       }
 

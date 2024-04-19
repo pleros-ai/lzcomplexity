@@ -71,11 +71,9 @@ namespace lz {
          std::memcpy(LCP_, other.LCP_, n_ * sizeof(lz_int));
       }
 
-      CaPS_SA::CaPS_SA(CaPS_SA&& other) noexcept
-        : CaPS_SA(std::move(other.T_), other.n_, other.p_, other.max_context) {
-         std::memmove(SA_, other.SA_, n_ * sizeof(lz_int));
-         std::memmove(LCP_, other.LCP_, n_ * sizeof(lz_int));
-      }
+      CaPS_SA::CaPS_SA(CaPS_SA&& other) noexcept {
+         *this = std::move(other);
+      };
 
       CaPS_SA::~CaPS_SA() {
          std::free(SA_);

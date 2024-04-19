@@ -61,8 +61,8 @@ namespace lz {
          };
          stack_element& operator=(stack_element&& s) {
             if (this != &s) {
-               this->~stack_element();
-               new (this) stack_element(s);
+               len = std::exchange(s.len, std::numeric_limits<lz_int>::max());
+               pos = std::exchange(s.pos, std::numeric_limits<lz_int>::max());
             }
             return *this;
          };

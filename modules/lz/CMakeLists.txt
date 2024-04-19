@@ -43,8 +43,8 @@ if(NOT LZCore_FOUND)
    get_property(CORE_INCLUDE_DIR GLOBAL PROPERTY CORE_INCLUDE_DIR)
 
    message(STATUS "LZCore path: ${CORE_INCLUDE_DIR}")
-   set(LZ_CORE_INCLUDE_DIR ${CORE_INCLUDE_DIR})
-   set(LZ_CORE_LIB LZCore)
+   set(LZCore_INCLUDE_DIR ${CORE_INCLUDE_DIR})
+   set(LZCore_LIB LZCore)
 endif()
 
 # add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
@@ -53,13 +53,13 @@ target_sources(${PROJECT_NAME} PRIVATE ${LZ_ALG} ${LZ_FLAGS})
 target_include_directories(${PROJECT_NAME} 
    PUBLIC 
       $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
-      $<BUILD_INTERFACE:${LZ_CORE_INCLUDE_DIR}>
+      $<BUILD_INTERFACE:${LZCore_INCLUDE_DIR}>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 
 # target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LZ_CORE_LIB})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LZCore_LIB})
 # set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${LZ_TBB_LIBS})
 
 # set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${LZ_CORE_LIB})
