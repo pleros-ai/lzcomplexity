@@ -58,7 +58,7 @@ The possible cmake OPTIONS can be found in the `CMakeLists.txt` file:
 >
 
 
-1. Install
+3. Install
 
 ```bash
 make install

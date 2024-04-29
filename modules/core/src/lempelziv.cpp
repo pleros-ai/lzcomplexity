@@ -65,15 +65,26 @@ namespace lz {
       };
 
       LZ_Data lz76Factorization(const sequence& text, utils::LZ_Args args) {
+         lz_uint   factorization = 0x01;
+         lz_int    half_lz       = 0x01;
+         lz_double epsilon       = 0;
+         lz_double stddev        = 0;
 
-         internal::LempelZiv76 L;
-         L.Factorize(text, args);
+         if (internal::CheckCharDensity(text).size() > 1) {
+            internal::LempelZiv76 L;
+            // factorization, factors, epsilon and factors stddev
+            L.Factorize(text, args);
+            factorization = L.getFactorization();
+            epsilon       = L.getEpsilon();
+            stddev        = L.getStddev();
 
-         auto pos =
-            std::find_if(PAR L.getFactorsBegin(), L.getFactorsEnd(), [&](auto val) { return val > text.size() / 2; });
+            auto pos = std::find_if(
+               PAR L.getFactorsBegin(), L.getFactorsEnd(), [&](auto val) { return val > text.size() / 2; });
 
-         lz_int half_lz = std::distance(L.getFactorsBegin(), pos) - 1;
-         return {L.getFactorization(), half_lz, L.getStddev(), L.getEpsilon()};
+            half_lz = std::distance(L.getFactorsBegin(), pos) - 1;
+         }
+
+         return {factorization, half_lz, stddev, epsilon};
       };
 
       sequence MergeSequences(sequence s1, sequence s2) {
@@ -93,24 +104,41 @@ namespace lz {
 
          return sequence{seq, s1.getAlphabetSize() + s2.getAlphabetSize()};
       }
+
+      std::map<char, lz_double> CheckCharDensity(const sequence& seq) {
+         std::map<char, lz_double> res = seq.charDensity();
+
+         return res;
+      };
    }  // namespace internal
 
    utils::LempelZiv lz76(const sequence& seq, utils::LZ_Args args) {
-      internal::LempelZiv76 L;
-      // factorization, factors, epsilon and factors stddev
-      L.Factorize(seq, args);
+      lz_uint              factorization = 0x01;
+      lz_double            epsilon       = 0;
+      lz_double            stddev        = 0;
+      std::vector<lz_uint> factors{0, 1, static_cast<lz_uint>(seq.length())};
+
+      if (internal::CheckCharDensity(seq).size() > 1) {
+         internal::LempelZiv76 L;
+         // factorization, factors, epsilon and factors stddev
+         L.Factorize(seq, args);
+         factorization = L.getFactorization();
+         epsilon       = L.getEpsilon();
+         stddev        = L.getStddev();
+         factors       = L.getFactors();
+      }
 
       lz_double div = static_cast<double>(seq.size()) / utils::log(seq.size(), args.log_base);
       // entropy density
-      auto entropy = L.getFactorization() / div;
+      auto entropy = factorization / div;
       // random shuffle complexity (rsc)
       utils::LZ_Shuffle rsc;
       auto              rsc_fun = [&rsc, &seq, &args]() { rsc = lz76RandomShuffleComplexity(seq, args); };
       // whole sequence random shuffle complexity (w_rsc -- optional)
       utils::LZ_Shuffle w_rsc;
-      auto              w_rsc_fun = [&seq, &args, &L]() {
+      auto              w_rsc_fun = [&seq, &args, &factorization]() {
          auto [H_rand, mm]       = ShuffleFactorization(seq, args);
-         utils::LZ_Shuffle w_rsc = ShuffleEntropyCalculation(seq, args, L.getFactorization(), H_rand, mm);
+         utils::LZ_Shuffle w_rsc = ShuffleEntropyCalculation(seq, args, factorization, H_rand, mm);
       };
       // Extras
       utils::LZ_Extra extras;
@@ -120,42 +148,49 @@ namespace lz {
 
       // Error for Normal distribution factors length
       div               = std::sqrt(seq.size() / utils::log(seq.size(), args.log_base));
-      auto normal_error = std::sqrt(entropy * entropy * entropy) * L.getStddev() / div;
+      auto normal_error = std::sqrt(entropy * entropy * entropy) * stddev / div;
       // Error for Poison distribution factors length
       auto poison_error = entropy / seq.size();
 
-      return {L.getFactorization(),
-              L.getFactors(),
-              entropy,
-              w_rsc,
-              rsc,
-              normal_error,
-              poison_error,
-              L.getEpsilon(),
-              L.getStddev(),
-              extras};
+      return {factorization, factors, entropy, w_rsc, rsc, normal_error, poison_error, epsilon, stddev, extras};
    }
 
    //-------------------- Factorization functions ----------------------------//
    lz_uint lz76Factorization(const sequence& text, utils::LZ_Args args) {
-      internal::LempelZiv76 L;
-      L.Factorize(text, args);
-      return L.getFactorization();
+      lz_uint factorization = 0x01;
+
+      if (internal::CheckCharDensity(text).size() > 1) {
+         internal::LempelZiv76 L;
+         L.Factorize(text, args);
+         factorization = L.getFactorization();
+      }
+      return factorization;
    };
 
    internal::LZ_Result lz76Factors(const sequence& text, utils::LZ_Args args) {
-      internal::LempelZiv76 L;
-      return L.Factorize(text, args);
+      lz_uint              factorization = 0x01;
+      lz_double            epsilon       = 0;
+      std::vector<lz_uint> factors{0, 1, static_cast<lz_uint>(text.length())};
+
+      if (internal::CheckCharDensity(text).size() > 1) {
+         internal::LempelZiv76 L;
+         // factorization, factors, epsilon and factors stddev
+         L.Factorize(text, args);
+         factorization = L.getFactorization();
+         epsilon       = L.getEpsilon();
+         factors       = L.getFactors();
+      }
+
+      return {factorization, epsilon, factors};
    };
 
    //-------------------- Entropy density functions ----------------------------//
    lz_double lz76EntropyDensity(const sequence& text, utils::LZ_Args args) {
-      internal::LempelZiv76 L;
-      L.Factorize(text, args);
+      auto factorization = lz76Factorization(text, args);
       // lz_double div = text.size() * std::log(text.getAlphabetSize()) / std::log(text.size());
       lz_double div = static_cast<double>(text.size()) / utils::log(text.size(), args.log_base);
 
-      lz_double res = L.getFactorization() / div;
+      lz_double res = factorization / div;
       return res;
    }
 

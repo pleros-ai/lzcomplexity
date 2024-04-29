@@ -1,3 +1,4 @@
+#include <lz/lz.h>
 #include <lz/lzApp.h>
 
 #include "main/config.h"
@@ -218,10 +219,17 @@ lz::lz_int process(lz_options& opt) {
 
    bool makeShuffleComplexity = true;
    for (auto&& dat: test_flags.input) {
-      if (dat.length() < 100) {
+      if (dat.length() < 1000) {
          makeShuffleComplexity = false;
          break;
       }
+   }
+
+   if (!makeShuffleComplexity) {
+      std::cout << print_msg(lz::utils::MSG_TYPE::WARRING,
+                             "The dataset have at least 1 sequence too short for calculate Random Shuffle Complexity.\n"
+                             "All sequence should have more than 1e4 characters")
+                << std::endl;
    }
 
    if (makeShuffleComplexity && !opt.entropy_density) {

@@ -114,8 +114,7 @@ namespace lz {
        * @brief Move constructor.
        * @param s The sequence to be moved.
        */
-      sequence(sequence&& s)
-        : seq(std::move(s.seq)), alphabet(std::move(s.alphabet)), alphabet_size(s.alphabet_size){};
+      sequence(sequence&& s) { *this = std::move(s); };
 
       /**
        * @brief Destructor.
@@ -136,6 +135,8 @@ namespace lz {
 
       lz_uint     NoZeroes(void) const;
       std::string toString(void) const;
+
+      std::map<char, lz_double> charDensity(void) const;
 
       char& operator[](lz_size);
       const char& operator[](lz_size) const;
@@ -173,8 +174,11 @@ namespace lz {
       sequence& rightShift(lz_uint ls = 1);
       sequence& leftShift(lz_uint ls = 1);
 
-      sequence& operator=(sequence);
+      sequence& operator=(sequence&);
+      sequence& operator=(const sequence&);
+      sequence& operator=(sequence&&);
       sequence& operator=(const std::vector<char>&);
+
       sequence& operator+=(const std::vector<char>& s);
       sequence& operator+=(const sequence& s);
 
@@ -214,6 +218,20 @@ namespace lz {
 
    //.............................................................................................................
 
+   inline std::map<char, lz_double> sequence::charDensity(void) const {
+      std::map<char, lz_double> res;
+
+      for (auto& ch: seq) {
+         if (res.contains(ch)) {
+            res[ch] += 1;
+         } else {
+            res[ch] = 1;
+         }
+      }
+
+      return res;
+   }
+
    inline lz_uint sequence::NoZeroes(void) const {
       lz_uint acum = 0;
 
@@ -227,8 +245,27 @@ namespace lz {
       return std::string{seq.begin(), seq.end()};
    }
 
-   inline sequence& sequence::operator=(sequence s) {
-      swap(*this, s);
+   inline sequence& sequence::operator=(sequence& s) {
+      if (this != &s) {
+         swap(*this, s);
+      }
+
+      return *this;
+   }
+
+   inline sequence& sequence::operator=(const sequence& s) {
+      if (this != &s) {
+         this->~sequence();
+         new (this) sequence(s);
+      }
+
+      return *this;
+   }
+
+   inline sequence& sequence::operator=(sequence&& s) {
+      seq           = std::move(s.seq);
+      alphabet      = std::move(s.alphabet);
+      alphabet_size = std::exchange(s.alphabet_size, std::numeric_limits<lz_uint>::max());
 
       return *this;
    }

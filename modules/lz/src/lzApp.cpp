@@ -47,7 +47,7 @@ namespace lz {
 
       for (lz_size idx = 0; idx < flags.input.size(); idx++) {
          auto str = flags.input[idx];
-         auto clx = internal::lz76Factorization(str);
+         auto clx = internal::lz76Factorization(str, flags.sa_args);
          // lz.complexity.push_back(clx.factorization);
          lz.half_complexity.push_back(clx.half_factorization);
          lz.calculated_complexity[idx] = true;

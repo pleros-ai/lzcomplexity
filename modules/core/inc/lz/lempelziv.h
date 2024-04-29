@@ -51,6 +51,8 @@ namespace lz {
       auto lz76Factorization(const sequence&) -> LZ_Data;
       auto lz76Factorization(const sequence&, utils::LZ_Args) -> LZ_Data;
       auto MergeSequences(sequence s1, sequence s2) -> sequence;
+
+      auto CheckCharDensity(const sequence&) -> std::map<char, lz_double>;
    }  // namespace internal
 
    auto lz76(const sequence&, utils::LZ_Args) -> utils::LempelZiv;
