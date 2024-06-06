@@ -102,6 +102,19 @@ lz::lz_int process(lz_options& opt) {
 
    if (opt.verbose) {
       std::cout << lz::GREEN_COLOR << "Sequence to process: " << data.size() << std::endl << std::endl << lz::END_COLOR;
+      std::map<lz::lz_int, lz::lz_int> map_size;
+      for (auto&& x: data)
+         if (map_size.count(x.size()) > 0) {
+            map_size[x.size()] += 1;
+         } else {
+            map_size[x.size()] = 1;
+         }
+
+      for (auto [size, count]: map_size) {
+         std::cout << lz::GREEN_COLOR << count << " sequence with " << size << " characters" << std::endl
+                   << std::endl
+                   << lz::END_COLOR;
+      }
    }
 
    //? Input flags
@@ -225,7 +238,7 @@ lz::lz_int process(lz_options& opt) {
       }
    }
 
-   if (!makeShuffleComplexity) {
+   if (!makeShuffleComplexity && opt.verbose) {
       std::cout << print_msg(lz::utils::MSG_TYPE::WARRING,
                              "The dataset have at least 1 sequence too short for calculate Random Shuffle Complexity.\n"
                              "All sequence should have more than 1e4 characters")
@@ -388,7 +401,7 @@ auto main(int argc, char const* argv[]) -> int {
              "file_name");
    opt_group("p,partitions",
              "Number of partitions used for the parallel suffix array algorithm.",
-             cxxopts::value<lz::lz_int>()->default_value("4"),
+             cxxopts::value<lz::lz_int>()->default_value("2"),
              "value");
    opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
    opt_group(
