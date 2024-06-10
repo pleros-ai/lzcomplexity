@@ -214,7 +214,7 @@ namespace lz {
    };
 
    void     Shuffle(sequence& s, lz_uint block_size);
-   sequence Shuffle(sequence& s, lz_uint block_size, lz_uint times);
+   sequence Shuffle(const sequence& s, lz_uint block_size, lz_uint times);
 
    //.............................................................................................................
 

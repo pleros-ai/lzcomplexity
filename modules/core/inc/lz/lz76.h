@@ -69,9 +69,9 @@ namespace lz {
          LempelZiv76(LempelZiv76&&);                 //!> move constructor.
 
          LZ_Result Factorize(const sequence&);  //!> Find the factors and calculate the lz76 complexity using CaPS.
-         LZ_Result Factorize(const sequence&, utils::LZ_Args&);  //!> Find the factors and calculate the lz76 complexity
-                                                                 //! using CaPS with the parameters specified.
-         LZ_Result Factorize(const utils::LZ_SuffixArray);       //!> Find the factors and calculate the lz76 complexity
+         LZ_Result Factorize(const sequence, utils::LZ_Args&);  //!> Find the factors and calculate the lz76 complexity
+                                                                //! using CaPS with the parameters specified.
+         LZ_Result Factorize(const utils::LZ_SuffixArray);      //!> Find the factors and calculate the lz76 complexity
 
          // #if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
          //          template <typename... SAImpl>

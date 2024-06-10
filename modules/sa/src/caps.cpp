@@ -3,7 +3,7 @@
 namespace lz {
    namespace suffixarray {
 
-      CaPS_SA::CaPS_SA(const char* T, lz_int n, lz_int subproblem_count, lz_int max_context)
+      CaPS_SA::CaPS_SA(std::vector<char> T, lz_int n, lz_int subproblem_count, lz_int max_context)
         : T_(T)
         , n_(n)
         , SA_(utils::allocate<lz_int>(n_))
@@ -19,7 +19,7 @@ namespace lz {
         , pivot_(nullptr)
         , pivot_per_part_(p_ - 1)
         , part_size_scan_(nullptr)
-        , part_ruler_(nullptr) {
+        , part_ruler_() {
          if (n_ < 0 || (n_ > 0 && p_ > n_)) {
             // std::cerr << subproblem_count << " " << n << "The environment variable `PARLAY_NUM_THREADS` needs to be
             // set. Aborting.\n";
@@ -32,7 +32,7 @@ namespace lz {
       }
 
       CaPS_SA::CaPS_SA(lz_int subproblem_count, lz_int max_context)
-        : T_(nullptr)
+        : T_()
         , n_(0)
         , SA_(nullptr)
         , LCP_(nullptr)
@@ -43,13 +43,13 @@ namespace lz {
         , pivot_(nullptr)
         , pivot_per_part_(p_ - 1)
         , part_size_scan_(nullptr)
-        , part_ruler_(nullptr) {
+        , part_ruler_() {
          c     = p_ == 1 ? 1 : p_ - 1;
          debug = false;
       }
 
       CaPS_SA::CaPS_SA(utils::SA_Args args)
-        : T_(nullptr)
+        : T_()
         , n_(0)
         , SA_(nullptr)
         , LCP_(nullptr)
@@ -60,7 +60,7 @@ namespace lz {
         , pivot_(nullptr)
         , pivot_per_part_(p_ - 1)
         , part_size_scan_(nullptr)
-        , part_ruler_(nullptr) {
+        , part_ruler_() {
          c     = p_ == 1 ? 1 : p_ - 1;
          debug = false;
       }
@@ -108,7 +108,7 @@ namespace lz {
 #if (defined(__i386__) || defined(__x86_64__)) && defined(__AVX2__)
                const lz_int n = m + lcp_opt_avx(T_ + (X[i] + m), T_ + (Y[j] + m), context - m);  // LCP(X_i, Y_j)
 #else
-               const lz_int n = m + lcp_opt(T_ + (X[i] + m), T_ + (Y[j] + m), context - m);  // LCP(X_i, Y_j)
+               const lz_int n = m + lcp_opt(&T_[X[i] + m], &T_[Y[j] + m], context - m);  // LCP(X_i, Y_j)
 #endif
 
                // Whether the shorter suffix is a prefix of the longer one.
@@ -244,7 +244,7 @@ namespace lz {
             const auto P_i = P + i * (p_ + 1);       // Pivot locations in `X_i` are to be placed in `P_i`.
             P_i[0] = 0, P_i[p_] = subarr_size + (i < p_ - 1 ? 0 : n_ % p_);  // The two flanking pivot indices.
             for (lz_int j = 0; j < p_ - 1; ++j)  // TODO: try parallelizing this loop too; observe performance diff.
-               P_i[j + 1] = upper_bound(X_i, P_i[p_], T_ + pivot_[j], n_ - pivot_[j]);
+               P_i[j + 1] = upper_bound(X_i, P_i[p_], &T_[pivot_[j]], n_ - pivot_[j]);
          };
 
          lz::utils::parallel_for(0, p_, locate, 1);
@@ -268,7 +268,7 @@ namespace lz {
          while (r - l > 1)  // Candidate matches exist.
          {
             c                         = (l + r) / 2;
-            const char* const suf     = T_ + X[c];  // The suffix at the middle.
+            const char* const suf     = &T_[X[c]];  // The suffix at the middle.
             const auto        suf_len = n_ - X[c];  // Length of the suffix.
 
             lz_int lcp_c = std::min(lcp_l, lcp_r);    // LCP(X[c], P).
@@ -338,13 +338,13 @@ namespace lz {
             std::cout << "Finish idx sum\n";
 
          // Collate the sorted sub-subarrays to appropriate partitions.
-         part_ruler_              = utils::allocate<lz_int>(p_ * (p_ + 1));
+         part_ruler_.reserve(p_ * (p_ + 1));
          const lz_int subarr_size = n_ / p_;
          const auto   collate     =  // Collates the `j`'th sub-subarray from each sorted subarray to partition `j`.
             [&](const lz_int j) {
                auto const Y_j            = SA_w + part_size_scan_[j];   // Memory-base for partition `j`.
                auto const LCP_Y_j        = LCP_w + part_size_scan_[j];  // Memory-base for LCPs of partition `j`.
-               auto const sub_subarr_idx = part_ruler_ + j * (p_ + 1);  // Index of the sorted sub-subarrays in `Y_j`.
+               auto const sub_subarr_idx = &part_ruler_[j * (p_ + 1)];  // Index of the sorted sub-subarrays in `Y_j`.
                lz_int     curr_idx       = 0;                           // Current index into `Y_j`.
 
                for (lz_int i = 0; i < p_; ++i)  // Subarray `i`.
@@ -397,7 +397,7 @@ namespace lz {
             auto const Y_j      = SA_ + part_idx;      // Location to sort partition `j`.
             auto const LCP_X_j  = LCP_w + part_idx;    // Memory-base for the LCP-arrays of partition `j`.
             auto const LCP_Y_j  = LCP_ + part_idx;     // LCP array of `Y_j`.
-            auto const sub_subarr_idx = part_ruler_ + j * (p_ + 1);  // Indices of the sorted subarrays in `X_i`.
+            auto const sub_subarr_idx = part_ruler_.data() + j * (p_ + 1);  // Indices of the sorted subarrays in `X_i`.
 
             sort_partition(X_j, Y_j, p_, sub_subarr_idx, LCP_X_j, LCP_Y_j);
 
@@ -451,7 +451,7 @@ namespace lz {
                lcp_opt_avx(T_ + SA_[part_idx - 1], T_ + SA_[part_idx], n_ - std::max(SA_[part_idx - 1], SA_[part_idx]));
 #else
             LCP_[part_idx] =
-               lcp_opt(T_ + SA_[part_idx - 1], T_ + SA_[part_idx], n_ - std::max(SA_[part_idx - 1], SA_[part_idx]));
+               lcp_opt(&T_[SA_[part_idx - 1]], &T_[SA_[part_idx]], n_ - std::max(SA_[part_idx - 1], SA_[part_idx]));
 #endif
          };
 
@@ -471,7 +471,7 @@ namespace lz {
 
          std::free(pivot_);
          std::free(part_size_scan_);
-         std::free(part_ruler_);
+         // std::free(part_ruler_);
 
          const auto t_e = now();
          if (debug)
@@ -493,8 +493,8 @@ namespace lz {
          LCP_ = utils::allocate<lz_int>(n_);
       }
 
-      utils::LZ_SuffixArray CaPS_SA::construct(const char* T, lz_int n) {
-         T_ = T;
+      utils::LZ_SuffixArray CaPS_SA::construct(std::vector<char> T, lz_int n) {
+         T_ = std::move(T);
          n_ = n;
 
          refresh();
@@ -502,7 +502,9 @@ namespace lz {
       }
 
       utils::LZ_SuffixArray CaPS_SA::construct(const std::string& T) {
-         T_ = T.data();
+         std::for_each(T.begin(), T.end(), [&](char ch) { T_.push_back(std::move(ch)); });
+
+         // T_ = std::vector<const char>();
          n_ = T.length();
 
          refresh();
@@ -570,7 +572,7 @@ namespace lz {
 
       bool CaPS_SA::is_sorted(const lz_int* const X, const lz_int n) const {
          for (lz_int i = 1; i < n; ++i) {
-            const auto x = T_ + X[i - 1], y = T_ + X[i];
+            const auto x = &T_[X[i - 1]], y = &T_[X[i]];
             const auto l = std::min(n_ - X[i - 1], n_ - X[i]);
 
             for (lz_int i = 0; i < l; ++i)

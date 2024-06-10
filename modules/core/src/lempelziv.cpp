@@ -265,7 +265,7 @@ namespace lz {
 
       std::vector<lz_int> res(mm + 3);  // Reserve the number of blocks for shuffling + 3
 
-      auto fun = [&](lz_size idx) {
+      auto fun = [&, str](lz_size idx) {
          sequence rand_seq = Shuffle(str, idx, str.size() / 2);  // Shuffling is made for half the
                                                                  // size of the sequence, hope that is enough
          auto rand_complexity = lz76Factorization(rand_seq, args);

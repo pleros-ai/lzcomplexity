@@ -58,7 +58,8 @@ namespace lz {
          for (char c: str) {
             os << c;
 
-            if (c == utils::newline_char) os << commenttoken << " ";
+            if (c == utils::newline_char)
+               os << commenttoken << " ";
          }
          os << std::endl;
          return os;
@@ -105,13 +106,14 @@ namespace lz {
       //            BinarySequenceError         --------> Generic error.
       //..............................................................................
       std::istream& ReadBin(std::istream& is, sequence& obj, lz_size size) {
-         lz_size i = 0;        // the current bit index
-         unsigned char c = 0;  // the current byte
-         short bits = 0;       // to process next byte
-         char mask = 0;
-         lz_size ss = size;
+         lz_size       i    = 0;  // the current bit index
+         unsigned char c    = 0;  // the current byte
+         short         bits = 0;  // to process next byte
+         char          mask = 0;
+         lz_size       ss   = size;
 
-         if (ss == 0) ss = std::numeric_limits<unsigned int>::max();  // size was set to zero, so we read until EOF
+         if (ss == 0)
+            ss = std::numeric_limits<unsigned int>::max();  // size was set to zero, so we read until EOF
 
          obj.clear();
 
@@ -133,7 +135,8 @@ namespace lz {
 
                --bits;
 
-               if (++i >= ss) break;
+               if (++i >= ss)
+                  break;
             }
 
             if (i >= size) {
@@ -164,17 +167,18 @@ namespace lz {
       //            None
       //..............................................................................
       std::ostream& WriteBin(std::ostream& os, const sequence& obj) {
-         lz_size i = 0;        // the current bit index
-         unsigned char c = 0;  // the current byte
-         short bits = 0;       // to process next byte
+         lz_size       i    = 0;  // the current bit index
+         unsigned char c    = 0;  // the current byte
+         short         bits = 0;  // to process next byte
 
          while (i < obj.size()) {
             c = c << 1;
-            if (obj.const_at(i)) ++c;  // adding 1 if bit is true
+            if (obj.const_at(i))
+               ++c;  // adding 1 if bit is true
             ++bits;
             if (bits == CHARBITS) {  // The byte has been built
                os.put((char)c);
-               c = 0;
+               c    = 0;
                bits = 0;
             }
             ++i;
@@ -215,10 +219,10 @@ namespace lz {
       // Exceptions:
       //            None
       //..............................................................................
-      unsigned int WriteNonBin(std::ostream& os, const sequence& obj, unsigned int linepos,
-                               unsigned int linesizebound) {
+      unsigned int
+         WriteNonBin(std::ostream& os, const sequence& obj, unsigned int linepos, unsigned int linesizebound) {
          static unsigned int linechar = linepos;
-         char val = 0;
+         char                val      = 0;
 
          for (std::vector<bool>::size_type i = 0; i < obj.size(); ++i) {
             val = (obj.const_at(i)) ? '1' : '0';
@@ -253,36 +257,21 @@ namespace lz {
          char c[5];
 
          c[0] = c[1] = c[2] = c[3] = c[4] = 'A';  // just in case the line is shorter than three
-         std::iostream::pos_type fpos = is.tellg();
+         std::iostream::pos_type fpos     = is.tellg();
          is.seekg(0);     // rewind to the beginning of the file
          is.get(c, 5);    // get signature
          is.seekg(fpos);  // restore the file pointer to the initial position
 
          if (c[0] == 'P' || c[0] == 'p') {
             switch (c[1]) {
-               case '1':
-                  magick_number = PNM_P1;
-                  break;
-               case '2':
-                  magick_number = PNM_P2;
-                  break;
-               case '3':
-                  magick_number = PNM_P3;
-                  break;
-               case '4':
-                  magick_number = PNM_P4;
-                  break;
-               case '5':
-                  magick_number = PNM_P5;
-                  break;
-               case '6':
-                  magick_number = PNM_P6;
-                  break;
-               case '7':
-                  magick_number = PNM_P7;
-                  break;
-               default:
-                  throw PNMBadFileFormat();
+               case '1': magick_number = PNM_P1; break;
+               case '2': magick_number = PNM_P2; break;
+               case '3': magick_number = PNM_P3; break;
+               case '4': magick_number = PNM_P4; break;
+               case '5': magick_number = PNM_P5; break;
+               case '6': magick_number = PNM_P6; break;
+               case '7': magick_number = PNM_P7; break;
+               default: throw PNMBadFileFormat();
             }
          } else {
             if ((std::isalnum(c[0]) || c[0] == ' ' || c[0] == '\t' || c[0] == '\n') &&
@@ -316,8 +305,8 @@ namespace lz {
       //            PNMBadFileFormat            --------> The file was not a valid PNM file
       //..............................................................................
       std::istream& pnm::ReadPBM(std::istream& is, sequence& s, bool bin) {
-         std::string line;
-         char c[10];
+         std::string       line;
+         char              c[10];
          const std::string newl = "\n";
 
          try {
@@ -327,7 +316,7 @@ namespace lz {
             if ((c[0] == 'P' || c[0] == 'p') && (c[1] == '1' || c[1] == '4')) {  // read header of PBM file
 
                magick_number = (c[1] == '1') ? PNM_P1 : PNM_P4;
-               maxvalue = 1;
+               maxvalue      = 1;
 
                while (line.size() == 0 && is.good()) {
                   std::getline(is, line);
@@ -343,16 +332,19 @@ namespace lz {
                   line = string_trim(line);
                }
 
-               int val = 0;
+               int val   = 0;
                int twice = 0;
 
                // reading image size
                {
                   std::stringstream iss(line);  // local scope
                   while (iss >> val) {
-                     if (twice == 0) width = val;
-                     if (twice == 1) height = val;
-                     if (twice > 1) break;
+                     if (twice == 0)
+                        width = val;
+                     if (twice == 1)
+                        height = val;
+                     if (twice > 1)
+                        break;
                      ++twice;
                   }
                }
@@ -386,13 +378,15 @@ namespace lz {
                throw PNMBadFileFormat();
 
             if (magick_number == PNM_P4) {  // binary raw data
-               if (!bin) throw PNMBadFileFormat();
+               if (!bin)
+                  throw PNMBadFileFormat();
                s.clear();
                ReadBin(is, s, width * height);
             } else {  // text data
-               if (bin) throw PNMBadFileFormat();
+               if (bin)
+                  throw PNMBadFileFormat();
                s.clear();
-               unsigned int currentline = 0;
+               unsigned int currentline  = 0;
                unsigned int currentwidth = 0;
 
                line.clear();
@@ -428,10 +422,12 @@ namespace lz {
                         currentwidth = 0;
                         currentline++;
                      }
-                     if (currentline >= height) break;
+                     if (currentline >= height)
+                        break;
                   }
                   line.clear();
-                  if (currentline >= height) break;
+                  if (currentline >= height)
+                     break;
                }  // while true
             }     // if P1
          } catch (SequenceBadAlloc& ba) {
@@ -445,8 +441,8 @@ namespace lz {
       //..............................................................................
       std::istream& pnm::ReadPBM(std::istream& is, std::vector<sequence>& s, bool bin) {
          std::string line;
-         char c[10];
-         sequence bs;
+         char        c[10];
+         sequence    bs;
 
          try {
             // get signature
@@ -455,7 +451,7 @@ namespace lz {
             if ((c[0] == 'P' || c[0] == 'p') && (c[1] == '1' || c[1] == '4')) {  // read header of PBM file
 
                magick_number = (c[1] == '1') ? PNM_P1 : PNM_P4;
-               maxvalue = 1;
+               maxvalue      = 1;
 
                while (line.size() == 0 && is.good()) {
                   std::getline(is, line);
@@ -471,16 +467,19 @@ namespace lz {
                   line = string_trim(line);
                }
 
-               int val = 0;
+               int val   = 0;
                int twice = 0;
 
                // reading image size
                {
                   std::stringstream iss(line);  // local scope
                   while (iss >> val) {
-                     if (twice == 0) width = val;
-                     if (twice == 1) height = val;
-                     if (twice > 1) break;
+                     if (twice == 0)
+                        width = val;
+                     if (twice == 1)
+                        height = val;
+                     if (twice > 1)
+                        break;
                      ++twice;
                   }
                }
@@ -514,19 +513,22 @@ namespace lz {
                throw PNMBadFileFormat();
 
             if (magick_number == PNM_P4) {
-               if (!bin) throw PNMBadFileFormat();
+               if (!bin)
+                  throw PNMBadFileFormat();
 
                s.clear();
                // binary raw data
                for (unsigned int i = 0; i < height; ++i) {
-                  if (!is.good()) break;
+                  if (!is.good())
+                     break;
                   ReadBin(is, bs, width);
                   s.push_back(bs);
                }
             } else {  // text data
-               if (bin) throw PNMBadFileFormat();
+               if (bin)
+                  throw PNMBadFileFormat();
                s.clear();
-               unsigned int currentline = 0;
+               unsigned int currentline  = 0;
                unsigned int currentwidth = 0;
 
                bs.clear();
@@ -553,7 +555,8 @@ namespace lz {
                   for (std::string::size_type i = 0; i < line.size(); ++i) {
                      val = line[i];
 
-                     if (val != '0' && val != '1') continue;
+                     if (val != '0' && val != '1')
+                        continue;
 
                      bs.push((val == '1'));
 
@@ -563,10 +566,12 @@ namespace lz {
                         currentline++;
                         bs.clear();
                      }
-                     if (currentline >= height) break;
+                     if (currentline >= height)
+                        break;
                   }
                   line.clear();
-                  if (currentline >= height) break;
+                  if (currentline >= height)
+                     break;
                }  // while true
             }     // if P1
          } catch (SequenceBadAlloc& ba) {
@@ -612,7 +617,7 @@ namespace lz {
             internal::InsertComment(os, header_dump, '#');
 
             // dimensions
-            width = s.size();
+            width  = s.size();
             height = newfile;
 
             os << width << "   " << height << std::endl;
@@ -635,7 +640,8 @@ namespace lz {
          SavePBM(os, *it, binary, s.size());
          it++;
 
-         while (it != s.end()) SavePBM(os, *it++, binary, 0);
+         while (it != s.end())
+            SavePBM(os, *it++, binary, 0);
 
          return os;
       }
@@ -662,7 +668,7 @@ namespace lz {
       //..............................................................................
       std::istream& pnm::ReadPGM(std::istream& is, sequence& s, bool bin) {
          std::string line;
-         char c[10];
+         char        c[10];
 
          try {
             // get signature
@@ -686,17 +692,21 @@ namespace lz {
                   line = string_trim(line);
                }
 
-               int val = 0;
+               int val   = 0;
                int trice = 0;
 
                // reading image size
                {
                   std::stringstream iss(line);  // local scope
                   while (iss >> val) {
-                     if (trice == 0) width = val;
-                     if (trice == 1) height = val;
-                     if (trice == 2) maxvalue = val;
-                     if (trice > 2) break;
+                     if (trice == 0)
+                        width = val;
+                     if (trice == 1)
+                        height = val;
+                     if (trice == 2)
+                        maxvalue = val;
+                     if (trice > 2)
+                        break;
                      ++trice;
                   }
                }
@@ -722,9 +732,12 @@ namespace lz {
                   std::stringstream iss(line);  // local scope
 
                   while (iss >> val) {
-                     if (trice == 1) height = val;
-                     if (trice == 2) maxvalue = val;
-                     if (trice > 2) break;
+                     if (trice == 1)
+                        height = val;
+                     if (trice == 2)
+                        maxvalue = val;
+                     if (trice > 2)
+                        break;
                      ++trice;
                   }
                }
@@ -754,14 +767,16 @@ namespace lz {
                   maxvalue = val;
                }
 
-               if (maxvalue > 255) throw PNMDepth();
+               if (maxvalue > 255)
+                  throw PNMDepth();
             }  // end reading image size
             else
                throw PNMBadFileFormat();
 
             if (magick_number == PNM_P5) {  // binary raw data
 
-               if (!bin) throw PNMBadFileFormat();
+               if (!bin)
+                  throw PNMBadFileFormat();
                s.clear();
                unsigned int value = 0;
 
@@ -771,12 +786,13 @@ namespace lz {
                }
             } else {  // text data
 
-               if (bin) throw PNMBadFileFormat();
+               if (bin)
+                  throw PNMBadFileFormat();
                s.clear();
 
                line.clear();
                unsigned int total_l = width * height;
-               unsigned int number = 0;
+               unsigned int number  = 0;
 
                // raw data
                while (is.good()) {
@@ -795,12 +811,13 @@ namespace lz {
                   }
 
                   std::stringstream iss(line);  // local scope
-                  int val = 0;
+                  int               val = 0;
 
                   while (iss >> val) {
                      s.push((unsigned char)val);
                      number++;
-                     if (number > total_l) break;
+                     if (number > total_l)
+                        break;
                   }
                   line.clear();
                   if (number > total_l)  // are we done ?
@@ -818,10 +835,10 @@ namespace lz {
 
       //..........................................................................
       std::istream& pnm::ReadPGM(std::istream& is, std::vector<sequence>& s, bool bin) {
-         std::string line;
-         char c[10];
+         std::string       line;
+         char              c[10];
          const std::string newl = "\n";
-         sequence bs;
+         sequence          bs;
 
          try {
             // get signature
@@ -845,17 +862,21 @@ namespace lz {
                   line = string_trim(line);
                }
 
-               int val = 0;
+               int val   = 0;
                int trice = 0;
 
                // reading image size
                {
                   std::stringstream iss(line);  // local scope
                   while (iss >> val) {
-                     if (trice == 0) width = val;
-                     if (trice == 1) height = val;
-                     if (trice == 2) maxvalue = val;
-                     if (trice > 2) break;
+                     if (trice == 0)
+                        width = val;
+                     if (trice == 1)
+                        height = val;
+                     if (trice == 2)
+                        maxvalue = val;
+                     if (trice > 2)
+                        break;
                      ++trice;
                   }
                }
@@ -881,9 +902,12 @@ namespace lz {
                   std::stringstream iss(line);  // local scope
 
                   while (iss >> val) {
-                     if (trice == 1) height = val;
-                     if (trice == 2) maxvalue = val;
-                     if (trice > 2) break;
+                     if (trice == 1)
+                        height = val;
+                     if (trice == 2)
+                        maxvalue = val;
+                     if (trice > 2)
+                        break;
                      ++trice;
                   }
                }
@@ -913,14 +937,16 @@ namespace lz {
                   maxvalue = val;
                }
 
-               if (maxvalue > 255) throw PNMDepth();
+               if (maxvalue > 255)
+                  throw PNMDepth();
             }  // end reading image size
             else
                throw PNMBadFileFormat();
 
             if (magick_number == PNM_P5) {  // binary raw data
 
-               if (!bin) throw PNMBadFileFormat();
+               if (!bin)
+                  throw PNMBadFileFormat();
 
                s.clear();
                unsigned int value;
@@ -935,10 +961,11 @@ namespace lz {
                }
             } else {  // text data
 
-               if (bin) throw PNMBadFileFormat();
+               if (bin)
+                  throw PNMBadFileFormat();
 
                s.clear();
-               unsigned int currentline = 0;
+               unsigned int currentline  = 0;
                unsigned int currentwidth = 0;
 
                bs.clear();
@@ -961,7 +988,7 @@ namespace lz {
                   }
 
                   std::stringstream iss(line);  // local scope
-                  int val = 0;
+                  int               val = 0;
 
                   while (iss >> val) {
                      bs.push((unsigned char)val);
@@ -972,7 +999,8 @@ namespace lz {
                         currentline++;
                         bs.clear();
                      }
-                     if (currentline >= height) break;
+                     if (currentline >= height)
+                        break;
                   }
                   line.clear();
                   if (currentline >= height)  // are we done ?
@@ -1015,8 +1043,8 @@ namespace lz {
       //..............................................................................
       std::ostream& pnm::SavePGM(std::ostream& os, const sequence& s, bool binary, int newfile, char maxv) {
          static unsigned int linepos = 0;
-         unsigned char max = 0;
-         unsigned char min = 0;
+         unsigned char       max     = 0;
+         unsigned char       min     = 0;
 
          if (newfile > 0) {
             // signature
@@ -1030,14 +1058,15 @@ namespace lz {
             internal::InsertComment(os, header_dump, '#');
 
             // dimensions
-            width = s.size();
+            width  = s.size();
             height = newfile;
 
             if (maxv == 0) {
                max = (unsigned char)s.Max();
                min = (unsigned char)s.Min();
 
-               if (max < min) std::swap(max, min);
+               if (max < min)
+                  std::swap(max, min);
             } else
                max = maxv;
 
@@ -1054,7 +1083,7 @@ namespace lz {
                os << val;
             }
          } else {  // text dump
-            unsigned int val = 0;
+            unsigned int val      = 0;
             unsigned int linechar = linepos;
             for (unsigned int i = 0; i < width && i < s.size(); ++i) {
                val = (unsigned char)s.const_at(i);
@@ -1074,11 +1103,14 @@ namespace lz {
       }
 
       //.............
-      std::ostream& pnm::SavePGM(std::ostream& os, const std::vector<unsigned int>::iterator start,
-                                 const std::vector<unsigned int>::iterator end, bool binary, int newfile,
-                                 unsigned int maxv) {
-         static unsigned int linepos = 0;
-         std::vector<unsigned int>::const_iterator it = start;
+      std::ostream& pnm::SavePGM(std::ostream&                             os,
+                                 const std::vector<unsigned int>::iterator start,
+                                 const std::vector<unsigned int>::iterator end,
+                                 bool                                      binary,
+                                 int                                       newfile,
+                                 unsigned int                              maxv) {
+         static unsigned int                       linepos = 0;
+         std::vector<unsigned int>::const_iterator it      = start;
 
          if (newfile > 0) {
             // signature
@@ -1092,7 +1124,7 @@ namespace lz {
             internal::InsertComment(os, header_dump, '#');
 
             // dimensions
-            width = (end - start);
+            width  = (end - start);
             height = newfile;
 
             if (maxv == 0)
@@ -1139,33 +1171,40 @@ namespace lz {
          SavePGM(os, *it, binary, s.size(), maxv);
          it++;
 
-         while (it != s.end()) SavePGM(os, *it++, binary, 0, maxv);
+         while (it != s.end())
+            SavePGM(os, *it++, binary, 0, maxv);
 
          return os;
       }
 
       //...........
-      std::ostream& pnm::SavePGM(std::ostream& os, std::vector<unsigned int>& data, unsigned int w, bool binary,
-                                 unsigned int maxv) {
+      std::ostream& pnm::SavePGM(std::ostream&              os,
+                                 std::vector<unsigned int>& data,
+                                 unsigned int               w,
+                                 bool                       binary,
+                                 unsigned int               maxv) {
          std::vector<unsigned int>::iterator it = data.begin();
          std::vector<unsigned int>::iterator itend;
-         unsigned int h = data.size() / w;
+         unsigned int                        h = data.size() / w;
 
          width = w;
 
-         if (data.size() % width > 0) h++;
+         if (data.size() % width > 0)
+            h++;
 
          height = h;
 
          itend = it + width;
-         if (itend >= data.end()) itend = data.end();
+         if (itend >= data.end())
+            itend = data.end();
 
          SavePGM(os, it, itend, binary, height, maxv);
          it += width;
 
          while (it < data.end()) {
             itend = it + width;
-            if (itend >= data.end()) itend = data.end();
+            if (itend >= data.end())
+               itend = data.end();
             SavePGM(os, it, itend, binary, 0, maxv);
             it += width;
          }
@@ -1198,14 +1237,17 @@ namespace lz {
       //          equal to the original width (s.size()!= width), binary file option should not be used.
       //          Some PGM visualizers do not know how to handle it.
       //..............................................................................
-      std::ostream& pnm::SavePPM(std::ostream& os, const std::vector<unsigned int>::iterator start,
-                                 const std::vector<unsigned int>::iterator end, bool binary, int newfile,
-                                 unsigned int maxv) {
-         static unsigned int linepos = 0;
-         static unsigned int max = 0;
-         static unsigned int min = 0;
-         static unsigned int maxmin = 0;
-         std::vector<unsigned int>::const_iterator it = start;
+      std::ostream& pnm::SavePPM(std::ostream&                             os,
+                                 const std::vector<unsigned int>::iterator start,
+                                 const std::vector<unsigned int>::iterator end,
+                                 bool                                      binary,
+                                 int                                       newfile,
+                                 unsigned int                              maxv) {
+         static unsigned int                       linepos = 0;
+         static unsigned int                       max     = 0;
+         static unsigned int                       min     = 0;
+         static unsigned int                       maxmin  = 0;
+         std::vector<unsigned int>::const_iterator it      = start;
 
          if (newfile > 0) {
             // signature
@@ -1219,7 +1261,7 @@ namespace lz {
             internal::InsertComment(os, header_dump, '#');
 
             // dimensions
-            width = (end - start) / 3;
+            width  = (end - start) / 3;
             height = newfile;
 
             if (maxv == 0) {
@@ -1229,7 +1271,7 @@ namespace lz {
                maxmin = max - min;
             } else {
                max = maxmin = maxv;
-               min = 0;
+               min          = 0;
             }
 
             os << width << " " << height << std::endl;
@@ -1248,7 +1290,8 @@ namespace lz {
                else
                   os << c[0] << c[1];
 
-               if (it == end) throw PNMInsuficientData();
+               if (it == end)
+                  throw PNMInsuficientData();
 
                internal::ToChar(static_cast<std::uint16_t>(*it++), c);
 
@@ -1257,7 +1300,8 @@ namespace lz {
                else
                   os << c[0] << c[1];
 
-               if (it == end) throw PNMInsuficientData();
+               if (it == end)
+                  throw PNMInsuficientData();
 
                internal::ToChar(static_cast<std::uint16_t>(*it++), c);
 
@@ -1270,9 +1314,11 @@ namespace lz {
             unsigned int linechar = linepos;
             for (unsigned int i = 0; i < width && it < end; ++i) {
                os << std::to_string(static_cast<std::uint16_t>(*it++)) << " ";
-               if (it == end) throw PNMInsuficientData();
+               if (it == end)
+                  throw PNMInsuficientData();
                os << std::to_string(static_cast<std::uint16_t>(*it++)) << " ";
-               if (it == end) throw PNMInsuficientData();
+               if (it == end)
+                  throw PNMInsuficientData();
                os << std::to_string(static_cast<std::uint16_t>(*it++)) << "  ";
                linechar++;
 
@@ -1289,27 +1335,33 @@ namespace lz {
       }
 
       //.................................................................................
-      std::ostream& pnm::SavePPM(std::ostream& os, std::vector<unsigned int>& data, unsigned int ancho, bool binary,
-                                 unsigned int maxv) {
+      std::ostream& pnm::SavePPM(std::ostream&              os,
+                                 std::vector<unsigned int>& data,
+                                 unsigned int               ancho,
+                                 bool                       binary,
+                                 unsigned int               maxv) {
          std::vector<unsigned int>::iterator it = data.begin();
          std::vector<unsigned int>::iterator itend;
-         unsigned int w = ancho * 3;
-         unsigned int h = data.size() / w;
+         unsigned int                        w = ancho * 3;
+         unsigned int                        h = data.size() / w;
 
          width = ancho;
 
-         if (data.size() % w > 0) h++;
+         if (data.size() % w > 0)
+            h++;
 
          height = h;
 
          itend = it + w;
-         if (itend >= data.end()) itend = data.end();
+         if (itend >= data.end())
+            itend = data.end();
          SavePPM(os, it, itend, binary, height, maxv);
          it += w;
 
          while (it < data.end()) {
             itend = it + w;
-            if (itend >= data.end()) itend = data.end();
+            if (itend >= data.end())
+               itend = data.end();
             SavePPM(os, it, itend, binary, 0, maxv);
             it += w;
          }
@@ -1356,7 +1408,7 @@ namespace lz {
                int fpos = is.tellg();
                is.seekg(0, std::ios_base::end);  // rewind to the end of the file
                int fsize = is.tellg();           // size of the file
-               fsize = (fsize - 1) * CHARBITS;
+               fsize     = (fsize - 1) * CHARBITS;
                is.seekg(fpos);  // restore the file pointer to the initial position
 
                ReadBin(is, s, fsize);
@@ -1373,7 +1425,8 @@ namespace lz {
                   }
 
                   // for (char c: line) s.push(c - '0');
-                  for (char c: line) s.push(c);
+                  for (char c: line)
+                     s.push(c);
 
                   line.clear();
                   break;
@@ -1391,7 +1444,7 @@ namespace lz {
       //..............................................................................
       std::istream& pnm::ReadRAW(std::istream& is, std::vector<sequence>& s, bool bin) {
          std::string line;
-         sequence seq;
+         sequence    seq;
 
          try {
             if (bin)
@@ -1405,7 +1458,7 @@ namespace lz {
                int fpos = is.tellg();
                is.seekg(0, std::ios_base::end);  // rewind to the end of the file
                int fsize = is.tellg();           // size of the file
-               fsize = (fsize - 1) * CHARBITS;
+               fsize     = (fsize - 1) * CHARBITS;
                is.seekg(fpos);  // restore the file pointer to the initial position
 
                ReadBin(is, seq, fsize);
@@ -1422,11 +1475,14 @@ namespace lz {
                      std::getline(is, line);
                      line = string_trim(line);
 
-                     if (line.at(0) == '#') continue;
+                     if (line.size() > 0 && line.at(0) == '#')
+                        continue;
                   }
 
                   seq.clear();
-                  for (unsigned char c: line) seq.push((unsigned char)(c));
+                  // for (unsigned char c: line) seq.push((unsigned char)(c));
+                  if (line.size() > 0)
+                     seq = lz::sequence(line);
 
                   line.clear();
                   s.push_back(seq);
@@ -1478,20 +1534,11 @@ namespace lz {
                ReadPBM(is, seq, true);
                s = seq;
                break;
-            case PNM_P2:
-               ReadPGM(is, s, false);
-               break;
-            case PNM_P5:
-               ReadPGM(is, s, true);
-               break;
-            case PNM_RAWTXT:
-               ReadRAW(is, s, false);
-               break;
-            case PNM_RAWBIN:
-               ReadRAW(is, s, true);
-               break;
-            default:
-               throw PNMBadFileFormat();
+            case PNM_P2: ReadPGM(is, s, false); break;
+            case PNM_P5: ReadPGM(is, s, true); break;
+            case PNM_RAWTXT: ReadRAW(is, s, false); break;
+            case PNM_RAWBIN: ReadRAW(is, s, true); break;
+            default: throw PNMBadFileFormat();
          }
 
          return is;
@@ -1499,7 +1546,7 @@ namespace lz {
       //........................................................................
       std::istream& pnm::ReadPNM(std::istream& is, std::vector<sequence>& sv) {
          std::vector<sequence> bseq;
-         sequence s;
+         sequence              s;
 
          magick_number = FileTypeQ(is);
 
@@ -1518,20 +1565,11 @@ namespace lz {
                   sv.push_back(s);
                }
                break;
-            case PNM_P2:
-               ReadPGM(is, sv, false);
-               break;
-            case PNM_P5:
-               ReadPGM(is, sv, true);
-               break;
-            case PNM_RAWTXT:
-               ReadRAW(is, sv, false);
-               break;
-            case PNM_RAWBIN:
-               ReadRAW(is, sv, true);
-               break;
-            default:
-               throw PNMBadFileFormat();
+            case PNM_P2: ReadPGM(is, sv, false); break;
+            case PNM_P5: ReadPGM(is, sv, true); break;
+            case PNM_RAWTXT: ReadRAW(is, sv, false); break;
+            case PNM_RAWBIN: ReadRAW(is, sv, true); break;
+            default: throw PNMBadFileFormat();
          }
 
          return is;

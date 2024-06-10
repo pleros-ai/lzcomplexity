@@ -137,7 +137,7 @@ namespace lz {
          return LZ_Result{factorization, epsilon, lzf};
       }
 
-      LZ_Result LempelZiv76::Factorize(const sequence& seq, utils::LZ_Args& sa_args) {
+      LZ_Result LempelZiv76::Factorize(const sequence seq, utils::LZ_Args& sa_args) {
          // parameters should come from flags
          suffixarray::CaPS_SA  alg(sa_args);
          utils::LZ_SuffixArray _SA = alg.construct(seq.toString());

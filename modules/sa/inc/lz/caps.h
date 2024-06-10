@@ -65,23 +65,23 @@ namespace lz {
       // class for some given sequence.
       class CaPS_SA {
      private:
-         const char* T_;     //!> The input text.
-         lz_int      n_;     //!> Length of the input text.
-         lz_int*     SA_;    //!> The suffix array.
-         lz_int*     LCP_;   //!> The LCP array.
-         lz_int*     SA_w;   //!> Working space for the SA construction.
-         lz_int*     LCP_w;  //!> Working space for the LCP construction.
+         std::vector<char> T_;     //!> The input text.
+         lz_int            n_;     //!> Length of the input text.
+         lz_int*           SA_;    //!> The suffix array.
+         lz_int*           LCP_;   //!> The LCP array.
+         lz_int*           SA_w;   //!> Working space for the SA construction.
+         lz_int*           LCP_w;  //!> Working space for the LCP construction.
          // TODO: make constant and delete copy constructor and equal operators
-         lz_int  p_;                    //!> Count of subproblems used in construction.
-         lz_int  max_context;           //!> Maximum prefix-context length for comparing suffixes.
-         lz_int* pivot_;                //!> Pivots for the global suffix array.
-         lz_int  pivot_per_part_;       //!> Number of pivots to sample per sub-array.
-         lz_int* part_size_scan_;       //!> Inclusive scan (prefix sum) of the sizes of the pivoted final
-                                        //! partitions containing appropriate sorted sub-subarrays.
-         lz_int* part_ruler_;           //!> "Ruler" for the partitions—contains the indices of each
-                                        //! sub-sub-array in each partition.
-         std::atomic_uint64_t solved_;  //!> Progress tracker—number of subproblems solved in some step.
-         lz_int               c;        //!> constant for select the number of pivots by partitions
+         lz_int  p_;                       //!> Count of subproblems used in construction.
+         lz_int  max_context;              //!> Maximum prefix-context length for comparing suffixes.
+         lz_int* pivot_;                   //!> Pivots for the global suffix array.
+         lz_int  pivot_per_part_;          //!> Number of pivots to sample per sub-array.
+         lz_int* part_size_scan_;          //!> Inclusive scan (prefix sum) of the sizes of the pivoted final
+                                           //! partitions containing appropriate sorted sub-subarrays.
+         std::vector<lz_int> part_ruler_;  //!> "Ruler" for the partitions—contains the indices of each
+                                           //! sub-sub-array in each partition.
+         std::atomic_uint64_t solved_;     //!> Progress tracker—number of subproblems solved in some step.
+         lz_int               c;           //!> constant for select the number of pivots by partitions
 
          static constexpr lz_int default_subproblem_count = 8192;  //!> Default subproblem-count to use in construction.
          static constexpr lz_int nested_par_grain_size    = (100);  //!> Granularity for nested parallelism to kick in.
@@ -188,7 +188,7 @@ namespace lz {
          // CaPS_SA() :CaPS_SA("", 1, 1) {};
          CaPS_SA(utils::SA_Args);
          CaPS_SA(lz_int subproblem_count = 0, lz_int max_context = 0);
-         CaPS_SA(const char* T, lz_int n, lz_int subproblem_count = 0, lz_int max_context = 0);
+         CaPS_SA(std::vector<char> T, lz_int n, lz_int subproblem_count = 0, lz_int max_context = 0);
 
          // Copy constructs the suffix array object from `other`.
          CaPS_SA(const CaPS_SA& other);
@@ -198,8 +198,8 @@ namespace lz {
 
          ~CaPS_SA();
 
-         auto operator()(std::string str) -> utils::LZ_SuffixArray { return construct(str); }
-         auto operator()(const char* str, lz_int n) -> utils::LZ_SuffixArray { return construct(str, n); }
+         // auto operator()(std::string str) -> utils::LZ_SuffixArray { return construct(str); }
+         // auto operator()(const char* str, lz_int n) -> utils::LZ_SuffixArray { return construct(str, n); }
 
          // Copy assignment
          const CaPS_SA& operator=(const CaPS_SA& rhs) {
@@ -213,7 +213,8 @@ namespace lz {
          // Move assignment
          const CaPS_SA& operator=(CaPS_SA&& rhs) {
             if (this != &rhs) {
-               T_              = std::exchange(rhs.T_, nullptr);
+               // T_              = std::exchange(rhs.T_, nullptr);
+               T_              = std::move(rhs.T_);
                n_              = std::exchange(rhs.n_, std::numeric_limits<lz_int>::max());
                SA_             = std::exchange(rhs.SA_, nullptr);
                LCP_            = std::exchange(rhs.LCP_, nullptr);
@@ -228,8 +229,7 @@ namespace lz {
          friend void swap(CaPS_SA& first, CaPS_SA& second);
 
          friend constexpr bool operator==(const CaPS_SA& lhs, const CaPS_SA& rhs) {
-            return lhs.n_ == rhs.n_ && lhs.p_ == rhs.p_ && lhs.max_context == rhs.max_context &&
-                   std::equal(lhs.T_, lhs.T_ + lhs.n_, rhs.T_);
+            return lhs.n_ == rhs.n_ && lhs.p_ == rhs.p_ && lhs.max_context == rhs.max_context && lhs.T_ == rhs.T_;
          }
 
          friend constexpr bool operator!=(const CaPS_SA& lhs, const CaPS_SA& rhs) { return !operator==(lhs, rhs); }
@@ -249,7 +249,7 @@ namespace lz {
          // Constructs the suffix array and the LCP array.
          utils::LZ_SuffixArray construct();
          utils::LZ_SuffixArray construct(const std::string&);
-         utils::LZ_SuffixArray construct(const char*, lz_int);
+         utils::LZ_SuffixArray construct(std::vector<char>, lz_int);
 
          // Dumps the suffix array and the LCP array into the stream `output`.
          void dump(std::ofstream& output);
