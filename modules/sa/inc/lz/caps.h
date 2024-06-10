@@ -235,16 +235,16 @@ namespace lz {
          friend constexpr bool operator!=(const CaPS_SA& lhs, const CaPS_SA& rhs) { return !operator==(lhs, rhs); }
 
          // Returns the text.
-         constexpr auto T() const { return T_; }
+         const auto T() const { return T_; }
 
          // Returns the length of the text.
-         constexpr auto n() const { return n_; }
+         const auto n() const { return n_; }
 
          // Returns the suffix array.
-         constexpr auto SA() const { return SA_; }
+         const auto SA() const { return SA_; }
 
          // Returns the LCP array.
-         constexpr auto LCP() const { return LCP_; }
+         const auto LCP() const { return LCP_; }
 
          // Constructs the suffix array and the LCP array.
          utils::LZ_SuffixArray construct();
