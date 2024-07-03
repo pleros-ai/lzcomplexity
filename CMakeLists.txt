@@ -13,7 +13,7 @@ cmake_policy(VERSION 3.5...3.28)
 set(PROJECT_NAME lzcomplexity)
 set(namespace "lz")
 set(component "lz_cmd")
-set(VERSION 0.8.0)
+set(VERSION 0.8.5)
 project(
     ${PROJECT_NAME}
     VERSION ${VERSION}
