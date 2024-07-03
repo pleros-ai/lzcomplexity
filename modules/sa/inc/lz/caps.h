@@ -228,23 +228,23 @@ namespace lz {
 
          friend void swap(CaPS_SA& first, CaPS_SA& second);
 
-         friend const bool operator==(const CaPS_SA& lhs, const CaPS_SA& rhs) {
+         friend bool operator==(const CaPS_SA& lhs, const CaPS_SA& rhs) {
             return lhs.n_ == rhs.n_ && lhs.p_ == rhs.p_ && lhs.max_context == rhs.max_context && lhs.T_ == rhs.T_;
          }
 
-         friend const bool operator!=(const CaPS_SA& lhs, const CaPS_SA& rhs) { return !operator==(lhs, rhs); }
+         friend bool operator!=(const CaPS_SA& lhs, const CaPS_SA& rhs) { return !operator==(lhs, rhs); }
 
          // Returns the text.
-         const auto T() const { return T_; }
+         auto T() const { return T_; }
 
          // Returns the length of the text.
-         const auto n() const { return n_; }
+         auto n() const { return n_; }
 
          // Returns the suffix array.
-         const auto SA() const { return SA_; }
+         auto SA() const { return SA_; }
 
          // Returns the LCP array.
-         const auto LCP() const { return LCP_; }
+         auto LCP() const { return LCP_; }
 
          // Constructs the suffix array and the LCP array.
          utils::LZ_SuffixArray construct();

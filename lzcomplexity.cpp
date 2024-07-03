@@ -442,7 +442,8 @@ auto main(int argc, char const* argv[]) -> int {
    try {
       auto result = options.parse(argc, argv);
 
-      if (result["h"].count() || result["help"].count()) {
+      if (result["h"].count() || result["help"].count() ||
+          (result.arguments().empty() && result.unmatched().size() == 0)) {
          std::cout << lz::GREEN_COLOR << options.help() << lz::END_COLOR;
          return EXIT_SUCCESS;
       }
