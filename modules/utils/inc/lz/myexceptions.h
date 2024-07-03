@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <string>
+
 #define ERROR_OK -100
 #define OUT_OF_BOUNDS -102
 #define BAD_INITIALIZATION -103
@@ -43,189 +45,193 @@
 #define UNKNOWN_ERROR -199
 
 class Errors {
-  public:
-   int type;
+   public:
+   int         type;
    std::string msg;
 
    Errors(void) {
       type = ERROR_OK;
-      msg = "Some general error.";
+      msg  = "Some general error.";
    };
    Errors(std::string _msg)
-       : msg(_msg) {
+     : msg(_msg) {
       type = ERROR_OK;
    };
 };
 
 class OutOfBounds : public Errors {
-  public:
+   public:
    OutOfBounds(void)
-       : Errors("Out of bounds") {
+     : Errors("Out of bounds") {
       type = OUT_OF_BOUNDS;
    };
 };
 class BadInitialization : public Errors {
-  public:
+   public:
    BadInitialization(void)
-       : Errors("Bad initialization") {
+     : Errors("Bad initialization") {
+      type = BAD_INITIALIZATION;
+   };
+   BadInitialization(std::string msg)
+     : Errors(msg) {
       type = BAD_INITIALIZATION;
    };
 };
 class NullPointer : public Errors {
-  public:
+   public:
    NullPointer(void)
-       : Errors("Null pointer") {
+     : Errors("Null pointer") {
       type = NULL_POINTER;
    };
 };
 class BadAssignment : public Errors {
-  public:
+   public:
    BadAssignment(void)
-       : Errors("Bad assignment") {
+     : Errors("Bad assignment") {
       type = BAD_ASSIGNMENT;
    };
 };
 class BadOperation : public Errors {
-  public:
+   public:
    BadOperation(void)
-       : Errors("Bad operation") {
+     : Errors("Bad operation") {
       type = BAD_OPERATION;
    };
 };
 class BadInternalCondition : public Errors {
-  public:
+   public:
    BadInternalCondition(void)
-       : Errors("Bad internal condition") {
+     : Errors("Bad internal condition") {
       type = BAD_INTERNAL_CONDITION;
    };
 };
 class BadSize : public Errors {
-  public:
+   public:
    BadSize(void)
-       : Errors("Bad size") {
+     : Errors("Bad size") {
       type = BAD_SIZE;
    };
 };
 class NotEqualSize : public Errors {
-  public:
+   public:
    NotEqualSize(void)
-       : Errors("Nor equal size") {
+     : Errors("Nor equal size") {
       type = NOT_EQUAL_SIZE;
    };
 };
 class OutOfChoices : public Errors {
-  public:
+   public:
    OutOfChoices(void)
-       : Errors("Out of choices") {
+     : Errors("Out of choices") {
       type = OUT_OF_CHOICES;
    };
 };
 class BadAlloc : public Errors {
-  public:
+   public:
    BadAlloc(void)
-       : Errors("Bad alloc") {
+     : Errors("Bad alloc") {
       type = BAD_ALLOC;
    };
 };
 class BadMemoryLimits : public Errors {
-  public:
+   public:
    BadMemoryLimits(void)
-       : Errors("Bad memory limits") {
+     : Errors("Bad memory limits") {
       type = MEMORY_MAX_LIMIT;
    };
 };
 class BadString : public Errors {
-  public:
+   public:
    BadString(void)
-       : Errors("Bad string") {
+     : Errors("Bad string") {
       type = BAD_STRING;
    };
 };
 class Singular : public Errors {
-  public:
+   public:
    Singular(void)
-       : Errors("Singular") {
+     : Errors("Singular") {
       type = SINGULAR;
    };
 };
 class OverUnderFlow : public Errors {
-  public:
+   public:
    OverUnderFlow(void)
-       : Errors("Over-Under flow") {
+     : Errors("Over-Under flow") {
       type = OVER_UNDER_FLOW;
    };
 };
 class OverFlow : public Errors {
-  public:
+   public:
    OverFlow(void)
-       : Errors("Over flow") {
+     : Errors("Over flow") {
       type = OVER_FLOW;
    };
 };
 class UnderFlow : public Errors {
-  public:
+   public:
    UnderFlow(void)
-       : Errors("Under flow") {
+     : Errors("Under flow") {
       type = UNDER_FLOW;
    };
 };
 class OutOfDegree : public Errors {
-  public:
+   public:
    OutOfDegree(void)
-       : Errors("Out of degree") {
+     : Errors("Out of degree") {
       type = OUT_OF_BOUNDS;
    };
 };
 class LossOfData : public Errors {
-  public:
+   public:
    LossOfData(void)
-       : Errors("Loss of data") {
+     : Errors("Loss of data") {
       type = LOSS_OF_DATA;
    };
 };
 class ConfigFileError : public Errors {
-  public:
+   public:
    ConfigFileError(void)
-       : Errors("Config file error") {
+     : Errors("Config file error") {
       type = CONFIG_FILE_ERROR;
    };
 };
 class NormFileError : public Errors {
-  public:
+   public:
    NormFileError(void)
-       : Errors("Norm file error") {
+     : Errors("Norm file error") {
       type = NORM_FILE_ERROR;
    };
 };
 class FileNameError : public Errors {
-  public:
+   public:
    FileNameError(void)
-       : Errors() {
+     : Errors() {
       type = FILE_NAME_ERROR;
    };
    FileNameError(std::string _msg)
-       : Errors(_msg) {
+     : Errors(_msg) {
       type = FILE_NAME_ERROR;
    };
 };
 class FileFormatError : public Errors {
-  public:
+   public:
    FileFormatError(void)
-       : Errors("File format error") {
+     : Errors("File format error") {
       type = FILE_FORMAT_ERROR;
    };
 };
 class IntervalWithoutPoints : public Errors {
-  public:
+   public:
    IntervalWithoutPoints(void)
-       : Errors("Interval without points") {
+     : Errors("Interval without points") {
       type = INTERVAL_WITHOUT_POINTS;
    };
 };
 class UnknownError : public Errors {
-  public:
+   public:
    UnknownError(void)
-       : Errors("Unknow error") {
+     : Errors("Unknow error") {
       type = UNKNOWN_ERROR;
    };
 };

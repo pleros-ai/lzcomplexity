@@ -55,6 +55,10 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
       out_data["lz76Distance"]["InformationDistance"]   = results.info_distance;
    }
 
+   if (opt.mixed_entropy) {
+      out_data["lz76MixedEntropyDensity"] = results.mixed_entropy_density;
+   }
+
    std::ofstream out(opt.output);
    if (out.is_open() && out.good()) {
       out << out_data;
@@ -310,6 +314,25 @@ lz::lz_int process(lz_options& opt) {
       }
    }
 
+   if (opt.mixed_entropy) {
+      if (opt.verbose) {
+         std::cout << lz::GREEN_COLOR << "2." << verbose_index++
+                   << ". Calculating mixed entropy density of consecutive lines\n"
+                   << lz::END_COLOR;
+         init_time = now();
+      }
+      // Excess entropy by shuffling
+      lz::lz76MixedEntropyDensity(test_flags, lz);
+      if (opt.verbose) {
+         const auto end_time = now();
+         std::cout << "Mixed entropy density: ";
+         for (auto x: lz.mixed_entropy_density)
+            std::cout << x << " ";
+         std::cout << std::endl;
+         std::cout << "Finished in: " << duration(end_time - init_time) << " s" << std::endl << std::endl;
+      }
+   }
+
    if (opt.find_distance) {
       if (opt.verbose) {
          std::cout << lz::GREEN_COLOR << "2." << verbose_index++
@@ -385,6 +408,10 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<std::string>()->default_value("AUTO"),
              "value");
    opt_group("h,help", "Show this message.");
+   opt_group("i,mixed-entropy",
+             "The mixed entropy density of consecutive lines. Only valid for multiline files (-m "
+             "option).",
+             cxxopts::value<bool>()->default_value("false"));
    opt_group("j,jobs",
              "Number of threads.",
              cxxopts::value<lz::lz_uint>()->default_value(std::to_string(std::thread::hardware_concurrency())),
@@ -404,11 +431,10 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<lz::lz_int>()->default_value("2"),
              "value");
    opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
-   opt_group(
-      "x,extras",
-      "Computes additional measures based on lz (rajski distance, the uncertainty of both halves, pearson coefficient "
-      "and redundancy).",
-      cxxopts::value<bool>()->default_value("false"));
+   opt_group("x,extras",
+             "Computes additional measures based on lz76 (rajski distance, the uncertainty of both halves, pearson "
+             "coefficient and redundancy).",
+             cxxopts::value<bool>()->default_value("false"));
 
    // opt_group("r,process", "Clear input data.");
    //    opt_group("m,max-context", "Max context for suffix comparisons (only for caps algorithm).",
@@ -416,7 +442,7 @@ auto main(int argc, char const* argv[]) -> int {
    try {
       auto result = options.parse(argc, argv);
 
-      if (result["h"].count() || result["help"].count() || result.arguments().size() == 0) {
+      if (result["h"].count() || result["help"].count()) {
          std::cout << lz::GREEN_COLOR << options.help() << lz::END_COLOR;
          return EXIT_SUCCESS;
       }

@@ -431,4 +431,24 @@ namespace lz {
       return EXIT_SUCCESS;
    }
 
+   lz_int lz76MixedEntropyDensity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+      if (flags.input.size() == 1) {
+         lz.mixed_entropy_density = {0};
+         return EXIT_SUCCESS;
+      }
+
+      lz.mixed_entropy_density.clear();
+      lz_double res = 0.0;
+      for (std::size_t i = 1; i < flags.input.size(); i++) {
+         auto z            = internal::MergeSequences(flags.input[i - 1], flags.input[i]);
+         auto args_cpy     = flags.sa_args;
+         args_cpy.alphabet = z.getAlphabetSize();
+         args_cpy.log_base = z.getAlphabetSize();
+
+         res = lz76EntropyDensity(z, args_cpy);
+         lz.mixed_entropy_density.push_back(res);
+      }
+
+      return EXIT_SUCCESS;
+   }
 }  // namespace lz

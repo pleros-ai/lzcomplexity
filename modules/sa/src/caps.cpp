@@ -6,8 +6,8 @@ namespace lz {
       CaPS_SA::CaPS_SA(std::vector<char> T, lz_int n, lz_int subproblem_count, lz_int max_context)
         : T_(T)
         , n_(n)
-        , SA_(utils::allocate<lz_int>(n_))
-        , LCP_(utils::allocate<lz_int>(n_))
+        , SA_(n_, 0)
+        , LCP_(n_, 0)
         , SA_w(nullptr)
         , LCP_w(nullptr)
         , p_(subproblem_count > 0 ? subproblem_count
@@ -34,8 +34,8 @@ namespace lz {
       CaPS_SA::CaPS_SA(lz_int subproblem_count, lz_int max_context)
         : T_()
         , n_(0)
-        , SA_(nullptr)
-        , LCP_(nullptr)
+        , SA_()
+        , LCP_()
         , SA_w(nullptr)
         , LCP_w(nullptr)
         , p_(subproblem_count > 0 ? subproblem_count : default_subproblem_count)
@@ -51,8 +51,8 @@ namespace lz {
       CaPS_SA::CaPS_SA(utils::SA_Args args)
         : T_()
         , n_(0)
-        , SA_(nullptr)
-        , LCP_(nullptr)
+        , SA_()
+        , LCP_()
         , SA_w(nullptr)
         , LCP_w(nullptr)
         , p_(args.chunks > 0 ? args.chunks : default_subproblem_count)
@@ -67,8 +67,10 @@ namespace lz {
 
       CaPS_SA::CaPS_SA(const CaPS_SA& other)
         : CaPS_SA(other.T_, other.n_, other.p_, other.max_context) {
-         std::memcpy(SA_, other.SA_, n_ * sizeof(lz_int));
-         std::memcpy(LCP_, other.LCP_, n_ * sizeof(lz_int));
+         // std::memcpy(SA_, other.SA_, n_ * sizeof(lz_int));
+         SA_ = other.SA_;
+         // std::memcpy(LCP_, other.LCP_, n_ * sizeof(lz_int));
+         LCP_ = other.LCP_;
       }
 
       CaPS_SA::CaPS_SA(CaPS_SA&& other) noexcept {
@@ -76,8 +78,8 @@ namespace lz {
       };
 
       CaPS_SA::~CaPS_SA() {
-         std::free(SA_);
-         std::free(LCP_);
+         // std::free(SA_);
+         // std::free(LCP_);
       }
 
       void CaPS_SA::merge(const lz_int* X,
@@ -175,15 +177,15 @@ namespace lz {
       void CaPS_SA::sort_subarrays() {
          const auto t_s = now();
 
-         const auto mem_init = [SA_ = SA_, SA_w = SA_w](const lz_int i) { SA_[i] = SA_w[i] = i; };
+         const auto mem_init = [&](const lz_int i) { SA_[i] = SA_w[i] = i; };
          lz::utils::parallel_for(0, n_, mem_init);
 
          const auto subarr_size = n_ / p_;  // Size of each subarray to be sorted independently.
          const auto sort_subarr = [&](const lz_int i) {
             merge_sort(SA_w + i * subarr_size,
-                       SA_ + i * subarr_size,
+                       SA_.data() + i * subarr_size,
                        subarr_size + (i < p_ - 1 ? 0 : n_ % p_),
-                       LCP_ + i * subarr_size,
+                       LCP_.data() + i * subarr_size,
                        LCP_w + i * subarr_size);
 
             if (++solved_ % 8 == 0 && debug)
@@ -218,7 +220,7 @@ namespace lz {
          if (debug)
             std::cout << "Initalizate pivotes var: " << subarr_size << std::endl;
          for (lz_int i = 0; i < p_; ++i)
-            sample_pivots(SA_ + i * subarr_size, subarr_size + (i < p_ - 1 ? 0 : n_ % p_), c, pivot_ + i * c);
+            sample_pivots(SA_.data() + i * subarr_size, subarr_size + (i < p_ - 1 ? 0 : n_ % p_), c, pivot_ + i * c);
 
          auto const temp_1 = utils::allocate<lz_int>(sample_count), temp_2 = utils::allocate<lz_int>(sample_count);
 
@@ -240,8 +242,8 @@ namespace lz {
          const auto subarr_size = n_ / p_;  // Size of each independent sorted subarray.
 
          const auto locate = [&](const lz_int i) {
-            const auto X_i = SA_ + i * subarr_size;  // The i'th subarray.
-            const auto P_i = P + i * (p_ + 1);       // Pivot locations in `X_i` are to be placed in `P_i`.
+            const auto X_i = SA_.data() + i * subarr_size;  // The i'th subarray.
+            const auto P_i = P + i * (p_ + 1);              // Pivot locations in `X_i` are to be placed in `P_i`.
             P_i[0] = 0, P_i[p_] = subarr_size + (i < p_ - 1 ? 0 : n_ % p_);  // The two flanking pivot indices.
             for (lz_int j = 0; j < p_ - 1; ++j)  // TODO: try parallelizing this loop too; observe performance diff.
                P_i[j + 1] = upper_bound(X_i, P_i[p_], &T_[pivot_[j]], n_ - pivot_[j]);
@@ -349,9 +351,9 @@ namespace lz {
 
                for (lz_int i = 0; i < p_; ++i)  // Subarray `i`.
                {
-                  const auto X_i     = SA_ + i * subarr_size;   // `i`'th sorted subarray.
-                  const auto LCP_X_i = LCP_ + i * subarr_size;  // LCP array of `X_i`.
-                  const auto P_i     = P + i * (p_ + 1);        // Pivot collection of subarray `i`.
+                  const auto X_i     = SA_.data() + i * subarr_size;   // `i`'th sorted subarray.
+                  const auto LCP_X_i = LCP_.data() + i * subarr_size;  // LCP array of `X_i`.
+                  const auto P_i     = P + i * (p_ + 1);               // Pivot collection of subarray `i`.
 
                   const auto sub_subarr_size = P_i[j + 1] - P_i[j];  // Size of the `j`'th sub-subarray of subarray `i`.
                   // if (debug) std::cout << "CollectVal: " << P_i[j + 1] << " " << P_i[j] << std::endl;
@@ -385,18 +387,18 @@ namespace lz {
 
          const auto mem_init = [&](const lz_int j) {
             const auto part_size = part_size_scan_[j + 1] - part_size_scan_[j];
-            std::memcpy(SA_ + part_size_scan_[j], SA_w + part_size_scan_[j], part_size * sizeof(lz_int));
-            std::memcpy(LCP_ + part_size_scan_[j], LCP_w + part_size_scan_[j], part_size * sizeof(lz_int));
+            std::memcpy(SA_.data() + part_size_scan_[j], SA_w + part_size_scan_[j], part_size * sizeof(lz_int));
+            std::memcpy(LCP_.data() + part_size_scan_[j], LCP_w + part_size_scan_[j], part_size * sizeof(lz_int));
          };
 
          lz::utils::parallel_for(0, p_, mem_init, 1);  // Fulfill `sort_partition`'s precondition.
 
          const auto sort_part = [&](const lz_int j) {
-            const auto part_idx = part_size_scan_[j];  // Index of the partition in the partitions' flat collection.
-            auto const X_j      = SA_w + part_idx;     // Memory-base for partition `j`.
-            auto const Y_j      = SA_ + part_idx;      // Location to sort partition `j`.
-            auto const LCP_X_j  = LCP_w + part_idx;    // Memory-base for the LCP-arrays of partition `j`.
-            auto const LCP_Y_j  = LCP_ + part_idx;     // LCP array of `Y_j`.
+            const auto part_idx = part_size_scan_[j];      // Index of the partition in the partitions' flat collection.
+            auto const X_j      = SA_w + part_idx;         // Memory-base for partition `j`.
+            auto const Y_j      = SA_.data() + part_idx;   // Location to sort partition `j`.
+            auto const LCP_X_j  = LCP_w + part_idx;        // Memory-base for the LCP-arrays of partition `j`.
+            auto const LCP_Y_j  = LCP_.data() + part_idx;  // LCP array of `Y_j`.
             auto const sub_subarr_idx = part_ruler_.data() + j * (p_ + 1);  // Indices of the sorted subarrays in `X_i`.
 
             sort_partition(X_j, Y_j, p_, sub_subarr_idx, LCP_X_j, LCP_Y_j);
@@ -481,16 +483,18 @@ namespace lz {
       void CaPS_SA::refresh() {
          clean_up();
 
-         if (SA_ != nullptr)
-            std::free(SA_);
-         if (LCP_ != nullptr)
-            std::free(LCP_);
+         // if (SA_ != nullptr)
+         // std::free(SA_);
+         // if (LCP_ != nullptr)
+         //    std::free(LCP_);
 
          if (max_context == 0)
             max_context = n_;
 
-         SA_  = utils::allocate<lz_int>(n_);
-         LCP_ = utils::allocate<lz_int>(n_);
+         // SA_  = utils::allocate<lz_int>(n_);
+         SA_.resize(n_);
+         // LCP_ = utils::allocate<lz_int>(n_);
+         LCP_.resize(n_);
       }
 
       utils::LZ_SuffixArray CaPS_SA::construct(std::vector<char> T, lz_int n) {
@@ -543,9 +547,14 @@ namespace lz {
          const auto t_start = now();
 
          const std::size_t n = n_;
-         output.write(reinterpret_cast<const char*>(&n), sizeof(std::size_t));
-         output.write(reinterpret_cast<const char*>(SA_), n_ * sizeof(lz_int));
-         output.write(reinterpret_cast<const char*>(LCP_), n_ * sizeof(lz_int));
+         output << n;
+         for (auto i = 0; i < n_; i++)
+            output << SA_[i];
+         for (auto i = 0; i < n_; i++)
+            output << LCP_[i];
+         // output.write(reinterpret_cast<const char*>(&n), sizeof(std::size_t));
+         // output.write(reinterpret_cast<const char*>(SA_.data()), n_ * sizeof(lz_int));
+         // output.write(reinterpret_cast<const char*>(LCP_.data()), n_ * sizeof(lz_int));
 
          const auto t_end = now();
          if (debug)
@@ -572,6 +581,8 @@ namespace lz {
 
       bool CaPS_SA::is_sorted(const lz_int* const X, const lz_int n) const {
          for (lz_int i = 1; i < n; ++i) {
+            // std::vector<const char> x = {T_.begin() + X[i - 1], T_.begin() + X[i]};
+            // std::vector<const char> y = {T_.begin() + X[i], T_.begin() + X[i + 1]};
             const auto x = &T_[X[i - 1]], y = &T_[X[i]];
             const auto l = std::min(n_ - X[i - 1], n_ - X[i]);
 

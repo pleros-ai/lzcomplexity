@@ -35,6 +35,8 @@ namespace lz {
 
          std::vector<LZ_Extra> extra;
 
+         std::vector<lz_double> mixed_entropy_density;  //!> mixed entropy density of consecutive lines
+
          LZ_Output() = default;
          LZ_Output(lz_size size) {
             data                  = std::vector<LempelZiv>{size};
@@ -62,6 +64,8 @@ namespace lz {
             std::swap(this->info_distance, rhs.info_distance);
             std::swap(this->sequence_info_distance, rhs.sequence_info_distance);
             std::swap(this->data, rhs.data);
+
+            std::swap(this->mixed_entropy_density, rhs.mixed_entropy_density);
 
             return *this;
          };

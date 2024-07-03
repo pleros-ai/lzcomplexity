@@ -45,8 +45,22 @@ namespace lz {
 
          LZ_SuffixArray(void)
            : SA(), LCP(), n(0){};
-         LZ_SuffixArray(std::vector<lz_uint> SA_, std::vector<lz_uint> LCP_, const lz_uint n_)
-           : SA(std::move(SA_)), LCP(std::move(LCP_)), n(n_){};
+         template<typename Int>
+#ifdef __cpp_concepts
+            requires std::is_integral_v<Int>
+#endif
+         LZ_SuffixArray(std::vector<Int> SA_, std::vector<Int> LCP_, const lz_uint n_)
+           : n(n_) {
+            if (std::numeric_limits<Int>::is_integer) {
+               SA  = std::vector<lz_uint>{SA_.begin(), SA_.end()};
+               LCP = std::vector<lz_uint>{LCP_.begin(), LCP_.end()};
+            } else {
+               throw BadInitialization("LZ_SuffixArray: std::vector of type" + std::string(typeid(Int).name()) +
+                                       " is not integral");
+            }
+         };
+         // LZ_SuffixArray(std::vector<lz_uint> SA_, std::vector<lz_uint> LCP_, const lz_uint n_)
+         //   : SA(std::move(SA_)), LCP(std::move(LCP_)), n(n_){};
          LZ_SuffixArray(std::vector<lz_uint> SA_, const lz_uint n_)
            : SA(std::move(SA_)), LCP(), n(n_){};
          LZ_SuffixArray(lz_uint* const SA_, lz_uint* const LCP_, lz_uint n_)

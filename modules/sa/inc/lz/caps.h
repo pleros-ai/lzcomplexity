@@ -65,12 +65,12 @@ namespace lz {
       // class for some given sequence.
       class CaPS_SA {
      private:
-         std::vector<char> T_;     //!> The input text.
-         lz_int            n_;     //!> Length of the input text.
-         lz_int*           SA_;    //!> The suffix array.
-         lz_int*           LCP_;   //!> The LCP array.
-         lz_int*           SA_w;   //!> Working space for the SA construction.
-         lz_int*           LCP_w;  //!> Working space for the LCP construction.
+         std::vector<char>   T_;     //!> The input text.
+         lz_int              n_;     //!> Length of the input text.
+         std::vector<lz_int> SA_;    //!> The suffix array.
+         std::vector<lz_int> LCP_;   //!> The LCP array.
+         lz_int*             SA_w;   //!> Working space for the SA construction.
+         lz_int*             LCP_w;  //!> Working space for the LCP construction.
          // TODO: make constant and delete copy constructor and equal operators
          lz_int  p_;                       //!> Count of subproblems used in construction.
          lz_int  max_context;              //!> Maximum prefix-context length for comparing suffixes.
@@ -216,8 +216,8 @@ namespace lz {
                // T_              = std::exchange(rhs.T_, nullptr);
                T_              = std::move(rhs.T_);
                n_              = std::exchange(rhs.n_, std::numeric_limits<lz_int>::max());
-               SA_             = std::exchange(rhs.SA_, nullptr);
-               LCP_            = std::exchange(rhs.LCP_, nullptr);
+               SA_             = std::move(rhs.SA_);
+               LCP_            = std::move(rhs.LCP_);
                p_              = std::exchange(rhs.p_, std::numeric_limits<lz_int>::max());
                c               = std::exchange(rhs.c, std::numeric_limits<lz_int>::max());
                max_context     = std::exchange(rhs.max_context, std::numeric_limits<lz_int>::max());
@@ -235,16 +235,16 @@ namespace lz {
          friend constexpr bool operator!=(const CaPS_SA& lhs, const CaPS_SA& rhs) { return !operator==(lhs, rhs); }
 
          // Returns the text.
-         const auto T() const { return T_; }
+         constexpr auto T() const { return T_; }
 
          // Returns the length of the text.
-         const auto n() const { return n_; }
+         constexpr auto n() const { return n_; }
 
          // Returns the suffix array.
-         const auto SA() const { return SA_; }
+         constexpr auto SA() const { return SA_; }
 
          // Returns the LCP array.
-         const auto LCP() const { return LCP_; }
+         constexpr auto LCP() const { return LCP_; }
 
          // Constructs the suffix array and the LCP array.
          utils::LZ_SuffixArray construct();

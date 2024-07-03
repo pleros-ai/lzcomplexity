@@ -99,4 +99,9 @@ namespace lz {
    auto lz76NormalError(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
    auto lz76PoisonError(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
+   //.........................................................................
+   // Mixed entropy density of consecutive lines
+   //.........................................................................
+   auto lz76MixedEntropyDensity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+
 }  // namespace lz

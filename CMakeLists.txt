@@ -28,12 +28,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(asan "Build with address sanitizer instrumentation " OFF)
+option(asan "Enable ASAN (Address Sanitizer) instrumentation " OFF)
+option(ENABLE_ADDRESS_SANITIZER "Build with address sanitizer instrumentation " OFF)
+option(ENABLE_MEMORY_SANITIZER "Build with memory sanitizer instrumentation " OFF)
+option(ENABLE_UNDEFINED_SANITIZER "Build with undefined behavior sanitizer instrumentation " OFF)
 option(builtin_tbb "Use local TBB library" ON)
 option(binding_python "Build python binding of LZ lib" OFF)
 option(LZ_SHARE "Build shared library" ON)
 option(LZ_ONLY_LIBS "Build only the libraries (LZCore and LZApp)" OFF)
 option(LZ_ONLY_CORE "Build only the core library" OFF)
+
+option(LZ_DISTANCE "Build lzdistance application" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Global cmake
@@ -71,6 +76,10 @@ endif()
 # Default build type.
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build Type" FORCE)
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_VERBOSE_MAKEFILE ON)
 endif()
 
 # Specify compiler features required when compiling a given target.
@@ -130,35 +139,54 @@ if(asan)
     message(WARNING "Address sanitizer builds only tested with gcc and Clang")
   endif()
 
-  set(LZ_LINK_SANITIZE $<$<COMPILE_LANGUAGE:CXX>:-fsanitize=address>)
-  set(LZ_COMPILE_SANITIZE)
-  foreach(item IN LISTS ASAN_EXTRA_CXX_FLAGS)
-    # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${item}>)
-    list(APPEND LZ_COMPILE_SANITIZE ${item})
-  endforeach()
+  if (ENABLE_ADDRESS_SANITIZER)
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+  endif()
 
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-v>)
-#   add_link_options(${ASAN_EXTRA_SHARED_LINKER_FLAGS})
-#   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ASAN_EXTRA_SHARED_LINKER_FLAGS}")
-#   set(LZ_LINK_SANITIZE "${LZ_LINK_SANITIZE} ${ASAN_EXTRA_SHARED_LINKER_FLAGS}")
+  if (ENABLE_MEMORY_SANITIZER)
+    add_compile_options(-fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=memory -fsanitize-memory-track-origins)
+  endif()
+
+  if (ENABLE_UNDEFINED_SANITIZER)
+    add_compile_options(-fsanitize=undefined -fno-omit-frame-pointer)
+    if (UNDEFINED_BEHAVIOR_IS_FATAL)
+        add_compile_options(-fno-sanitize-recover=undefined)
+    endif()
+    if (APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang$" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "17")
+        add_compile_options(-fno-sanitize=function)
+    endif()
+    add_link_options(-fsanitize=undefined)
+  endif()
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_VERBOSE_MAKEFILE ON)
+message(STATUS "path lib: ${CMAKE_INSTALL_LIBDIR} and cpack: ${CPACK_PACKAGING_INSTALL_PREFIX}")
+if(UNIX)
+  if(APPLE)
+    set(CMAKE_MACOSX_RPATH TRUE)
+  endif()
+
+  # use, i.e. don't skip the full RPATH for the build tree
+  set(CMAKE_SKIP_BUILD_RPATH FALSE)
+  # when building, don't use the install RPATH already
+  # (but later on when installing)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+  # list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+  # add the automatically determined parts of the RPATH
+  # which point to directories outside the build tree to the install RPATH
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+  # the RPATH to be used when installing, but only if it's not a system directory
+  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" isSystemDir)
+  if("${isSystemDir}" STREQUAL "-1")
+      set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+  endif("${isSystemDir}" STREQUAL "-1")
 endif()
 
 # add module subdirectory
 add_subdirectory(modules)
-
-message(status "path lib: ${CMAKE_INSTALL_LIBDIR} and cpack: ${CPACK_PACKAGING_INSTALL_PREFIX}")
-if(UNIX)
-  if(APPLE)
-    set(CMAKE_MACOSX_RPATH 1)
-  endif()
-  
-  list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-endif()
 
 # Executable for the driver program.
 if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
@@ -235,7 +263,84 @@ if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
     )
 
-    include(packaging)
+    # include(packaging)
+endif()
+
+message(STATUS "Distance app: ${LZ_DISTANCE}")
+
+# Executable for the driver program.
+if(LZ_DISTANCE AND NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
+  set(PROJECT_NAME lzdistance)
+  set(namespace "lz")
+  set(component "lz_dist_cmd")
+  set(VERSION 0.8.5)
+  project(
+    ${PROJECT_NAME}
+    VERSION ${VERSION}
+    DESCRIPTION "Infromation distance application using LempelZiv-76"
+    LANGUAGES CXX
+  )
+
+  set(MAIN_INCLUDE_DIR ${CMAKE_CURRENT_DIR}/main)
+  add_executable(${PROJECT_NAME} lzdistance.cpp)
+
+  # target_link_libraries(${PROJECT_NAME} PRIVATE ${GLOBAL_LZ_TBB_LIBS})
+  target_link_libraries(${PROJECT_NAME} PUBLIC LZCore)
+
+  get_property(CORE_INCLUDE_DIR GLOBAL PROPERTY CORE_INCLUDE_DIR)
+
+  message(STATUS "Core dir dist: ${LZ_CORE_INCLUDE_DIR}")
+  # target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${MAIN_INCLUDE_DIR}>)
+  # Compiler flags for the target.
+  target_include_directories(${PROJECT_NAME} 
+    PUBLIC 
+      $<BUILD_INTERFACE:${LZ_CORE_INCLUDE_DIR}>
+      $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  )
+
+  target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE} -lz -lbz2)
+  target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
+  target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
+
+  # set_target_properties(${PROJECT_NAME} PROPERTIES
+  #     BUNDLE True
+  #     # MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.${CUR_TARGET}
+  #     MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
+  #     MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}"
+  #     MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}"
+  #     # MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/customtemplate.plist.in
+  # )
+
+  message(STATUS "Paths for install lzdistance:")
+  message(STATUS "Prefix install dir: ${CMAKE_INSTALL_PREFIX}")
+  message(STATUS "Library dir: ${CMAKE_INSTALL_LIBDIR}")
+  message(STATUS "Inlude dir: ${CMAKE_INSTALL_INCLUDEDIR}")
+  message(STATUS "Binary dir: ${CMAKE_INSTALL_BINDIR}")
+
+  # install the target and create export-set
+  install(
+      TARGETS ${PROJECT_NAME}
+      EXPORT "${PROJECT_NAME}Targets"
+      COMPONENT ${component} # must be here, not any line lower
+      # these get default values from GNUInstallDirs, no need to set them
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
+      LIBRARY 
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          NAMELINK_COMPONENT lz_headers
+      ARCHIVE
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          # NAMELINK_COMPONENT lz_headers
+      # except for public headers, as we want them to be inside a library folder
+      PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
+  )
+
+  # include(packaging)
+endif()
+
+if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
+  include(packaging)
 endif()
 
 if(binding_python)

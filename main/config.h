@@ -30,6 +30,7 @@ struct lz_options {
    bool         extras          = false;
    bool         save_results    = false;  //! @deprecated --> remove in final version
    bool         verbose         = false;
+   bool         mixed_entropy   = false;
 
    lz_options(cxxopts::parse_result result) {
       input = result.unmatched()[0];
@@ -54,6 +55,7 @@ struct lz_options {
       verbose         = result["verbose"].as<bool>();
       entropy_density = result["entropy-density"].as<bool>();
       extras          = result["extras"].as<bool>();
+      mixed_entropy   = result["mixed-entropy"].as<bool>();
       // preprocess      = result["process"].as<bool>();
 
       auto opt_format = result["format"].as<std::string>();
