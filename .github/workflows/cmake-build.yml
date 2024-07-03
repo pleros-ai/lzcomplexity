@@ -41,8 +41,13 @@ jobs:
             builtinTbb: ON
           - runs-on: ubuntu-22.04
             build_type: "Release"
-            cxx: clang
-            cc: clang
+            cxx: g++
+            cc: gcc
+            builtinTbb: ON
+          - runs-on: ubuntu-22.04
+            build_type: "Release"
+            cxx: clang-15
+            cc: clang-15
             builtinTbb: ON
           # - runs-on: ubuntu-22.04
           #   build_type: "Release"
