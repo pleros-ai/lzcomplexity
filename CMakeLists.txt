@@ -28,12 +28,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # for clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(asan "Enable ASAN (Address Sanitizer) instrumentation " OFF)
+option(ASAN "Enable ASAN (Address Sanitizer) instrumentation " OFF)
 option(ENABLE_ADDRESS_SANITIZER "Build with address sanitizer instrumentation " OFF)
 option(ENABLE_MEMORY_SANITIZER "Build with memory sanitizer instrumentation " OFF)
 option(ENABLE_UNDEFINED_SANITIZER "Build with undefined behavior sanitizer instrumentation " OFF)
-option(builtin_tbb "Use local TBB library" ON)
-option(binding_python "Build python binding of LZ lib" OFF)
+option(BUILTIN_TBB "Use local TBB library" ON)
+option(BUILD_PYTHON "Build python binding of LZ lib" OFF)
 option(LZ_SHARE "Build shared library" ON)
 option(LZ_ONLY_LIBS "Build only the libraries (LZCore and LZApp)" OFF)
 option(LZ_ONLY_CORE "Build only the core library" OFF)
@@ -134,13 +134,14 @@ list(APPEND REQUIRED_FEATURES
 
 # add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-v>)
 #--- Set up address sanitizer builds ----------------------------------------------------------
-if(asan)
+if(ASAN)
   if(NOT CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_ID MATCHES Clang)
     message(WARNING "Address sanitizer builds only tested with gcc and Clang")
   endif()
 
   if (ENABLE_ADDRESS_SANITIZER)
     add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_compile_definitions(_GLIBCXX_SANITIZE_VECTOR)
     add_link_options(-fsanitize=address)
   endif()
 
@@ -189,7 +190,7 @@ endif()
 add_subdirectory(modules)
 
 # Executable for the driver program.
-if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
+if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     set(MAIN_INCLUDE_DIR ${CMAKE_CURRENT_DIR}/main)
     add_executable(${PROJECT_NAME} lzcomplexity.cpp)
 
@@ -269,7 +270,7 @@ endif()
 message(STATUS "Distance app: ${LZ_DISTANCE}")
 
 # Executable for the driver program.
-if(LZ_DISTANCE AND NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
+if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   set(PROJECT_NAME lzdistance)
   set(namespace "lz")
   set(component "lz_dist_cmd")
@@ -339,11 +340,11 @@ if(LZ_DISTANCE AND NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   # include(packaging)
 endif()
 
-if(NOT binding_python AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
+if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   include(packaging)
 endif()
 
-if(binding_python)
+if(BUILD_PYTHON)
     add_subdirectory(python)
   #   find_package(Python3 REQUIRED COMPONENTS Interpreter)
     

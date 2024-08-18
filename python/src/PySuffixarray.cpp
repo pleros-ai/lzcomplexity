@@ -9,6 +9,11 @@ namespace py  = pybind11;
 namespace suf = lz::suffixarray;
 namespace utl = lz::utils;
 
+std::unique_ptr<suf::CaPS_SA>
+   constructor_str(std::string T, lz::lz_int n, lz::lz_int subproblem_count, lz::lz_int max_context) {
+   return std::unique_ptr<suf::CaPS_SA>{new suf::CaPS_SA({T.begin(), T.end()}, n, subproblem_count, max_context)};
+}
+
 void PyCaps(py::module& m) {
    using namespace pybind11::literals;
 
@@ -16,17 +21,26 @@ void PyCaps(py::module& m) {
    // Constructors and methods
    // Check why with subproblem_count = 0 BOOM!!! when should initialize p_ with default_subproblem_count
    caps
-      .def(py::init<const char*, lz::lz_int, lz::lz_int, lz::lz_int>(),
+      .def(py::init<std::vector<char>, lz::lz_int, lz::lz_int, lz::lz_int>(),
            "T"_a,
            "n"_a,
            "subproblem_count"_a = 0,
            "max_context"_a      = 0)
-      // .def(py::init<lz::lz_int, lz::lz_int>(), "subproblem_count"_a = 0, "max_context"_a = 0)
+      .def(py::init(&constructor_str), "T"_a, "n"_a, "subproblem_count"_a = 0, "max_context"_a = 0)
+      .def(py::init<lz::lz_int, lz::lz_int>(), "subproblem_count"_a = 0, "max_context"_a = 0)
+      .def(py::init<utl::SA_Args>(), "args"_a)
+      .def("__copy__", [](const suf::CaPS_SA& self) { return suf::CaPS_SA(self); })
+      .def(
+         "__deepcopy__", [](const suf::CaPS_SA& self, py::dict) { return suf::CaPS_SA(self); }, "memo"_a)
       .def(
          "construct",
          [](suf::CaPS_SA& self) { return self.construct(); },
          "Generate the suffix array from the text use for build the class",
          py::return_value_policy::copy)
+      .def("construct",
+           py::overload_cast<std::vector<char>, lz::lz_int>(&suf::CaPS_SA::construct),
+           "Generate the suffix array from a vector of characters",
+           py::return_value_policy::copy)
       .def("construct",
            py::overload_cast<const std::string&>(&suf::CaPS_SA::construct),
            "Generate the suffix array from the text",

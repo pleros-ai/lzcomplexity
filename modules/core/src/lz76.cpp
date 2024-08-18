@@ -64,7 +64,7 @@ namespace lz {
                    (std::log(_SA.SA.size()) / logn);
 
          try {
-            lz::utils::LPF(&lpf[0], (lz_int*)_SA.SA.data(), (lz_int*)_SA.LCP.data(), _SA.n);  // Largest prefix factor.
+            lz::utils::LPF(lpf, std::move(_SA.SA), std::move(_SA.LCP), _SA.n);  // Largest prefix factor.
 
             // Lets build the factorization table
             i = 1;
@@ -112,8 +112,7 @@ namespace lz {
 
          try {
             // Largest prefix factor.
-            lz::utils::LPF(
-               &lpf[0], reinterpret_cast<lz_int*>(_SA.SA.data()), reinterpret_cast<lz_int*>(_SA.LCP.data()), _SA.n);
+            lz::utils::LPF(lpf, std::move(_SA.SA), std::move(_SA.LCP), _SA.n);
 
             // Lets build the factorization table
             i = 1;
@@ -154,8 +153,7 @@ namespace lz {
 
          try {
             // Largest prefix factor.
-            lz::utils::LPF(
-               &lpf[0], reinterpret_cast<lz_int*>(_SA.SA.data()), reinterpret_cast<lz_int*>(_SA.LCP.data()), _SA.n);
+            lz::utils::LPF(lpf, std::move(_SA.SA), std::move(_SA.LCP), _SA.n);
 
             // Lets build the factorization table
             i = 1;
@@ -240,7 +238,7 @@ namespace lz {
       // #endif
 
       lz_double LempelZiv76::FoundStddev() {
-         std::vector<lz_uint> factors_length;
+         std::vector<lz_uint> factors_length(lzf.size());
          lz_uint              max_factor_size = 0;
 
          for (auto i = 1ul; i < lzf.size(); i++) {
@@ -260,7 +258,7 @@ namespace lz {
          // }
 
          // lz_double sum  = std::accumulate(PAR factors_length.begin(), factors_length.end(), 0.0);
-         lz_double sum  = *lzf.end() - 1;
+         lz_double sum  = lzf[lzf.size() - 1] - 1;
          lz_double mean = sum / lzf.size();
 
          // std::vector<lz_double> diff(factors_length.size());
@@ -270,7 +268,7 @@ namespace lz {
          //     std::transform_reduce(PAR diff.begin(), diff.end(), 0.0, std::plus{}, [](auto val) { return val * val;
          //     });
 
-         auto body = [&](const auto& rng, auto init) {
+         auto body = [&factors_length, mean](const auto& rng, auto init) {
             for (auto i = rng.begin(); i < rng.end(); i++) {
                auto diff = factors_length[i] - mean;
                init += diff * diff;

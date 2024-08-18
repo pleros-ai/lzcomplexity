@@ -36,6 +36,7 @@
 
 #include <lz/general.h>
 #include <lz/parallel_utils.h>
+#include <lz/utils.h>
 
 #include <atomic>
 #include <cassert>
@@ -65,23 +66,23 @@ namespace lz {
       // class for some given sequence.
       class CaPS_SA {
      private:
-         std::vector<char>   T_;     //!> The input text.
-         lz_int              n_;     //!> Length of the input text.
-         std::vector<lz_int> SA_;    //!> The suffix array.
-         std::vector<lz_int> LCP_;   //!> The LCP array.
-         lz_int*             SA_w;   //!> Working space for the SA construction.
-         lz_int*             LCP_w;  //!> Working space for the LCP construction.
+         std::vector<char> T_;     //!> The input text.
+         lz_int            n_;     //!> Length of the input text.
+         lz_int*           SA_;    //!> The suffix array.
+         lz_int*           LCP_;   //!> The LCP array.
+         lz_int*           SA_w;   //!> Working space for the SA construction.
+         lz_int*           LCP_w;  //!> Working space for the LCP construction.
          // TODO: make constant and delete copy constructor and equal operators
-         lz_int  p_;                       //!> Count of subproblems used in construction.
-         lz_int  max_context;              //!> Maximum prefix-context length for comparing suffixes.
-         lz_int* pivot_;                   //!> Pivots for the global suffix array.
-         lz_int  pivot_per_part_;          //!> Number of pivots to sample per sub-array.
-         lz_int* part_size_scan_;          //!> Inclusive scan (prefix sum) of the sizes of the pivoted final
-                                           //! partitions containing appropriate sorted sub-subarrays.
-         std::vector<lz_int> part_ruler_;  //!> "Ruler" for the partitions—contains the indices of each
-                                           //! sub-sub-array in each partition.
-         std::atomic_uint64_t solved_;     //!> Progress tracker—number of subproblems solved in some step.
-         lz_int               c;           //!> constant for select the number of pivots by partitions
+         lz_int  p_;                    //!> Count of subproblems used in construction.
+         lz_int  max_context;           //!> Maximum prefix-context length for comparing suffixes.
+         lz_int* pivot_;                //!> Pivots for the global suffix array.
+         lz_int  pivot_per_part_;       //!> Number of pivots to sample per sub-array.
+         lz_int* part_size_scan_;       //!> Inclusive scan (prefix sum) of the sizes of the pivoted final
+                                        //! partitions containing appropriate sorted sub-subarrays.
+         lz_int* part_ruler_;           //!> "Ruler" for the partitions—contains the indices of each
+                                        //! sub-sub-array in each partition.
+         std::atomic_uint64_t solved_;  //!> Progress tracker—number of subproblems solved in some step.
+         lz_int               c;        //!> constant for select the number of pivots by partitions
 
          static constexpr lz_int default_subproblem_count = 8192;  //!> Default subproblem-count to use in construction.
          static constexpr lz_int nested_par_grain_size    = (100);  //!> Granularity for nested parallelism to kick in.

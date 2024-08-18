@@ -23,6 +23,8 @@ set_property(GLOBAL PROPERTY APP_INCLUDE_DIR ${APP_INCLUDE_DIR})
 set(LZ_ALG ${APP_SOURCE_DIR}/lzApp.cpp)
 set(LZ_FLAGS ${APP_SOURCE_DIR}/flags.cpp)
 
+message(STATUS "rpath: ${CMAKE_INSTALL_RPATH} and mac: ${CMAKE_MACOSX_RPATH} and linux: ${CMAKE_INSTALL_RPATH_USE_LINK_PATH}")
+
 if(LZ_SHARE)
    add_library(${PROJECT_NAME} SHARED)
    # set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -32,9 +34,7 @@ endif()
 # Alias for the library
 add_library(lz::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-# Suffix array algorithms form part of the core
-# include(useTbb)
-find_package(LZCore REQUIRED)
+# find_package(LZCore REQUIRED)
 
 message(STATUS "LZCore: ${LZCore_FOUND}")
 

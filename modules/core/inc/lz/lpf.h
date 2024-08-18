@@ -35,11 +35,11 @@ namespace lz {
    namespace utils {
 
       struct stack_element {
-         int len;
-         int pos;
+         int          len;
+         unsigned int pos;
 
          stack_element(void) { len = pos = 0; };
-         stack_element(int l, int p)
+         stack_element(lz_int l, lz_uint p)
            : len(l), pos(p){};
          stack_element(const stack_element& s)
            : len(s.len), pos(s.pos){};
@@ -62,7 +62,7 @@ namespace lz {
          stack_element& operator=(stack_element&& s) {
             if (this != &s) {
                len = std::exchange(s.len, std::numeric_limits<lz_int>::max());
-               pos = std::exchange(s.pos, std::numeric_limits<lz_int>::max());
+               pos = std::exchange(s.pos, std::numeric_limits<lz_uint>::max());
             }
             return *this;
          };
@@ -85,13 +85,13 @@ namespace lz {
          LPFStack(lz_size n);  //!< Constructor. Allocates memory according to n.
          ~LPFStack();          //!< Destructor.
 
-         lz_size push(lz_int len, lz_int pos);   //!< Adds an element to the stack.
+         lz_size push(lz_int len, lz_uint pos);  //!< Adds an element to the stack.
          lz_size push(struct stack_element el);  //!< Adds an element to the stack.
          lz_size pop(void);                      //!< Pops an element from the stack.
 
          struct stack_element Top(void) const;  //!< Returns the top element from the stack, without popping.
-         lz_int TopLen(void) const;  //!< Returns the len value of the top element from the stack, without popping.
-         lz_int TopPos(void) const;  //!< Returns the pos value of the top element from the stack, without popping.
+         lz_int  TopLen(void) const;  //!< Returns the len value of the top element from the stack, without popping.
+         lz_uint TopPos(void) const;  //!< Returns the pos value of the top element from the stack, without popping.
 
          lz_size length(void) const;  //!< Returns the number of elements in the stack.
          lz_size No(void) const;      //!< Returns the number of elements in the stack.
@@ -133,7 +133,7 @@ namespace lz {
       /// below x in the stack (or 0 if none) \param pos position in suffix array \param el inserted element. For
       /// description of the factors see the two parameters above. \return The number of elements in the stack. \sa
       /// pop()
-      inline lz_size LPFStack::push(lz_int len, lz_int pos) {
+      inline lz_size LPFStack::push(lz_int len, lz_uint pos) {
          struct stack_element s(len, pos);
 
          return push(s);
@@ -157,14 +157,14 @@ namespace lz {
       /// \brief
       /// Returns the len value of the top element from the stack, without popping.
       /// \return The len value of the top element
-      inline int LPFStack::TopLen(void) const {
+      inline lz_int LPFStack::TopLen(void) const {
          return element.back().len;
       }
 
       /// \brief
       /// Returns the pos value of the top element from the stack, without popping.
       /// \return The pos value of the top element
-      inline int LPFStack::TopPos(void) const {
+      inline lz_uint LPFStack::TopPos(void) const {
          return element.back().pos;
       }
 
@@ -180,7 +180,7 @@ namespace lz {
       /// \brief
       /// Returns True if stack is empty, False otherwise.
       /// \return bool value.
-      inline bool LPFStack::empty(void) const {
+      inline lz_bool LPFStack::empty(void) const {
          return element.empty();
       }
 
@@ -229,10 +229,10 @@ namespace lz {
        * @param n     length of the arrays
        * @return number of elements in LPF
        */
-      inline lz_int LPF(lz_int* lpf, lz_int* SA, lz_int* LCP, lz_size n) {
-         if ((SA == NULL) || (LCP == NULL) || (n == 0)) {
-            return -1;
-         }
+      inline lz_int LPF(std::vector<lz_int>& lpf, std::vector<lz_uint> SA, std::vector<lz_uint> LCP, lz_size n) {
+         // if ((SA == nullptr) || (LCP == nullptr) || (n == 0)) {
+         //    return -1;
+         // }
          if (n <= 1) {
             if (n == 1)
                lpf[0] = 0;
@@ -243,8 +243,8 @@ namespace lz {
          lz_int   lcp = 0;
 
          // SA and LCP must have allocated size n+1	!!!
-         SA[n]  = -1;
-         LCP[n] = 0;
+         SA.push_back(-1);
+         LCP.push_back(0);
 
          stack.push(0, SA[0]);
 

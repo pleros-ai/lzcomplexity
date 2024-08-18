@@ -7,7 +7,7 @@ from pathlib import Path
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
-__version__ = "0.8.0"
+__version__ = "0.8.5"
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {
@@ -118,7 +118,7 @@ class CMakeBuild(build_ext):
         if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
-        cmake_args += ["-DLZ_ONLY_CORE=ON", "-Dbinding_python=ON"]
+        cmake_args += ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON"]
 
         subprocess.run(
             ["cmake", ext.sourcedir, *cmake_args], cwd=build_temp, check=True

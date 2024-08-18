@@ -46,7 +46,7 @@ cmake -DCMAKE_INSTALL_PREFIX=[path/to/install] -DCMAKE_BUILD_TYPE=[Debug | Relea
 The possible cmake OPTIONS can be found in the `CMakeLists.txt` file:
 
 - `asan` (**OFF** by default): configure the build with address sanitizer
-- `binding_python` (**OFF** by default): enable python binding
+- `BUILD_PYTHON` (**OFF** by default): enable python binding
 - `builtin_tbb` (**OFF** by default): use local TBB project instead of system one
 - `LZ_SHARE` (**ON** by default): build shared library
 - `LZ_ONLY_LIBS` (**OFF** by default): build only the libraries (LZCore and LZApp)
@@ -54,7 +54,7 @@ The possible cmake OPTIONS can be found in the `CMakeLists.txt` file:
 
 ##### Example
 >
-> cmake -DCMAKE_INSTALL_PREFIX=../ -DCMAKE_BUILD_TYPE=Release -Dbinding_python=ON ..
+> cmake -DCMAKE_INSTALL_PREFIX=../ -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON=ON ..
 >
 
 

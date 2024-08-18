@@ -200,6 +200,11 @@ cpack_add_component(lz_cmd
     DESCRIPTION "LZ application executable"
      INSTALL_TYPES full minimal developer)
 
+cpack_add_component(lz_dist_cmd
+    DISPLAY_NAME "LZ cmd Applications for distance information"
+    DESCRIPTION "LZ application executable"
+     INSTALL_TYPES full minimal developer)
+
 cpack_add_component(lz_library
     DISPLAY_NAME "LZ Libraries for build apps"
     DESCRIPTION "All LZ libraries and dictionaries"

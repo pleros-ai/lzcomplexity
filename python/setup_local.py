@@ -117,7 +117,7 @@ class CMakeBuild(build_ext):
         if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
-        # cmake_args += ["-Dbinding_python=ON", "-Dbuiltin_tbb=OFF"]
+        # cmake_args += ["-DBUILD_PYTHON=ON", "-DBUILTIN_TBB=OFF"]
 
         subprocess.run(
             ["cmake", ext.sourcedir, *cmake_args], cwd=build_temp, check=True

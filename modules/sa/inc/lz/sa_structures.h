@@ -62,7 +62,7 @@ namespace lz {
          // LZ_SuffixArray(std::vector<lz_uint> SA_, std::vector<lz_uint> LCP_, const lz_uint n_)
          //   : SA(std::move(SA_)), LCP(std::move(LCP_)), n(n_){};
          LZ_SuffixArray(std::vector<lz_uint> SA_, const lz_uint n_)
-           : SA(std::move(SA_)), LCP(), n(n_){};
+           : LZ_SuffixArray(SA_, std::vector<lz_uint>{}, n_){};
          LZ_SuffixArray(lz_uint* const SA_, lz_uint* const LCP_, lz_uint n_)
            : n(n_) {
             SA  = std::vector<lz_uint>(SA_, SA_ + n_);
@@ -83,9 +83,9 @@ namespace lz {
             n = 0;
          };
 
-         ~LZ_SuffixArray(){
-            // Clear();
-         };
+         // ~LZ_SuffixArray(){
+         //    // Clear();
+         // };
 
          LZ_SuffixArray& operator=(LZ_SuffixArray& rhs) {
             if (*this != rhs) {

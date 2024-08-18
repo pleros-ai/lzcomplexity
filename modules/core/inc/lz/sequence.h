@@ -242,7 +242,7 @@ namespace lz {
    }
 
    inline std::string sequence::toString(void) const {
-      return std::string{seq.begin(), seq.end()};
+      return {seq.begin(), seq.end()};
    }
 
    inline sequence& sequence::operator=(sequence& s) {

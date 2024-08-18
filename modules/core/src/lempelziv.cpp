@@ -265,7 +265,7 @@ namespace lz {
 
       std::vector<lz_int> res(mm + 3);  // Reserve the number of blocks for shuffling + 3
 
-      auto fun = [&, str](lz_size idx) {
+      auto fun = [&res, str, args](lz_size idx) {
          sequence rand_seq = Shuffle(str, idx, str.size() / 2);  // Shuffling is made for half the
                                                                  // size of the sequence, hope that is enough
          auto rand_complexity = lz76Factorization(rand_seq, args);
@@ -285,7 +285,7 @@ namespace lz {
       utils::LZ_Shuffle result;
       result.max_block_size = mm;
 
-      auto terms = utils::map(H_rand, [&](lz_int val) {
+      auto terms = utils::map(H_rand, [&str, &args, &complexity](lz_int val) {
          return utils::log(str.size(), args.log_base) * std::fabs((lz_double)val - (lz_double)complexity) /
                 (str.size() * utils::log(args.alphabet, args.log_base));
       });
@@ -313,16 +313,31 @@ namespace lz {
       auto [past, future] = str.Split(str.size() / 2);
       auto new_seq        = internal::MergeSequences(past, future);
 
+      // lz_int mm = args.block_size;
+      // if (mm <= 0) {
+      //    mm = utils::max_block_size(str.size());  // the maximum number for the sum in the entropy estimation
+      //    mm += 10;                                // begin aggressive
+      // }
+
       std::pair<std::vector<lz_int>, lz_size> random_run;
-      lz_int                                  complexity;
+      // std::vector<lz_int>                     H_rand;
+      lz_int complexity;
 
       args.alphabet = new_seq.getAlphabetSize();
       args.log_base = new_seq.getAlphabetSize();
 
-      auto factor_fun = [&]() { complexity = lz76Factorization(new_seq, args); };
-      auto rand_fun   = [&]() { random_run = ShuffleFactorization(new_seq, args); };
+      auto factor_fun = [&complexity, new_seq, args]() { complexity = lz76Factorization(new_seq, args); };
+      auto rand_fun   = [&random_run, new_seq, args]() { random_run = ShuffleFactorization(new_seq, args); };
 
       utils::par_do(factor_fun, rand_fun);
+      // complexity = lz76Factorization(new_seq, args);
+
+      // for (int i = 1; i <= mm; i++) {
+      //    sequence rand_seq = Shuffle(new_seq, i, new_seq.size() / 2);  // Shuffling is made for half the
+      //                                                                  // size of the sequence, hope that is enough
+      //    auto rand_complexity = lz76Factorization(rand_seq, args);
+      //    H_rand.push_back(rand_complexity);
+      // }
 
       auto [H_rand, mm] = random_run;
 

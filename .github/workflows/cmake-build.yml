@@ -44,11 +44,6 @@ jobs:
             cxx: g++
             cc: gcc
             builtinTbb: ON
-          - runs-on: ubuntu-22.04
-            build_type: "Release"
-            cxx: clang-15
-            cc: clang-15
-            builtinTbb: ON
           # - runs-on: ubuntu-22.04
           #   build_type: "Release"
           #   cxx: clang++
@@ -107,7 +102,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
 
       - name: Build
@@ -148,12 +143,17 @@ jobs:
             cxx: clang++
             cc: clang
             builtinTbb: ON
-          # - runs-on: macos-latest
-          #   build_type: "Release"
-          #   cxx: clang++
-          #   cc: clang
-          #   builtinTbb: OFF
-
+            # - runs-on: macos-latest
+            #   build_type: "Release"
+            #   cxx: clang++
+            #   cc: clang
+            #   builtinTbb: OFF
+          - runs-on: macos-14-arm64
+            build_type: "Release"
+            cxx: clang++
+            cc: clang
+            builtinTbb: ON
+            
     name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
     runs-on: ${{ matrix.runs-on }}
 
@@ -182,7 +182,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
 
       - name: Build
@@ -264,7 +264,7 @@ jobs:
   #         cmake cmake -S . -B _build/ 
   #         -G "${{ matrix.generator }}" -A ${{ matrix.arch }} 
   #         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} 
-  #         -Dasan=OFF -Dbinding_python=OFF -Dbuiltin_tbb=ON
+  #         -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=ON
 
   #     - name: Build
   #       run: cmake --build _build/ --config ${{ matrix.build_type }}
