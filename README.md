@@ -1,20 +1,14 @@
 
-<div style="display: flex; justify-content: center; width: 100%;">
-  <div>
-    <img src="./Pleros_AI.webp" alt="drawing" style="width:200px;"/>
-  </div>
+<div align="center" style="width: 100%;">
+  <img src="./Pleros_AI.webp" alt="drawing" align="center" height="200"/>
 
-  <pre style="height: 200px; display: flex; justify-content: flex-start; align-items: center; width: 500px;">
-    <code>
-            ---------- Presents ------------
-      lzcomplexity: a LempelZiv analysis library
-            ------------------------------
-                         2024
-    </code>
-  </pre>
-</div>
+  <h2 align="center">
+    lzcomplexity: the LempelZiv analysis library
+  </h2>
+
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![python](https://img.shields.io/badge/Python-3.9-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org) ![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=flat&logo=c%2B%2B&logoColor=white)
+</div>
 
 
 # lzcomplexity
@@ -46,26 +40,20 @@ git submodule init
 git submodule update
 ```
 
-### Build locally
+### Build and install locally
 ---
-
-The library use cmake for management the build process.
-
-1. Create a build directory a move into the directory (optional)
 
 ```bash
 mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make install
+lzcomplexity
 ```
 
-2. Execute cmake for config the build with the build options
 
-```bash
-cmake -DCMAKE_INSTALL_PREFIX=[path/to/install] -DCMAKE_BUILD_TYPE=[Debug | Release] [OPTIONS] ..
-```
+The library use cmake for management the build process. The options for the cmake to configure the build process are: 
 
-The possible cmake OPTIONS can be found in the `CMakeLists.txt` file:
-
-- `BUILTIN_TBB` (**OFF** by default): use local TBB project instead of system one.
+- `BUILTIN_TBB` (**OFF** by default): use local oneTBB project instead of system one.
 - `LZ_SHARE` (**ON** by default): build shared library.
 - `LZ_ONLY_LIBS` (**OFF** by default): build only the libraries (LZCore and LZApp).
 - `LZ_ONLY_CORE` (**OFF** by default): build only the core library.
@@ -74,9 +62,3 @@ The possible cmake OPTIONS can be found in the `CMakeLists.txt` file:
 - `ENABLE_ADDRESS_SANITIZER` (**OFF** by default): activate the sanitizer address option for detect memory error.
 - `ENABLE_MEMORY_SANITIZER` (**OFF** by default): activate the sanitizer memory option for detect uninitialized memory reads.
 - `ENABLE_UNDEFINED_SANITIZER` (**OFF** by default): activate the sanitizer undefined option for detect undefined behavior.
-
-3. Install
-
-```bash
-make install
-```
