@@ -148,7 +148,7 @@ jobs:
             #   cxx: clang++
             #   cc: clang
             #   builtinTbb: OFF
-          - runs-on: macos-14-arm64
+          - runs-on: macos-13-large
             build_type: "Release"
             cxx: clang++
             cc: clang
