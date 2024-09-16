@@ -148,11 +148,11 @@ jobs:
             #   cxx: clang++
             #   cc: clang
             #   builtinTbb: OFF
-          - runs-on: macos-13-large
-            build_type: "Release"
-            cxx: clang++
-            cc: clang
-            builtinTbb: ON
+          # - runs-on: macos-latest-large
+          #   build_type: "Release"
+          #   cxx: clang++
+          #   cc: clang
+          #   builtinTbb: ON
             
     name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
     runs-on: ${{ matrix.runs-on }}
@@ -268,3 +268,47 @@ jobs:
 
   #     - name: Build
   #       run: cmake --build _build/ --config ${{ matrix.build_type }}
+
+  build_python:
+    defaults:
+      run:
+        shell: bash
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: 3.6
+          - python: 3.7
+          - python: 3.10
+          - python: 3.12
+
+    name: • macos • python •
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Set reusable strings
+        id: build_path
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Patch TBB submodule
+        run: patch -p0 -i patches/tbb.patch
+
+      - name: Generate wheel
+        run: pip3 wheel .
+
+      # - uses: actions/upload-artifact@v4
+      #   with:
+      #     name: python-wheel
+      #     path: ./_packages
+      #     retention-days: 1
+     

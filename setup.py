@@ -4,8 +4,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from setuptools import Extension, setup
+from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
+# from setuptools.command.install import install
 
 __version__ = "0.8.5"
 
@@ -130,7 +131,6 @@ class CMakeBuild(build_ext):
         #     ["make"], cwd=build_temp, check=True
         # )
 
-
 setup(
     name="lzcomplexity",
     version=__version__,
@@ -141,7 +141,7 @@ setup(
     description="The Lempel-Ziv (lz76) complexity",
     long_description="The Lempel-Ziv (lz76) complexity",
     long_description_content_type="text/markdown",
-    # packages=setuptools.find_packages("src"),
+    packages=find_packages(where="python/src"),
     package_dir={"": "python/src"},
     classifiers=[
          'Development Status :: Beta',
