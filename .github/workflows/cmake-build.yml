@@ -278,10 +278,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python: 3.6
-          - python: 3.7
-          - python: 3.10
-          - python: 3.12
+          - python: 3.6.15
+          - python: 3.7.17
+          - python: 3.10.15
+          - python: 3.12.6
 
     name: • macos • python •
     runs-on: macos-latest
