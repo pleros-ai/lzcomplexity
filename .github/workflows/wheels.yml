@@ -68,7 +68,7 @@ jobs:
          echo "CIBW_ENVIRONMENT_MACOS=$CIBW DYLD_LIBRARY_PATH=$DYLD" >> "$GITHUB_ENV"  
 
       - name: Generate wheel
-        uses: pypa/cibuildwheel  # v2.21.1
+        uses: pypa/cibuildwheel@v2.21.1  # v2.21.1
         env:
           CIBW_PRERELEASE_PYTHONS: True
           CIBW_FREE_THREADED_SUPPORT: True
