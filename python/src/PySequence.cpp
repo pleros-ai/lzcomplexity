@@ -105,6 +105,12 @@ void PySequence(py::module& m) {
       .def(py::init<const std::vector<char>>(), "vec"_a)
       .def(py::init<const std::string, lz::lz_int>(), "str"_a, "aph"_a)
       .def(py::init<const std::vector<char>, lz::lz_int>(), "vec"_a, "aph"_a)
+      .def(py::init([](std::vector<int> arr) {
+         auto string_view = arr | std::views::transform([](int num) { return std::to_string(num); });
+         auto res = std::accumulate(std::ranges::begin(string_view), std::ranges::end(string_view), std::string{});
+
+         return lz::sequence(res);
+      }))
       .def(py::self + py::self)
       .def(py::self == py::self)
       .def(py::self == std::string())

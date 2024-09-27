@@ -26,6 +26,14 @@ class CMakeExtension(Extension):
     def __init__(self, name: str, sourcedir: str = "") -> None:
         super().__init__(name, sources=[])
         self.sourcedir = os.fspath(Path(sourcedir).resolve())
+        self.sources = [
+            'modules/core/src/lempelziv.cpp', 
+            'modules/core/src/lz76.cpp', 
+            'modules/core/src/sequence.cpp',
+            'modules/sa/src/caps.cpp'
+        ]
+        # self.include_dirs = ['modules/core/inc', 'modules/utils/inc', 'modules/sa/inc']
+        # self.runtime_library_dirs=["usr/local/lib"]
 
 
 class CMakeBuild(build_ext):
@@ -138,10 +146,10 @@ setup(
     author="Efren Aragon",
     author_email="efrenaragon96@gmail.com",
     license="GNU General Public License",
-    description="The Lempel-Ziv (lz76) complexity",
-    long_description="The Lempel-Ziv (lz76) complexity",
+    description="LempelZiv-76 complexity utilities as a library and also a standalone software",
+    long_description="LempelZiv-76 complexity utilities as a library and also a standalone software. Suited for complexity analysis of time series.",
     long_description_content_type="text/markdown",
-    packages=find_packages(where="python/src"),
+    packages=find_packages(where="python/src", include=["modules/core/*", "modules/utils/*", "modules/sa/*"]),
     package_dir={"": "python/src"},
     classifiers=[
          'Development Status :: Beta',
@@ -153,8 +161,13 @@ setup(
          'Programming Language :: C++',
          'Topic :: Software Development :: Libraries',
     ],
+    # install_requires=[
+    #     "setuptools>=42",
+    #     "wheel",
+    #     "cmake>=3.5",
+    # ],
     ext_modules=[CMakeExtension('')],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False
 )

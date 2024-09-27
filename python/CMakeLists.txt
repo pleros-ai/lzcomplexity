@@ -66,6 +66,7 @@ target_include_directories(${PROJECT_NAME}
 # install(TARGETS ${PROJECT_NAME}
 #   COMPONENT lz_python
 #   LIBRARY 
-#     DESTINATION "${PYTHON_LIBRARY_DIR}"
-#     NAMELINK_COMPONENT lz_headers
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#   INCLUDES 
+#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
 # )

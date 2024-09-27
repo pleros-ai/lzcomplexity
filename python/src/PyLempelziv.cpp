@@ -1,262 +1,124 @@
-#include <lz/lempelziv.h>
-#include <lz/utils.h>
-#include <pybind11/stl.h>
+#include "utils.hpp"
 
-#include <variant>
+// Factorization
+// Get function signature for the python wrapper
+auto factorization_sequence      = py::overload_cast<const lz::sequence&>(&lz::lz76Factorization);
+auto factorization_sequence_args = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76Factorization);
+// Factorization using sequence class
+auto lz76FactorizationSeqWithoutArgs = generateFunctionSequenceWithoutArgs<lz::lz_uint>(factorization_sequence);
+auto lz76FactorizationSeqWithArgs    = generateFunctionSequenceWithArgs<lz::lz_uint>(factorization_sequence_args);
+// Factorization using variant type for vector<int>, vector<char> and string
+auto lz76FactorizationWithoutArgs = generateFunctionWithoutArgs<lz::lz_uint>(factorization_sequence);
+auto lz76FactorizationWithArgs    = generateFunctionWithArgs<lz::lz_uint>(factorization_sequence_args);
+// Factorization for python style function with flags
+auto lz76FactorizationSeq = generateFunctionSequenceWithArgsAndFlags<lz::lz_uint>(factorization_sequence_args);
+auto lz76Factorization    = generateFunctionWithArgsAndFlags<lz::lz_uint>(factorization_sequence_args);
 
-using seq_type = std::variant<lz::sequence, std::string, std::vector<char>>;
+// Factors
+// Get function signature for the python wrapper
+auto factors_sequence      = py::overload_cast<const lz::sequence&>(&lz::lz76Factors);
+auto factors_sequence_args = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76Factors);
+// Factors using sequence class
+auto lz76FactorsSeqWithoutArgs = generateFunctionSequenceWithoutArgs<lz::lz_uint>(factors_sequence);
+auto lz76FactorsSeqWithArgs    = generateFunctionSequenceWithArgs<lz::lz_uint>(factors_sequence_args);
+// Factors using variant type for vector<int>, vector<char> and string
+auto lz76FactorsWithoutArgs = generateFunctionWithoutArgs<lz::internal::LZ_Result>(factors_sequence);
+auto lz76FactorsWithArgs    = generateFunctionWithArgs<lz::internal::LZ_Result>(factors_sequence_args);
+// Factors for python style function with flags
+auto lz76FactorsSeq = generateFunctionSequenceWithArgsAndFlags<lz::internal::LZ_Result>(factors_sequence_args);
+auto lz76Factors    = generateFunctionWithArgsAndFlags<lz::internal::LZ_Result>(factors_sequence_args);
 
-namespace py  = pybind11;
-namespace utl = lz::utils;
+// Entropy density
+// Get function signature for the python wrapper
+auto entropy_density_sequence      = py::overload_cast<const lz::sequence&>(&lz::lz76EntropyDensity);
+auto entropy_density_sequence_args = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76EntropyDensity);
+// Entropy density using sequence class
+auto lz76EntropyDensitySeqWithoutArgs = generateFunctionSequenceWithoutArgs<lz::lz_double>(entropy_density_sequence);
+auto lz76EntropyDensitySeqWithArgs    = generateFunctionSequenceWithArgs<lz::lz_double>(entropy_density_sequence_args);
+// Entropy density using variant type for vector<int>, vector<char> and string
+auto lz76EntropyDensityWithoutArgs = generateFunctionWithoutArgs<lz::lz_double>(entropy_density_sequence);
+auto lz76EntropyDensityWithArgs    = generateFunctionWithArgs<lz::lz_double>(entropy_density_sequence_args);
+// Entropy density for python style function with flags
+auto lz76EntropyDensitySeq = generateFunctionSequenceWithArgsAndFlags<lz::lz_double>(entropy_density_sequence_args);
+auto lz76EntropyDensity    = generateFunctionWithArgsAndFlags<lz::lz_double>(entropy_density_sequence_args);
 
-auto lz76FactorizationWithoutArgs(const seq_type& seq) {
-   lz::lz_uint cpx = 0;
+// Random Shuffle Complexity
+// Get function signature for the python wrapper
+auto random_shuffle_seq      = py::overload_cast<const lz::sequence&>(&lz::lz76RandomShuffleComplexity);
+auto random_shuffle_seq_args = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76RandomShuffleComplexity);
+// Random shuffle using sequence class
+auto lz76RandomShuffleSeqWithoutArgs = generateFunctionSequenceWithoutArgs<utl::LZ_Shuffle>(random_shuffle_seq);
+auto lz76RandomShuffleSeqWithArgs    = generateFunctionSequenceWithArgs<utl::LZ_Shuffle>(random_shuffle_seq_args);
+// Random shuffle using variant type for vector<int>, vector<char> and string
+auto lz76RandomShuffleWithoutArgs = generateFunctionWithoutArgs<utl::LZ_Shuffle>(random_shuffle_seq);
+auto lz76RandomShuffleWithArgs    = generateFunctionWithArgs<utl::LZ_Shuffle>(random_shuffle_seq_args);
+// Random shuffle for python style function with flags
+auto lz76RandomShuffleSeq =
+   generateFunctionSequenceWithArgsAndFlagsForShuffle<utl::LZ_Shuffle>(random_shuffle_seq_args);
+auto lz76RandomShuffle = generateFunctionWithArgsAndFlagsForShuffle<utl::LZ_Shuffle>(random_shuffle_seq_args);
 
-   std::visit([&](auto&& s) { cpx = lz::lz76Factorization(s); }, seq);
-   return cpx;
-}
-auto lz76FactorizationWithArgs(const seq_type& seq, utl::LZ_Args& args) {
-   lz::lz_uint cpx = 0;
+// Whole randoms shuffle complexity
+// Get function signature for the python wrapper
+auto whole_random_shuffle_seq = py::overload_cast<const lz::sequence&>(&lz::lz76WholeRandomShuffleComplexity);
+auto whole_random_shuffle_seq_args =
+   py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76WholeRandomShuffleComplexity);
+// Whole random shuffle using sequence class
+auto lz76WholeRandomShuffleSeqWithoutArgs =
+   generateFunctionSequenceWithoutArgs<utl::LZ_Shuffle>(whole_random_shuffle_seq);
+auto lz76WholeRandomShuffleSeqWithArgs =
+   generateFunctionSequenceWithArgs<utl::LZ_Shuffle>(whole_random_shuffle_seq_args);
+// Whole random shuffle using variant type for vector<int>, vector<char> and string
+auto lz76WholeRandomShuffleWithoutArgs = generateFunctionWithoutArgs<utl::LZ_Shuffle>(whole_random_shuffle_seq);
+auto lz76WholeRandomShuffleWithArgs    = generateFunctionWithArgs<utl::LZ_Shuffle>(whole_random_shuffle_seq_args);
+// Whole random shuffle for python style function with flags
+auto lz76WholeRandomShuffleSeq =
+   generateFunctionSequenceWithArgsAndFlagsForShuffle<utl::LZ_Shuffle>(whole_random_shuffle_seq_args);
+auto lz76WholeRandomShuffle =
+   generateFunctionWithArgsAndFlagsForShuffle<utl::LZ_Shuffle>(whole_random_shuffle_seq_args);
 
-   std::visit([&](auto&& s) { cpx = lz::lz76Factorization(s, args); }, seq);
-   return cpx;
-}
+// Information distance
+// Get function signature for the python wrapper
+auto distance_seq = py::overload_cast<const lz::sequence&, const lz::sequence&>(&lz::lz76InformationDistanceZ);
+auto distance_seq_args =
+   py::overload_cast<const lz::sequence&, const lz::sequence&, utl::LZ_Args>(&lz::lz76InformationDistanceZ);
+// Information distance using sequence class
+auto lz76InformationDistanceSeqWithoutArgs =
+   generateFunctionSequenceWithoutArgsForDistance<lz::lz_double>(distance_seq);
+auto lz76InformationDistanceSeqWithArgs = generateFunctionSequenceWithArgsForDistance<lz::lz_double>(distance_seq_args);
+// Information distance using variant type for vector<int>, vector<char> and string
+auto lz76InformationDistanceWithoutArgs = generateFunctionWithoutArgsForDistance<lz::lz_double>(distance_seq);
+auto lz76InformationDistanceWithArgs    = generateFunctionWithArgsForDistance<lz::lz_double>(distance_seq_args);
+// Information distance for python style function with flags
+auto lz76InformationDistanceSeq = generateFunctionSequenceWithArgsAndFlagsForDistance<lz::lz_double>(distance_seq_args);
+auto lz76InformationDistance    = generateFunctionWithArgsAndFlagsForDistance<lz::lz_double>(distance_seq_args);
 
-// Python style function
-auto lz76Factorization(const seq_type& seq,
-                       lz::lz_int      partitions = 1,
-                       lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
-                       lz::lz_uint     log_base   = lz::ALPHABET_SIZE,
-                       lz::lz_uint     jobs       = std::thread::hardware_concurrency()) {
-   utl::LZ_Args args;
-   args.chunks     = partitions;
-   args.alphabet   = alphabet;
-   args.log_base   = log_base;
-   lz::lz_uint cpx = 0;
-
-   lz::utils::EnabledMT(jobs);
-   std::visit([&](auto&& s) { cpx = lz::lz76Factorization(s, args); }, seq);
-   lz::utils::DisabledMT();
-   return cpx;
-}
-
-auto lz76FactorsWithoutArgs(const seq_type& seq) {
-   lz::internal::LZ_Result cpx;
-
-   std::visit([&](auto&& s) { cpx = lz::lz76Factors(s); }, seq);
-   return cpx;
-}
-auto lz76FactorsWithArgs(const seq_type& seq, utl::LZ_Args& args) {
-   lz::internal::LZ_Result cpx;
-
-   std::visit([&](auto&& s) { cpx = lz::lz76Factors(s, args); }, seq);
-   return cpx;
-}
-
-// Python style function
-auto lz76Factors(const seq_type& seq,
-                 lz::lz_int      partitions = 1,
-                 lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
-                 lz::lz_uint     log_base   = lz::ALPHABET_SIZE,
-                 lz::lz_uint     jobs       = std::thread::hardware_concurrency()) {
-   utl::LZ_Args args;
-   args.chunks   = partitions;
-   args.alphabet = alphabet;
-   args.log_base = log_base;
-   lz::internal::LZ_Result cpx;
-
-   lz::utils::EnabledMT(jobs);
-   std::visit([&](auto&& s) { cpx = lz::lz76Factors(s, args); }, seq);
-   lz::utils::DisabledMT();
-   return cpx;
-}
-
-auto lz76EntropyDensityWithoutArgs(const seq_type& seq) {
-   lz::lz_double cpx = 0;
-
-   std::visit([&](auto&& s) { cpx = lz::lz76EntropyDensity(s); }, seq);
-   return cpx;
-}
-auto lz76EntropyDensityWithArgs(const seq_type& seq, utl::LZ_Args& args) {
-   lz::lz_double cpx = 0;
-
-   std::visit([&](auto&& s) { cpx = lz::lz76EntropyDensity(s, args); }, seq);
-   return cpx;
-}
-
-// Python style function
-auto lz76EntropyDensity(const seq_type& seq,
-                        lz::lz_int      partitions = 1,
-                        lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
-                        lz::lz_uint     log_base   = lz::ALPHABET_SIZE,
-                        lz::lz_uint     jobs       = std::thread::hardware_concurrency()) {
-   utl::LZ_Args args;
-   args.chunks       = partitions;
-   args.alphabet     = alphabet;
-   args.log_base     = log_base;
-   lz::lz_double cpx = 0;
-
-   lz::utils::EnabledMT(jobs);
-   std::visit([&](auto&& s) { cpx = lz::lz76EntropyDensity(s, args); }, seq);
-   lz::utils::DisabledMT();
-   return cpx;
-}
-
-auto lz76RandomShuffleComplexityWithoutArgs(const seq_type& seq) {
-   lz::utils::LZ_Shuffle cpx;
-
-   std::visit([&](auto&& s) { cpx = lz::lz76RandomShuffleComplexity(s); }, seq);
-   return cpx;
-}
-auto lz76RandomShuffleComplexityWithArgs(const seq_type& seq, utl::LZ_Args& args) {
-   lz::utils::LZ_Shuffle cpx;
-
-   std::visit([&](auto&& s) { cpx = lz::lz76RandomShuffleComplexity(s, args); }, seq);
-   return cpx;
-}
-
-// Python style function
-auto lz76RandomShuffleComplexity(const seq_type& seq,
-                                 lz::lz_int      partitions     = 1,
-                                 lz::lz_uint     alphabet       = lz::ALPHABET_SIZE,
-                                 lz::lz_uint     log_base       = lz::ALPHABET_SIZE,
-                                 lz::lz_int      max_block_size = -1,
-                                 lz::lz_uint     jobs           = std::thread::hardware_concurrency()) {
-   utl::LZ_Args args;
-   args.chunks     = partitions;
-   args.alphabet   = alphabet;
-   args.log_base   = log_base;
-   args.block_size = max_block_size;
-   lz::utils::LZ_Shuffle cpx;
-
-   lz::utils::EnabledMT(jobs);
-   std::visit([&](auto&& s) { cpx = lz::lz76RandomShuffleComplexity(s, args); }, seq);
-   lz::utils::DisabledMT();
-   return cpx;
-}
-
-auto lz76WholeRandomShuffleComplexityWithoutArgs(const seq_type& seq) {
-   lz::utils::LZ_Shuffle cpx;
-
-   std::visit([&](auto&& s) { cpx = lz::lz76WholeRandomShuffleComplexity(s); }, seq);
-   return cpx;
-}
-auto lz76WholeRandomShuffleComplexityWithArgs(const seq_type& seq, utl::LZ_Args& args) {
-   lz::utils::LZ_Shuffle cpx;
-
-   std::visit([&](auto&& s) { cpx = lz::lz76WholeRandomShuffleComplexity(s, args); }, seq);
-   return cpx;
-}
-
-// Python style function
-auto lz76WholeRandomShuffleComplexity(const seq_type& seq,
-                                      lz::lz_int      partitions     = 1,
-                                      lz::lz_uint     alphabet       = lz::ALPHABET_SIZE,
-                                      lz::lz_uint     log_base       = lz::ALPHABET_SIZE,
-                                      lz::lz_int      max_block_size = -1,
-                                      lz::lz_uint     jobs           = std::thread::hardware_concurrency()) {
-   utl::LZ_Args args;
-   args.chunks     = partitions;
-   args.alphabet   = alphabet;
-   args.log_base   = log_base;
-   args.block_size = max_block_size;
-   lz::utils::LZ_Shuffle cpx;
-   lz::utils::EnabledMT(jobs);
-   std::visit([&](auto s) { cpx = lz::lz76WholeRandomShuffleComplexity(s, args); }, seq);
-   lz::utils::DisabledMT();
-   return cpx;
-}
-
-auto lz76InformationDistanceWithoutArgs(const seq_type& seq1, const seq_type& seq2) {
-   lz::lz_double cpx;
-
-   std::visit([&](auto&& s1, auto&& s2) { cpx = lz::lz76InformationDistanceZ(s1, s2); }, seq1, seq2);
-   return cpx;
-}
-auto lz76InformationDistanceWithArgs(const seq_type& seq1, const seq_type& seq2, utl::LZ_Args& args) {
-   lz::lz_double cpx;
-
-   std::visit([&](auto&& s1, auto&& s2) { cpx = lz::lz76InformationDistanceZ(s1, s2, args); }, seq1, seq2);
-   return cpx;
-}
-
-// Python style function
-auto lz76InformationDistance(const seq_type& seq1,
-                             const seq_type& seq2,
-                             lz::lz_int      partitions = 1,
-                             lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
-                             lz::lz_uint     log_base   = lz::ALPHABET_SIZE,
-                             lz::lz_uint     jobs       = std::thread::hardware_concurrency()) {
-   utl::LZ_Args args;
-   args.chunks   = partitions;
-   args.alphabet = alphabet;
-   args.log_base = log_base;
-   lz::lz_double cpx;
-
-   lz::utils::EnabledMT(jobs);
-   std::visit([&](auto&& s1, auto&& s2) { cpx = lz::lz76InformationDistanceZ(s1, s2, args); }, seq1, seq2);
-   lz::utils::DisabledMT();
-   return cpx;
-}
-
-auto lz76RandomShuffleDistanceWithoutArgs(const seq_type& seq1, const seq_type& seq2) {
-   lz::lz_double cpx;
-
-   std::visit([&](auto&& s1, auto&& s2) { cpx = lz::lz76RandomShuffleDistance(s1, s2); }, seq1, seq2);
-   return cpx;
-}
-auto lz76RandomShuffleDistanceWithArgs(const seq_type& seq1, const seq_type& seq2, utl::LZ_Args& args) {
-   lz::lz_double cpx;
-
-   std::visit([&](auto&& s1, auto&& s2) { cpx = lz::lz76RandomShuffleDistance(s1, s2, args); }, seq1, seq2);
-   return cpx;
-}
-
-// Python style function
-auto lz76RandomShuffleDistance(const seq_type& seq1,
-                               const seq_type& seq2,
-                               lz::lz_int      partitions = 1,
-                               lz::lz_uint     alphabet   = lz::ALPHABET_SIZE,
-                               lz::lz_uint     log_base   = lz::ALPHABET_SIZE,
-                               lz::lz_uint     jobs       = std::thread::hardware_concurrency()) {
-   utl::LZ_Args args;
-   args.chunks   = partitions;
-   args.alphabet = alphabet;
-   args.log_base = log_base;
-   lz::lz_double cpx;
-
-   lz::utils::EnabledMT(jobs);
-   std::visit([&](auto&& s1, auto&& s2) { cpx = lz::lz76RandomShuffleDistance(s1, s2, args); }, seq1, seq2);
-   lz::utils::DisabledMT();
-   return cpx;
-}
+// Random shuffle distance
+// Get function signature for the python wrapper
+auto shuffle_distance_seq = py::overload_cast<const lz::sequence&, const lz::sequence&>(&lz::lz76RandomShuffleDistance);
+auto shuffle_distance_seq_args =
+   py::overload_cast<const lz::sequence&, const lz::sequence&, utl::LZ_Args>(&lz::lz76RandomShuffleDistance);
+// Random shuffle distance using sequence class
+auto lz76RandomShuffleDistanceSeqWithoutArgs =
+   generateFunctionSequenceWithoutArgsForDistance<lz::lz_double>(shuffle_distance_seq);
+auto lz76RandomShuffleDistanceSeqWithArgs =
+   generateFunctionSequenceWithArgsForDistance<lz::lz_double>(shuffle_distance_seq_args);
+// Random shuffle distance using variant type for vector<int>, vector<char> and string
+auto lz76RandomShuffleDistanceWithoutArgs = generateFunctionWithoutArgsForDistance<lz::lz_double>(shuffle_distance_seq);
+auto lz76RandomShuffleDistanceWithArgs = generateFunctionWithArgsForDistance<lz::lz_double>(shuffle_distance_seq_args);
+// Random shuffle distance for python style function with flags
+auto lz76RandomShuffleDistanceSeq =
+   generateFunctionSequenceWithArgsAndFlagsForDistance<lz::lz_double>(shuffle_distance_seq_args);
+auto lz76RandomShuffleDistance = generateFunctionWithArgsAndFlagsForDistance<lz::lz_double>(shuffle_distance_seq_args);
 
 // Calculate all
-auto lz76WithArgs(const seq_type& seq, utl::LZ_Args& args) {
-   lz::utils::LempelZiv cpx;
-
-   std::visit([&](auto&& s) { cpx = lz::lz76(s, args); }, seq);
-   return cpx;
-}
-
-auto lz76(const seq_type& seq,
-          lz::lz_int      partitions     = 1,
-          lz::lz_uint     alphabet       = lz::ALPHABET_SIZE,
-          lz::lz_uint     log_base       = lz::ALPHABET_SIZE,
-          lz::lz_int      max_block_size = -1,
-          lz::lz_uint     jobs           = std::thread::hardware_concurrency()) {
-   utl::LZ_Args args;
-   args.chunks     = partitions;
-   args.alphabet   = alphabet;
-   args.log_base   = log_base;
-   args.block_size = max_block_size;
-   lz::utils::LempelZiv cpx;
-
-   lz::utils::EnabledMT(jobs);
-   std::visit([&](auto&& s) { cpx = lz::lz76(s, args); }, seq);
-   lz::utils::DisabledMT();
-   return cpx;
-}
+auto lz76_seq_args = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76);
+// Compute all using sequence class
+auto lz76SeqWithArgs = generateFunctionSequenceWithArgs<utl::LempelZiv>(lz76_seq_args);
+// Compute all using variant type for vector<int>, vector<char> and string
+auto lz76WithArgs = generateFunctionWithArgs<utl::LempelZiv>(lz76_seq_args);
+// Compute all for python style function with flags
+auto lz76Seq = generateFunctionSequenceWithArgsAndFlagsForShuffle<utl::LempelZiv>(lz76_seq_args);
+auto lz76    = generateFunctionWithArgsAndFlagsForShuffle<utl::LempelZiv>(lz76_seq_args);
 
 void PyLempelZiv(py::module& m) {
    using namespace pybind11::literals;
@@ -307,61 +169,191 @@ void PyLempelZiv(py::module& m) {
       .def_property_readonly("factors", &utl::LempelZiv::getFactors)
       .def_property_readonly("factors_stddev", &utl::LempelZiv::getFactorsStddev);
 
-   m.def("lz76", &::lz76WithArgs, "seq"_a, "args"_a)
+   m.def("lz76", lz76SeqWithArgs, "seq"_a, "args"_a, R"pbdoc(
+    The lz76 function
+
+    Parameters
+    ----------
+    seq : sequence
+        The sequence to be analyzed.
+    args : LZ_Args
+        The arguments for the analysis.
+
+    Returns
+    -------
+    LempelZiv
+        The Lempel-Ziv complexity.
+)pbdoc")
+      .def("lz76", lz76WithArgs, "seq"_a, "args"_a, R"pbdoc(
+    The lz76 function
+
+    Parameters
+    ----------
+    seq : Union[str, List[char], List[int]]
+        The sequence to be analyzed.
+    args : LZ_Args
+        The arguments for the analysis.
+
+    Returns
+    -------
+    LempelZiv
+        The Lempel-Ziv complexity.
+)pbdoc")
       .def("lz76",
-           &::lz76,
+           lz76Seq,
            "seq"_a,
            "partitions"_a     = 1,
            "alphabet"_a       = 2,
            "log_base"_a       = 2,
            "max_block_size"_a = -1,
-           "jobs"_a           = std::thread::hardware_concurrency())
+           "jobs"_a           = std::thread::hardware_concurrency(),
+           R"pbdoc(
+           The lz76 function.
+           
+           Parameters
+           ----------
+           seq : sequence
+               The sequence to be analyzed.
+           partitions : int
+               The number of partitions used for the parallel suffix array algorithm.
+           alphabet : int
+               Size of the alphabet.
+           log_base : int
+               base for the logarithm.
+           max_block_size : int
+               Max length for the block in random shuffle complexity.
+           jobs : int
+               Number of threads.
+
+           Returns
+           -------
+           LempelZiv
+               The Lempel-Ziv complexity.
+           )pbdoc")
+      .def("lz76",
+           lz76,
+           "seq"_a,
+           "partitions"_a     = 1,
+           "alphabet"_a       = 2,
+           "log_base"_a       = 2,
+           "max_block_size"_a = -1,
+           "jobs"_a           = std::thread::hardware_concurrency(),
+           R"pbdoc(
+           The lz76 function.
+
+           Parameters
+           ----------
+           seq : Union[str, List[char], List[int]]
+               The sequence to be analyzed.
+           partitions : int
+               The number of partitions used for the parallel suffix array algorithm.
+           alphabet : int
+               Size of the alphabet.
+           log_base : int
+               base for the logarithm.
+           max_block_size : int
+               Max length for the block in random shuffle complexity.
+           jobs : int
+               Number of threads.
+
+           Returns
+           -------
+           LempelZiv
+               The Lempel-Ziv complexity.
+           )pbdoc")
       //!> LZ76 factorization
-      .def("lz76Factorization", &::lz76FactorizationWithoutArgs, "seq"_a)
-      .def("lz76Factorization", &::lz76FactorizationWithArgs, "seq"_a, "args"_a)
+      .def("lz76Factorization", lz76FactorizationSeqWithoutArgs, "seq"_a)
+      .def("lz76Factorization", lz76FactorizationWithoutArgs, "seq"_a)
+      .def("lz76Factorization", lz76FactorizationSeqWithArgs, "seq"_a, "args"_a)
+      .def("lz76Factorization", lz76FactorizationWithArgs, "seq"_a, "args"_a)
       //!> Function with all args
       .def("lz76Factorization",
-           &::lz76Factorization,
+           lz76FactorizationSeq,
+           "seq"_a,
+           "partitions"_a = 1,
+           "alphabet"_a   = 2,
+           "log_base"_a   = 2,
+           "jobs"_a       = std::thread::hardware_concurrency())
+      .def("lz76Factorization",
+           lz76Factorization,
            "seq"_a,
            "partitions"_a = 1,
            "alphabet"_a   = 2,
            "log_base"_a   = 2,
            "jobs"_a       = std::thread::hardware_concurrency())
       //!> Factor function
-      .def("lz76Factors", &::lz76FactorsWithoutArgs, "seq"_a)
-      .def("lz76Factors", &::lz76FactorsWithArgs, "seq"_a, "args"_a)
+      .def("lz76Factors", lz76FactorsSeqWithoutArgs, "seq"_a)
+      .def("lz76Factors", lz76FactorsWithoutArgs, "seq"_a)
+      .def("lz76Factors", lz76FactorsSeqWithArgs, "seq"_a, "args"_a)
+      .def("lz76Factors", lz76FactorsWithArgs, "seq"_a, "args"_a)
       .def("lz76Factors",
-           &::lz76Factors,
+           lz76FactorsSeq,
+           "seq"_a,
+           "partitions"_a = 1,
+           "alphabet"_a   = 2,
+           "log_base"_a   = 2,
+           "jobs"_a       = std::thread::hardware_concurrency())
+      .def("lz76Factors",
+           lz76Factors,
            "seq"_a,
            "partitions"_a = 1,
            "alphabet"_a   = 2,
            "log_base"_a   = 2,
            "jobs"_a       = std::thread::hardware_concurrency())
       //!> Entropy density
-      .def("lz76EntropyDensity", &::lz76EntropyDensityWithoutArgs, "seq"_a)
-      .def("lz76EntropyDensity", &::lz76EntropyDensityWithArgs, "seq"_a, "args"_a)
+      .def("lz76EntropyDensity", lz76EntropyDensitySeqWithoutArgs, "seq"_a)
+      .def("lz76EntropyDensity", lz76EntropyDensityWithoutArgs, "seq"_a)
+      .def("lz76EntropyDensity", lz76EntropyDensitySeqWithArgs, "seq"_a, "args"_a)
+      .def("lz76EntropyDensity", lz76EntropyDensityWithArgs, "seq"_a, "args"_a)
       .def("lz76EntropyDensity",
-           &::lz76EntropyDensity,
+           lz76EntropyDensitySeq,
+           "seq"_a,
+           "partitions"_a = 1,
+           "alphabet"_a   = 2,
+           "log_base"_a   = 2,
+           "jobs"_a       = std::thread::hardware_concurrency())
+      .def("lz76EntropyDensity",
+           lz76EntropyDensity,
            "seq"_a,
            "partitions"_a = 1,
            "alphabet"_a   = 2,
            "log_base"_a   = 2,
            "jobs"_a       = std::thread::hardware_concurrency())
       //!> Random shuffle complexity
-      .def("lz76RandomShuffleComplexity", &::lz76RandomShuffleComplexityWithoutArgs, "seq"_a)
-      .def("lz76RandomShuffleComplexity", &::lz76RandomShuffleComplexityWithArgs, "seq"_a, "args"_a)
+      .def("lz76RandomShuffleComplexity", lz76RandomShuffleSeqWithoutArgs, "seq"_a)
+      .def("lz76RandomShuffleComplexity", lz76RandomShuffleWithoutArgs, "seq"_a)
+      .def("lz76RandomShuffleComplexity", lz76RandomShuffleSeqWithArgs, "seq"_a, "args"_a)
+      .def("lz76RandomShuffleComplexity", lz76RandomShuffleWithArgs, "seq"_a, "args"_a)
       .def("lz76RandomShuffleComplexity",
-           &::lz76RandomShuffleComplexity,
+           lz76RandomShuffleSeq,
            "seq"_a,
            "partitions"_a     = 1,
            "alphabet"_a       = 2,
            "log_base"_a       = 2,
            "max_block_size"_a = -1,
            "jobs"_a           = std::thread::hardware_concurrency())
-      .def("lz76WholeRandomShuffleComplexity", &::lz76WholeRandomShuffleComplexityWithoutArgs, "seq"_a)
-      .def("lz76WholeRandomShuffleComplexity", &::lz76WholeRandomShuffleComplexityWithArgs, "seq"_a, "args"_a)
+      .def("lz76RandomShuffleComplexity",
+           lz76RandomShuffle,
+           "seq"_a,
+           "partitions"_a     = 1,
+           "alphabet"_a       = 2,
+           "log_base"_a       = 2,
+           "max_block_size"_a = -1,
+           "jobs"_a           = std::thread::hardware_concurrency())
+      .def("lz76WholeRandomShuffleComplexity", lz76WholeRandomShuffleSeqWithoutArgs, "seq"_a)
+      .def("lz76WholeRandomShuffleComplexity", lz76WholeRandomShuffleWithoutArgs, "seq"_a)
+      .def("lz76WholeRandomShuffleComplexity", lz76WholeRandomShuffleSeqWithArgs, "seq"_a, "args"_a)
+      .def("lz76WholeRandomShuffleComplexity", lz76WholeRandomShuffleWithArgs, "seq"_a, "args"_a)
       .def("lz76WholeRandomShuffleComplexity",
-           &::lz76WholeRandomShuffleComplexity,
+           lz76WholeRandomShuffleSeq,
+           "seq"_a,
+           "partitions"_a     = 1,
+           "alphabet"_a       = 2,
+           "log_base"_a       = 2,
+           "max_block_size"_a = -1,
+           "jobs"_a           = std::thread::hardware_concurrency())
+      .def("lz76WholeRandomShuffleComplexity",
+           lz76WholeRandomShuffle,
            "seq"_a,
            "partitions"_a     = 1,
            "alphabet"_a       = 2,
@@ -369,10 +361,20 @@ void PyLempelZiv(py::module& m) {
            "max_block_size"_a = -1,
            "jobs"_a           = std::thread::hardware_concurrency())
       //!> Information distance
-      .def("lz76InformationDistance", &::lz76InformationDistanceWithoutArgs, "seq1"_a, "seq2"_a)
-      .def("lz76InformationDistance", &::lz76InformationDistanceWithArgs, "seq1"_a, "seq2"_a, "args"_a)
+      .def("lz76InformationDistance", lz76InformationDistanceSeqWithoutArgs, "seq1"_a, "seq2"_a)
+      .def("lz76InformationDistance", lz76InformationDistanceWithoutArgs, "seq1"_a, "seq2"_a)
+      .def("lz76InformationDistance", lz76InformationDistanceSeqWithArgs, "seq1"_a, "seq2"_a, "args"_a)
+      .def("lz76InformationDistance", lz76InformationDistanceWithArgs, "seq1"_a, "seq2"_a, "args"_a)
       .def("lz76InformationDistance",
-           &::lz76InformationDistance,
+           lz76InformationDistanceSeq,
+           "seq1"_a,
+           "seq2"_a,
+           "partitions"_a = 1,
+           "alphabet"_a   = 2,
+           "log_base"_a   = 2,
+           "jobs"_a       = std::thread::hardware_concurrency())
+      .def("lz76InformationDistance",
+           lz76InformationDistance,
            "seq1"_a,
            "seq2"_a,
            "partitions"_a = 1,
@@ -380,10 +382,20 @@ void PyLempelZiv(py::module& m) {
            "log_base"_a   = 2,
            "jobs"_a       = std::thread::hardware_concurrency())
       //!> Information distance
-      .def("lz76RandomShuffleDistance", &::lz76RandomShuffleDistanceWithoutArgs, "seq1"_a, "seq2"_a)
-      .def("lz76RandomShuffleDistance", &::lz76RandomShuffleDistanceWithArgs, "seq1"_a, "seq2"_a, "args"_a)
+      .def("lz76RandomShuffleDistance", lz76RandomShuffleDistanceSeqWithoutArgs, "seq1"_a, "seq2"_a)
+      .def("lz76RandomShuffleDistance", lz76RandomShuffleDistanceWithoutArgs, "seq1"_a, "seq2"_a)
+      .def("lz76RandomShuffleDistance", lz76RandomShuffleDistanceSeqWithArgs, "seq1"_a, "seq2"_a, "args"_a)
+      .def("lz76RandomShuffleDistance", lz76RandomShuffleDistanceWithArgs, "seq1"_a, "seq2"_a, "args"_a)
       .def("lz76RandomShuffleDistance",
-           &::lz76RandomShuffleDistance,
+           lz76RandomShuffleDistanceSeq,
+           "seq1"_a,
+           "seq2"_a,
+           "partitions"_a = 1,
+           "alphabet"_a   = 2,
+           "log_base"_a   = 2,
+           "jobs"_a       = std::thread::hardware_concurrency())
+      .def("lz76RandomShuffleDistance",
+           lz76RandomShuffleDistance,
            "seq1"_a,
            "seq2"_a,
            "partitions"_a = 1,

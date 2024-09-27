@@ -1,0 +1,82 @@
+# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
+# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
+name: Build python wheels
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build_python:
+    defaults:
+      run:
+        shell: bash
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        buildplat:
+          - [ubuntu-22.04, manylinux_x86_64]
+          - [ubuntu-24.04, manylinux_x86_64]
+          - [ubuntu-22.04, musllinux_x86_64]
+          - [ubuntu-24.04, musllinux_x86_64]
+          - [macos-13, macosx_x86_64]
+          - [macos-14, macosx_arm64]
+        python: ["cp37", "cp310", "cp311", "cp312"]
+      #   include:
+      #     - python: 3.7.17
+      #       ver: "37"
+      #       ver2: "37m"
+      #     - python: 3.10.15
+      #       ver: "310"
+      #       ver2: "310"
+      #     - python: 3.12.6
+      #       ver: "312"
+      #       ver2: "312"
+    
+    env:
+      name: lzcomplexity-${{ matrix.python }}-${{ matrix.buildplat[1] }}
+
+    name: • ubuntu • python •
+    runs-on: ${{ matrix.buildplat[0] }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      
+      - name: Setup python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Set reusable strings
+        id: build_path
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Patch TBB submodule
+        run: patch -p0 -i patches/tbb.patch
+
+      - name: Setup macOS
+        if: matrix.buildplat[0] == 'macos-13' || matrix.buildplat[0] == 'macos-14'
+        run: |
+         CIBW="RUNNER_OS=macOS"
+         DYLD="$DYLD_LIBRARY_PATH:/$PWD/.openblas/lib"
+         echo "CIBW_ENVIRONMENT_MACOS=$CIBW DYLD_LIBRARY_PATH=$DYLD" >> "$GITHUB_ENV"  
+
+      - name: Generate wheel
+        uses: pypa/cibuildwheel  # v2.21.1
+        env:
+          CIBW_PRERELEASE_PYTHONS: True
+          CIBW_FREE_THREADED_SUPPORT: True
+          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.name }}
+          path: ./wheelhouse/*.whl
+          retention-days: 1
+     

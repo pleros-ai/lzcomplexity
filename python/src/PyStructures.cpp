@@ -35,20 +35,21 @@ void PyStructures(py::module& m) {
    // Define constructors and methods
    LZ_Args.def(py::init())
       .def(py::init<lz::lz_int>(), "_chunks"_a)
-      .def(py::init<lz::lz_int, lz::lz_int>(), "_chunks"_a, "_max_context"_a)
-      .def(py::init<lz::lz_int, lz::lz_int, lz::lz_int>(), "_chunks"_a, "_max_context"_a, "_block_size"_a)
-      .def(py::init<lz::lz_int, lz::lz_int, lz::lz_int, lz::lz_uint>(),
+      .def(py::init<lz::lz_int, lz::lz_int>(), "_chunks"_a, "_block_size"_a)
+      .def(py::init<lz::lz_int, lz::lz_int, lz::lz_uint>(), "_chunks"_a, "_block_size"_a, "alphabet_"_a)
+      .def(py::init<lz::lz_int, lz::lz_int, lz::lz_uint, lz::lz_uint>(),
            "_chunks"_a,
-           "_max_context"_a,
            "_block_size"_a,
-           "alphabet_"_a)
+           "alphabet_"_a,
+           "log_base"_a)
       .def(py::self == py::self)
       .def("__copy__", [](const utl::LZ_Args& self) { return utl::LZ_Args(self); })
       .def(
          "__deepcopy__", [](const utl::LZ_Args& self, py::dict) { return utl::LZ_Args(self); }, "memo"_a);
    // Define attributes
-   LZ_Args.def_readwrite("chunks", &utl::LZ_Args::chunks, "Number of partitions for parallel suffix array algorithm")
-      .def_readwrite("max_context", &utl::LZ_Args::max_context, "Max context for lexicographical comparison")
+   LZ_Args
+      .def_readwrite("chunks", &utl::LZ_Args::chunks, "Number of partitions for parallel suffix array algorithm")
+      // .def_readwrite("max_context", &utl::LZ_Args::max_context, "Max context for lexicographical comparison")
       .def_readwrite("get_shuffle_terms", &utl::LZ_Args::get_shuffle_terms, "Flag for shuffle entropy deficit")
       .def_readwrite("alphabet", &utl::LZ_Args::alphabet, "Size of the alphabet")
       .def_readwrite(

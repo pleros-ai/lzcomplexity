@@ -40,6 +40,7 @@
 
 # Dev folders
 /_packages/**
+/dist/**
 /build/**
 /bin/**
 /install/**
