@@ -20,8 +20,8 @@ jobs:
         buildplat:
           - [ubuntu-22.04, manylinux_x86_64]
           - [ubuntu-24.04, manylinux_x86_64]
-          - [ubuntu-22.04, musllinux_x86_64]
-          - [ubuntu-24.04, musllinux_x86_64]
+         #  - [ubuntu-22.04, musllinux_x86_64]
+         #  - [ubuntu-24.04, musllinux_x86_64]
           - [macos-13, macosx_x86_64]
           - [macos-14, macosx_arm64]
         python: ["cp37", "cp310", "cp311", "cp312"]
@@ -39,7 +39,7 @@ jobs:
     env:
       name: lzcomplexity-${{ matrix.python }}-${{ matrix.buildplat[1] }}
 
-    name: • ubuntu • python •
+    name: • ${{ matrix.buildplat[0] }} • ${{ matrix.python }} •
     runs-on: ${{ matrix.buildplat[0] }}
 
     steps:
@@ -64,8 +64,7 @@ jobs:
         if: matrix.buildplat[0] == 'macos-13' || matrix.buildplat[0] == 'macos-14'
         run: |
          CIBW="RUNNER_OS=macOS"
-         DYLD="$DYLD_LIBRARY_PATH:/$PWD/.openblas/lib"
-         echo "CIBW_ENVIRONMENT_MACOS=$CIBW DYLD_LIBRARY_PATH=$DYLD" >> "$GITHUB_ENV"  
+         echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"  
 
       - name: Generate wheel
         uses: pypa/cibuildwheel@v2.21.1  # v2.21.1

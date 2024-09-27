@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 
-if(CMAKE_VERSION VERSION_LESS "3.27")
-  set(CMP0148 "OLD")
-else()
-  cmake_policy(GET CMP0148 _missing_old_python)
+if(CMAKE_VERSION VERSION_LESS 3.12)
+  message(FATAL_ERROR "You cannot use the new FindPython module with CMake < 3.12")
 endif()
+
+# if(CMAKE_VERSION VERSION_LESS "3.27")
+#   set(CMP0148 "OLD")
+# else()
+#   cmake_policy(GET CMP0148 _missing_old_python)
+# endif()
 
 set(PROJECT_NAME lzcomplexity)
 set(VERSION 0.8.5)
@@ -51,7 +55,18 @@ pybind11_add_module(${PROJECT_NAME} MODULE OPT_SIZE ${PYTHON_FILES})
 # include(FindThreads)
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../modules modules)
 
-find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
+if(NOT Python_FOUND AND NOT Python3_FOUND)
+  if(NOT DEFINED Python_FIND_IMPLEMENTATIONS)
+    set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
+  endif()
+
+  # GitHub Actions like activation
+  if(NOT DEFINED Python_ROOT_DIR AND DEFINED ENV{pythonLocation})
+    set(Python_ROOT_DIR "$ENV{pythonLocation}")
+  endif()
+
+  find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development)
+endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE LZCore)
 target_include_directories(${PROJECT_NAME} 
