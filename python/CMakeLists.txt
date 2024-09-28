@@ -7,7 +7,7 @@ endif()
 # if(CMAKE_VERSION VERSION_LESS "3.27")
 #   set(CMP0148 "OLD")
 # else()
-#   cmake_policy(GET CMP0148 _missing_old_python)
+# cmake_policy(GET CMP0148 "OLD")
 # endif()
 
 set(PROJECT_NAME lzcomplexity)
@@ -65,7 +65,7 @@ if(NOT Python_FOUND AND NOT Python3_FOUND)
     set(Python_ROOT_DIR "$ENV{pythonLocation}")
   endif()
 
-  find_package(Python 3.7 REQUIRED COMPONENTS Interpreter Development)
+  find_package(Python 3.7 REQUIRED)
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE LZCore)
