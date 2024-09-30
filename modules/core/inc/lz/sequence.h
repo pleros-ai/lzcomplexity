@@ -114,7 +114,8 @@ namespace lz {
        * @brief Move constructor.
        * @param s The sequence to be moved.
        */
-      sequence(sequence&& s) { *this = std::move(s); };
+      sequence(sequence&& s)
+        : seq(std::move(s.seq)), alphabet(std::move(s.alphabet)), alphabet_size(std::exchange(s.alphabet_size, 0x01)){};
 
       /**
        * @brief Destructor.

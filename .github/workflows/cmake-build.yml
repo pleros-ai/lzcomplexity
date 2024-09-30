@@ -148,11 +148,11 @@ jobs:
             #   cxx: clang++
             #   cc: clang
             #   builtinTbb: OFF
-          - runs-on: macos-13-large
-            build_type: "Release"
-            cxx: clang++
-            cc: clang
-            builtinTbb: ON
+          # - runs-on: macos-latest-large
+          #   build_type: "Release"
+          #   cxx: clang++
+          #   cc: clang
+          #   builtinTbb: ON
             
     name: • ${{ matrix.runs-on }} • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
     runs-on: ${{ matrix.runs-on }}
