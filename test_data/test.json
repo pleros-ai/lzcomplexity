@@ -1,0 +1,1 @@
+{"filename":"test","format":10,"sequences":[{"lz76Complexity":474103,"lz76EntropyDensity":9.14598568719428,"lz76Extra":{"fh_uncertainty":0.0,"lh_uncertainty":0.0,"lz_pearson_coefficient":0.0,"lz_rajski_distance":0.0,"redundancy":0.0},"lz76RandomShuffleComplexity":{"max_block_size":25,"multi_information":10.733474785393078,"value":272.72759063173953},"size":1035831}],"size":1}

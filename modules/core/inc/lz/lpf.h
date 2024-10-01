@@ -35,11 +35,11 @@ namespace lz {
    namespace utils {
 
       struct stack_element {
-         int          len;
-         unsigned int pos;
+         lz_uint len;
+         lz_uint pos;
 
          stack_element(void) { len = pos = 0; };
-         stack_element(lz_int l, lz_uint p)
+         stack_element(lz_uint l, lz_uint p)
            : len(l), pos(p){};
          stack_element(const stack_element& s)
            : len(s.len), pos(s.pos){};
@@ -61,7 +61,7 @@ namespace lz {
          };
          stack_element& operator=(stack_element&& s) {
             if (this != &s) {
-               len = std::exchange(s.len, std::numeric_limits<lz_int>::max());
+               len = std::exchange(s.len, std::numeric_limits<lz_uint>::max());
                pos = std::exchange(s.pos, std::numeric_limits<lz_uint>::max());
             }
             return *this;
@@ -85,12 +85,12 @@ namespace lz {
          LPFStack(lz_size n);  //!< Constructor. Allocates memory according to n.
          ~LPFStack();          //!< Destructor.
 
-         lz_size push(lz_int len, lz_uint pos);  //!< Adds an element to the stack.
-         lz_size push(struct stack_element el);  //!< Adds an element to the stack.
-         lz_size pop(void);                      //!< Pops an element from the stack.
+         lz_size push(lz_uint len, lz_uint pos);  //!< Adds an element to the stack.
+         lz_size push(struct stack_element el);   //!< Adds an element to the stack.
+         lz_size pop(void);                       //!< Pops an element from the stack.
 
          struct stack_element Top(void) const;  //!< Returns the top element from the stack, without popping.
-         lz_int  TopLen(void) const;  //!< Returns the len value of the top element from the stack, without popping.
+         lz_uint TopLen(void) const;  //!< Returns the len value of the top element from the stack, without popping.
          lz_uint TopPos(void) const;  //!< Returns the pos value of the top element from the stack, without popping.
 
          lz_size length(void) const;  //!< Returns the number of elements in the stack.
@@ -133,7 +133,7 @@ namespace lz {
       /// below x in the stack (or 0 if none) \param pos position in suffix array \param el inserted element. For
       /// description of the factors see the two parameters above. \return The number of elements in the stack. \sa
       /// pop()
-      inline lz_size LPFStack::push(lz_int len, lz_uint pos) {
+      inline lz_size LPFStack::push(lz_uint len, lz_uint pos) {
          struct stack_element s(len, pos);
 
          return push(s);
@@ -157,7 +157,7 @@ namespace lz {
       /// \brief
       /// Returns the len value of the top element from the stack, without popping.
       /// \return The len value of the top element
-      inline lz_int LPFStack::TopLen(void) const {
+      inline lz_uint LPFStack::TopLen(void) const {
          return element.back().len;
       }
 
@@ -229,7 +229,7 @@ namespace lz {
        * @param n     length of the arrays
        * @return number of elements in LPF
        */
-      inline lz_int LPF(std::vector<lz_int>& lpf, std::vector<lz_uint> SA, std::vector<lz_uint> LCP, lz_size n) {
+      inline lz_int LPF(std::vector<lz_uint>& lpf, std::vector<lz_uint> SA, std::vector<lz_uint> LCP, lz_size n) {
          // if ((SA == nullptr) || (LCP == nullptr) || (n == 0)) {
          //    return -1;
          // }
@@ -240,25 +240,25 @@ namespace lz {
          }
 
          LPFStack stack;
-         lz_int   lcp = 0;
+         lz_uint  lcp = 0;
 
          // SA and LCP must have allocated size n+1	!!!
-         SA.push_back(-1);
+         SA.push_back(0);
          LCP.push_back(0);
 
-         stack.push(0, SA[0]);
+         stack.push(0, SA[0] + 1);
 
          for (lz_size i = 1; i <= n; ++i) {
             lcp = LCP[i];
 
-            while (!stack.empty() && SA[i] < stack.TopPos()) {
-               lpf[stack.TopPos()] = std::max(stack.TopLen(), lcp);
-               lcp                 = std::min(stack.TopLen(), lcp);
+            while (!stack.empty() && SA[i] + 1 < stack.TopPos()) {
+               lpf[stack.TopPos() - 1] = std::max(stack.TopLen(), lcp);
+               lcp                     = std::min(stack.TopLen(), lcp);
                stack.pop();
             }
 
             if (i < n)
-               stack.push(lcp, SA[i]);
+               stack.push(lcp, SA[i] + 1);
          }
 
          return n;

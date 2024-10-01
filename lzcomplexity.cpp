@@ -130,23 +130,6 @@ lz::lz_int process(lz_options& opt) {
 
    lz::utils::EnabledMT(opt.n_jobs);
 
-   // auto res1 = lz::lz76EntropyDensity(test_flags.input[0], test_flags.sa_args);
-   // std::cout << res1 << std::endl;
-   // auto res = lz::lz76WholeRandomShuffleComplexity(test_flags.input[0], test_flags.sa_args);
-   // std::cout << res.excess_value << std::endl;
-
-   // lz::sequence t1("0010101010111010101010101011110101010101010101010101010");
-   // lz::sequence t2("0010100010111110101010101010011101010101000001011111010");
-
-   // auto res = lz::lz76RandomShuffleDistance(t1, t2, test_flags.sa_args);
-   // std::cout << res << std::endl;
-
-   // auto res2 = lz::lz76RandomShuffleDistance(t2, t1, test_flags.sa_args);
-   // std::cout << res2 << std::endl;
-
-   // auto c = lz::lz76RandomShuffleComplexity(test_flags.input[0], test_flags.sa_args);
-   // return 0;
-
    // App functions
    if (opt.verbose) {
       std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating lz76 factorization\n" << lz::END_COLOR;
@@ -469,6 +452,11 @@ auto main(int argc, char const* argv[]) -> int {
       }
 
       auto opt = process_args(result);
+
+      if (opt.input.empty()) {
+         std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Input file is missing") << std::endl;
+         return EXIT_FAILURE;
+      }
 
       if (process(opt)) {
          return EXIT_SUCCESS;

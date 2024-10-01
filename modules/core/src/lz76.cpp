@@ -54,7 +54,7 @@ namespace lz {
        */
       LZ_Result LempelZiv76::Factorize(const utils::LZ_SuffixArray _SA) {
          lzf.reserve(_SA.n);
-         std::vector<lz_int>          lpf(_SA.n);
+         std::vector<lz_uint>         lpf(_SA.n);
          std::vector<char>::size_type i = 0;
 
          lzf.clear();
@@ -101,7 +101,7 @@ namespace lz {
          auto                 _SA = alg.construct(seq.toString());
 
          lzf.reserve(_SA.n);
-         std::vector<lz_int>          lpf(_SA.n);
+         std::vector<lz_uint>         lpf(_SA.n);
          std::vector<char>::size_type i = 0;
 
          lzf.clear();
@@ -136,7 +136,7 @@ namespace lz {
          return LZ_Result{factorization, epsilon, lzf};
       }
 
-      LZ_Result LempelZiv76::Factorize(const sequence seq, utils::LZ_Args& sa_args) {
+      LZ_Result LempelZiv76::Factorize(const sequence& seq, utils::LZ_Args& sa_args) {
          // parameters should come from flags
          suffixarray::CaPS_SA  alg(sa_args);
          utils::LZ_SuffixArray _SA = alg.construct(seq.toString());
@@ -146,7 +146,7 @@ namespace lz {
             2 * (1 + std::log(std::log(sa_args.alphabet * seq.size()) / logn) / logn) / (std::log(seq.size()) / logn);
 
          lzf.reserve(_SA.n);
-         std::vector<lz_int>          lpf(_SA.n);
+         std::vector<lz_uint>         lpf(_SA.n);
          std::vector<char>::size_type i = 0;
 
          lzf.clear();
