@@ -1,4 +1,5 @@
 #include <lz/parallel_utils.h>
+#include <lz/sequence.h>
 
 #include "lz_tbb_arena.h"
 
@@ -23,11 +24,17 @@ namespace lz {
          return globalTaskArena;
       }
 
-      void EnabledMT(lz_uint numthreads) { __GetTaskArena() = utils::GetGlobalTaskArena(numthreads); };
+      void EnabledMT(lz_uint numthreads) {
+         __GetTaskArena() = utils::GetGlobalTaskArena(numthreads);
+      };
 
-      void DisabledMT() { __GetTaskArena().reset(); };
+      void DisabledMT() {
+         __GetTaskArena().reset();
+      };
 
-      lz_size num_workers() { return internal::CPU_Bandwidth(); }
+      lz_size num_workers() {
+         return internal::CPU_Bandwidth();
+      }
 
       lz_size worker_id() {
          auto id = tbb::this_task_arena::current_thread_index();
@@ -42,24 +49,24 @@ namespace lz {
          arena->Access().execute([&] {
             if (granularity == 0) {
                tbb::parallel_for(
-                   tbb::blocked_range<lz_size>(start, end),
-                   [&](const tbb::blocked_range<lz_size>& r) {
-                      for (auto i = r.begin(); i != r.end(); ++i) {
-                         fun(i);
-                      }
-                   },
-                   tbb::auto_partitioner{});
+                  tbb::blocked_range<lz_size>(start, end),
+                  [&](const tbb::blocked_range<lz_size>& r) {
+                     for (auto i = r.begin(); i != r.end(); ++i) {
+                        fun(i);
+                     }
+                  },
+                  tbb::auto_partitioner{});
             }
             // Otherwise, use the granularity specified by the user (tbb::simple_partitioner)
             else {
                tbb::parallel_for(
-                   tbb::blocked_range<lz_size>(start, end, granularity),
-                   [&](const tbb::blocked_range<lz_size>& r) {
-                      for (auto i = r.begin(); i != r.end(); ++i) {
-                         fun(i);
-                      }
-                   },
-                   tbb::simple_partitioner{});
+                  tbb::blocked_range<lz_size>(start, end, granularity),
+                  [&](const tbb::blocked_range<lz_size>& r) {
+                     for (auto i = r.begin(); i != r.end(); ++i) {
+                        fun(i);
+                     }
+                  },
+                  tbb::simple_partitioner{});
             }
          });
       }
@@ -69,39 +76,55 @@ namespace lz {
          arena->Access().execute([&] {
             tbb::this_task_arena::isolate([&] {
                tbb::parallel_for(tbb::blocked_range(0ul, funcs.size()), [&](const tbb::blocked_range<lz_size>& r) {
-                  for (auto i = r.begin(); i < r.end(); i++) funcs[i]();
+                  for (auto i = r.begin(); i < r.end(); i++)
+                     funcs[i]();
                });
             });
          });
       }
 
-      float parallel_reduce_impl(lz_size init, lz_size end, float init_value,
-                                 const std::function<float(internal::LZ_BlockedRange<lz_size>, float)>& fun,
-                                 const std::function<float(float, float)>& reduce_fun) {
-         float result = init_value;
-         auto arena = lz::utils::GetGlobalTaskArena();
+      template<typename ReturnType>
+      ReturnType
+         parallel_reduce_impl(lz_size    init,
+                              lz_size    end,
+                              ReturnType init_value,
+                              const std::function<ReturnType(internal::LZ_BlockedRange<lz_size>, ReturnType)>& fun,
+                              const std::function<ReturnType(ReturnType, ReturnType)>& reduce_fun) {
+         ReturnType result = init_value;
+         auto       arena  = lz::utils::GetGlobalTaskArena();
          arena->Access().execute([&] {
             tbb::this_task_arena::isolate([&] {
                result =
-                   tbb::parallel_reduce(internal::LZ_BlockedRange<lz_size>(init, end), init_value, fun, reduce_fun);
+                  tbb::parallel_reduce(internal::LZ_BlockedRange<lz_size>(init, end), init_value, fun, reduce_fun);
             });
          });
          return result;
       }
 
-      double parallel_reduce_impl(lz_size init, lz_size end, double init_value,
-                                  const std::function<double(internal::LZ_BlockedRange<lz_size>, double)>& fun,
-                                  const std::function<double(double, double)>& reduce_fun) {
-         double result = init_value;
-         auto arena = lz::utils::GetGlobalTaskArena();
-         arena->Access().execute([&] {
-            tbb::this_task_arena::isolate([&] {
-               result =
-                   tbb::parallel_reduce(internal::LZ_BlockedRange<lz_size>(init, end), init_value, fun, reduce_fun);
-            });
-         });
-         return result;
-      }
    }  // namespace internal
 
 }  // namespace lz
+
+template float
+   lz::internal::parallel_reduce_impl<float>(lz_size,
+                                             lz_size,
+                                             float,
+                                             const std::function<float(internal::LZ_BlockedRange<lz_size>, float)>&,
+                                             const std::function<float(float, float)>&);
+template double
+                                   lz::internal::parallel_reduce_impl<double>(lz_size,
+                                              lz_size,
+                                              double,
+                                              const std::function<double(internal::LZ_BlockedRange<lz_size>, double)>&,
+                                              const std::function<double(double, double)>&);
+template int                       lz::internal::parallel_reduce_impl<int>(lz_size,
+                                                     lz_size,
+                                                     int,
+                                                     const std::function<int(internal::LZ_BlockedRange<lz_size>, int)>&,
+                                                     const std::function<int(int, int)>&);
+template std::vector<lz::sequence> lz::internal::parallel_reduce_impl<std::vector<lz::sequence>>(
+   lz_size,
+   lz_size,
+   std::vector<lz::sequence>,
+   const std::function<std::vector<lz::sequence>(internal::LZ_BlockedRange<lz_size>, std::vector<lz::sequence>)>&,
+   const std::function<std::vector<lz::sequence>(std::vector<lz::sequence>, std::vector<lz::sequence>)>&);

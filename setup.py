@@ -8,7 +8,7 @@ from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
 # from setuptools.command.install import install
 
-__version__ = "0.8.5"
+__version__ = "0.8.6"
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {

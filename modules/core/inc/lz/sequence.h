@@ -636,10 +636,11 @@ namespace lz {
    }
 
    inline std::ostream& operator<<(std::ostream& os, const sequence& obj) {
-      os << "Alphabet size: " << obj.alphabet_size << " Alphabet: [";
+      os << " Alphabet: [ ";
       for (auto c: obj.alphabet)
          os << c << " ";
-      os << "]\n";
+      os << "] "
+         << " size: " << obj.alphabet_size << std::endl;
       for (auto c: obj.seq)
          os << c;
 

@@ -1,8 +1,11 @@
+#include "main/lzcomplexity.h"
+
 #include <lz/lz.h>
 #include <lz/lzApp.h>
 
 #include "main/config.h"
-#include "main/main.h"
+
+#define VERSION "v0.8.6"
 
 void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_options& opt) {
    nlohmann::json out_data;
@@ -122,20 +125,36 @@ lz::lz_int process(lz_options& opt) {
    }
 
    //? Input flags
-   lz::utils::LZ_Flags test_flags(data, opt.args);
-   test_flags.shuffle_init_line = opt.excess_init_line;
-   test_flags.shuffle_end_line  = opt.excess_end_line;
+   lz::utils::LZ_Flags in_flags(data, opt.args);
+   in_flags.shuffle_init_line = opt.excess_init_line;
+   in_flags.shuffle_end_line  = opt.excess_end_line;
    //? Results
    lz::utils::LZ_Output lz(data.size());
 
-   lz::utils::EnabledMT(opt.n_jobs);
+   bool ignore_parallel = false;
+   for (auto&& dat: in_flags.input) {
+      if (dat.length() < 5e4) {
+         ignore_parallel = true;
+         break;
+      }
+   }
+
+   if (opt.warns)
+      std::cout << print_msg(lz::utils::MSG_TYPE::WARRING,
+                             "Ignoring parallel processing because data source is too sort")
+                << std::endl;
+
+   if (ignore_parallel)
+      in_flags.sa_args.chunks = 1;
+
+   lz::utils::EnabledMT(ignore_parallel ? 1 : opt.n_jobs);
 
    // App functions
    if (opt.verbose) {
       std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating lz76 factorization\n" << lz::END_COLOR;
       init_time = now();
    }
-   lz::lz76Factorization(test_flags, lz);
+   lz::lz76Factorization(in_flags, lz);
    if (opt.verbose) {
       const auto end_time = now();
       std::cout << "Complexity: ";
@@ -147,7 +166,7 @@ lz::lz_int process(lz_options& opt) {
 
    if (!opt.factors_output.empty()) {
       std::vector<lz::internal::LZ_Result> f;
-      for (auto seq: test_flags.input) {
+      for (auto seq: in_flags.input) {
          auto flz = lz::lz76Factors(seq);
          f.push_back(flz);
          std::cout << "Factors: [ ";
@@ -167,7 +186,7 @@ lz::lz_int process(lz_options& opt) {
          // std::cout << "]" << std::endl;
       }
 
-      save_factors(test_flags, f, opt);
+      save_factors(in_flags, f, opt);
    }
 
    // App functions
@@ -175,7 +194,7 @@ lz::lz_int process(lz_options& opt) {
       std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating Entropy density\n" << lz::END_COLOR;
       init_time = now();
    }
-   lz::lz76EntropyDensity(test_flags, lz);
+   lz::lz76EntropyDensity(in_flags, lz);
    if (opt.verbose) {
       const auto end_time = now();
       std::cout << "Entropy: ";
@@ -192,7 +211,7 @@ lz::lz_int process(lz_options& opt) {
                    << lz::END_COLOR;
          init_time = now();
       }
-      save_data(test_flags, lz, opt);
+      save_data(in_flags, lz, opt);
 
       if (opt.verbose) {
          std::cout << "Total time elapsed: " << duration(g_end - g_now) << " s" << std::endl;
@@ -207,7 +226,7 @@ lz::lz_int process(lz_options& opt) {
          init_time = now();
       }
       // Excess entropy by distance
-      lz::lz76ExtraMeasures(test_flags, lz);
+      lz::lz76ExtraMeasures(in_flags, lz);
       if (opt.verbose) {
          const auto end_time = now();
          std::cout << "LZ Rajski distance: ";
@@ -234,32 +253,14 @@ lz::lz_int process(lz_options& opt) {
       }
    }
 
-   bool makeShuffleComplexity = true;
-   for (auto&& dat: test_flags.input) {
-      if (dat.length() < 1000) {
-         makeShuffleComplexity = false;
-         break;
-      }
-   }
-
-   if (!makeShuffleComplexity && opt.verbose) {
-      std::cout << print_msg(lz::utils::MSG_TYPE::WARRING,
-                             "The dataset have at least 1 sequence too short for calculate Random Shuffle Complexity.\n"
-                             "All sequence should have more than 1e4 characters")
-                << std::endl;
-   }
-
-   // auto r = lz::lz76ExcessEntropyDistance(test_flags.input[0], test_flags.sa_args);
-   // std::cout << "Excess MI: " << r << "\n";
-
-   if (makeShuffleComplexity && !opt.entropy_density) {
+   if (!opt.entropy_density) {
       if (opt.verbose) {
          std::cout << lz::GREEN_COLOR << "2." << verbose_index++
                    << ". Calculating random shuffle complexity using Z sequence\n"
                    << lz::END_COLOR;
          init_time = now();
       }
-      lz::lz76RandomShuffleComplexity(test_flags, lz);
+      lz::lz76RandomShuffleComplexity(in_flags, lz);
       if (opt.verbose) {
          const auto end_time = now();
          std::cout << "Random shuffle complexity using Z sequence: ";
@@ -292,7 +293,7 @@ lz::lz_int process(lz_options& opt) {
          init_time = now();
       }
       // Excess entropy by shuffle
-      lz::lz76WholeRandomShuffleComplexity(test_flags, lz);
+      lz::lz76WholeRandomShuffleComplexity(in_flags, lz);
       if (opt.verbose) {
          const auto end_time = now();
          std::cout << "Random shuffle complexity using whole sequence: ";
@@ -325,7 +326,7 @@ lz::lz_int process(lz_options& opt) {
          init_time = now();
       }
       // Excess entropy by shuffling
-      lz::lz76MixedEntropyDensity(test_flags, lz);
+      lz::lz76MixedEntropyDensity(in_flags, lz);
       if (opt.verbose) {
          const auto end_time = now();
          std::cout << "Mixed entropy density: ";
@@ -345,9 +346,9 @@ lz::lz_int process(lz_options& opt) {
       }
       std::vector<double> rand_dist;
 
-      // lz::InformationDistance(test_flags, lz);
-      lz::lz76InformationDistance(test_flags, lz);
-      lz::lz76RandomShuffleDistance(test_flags, lz);
+      // lz::InformationDistance(in_flags, lz);
+      lz::lz76InformationDistance(in_flags, lz);
+      lz::lz76RandomShuffleDistance(in_flags, lz);
 
       if (opt.verbose) {
          const auto end_time = now();
@@ -369,7 +370,7 @@ lz::lz_int process(lz_options& opt) {
                 << lz::END_COLOR;
       init_time = now();
    }
-   save_data(test_flags, lz, opt);
+   save_data(in_flags, lz, opt);
 
    if (opt.verbose) {
       std::cout << "Total time elapsed: " << duration(g_end - g_now) << " s" << std::endl;
@@ -380,7 +381,7 @@ lz::lz_int process(lz_options& opt) {
 
 auto main(int argc, char const* argv[]) -> int {
    cxxopts::options options("lzcomplexity",
-                            "LempelZiv-76 complexity utilities as a library and also a standalone software. Suited for "
+                            "LempelZiv-76 complexity engine. Suited for "
                             "complexity analysis of time series. Send bug reports to estevez@fisica.uh.cu or "
                             "efrenaragon96@gmail.com.\n");
 
@@ -434,6 +435,7 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<lz::lz_int>()->default_value("2"),
              "value");
    opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
+   opt_group("V,version", "Output the version number.", cxxopts::value<bool>()->default_value("false"));
    opt_group("x,extras",
              "Computes additional measures based on lz76 (rajski distance, the uncertainty of both halves, pearson "
              "coefficient and redundancy).",
@@ -444,6 +446,11 @@ auto main(int argc, char const* argv[]) -> int {
    //              cxxopts::value<lz::lz_int>()->default_value("0"), "num");
    try {
       auto result = options.parse(argc, argv);
+
+      if (result["version"].count() || result["V"].count()) {
+         std::cout << print_msg(lz::utils::MSG_TYPE::INFO, VERSION) << std::endl;
+         return EXIT_SUCCESS;
+      }
 
       if (result["h"].count() || result["help"].count() ||
           (result.arguments().empty() && result.unmatched().size() == 0)) {
@@ -464,13 +471,10 @@ auto main(int argc, char const* argv[]) -> int {
          return EXIT_FAILURE;
       }
    } catch (Errors er) {
-      std::string msg = "Error: " + std::to_string(er.type);
-      msg += "\nMessage => " + er.msg;
-      std::cerr << std::endl << print_msg(lz::utils::MSG_TYPE::ERROR, msg) << std::endl;
-      // std::cerr << lz::GREEN_COLOR << options.help() << lz::END_COLOR << std::endl;
+      std::cerr << std::endl << print_msg(lz::utils::MSG_TYPE::ERROR, std::string(er.msg)) << std::endl;
       return EXIT_FAILURE;
    } catch (std::exception err) {
-      std::string msg{err.what()};
+      std::string msg(err.what());
       std::cerr << std::endl << print_msg(lz::utils::MSG_TYPE::ERROR, "Fatal error BOOM!!!" + msg) << std::endl;
       return EXIT_FAILURE;
    } catch (...) {

@@ -163,7 +163,11 @@ namespace lz {
             flags.sa_args.get_shuffle_terms = false;
          }
 
-         excess_entropy = lz76RandomShuffleComplexity(str, flags.sa_args);
+         auto new_args = flags.sa_args;
+         if (str.size() < 1e4)
+            new_args.chunks = 1;
+
+         excess_entropy = lz76RandomShuffleComplexity(str, new_args);
 
          if (processAllLines || processOneLine || processRange) {
             terms = {i + 1, excess_entropy.summands};

@@ -36,12 +36,7 @@ inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
    auto                     color = getColor(type);
    std::vector<std::string> allLines;
    std::va_list             args;
-
-   std::string            topL   = "╭──";
-   std::string            botL   = "╰──";
-   std::string            topR   = "──╮";
-   std::string            botR   = "──╯";
-   std::string::size_type maxLen = 0;
+   std::string::size_type   maxLen = 0;
 
    std::string final_msg = "";
    std::string delimiter = "\n";
@@ -52,14 +47,16 @@ inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
       maxLen = tmp.length() > maxLen ? tmp.length() : maxLen;
    }
 
-   auto header = topL + std::string(maxLen - 1, ' ') + topR + "\n";
-   auto bottom = botL + std::string(maxLen - 1, ' ') + botR + "\n";
+   std::string header = type == lz::utils::MSG_TYPE::ERROR  ? " [ Error ] "
+                        : type == lz::utils::MSG_TYPE::INFO ? " [ Info ] "
+                                                            : " [ Warning ] ";
 
    for (auto str: allLines) {
-      final_msg += "│ " + str + std::string(maxLen - str.length() + 1, ' ') + " │\n";
+      auto offset = final_msg.size() > 0 ? std::string(header.size(), ' ') : "";
+      final_msg += offset + str + "\n";
    }
 
-   return color + header + final_msg + bottom + lz::END_COLOR;
+   return color + header + lz::END_COLOR + final_msg;
 }
 
 inline void read_multi_line(std::ifstream& in, std::vector<lz::sequence>& seq_vec, MagickNumber format) {
@@ -76,13 +73,17 @@ inline void read_multi_line(std::ifstream& in, std::vector<lz::sequence>& seq_ve
          default: parser.ReadPNM(in, seq_vec);
       }
    } catch (BadAlloc& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
    } catch (lz::utils::PNMBadFileFormat& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
    } catch (lz::utils::PNMUnknownError& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
    } catch (Errors& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
    }
 }
 
@@ -100,13 +101,17 @@ inline void read_one_line(std::ifstream& in, lz::sequence& seq, MagickNumber for
          default: parser.ReadPNM(in, seq);
       }
    } catch (BadAlloc& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
    } catch (lz::utils::PNMBadFileFormat& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
    } catch (lz::utils::PNMUnknownError& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
    } catch (Errors& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + err.msg) << std::endl;
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
    }
 }
 

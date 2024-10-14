@@ -39,7 +39,7 @@ namespace lz {
 
          LZ_Output() = default;
          LZ_Output(lz_size size) {
-            data                  = std::vector<LempelZiv>{size};
+            data                  = std::vector<LempelZiv>(size);
             calculated_complexity = std::vector<bool>(size, false);
          };
          LZ_Output(const LZ_Output& lz) = default;

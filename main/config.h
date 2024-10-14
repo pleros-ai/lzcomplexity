@@ -33,7 +33,7 @@ struct lz_options {
    bool         mixed_entropy   = false;
 
    lz_options(cxxopts::parse_result result) {
-      input = result.unmatched()[0];
+      input = !result.unmatched().empty() ? result.unmatched()[0] : "";
 
       if (result.count("output")) {
          output = result["output"].as<std::string>();
@@ -175,6 +175,11 @@ lz_options process_args(cxxopts::parse_result& result) {
 
    namespace fs  = std::filesystem;
    namespace utl = lz::utils;
+
+   if (options.input.empty()) {
+      throw FileNameError("Input file is missing.");
+   }
+
    if (!fs::is_regular_file(options.input) && !fs::is_character_file(options.input)) {
       throw FileNameError("File doesn't exist: " + options.input);
    }
@@ -191,13 +196,13 @@ lz_options process_args(cxxopts::parse_result& result) {
       iss << "Summary of results:\n";
       iss << " - lz76 factorization\n";
       iss << " - Entropy density\n";
-      iss << " - LZ effective complexity\n";
-      iss << " - Excess of entropy by distance\n";  // possible remove (same as LZ effective complexity)
+      iss << " - Paired shuffle complexity\n";
       if (options.args.block_size >= 0)
-         iss << " - Shuffle entropy deficit\n";
-      iss << " - Information distance inside the sequence\n";
-      if (options.find_distance)
-         iss << " - Information distance between consecutive sequences\n";
+         iss << " - Random Shuffle Complexity\n";
+      if (options.find_distance) {
+         iss << " - Paired information distance between consecutive sequences\n";
+         iss << " - Random shuffle distance between consecutive sequences\n";
+      }
 
       std::cout << print_msg(msg::INFO, iss.str()) << std::endl;
    }

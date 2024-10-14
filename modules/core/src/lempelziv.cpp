@@ -260,7 +260,7 @@ namespace lz {
       lz_int mm = args.block_size;
       if (mm <= 0) {
          mm = utils::max_block_size(str.size());  // the maximum number for the sum in the entropy estimation
-         mm += 10;                                // begin aggressive
+         mm += str.size() > 50 ? 10 : 0;          // begin aggressive
       }
 
       std::vector<lz_int> res(mm + 3);  // Reserve the number of blocks for shuffling + 3
@@ -291,7 +291,7 @@ namespace lz {
       });
 
       if (args.get_shuffle_terms) {
-         result.summands = terms;
+         result.summands = std::vector<lz_double>{terms.begin() + 1, terms.end() - 2};
       }
 
       result.multi_information = terms[1];
@@ -385,7 +385,7 @@ namespace lz {
       C_all = lz76Factorization(T1 + T2);
 
       auto res =
-         (C_all - std::fmin(R1.factorization, R2.factorization)) * 1.0 / std::fmax(R1.factorization, R2.factorization);
+         (C_all - std::fmin(R1.factorization, R2.factorization)) / std::fmax(R1.factorization, R2.factorization);
 
       return res;
    }
@@ -401,7 +401,7 @@ namespace lz {
 
       utils::par_do(fh_fun, lh_fun, all_fun);
 
-      auto res = (C_all - std::fmin(C_t1, C_t2)) * 1.0 / std::fmax(C_t1, C_t2);
+      auto res = (C_all - std::fmin(C_t1, C_t2)) / std::fmax(C_t1, C_t2);
 
       return res;
    }
@@ -424,7 +424,7 @@ namespace lz {
 
       utils::par_do(fh_fun, lh_fun, all_fun);
 
-      auto res = (C_all - std::fmin(C_t1, C_t2)) * 1.0 / std::fmax(C_t1, C_t2);
+      auto res = (C_all - std::fmin(C_t1, C_t2)) / std::fmax(C_t1, C_t2);
 
       return res;
    }

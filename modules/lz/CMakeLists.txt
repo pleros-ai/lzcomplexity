@@ -69,7 +69,7 @@ set(public_headers
   ${public_headers}
   ${APP_INCLUDE_DIR}/lz/flags.h
   ${APP_INCLUDE_DIR}/lz/lzApp.h
-  PARENT_SCOPE
+#   PARENT_SCOPE
 )
 
 message(STATUS "headers for ${PROJECT_NAME}: ${public_headers}")

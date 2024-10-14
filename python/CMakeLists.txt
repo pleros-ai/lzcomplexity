@@ -11,7 +11,7 @@ endif()
 # endif()
 
 set(PROJECT_NAME lzcomplexity)
-set(VERSION 0.8.5)
+set(VERSION 0.8.6)
 set(VERSION_INFO ${VERSION})
 project(
     ${PROJECT_NAME}

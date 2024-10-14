@@ -47,14 +47,21 @@
 class Errors {
    public:
    int         type;
+   std::string id;
    std::string msg;
 
    Errors(void) {
       type = ERROR_OK;
+      id   = "Error";
       msg  = "Some general error.";
    };
    Errors(std::string _msg)
      : msg(_msg) {
+      type = ERROR_OK;
+      id   = "Error";
+   };
+   Errors(std::string _id, std::string _msg)
+     : id(_id), msg(_msg) {
       type = ERROR_OK;
    };
 };
@@ -214,10 +221,25 @@ class FileNameError : public Errors {
       type = FILE_NAME_ERROR;
    };
 };
+class BadCmdOptions : public Errors {
+   public:
+   BadCmdOptions(void)
+     : Errors() {
+      type = BAD_OPERATION;
+   };
+   BadCmdOptions(std::string _msg)
+     : Errors(_msg) {
+      type = BAD_OPERATION;
+   };
+};
 class FileFormatError : public Errors {
    public:
    FileFormatError(void)
      : Errors("File format error") {
+      type = FILE_FORMAT_ERROR;
+   };
+   FileFormatError(std::string _msg)
+     : Errors(_msg) {
       type = FILE_FORMAT_ERROR;
    };
 };

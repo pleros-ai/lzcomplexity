@@ -88,7 +88,9 @@
     "utility": "cpp",
     "tbb": "cpp",
     "execution": "cpp",
-    "chrono": "cpp"
+    "chrono": "cpp",
+    "print": "cpp",
+    "filesystem": "cpp"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/clang++",
   "editor.defaultFormatter": "xaver.clang-format",

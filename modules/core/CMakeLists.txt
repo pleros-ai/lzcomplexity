@@ -3,6 +3,10 @@ set(PROJECT_NAME LZCore)
 set(namespace "lz")
 set(component "lz_library")
 
+if (TARGET LZCore)
+   return()
+endif()
+
 project(
    ${PROJECT_NAME}
    VERSION ${VERSION}
