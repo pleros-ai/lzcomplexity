@@ -54,7 +54,6 @@ struct lz_options {
       n_jobs          = result["jobs"].as<lz::lz_uint>();
       verbose         = result["verbose"].as<bool>();
       entropy_density = result["entropy-density"].as<bool>();
-      extras          = result["extras"].as<bool>();
       mixed_entropy   = result["mixed-entropy"].as<bool>();
       // preprocess      = result["process"].as<bool>();
 
@@ -170,11 +169,10 @@ struct lz_options {
    }
 };
 
-lz_options process_args(cxxopts::parse_result& result) {
+inline lz_options process_args(cxxopts::parse_result& result) {
    lz_options options(result);
 
-   namespace fs  = std::filesystem;
-   namespace utl = lz::utils;
+   namespace fs = std::filesystem;
 
    if (options.input.empty()) {
       throw FileNameError("Input file is missing.");
@@ -196,11 +194,11 @@ lz_options process_args(cxxopts::parse_result& result) {
       iss << "Summary of results:\n";
       iss << " - lz76 factorization\n";
       iss << " - Entropy density\n";
-      iss << " - Paired shuffle complexity\n";
+      iss << " - Random shuffle complexity\n";
       if (options.args.block_size >= 0)
-         iss << " - Random Shuffle Complexity\n";
+         iss << " - Paired Shuffle Complexity\n";
       if (options.find_distance) {
-         iss << " - Paired information distance between consecutive sequences\n";
+         iss << " - Information distance between consecutive sequences\n";
          iss << " - Random shuffle distance between consecutive sequences\n";
       }
 

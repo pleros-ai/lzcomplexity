@@ -153,7 +153,22 @@ namespace lz {
 
          try {
             // Largest prefix factor.
-            lz::utils::LPF(lpf, std::move(_SA.SA), std::move(_SA.LCP), _SA.n);
+            lz::utils::LPF(lpf, _SA.SA, _SA.LCP, _SA.n);
+
+            // lz_int*             prev_occ = new lz_int[_SA.n];
+            // std::vector<lz_int> lpf2(_SA.n);
+            // lz::utils::LPF_2(seq.toString(), _SA.SA, _SA.n, _SA.LCP, lpf2, prev_occ);
+
+            // std::cout << "lpf: " << std::endl;
+            // for (int i = 0; i < _SA.n; i++) {
+            //    std::cout << lpf[i] << " ";
+            // }
+            // std::cout << std::endl;
+            // std::cout << "lpf2: " << std::endl;
+            // for (int i = 0; i < _SA.n; i++) {
+            //    std::cout << lpf2[i] << " ";
+            // }
+            // std::cout << std::endl;
 
             // Lets build the factorization table
             i = 1;
@@ -171,6 +186,9 @@ namespace lz {
             throw LZError();
          }
 
+         // for (auto i: lzf)
+         //    std::cout << i << " ";
+         // std::cout << std::endl;
          FoundStddev();
          // done !
          factorization = ((lzf.back() <= _SA.n) ? lzf.size() - 1 : lzf.size() - 2);

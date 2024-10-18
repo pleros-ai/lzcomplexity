@@ -5,8 +5,6 @@
 #endif
 #include <lz/pnm.h>
 
-#include <limits>
-
 typedef std::chrono::high_resolution_clock::time_point time_point_t;
 constexpr inline auto                                  now      = std::chrono::high_resolution_clock::now;
 constexpr inline auto                                  duration = [](const std::chrono::nanoseconds& d) {
@@ -51,9 +49,10 @@ inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
                         : type == lz::utils::MSG_TYPE::INFO ? " [ Info ] "
                                                             : " [ Warning ] ";
 
-   for (auto str: allLines) {
+   for (auto i = 0ul; i < allLines.size(); i++) {
+      auto str    = allLines[i];
       auto offset = final_msg.size() > 0 ? std::string(header.size(), ' ') : "";
-      final_msg += offset + str + "\n";
+      final_msg += offset + str + (i != allLines.size() - 1 ? "\n" : "");
    }
 
    return color + header + lz::END_COLOR + final_msg;
@@ -222,7 +221,7 @@ inline void multiLineToOneLine(const std::string& ip_path, std::vector<lz::seque
    std::cout << "End read: size --> " << final_str.size() << "\n";
 }
 
-std::vector<std::pair<std::string, std::vector<int>>> read_csv(std::string filename) {
+inline std::vector<std::pair<std::string, std::vector<int>>> read_csv(std::string filename) {
    // Reads a CSV file into a vector of <string, vector<int>> pairs where
    // each pair represents <column name, column values>
 

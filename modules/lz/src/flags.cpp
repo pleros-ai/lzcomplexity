@@ -26,14 +26,14 @@ namespace lz {
          data[idx].factors = lzf;
       };
 
+      auto LZ_Output::setPairedShuffleComplexity(lz_size idx, LZ_Shuffle shuffle) -> void {
+         checkCapacity(idx);
+         data[idx].paired_shuffle_complexity = shuffle;
+      };
+
       auto LZ_Output::setRandomShuffleComplexity(lz_size idx, LZ_Shuffle shuffle) -> void {
          checkCapacity(idx);
          data[idx].random_shuffle_complexity = shuffle;
-      };
-
-      auto LZ_Output::setAllRandomShuffleComplexity(lz_size idx, LZ_Shuffle shuffle) -> void {
-         checkCapacity(idx);
-         data[idx].all_random_shuffle_complexity = shuffle;
       };
 
       auto LZ_Output::setEpsilon(lz_size idx, lz_double eps) -> void {

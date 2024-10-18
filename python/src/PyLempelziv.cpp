@@ -42,7 +42,22 @@ auto lz76EntropyDensityWithArgs    = generateFunctionWithArgs<lz::lz_double>(ent
 auto lz76EntropyDensitySeq = generateFunctionSequenceWithArgsAndFlags<lz::lz_double>(entropy_density_sequence_args);
 auto lz76EntropyDensity    = generateFunctionWithArgsAndFlags<lz::lz_double>(entropy_density_sequence_args);
 
-// Random Shuffle Complexity
+// Paired Shuffle Complexity
+// Get function signature for the python wrapper
+auto paired_shuffle_seq      = py::overload_cast<const lz::sequence&>(&lz::lz76PairedShuffleComplexity);
+auto paired_shuffle_seq_args = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76PairedShuffleComplexity);
+// Paired shuffle using sequence class
+auto lz76PairedShuffleSeqWithoutArgs = generateFunctionSequenceWithoutArgs<utl::LZ_Shuffle>(paired_shuffle_seq);
+auto lz76PairedShuffleSeqWithArgs    = generateFunctionSequenceWithArgs<utl::LZ_Shuffle>(paired_shuffle_seq_args);
+// Paired shuffle using variant type for vector<int>, vector<char> and string
+auto lz76PairedShuffleWithoutArgs = generateFunctionWithoutArgs<utl::LZ_Shuffle>(paired_shuffle_seq);
+auto lz76PairedShuffleWithArgs    = generateFunctionWithArgs<utl::LZ_Shuffle>(paired_shuffle_seq_args);
+// Paired shuffle for python style function with flags
+auto lz76PairedShuffleSeq =
+   generateFunctionSequenceWithArgsAndFlagsForShuffle<utl::LZ_Shuffle>(paired_shuffle_seq_args);
+auto lz76PairedShuffle = generateFunctionWithArgsAndFlagsForShuffle<utl::LZ_Shuffle>(paired_shuffle_seq_args);
+
+// Randoms shuffle complexity
 // Get function signature for the python wrapper
 auto random_shuffle_seq      = py::overload_cast<const lz::sequence&>(&lz::lz76RandomShuffleComplexity);
 auto random_shuffle_seq_args = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76RandomShuffleComplexity);
@@ -57,30 +72,11 @@ auto lz76RandomShuffleSeq =
    generateFunctionSequenceWithArgsAndFlagsForShuffle<utl::LZ_Shuffle>(random_shuffle_seq_args);
 auto lz76RandomShuffle = generateFunctionWithArgsAndFlagsForShuffle<utl::LZ_Shuffle>(random_shuffle_seq_args);
 
-// Whole randoms shuffle complexity
-// Get function signature for the python wrapper
-auto whole_random_shuffle_seq = py::overload_cast<const lz::sequence&>(&lz::lz76WholeRandomShuffleComplexity);
-auto whole_random_shuffle_seq_args =
-   py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76WholeRandomShuffleComplexity);
-// Whole random shuffle using sequence class
-auto lz76WholeRandomShuffleSeqWithoutArgs =
-   generateFunctionSequenceWithoutArgs<utl::LZ_Shuffle>(whole_random_shuffle_seq);
-auto lz76WholeRandomShuffleSeqWithArgs =
-   generateFunctionSequenceWithArgs<utl::LZ_Shuffle>(whole_random_shuffle_seq_args);
-// Whole random shuffle using variant type for vector<int>, vector<char> and string
-auto lz76WholeRandomShuffleWithoutArgs = generateFunctionWithoutArgs<utl::LZ_Shuffle>(whole_random_shuffle_seq);
-auto lz76WholeRandomShuffleWithArgs    = generateFunctionWithArgs<utl::LZ_Shuffle>(whole_random_shuffle_seq_args);
-// Whole random shuffle for python style function with flags
-auto lz76WholeRandomShuffleSeq =
-   generateFunctionSequenceWithArgsAndFlagsForShuffle<utl::LZ_Shuffle>(whole_random_shuffle_seq_args);
-auto lz76WholeRandomShuffle =
-   generateFunctionWithArgsAndFlagsForShuffle<utl::LZ_Shuffle>(whole_random_shuffle_seq_args);
-
 // Information distance
 // Get function signature for the python wrapper
-auto distance_seq = py::overload_cast<const lz::sequence&, const lz::sequence&>(&lz::lz76InformationDistanceZ);
+auto distance_seq = py::overload_cast<const lz::sequence&, const lz::sequence&>(&lz::lz76InformationDistance);
 auto distance_seq_args =
-   py::overload_cast<const lz::sequence&, const lz::sequence&, utl::LZ_Args>(&lz::lz76InformationDistanceZ);
+   py::overload_cast<const lz::sequence&, const lz::sequence&, utl::LZ_Args>(&lz::lz76InformationDistance);
 // Information distance using sequence class
 auto lz76InformationDistanceSeqWithoutArgs =
    generateFunctionSequenceWithoutArgsForDistance<lz::lz_double>(distance_seq);
@@ -148,8 +144,8 @@ void PyLempelZiv(py::module& m) {
            "_complexity"_a,
            "_lz_factors"_a,
            "_entropy_density"_a,
-           "_whole_random_shuffle_complexity"_a,
            "_random_shuffle_complexity"_a,
+           "_paired_shuffle_complexity"_a,
            "_lz_normal_errors"_a,
            "_lz_poison_errors"_a,
            "_eps"_a,
@@ -161,8 +157,8 @@ void PyLempelZiv(py::module& m) {
 
    LempelZiv.def_property_readonly("complexity", &utl::LempelZiv::getComplexity)
       .def_property_readonly("entropy", &utl::LempelZiv::getEntropyDensity)
+      .def_property_readonly("paired_shuffle_complexity", &utl::LempelZiv::getPairedShuffleComplexity)
       .def_property_readonly("random_shuffle_complexity", &utl::LempelZiv::getRandomShuffleComplexity)
-      .def_property_readonly("whole_random_shuffle_complexity", &utl::LempelZiv::getAllRandomShuffleComplexity)
       .def_property_readonly("lz_normal_error", &utl::LempelZiv::getNormalError)
       .def_property_readonly("lz_poison_error", &utl::LempelZiv::getPoisonError)
       .def_property_readonly("extras", &utl::LempelZiv::getExtras)
@@ -209,7 +205,7 @@ void PyLempelZiv(py::module& m) {
            "jobs"_a           = std::thread::hardware_concurrency(),
            R"pbdoc(
            The lz76 function.
-           
+
            Parameters
            ----------
            seq : sequence
@@ -320,6 +316,26 @@ void PyLempelZiv(py::module& m) {
            "log_base"_a   = 2,
            "jobs"_a       = std::thread::hardware_concurrency())
       //!> Random shuffle complexity
+      .def("lz76PairedShuffleComplexity", lz76PairedShuffleSeqWithoutArgs, "seq"_a)
+      .def("lz76PairedShuffleComplexity", lz76PairedShuffleWithoutArgs, "seq"_a)
+      .def("lz76PairedShuffleComplexity", lz76PairedShuffleSeqWithArgs, "seq"_a, "args"_a)
+      .def("lz76PairedShuffleComplexity", lz76PairedShuffleWithArgs, "seq"_a, "args"_a)
+      .def("lz76PairedShuffleComplexity",
+           lz76PairedShuffleSeq,
+           "seq"_a,
+           "partitions"_a     = 1,
+           "alphabet"_a       = 2,
+           "log_base"_a       = 2,
+           "max_block_size"_a = -1,
+           "jobs"_a           = std::thread::hardware_concurrency())
+      .def("lz76PairedShuffleComplexity",
+           lz76PairedShuffle,
+           "seq"_a,
+           "partitions"_a     = 1,
+           "alphabet"_a       = 2,
+           "log_base"_a       = 2,
+           "max_block_size"_a = -1,
+           "jobs"_a           = std::thread::hardware_concurrency())
       .def("lz76RandomShuffleComplexity", lz76RandomShuffleSeqWithoutArgs, "seq"_a)
       .def("lz76RandomShuffleComplexity", lz76RandomShuffleWithoutArgs, "seq"_a)
       .def("lz76RandomShuffleComplexity", lz76RandomShuffleSeqWithArgs, "seq"_a, "args"_a)
@@ -334,26 +350,6 @@ void PyLempelZiv(py::module& m) {
            "jobs"_a           = std::thread::hardware_concurrency())
       .def("lz76RandomShuffleComplexity",
            lz76RandomShuffle,
-           "seq"_a,
-           "partitions"_a     = 1,
-           "alphabet"_a       = 2,
-           "log_base"_a       = 2,
-           "max_block_size"_a = -1,
-           "jobs"_a           = std::thread::hardware_concurrency())
-      .def("lz76WholeRandomShuffleComplexity", lz76WholeRandomShuffleSeqWithoutArgs, "seq"_a)
-      .def("lz76WholeRandomShuffleComplexity", lz76WholeRandomShuffleWithoutArgs, "seq"_a)
-      .def("lz76WholeRandomShuffleComplexity", lz76WholeRandomShuffleSeqWithArgs, "seq"_a, "args"_a)
-      .def("lz76WholeRandomShuffleComplexity", lz76WholeRandomShuffleWithArgs, "seq"_a, "args"_a)
-      .def("lz76WholeRandomShuffleComplexity",
-           lz76WholeRandomShuffleSeq,
-           "seq"_a,
-           "partitions"_a     = 1,
-           "alphabet"_a       = 2,
-           "log_base"_a       = 2,
-           "max_block_size"_a = -1,
-           "jobs"_a           = std::thread::hardware_concurrency())
-      .def("lz76WholeRandomShuffleComplexity",
-           lz76WholeRandomShuffle,
            "seq"_a,
            "partitions"_a     = 1,
            "alphabet"_a       = 2,

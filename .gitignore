@@ -37,6 +37,7 @@
 .DS_Store
 *.zip
 .codechecker/**
+.cache
 
 # Dev folders
 /_packages/**
@@ -45,6 +46,7 @@
 /bin/**
 /install/**
 /data/**
+/test_data/**
 /lib/**
 /share/**
 

@@ -158,15 +158,6 @@
    "cwd": "${fileDirname}",
 },
 {
-   "name": "Short line function with noise",
-   "type": "lldb",
-   "request": "launch",
-   "program": "${workspaceFolder}/build/lzcomplexity_dbg",
-   "args": ["-v", "-m",
-        "/Users/efren_aragon/Documents/Work/Investigacion/Data/function_data/Line_with_noise_0.0.txtbin_mean.txt"],
-   "cwd": "${fileDirname}",
-},
-{
    "name": "edge case: start with 0",
    "type": "lldb",
    "request": "launch",

@@ -11,7 +11,7 @@ endif()
 # endif()
 
 set(PROJECT_NAME lzcomplexity)
-set(VERSION 0.8.6)
+set(VERSION 0.8.7)
 set(VERSION_INFO ${VERSION})
 project(
     ${PROJECT_NAME}
@@ -69,8 +69,8 @@ if(NOT Python_FOUND AND NOT Python3_FOUND)
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE LZCore)
-target_include_directories(${PROJECT_NAME} 
-   PUBLIC 
+target_include_directories(${PROJECT_NAME}
+   PUBLIC
       $<BUILD_INTERFACE:${LZ_DIRS}>
       $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
       $<BUILD_INTERFACE:${pybind11_INCLUDE_DIR}>
@@ -80,8 +80,8 @@ target_include_directories(${PROJECT_NAME}
 
 # install(TARGETS ${PROJECT_NAME}
 #   COMPONENT lz_python
-#   LIBRARY 
+#   LIBRARY
 #     DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#   INCLUDES 
+#   INCLUDES
 #     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
 # )

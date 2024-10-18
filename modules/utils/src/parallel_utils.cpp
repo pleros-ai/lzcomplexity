@@ -71,6 +71,28 @@ namespace lz {
          });
       }
 
+      void parallel_for_impl_2(lz_size                                                 start,
+                               lz_size                                                 end,
+                               const std::function<void(tbb::blocked_range<lz_size>)>& fun,
+                               long                                                    granularity) {
+         auto arena = lz::utils::GetGlobalTaskArena();
+         arena->Access().execute([&] {
+            if (granularity == 0) {
+               tbb::parallel_for(
+                  tbb::blocked_range<lz_size>(start, end),
+                  [&](const tbb::blocked_range<lz_size>& r) { fun(r); },
+                  tbb::auto_partitioner{});
+            }
+            // Otherwise, use the granularity specified by the user (tbb::simple_partitioner)
+            else {
+               tbb::parallel_for(
+                  tbb::blocked_range<lz_size>(start, end, granularity),
+                  [&](const tbb::blocked_range<lz_size>& r) { fun(r); },
+                  tbb::simple_partitioner{});
+            }
+         });
+      }
+
       void parallel_do_impl(const std::vector<std::function<void()>>& funcs) {
          auto arena = lz::utils::GetGlobalTaskArena();
          arena->Access().execute([&] {

@@ -4,7 +4,7 @@
 namespace lz {
    namespace internal {
 
-      template <typename T>
+      template<typename T>
       class LZ_BlockedRange : public tbb::blocked_range<T> {
          using tbb::blocked_range<T>::blocked_range;
       };

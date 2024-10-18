@@ -90,8 +90,9 @@ namespace lz {
       sequence MergeSequences(sequence s1, sequence s2) {
          std::vector<char>           seq;
          std::map<std::string, char> new_alphabet;
+         const lz_size               max_iter = std::min(s1.size(), s2.size());
          // for now both sequence have the same alphabet
-         for (auto i = 0ul; i < std::min(s1.size(), s2.size()); i++) [[likely]] {
+         for (auto i = 0ul; i < max_iter; i++) [[likely]] {
             std::string key{s1[i], s2[i]};
             if (auto val = new_alphabet.find(key); val != new_alphabet.end())
                seq.push_back(val->second);
@@ -309,7 +310,7 @@ namespace lz {
       return result;
    }
 
-   utils::LZ_Shuffle lz76RandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_Shuffle lz76PairedShuffleComplexity(const sequence& str, utils::LZ_Args args) {
       auto [past, future] = str.Split(str.size() / 2);
       auto new_seq        = internal::MergeSequences(past, future);
 
@@ -344,7 +345,7 @@ namespace lz {
       return ShuffleEntropyCalculation(new_seq, args, complexity, H_rand, mm);
    }
 
-   utils::LZ_Shuffle lz76WholeRandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
+   utils::LZ_Shuffle lz76RandomShuffleComplexity(const sequence& str, utils::LZ_Args args) {
       std::pair<std::vector<lz_int>, lz_size> random_run;
       lz_int                                  complexity;
 
@@ -406,37 +407,38 @@ namespace lz {
       return res;
    }
 
-   lz_double lz76InformationDistanceZ(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
-      lz_int C_t1, C_t2, C_all = 0;
+   // Mutual information using shuffle of concatenated sequence
+   lz_double MutualInformation(const sequence& s1, const sequence& s2, utils::LZ_Args args) {
+      std::pair<std::vector<lz_int>, lz_size> random_run;
+      lz_uint                                 complexity;
+      auto                                    s_ = s1 + s2;
 
-      auto z = internal::MergeSequences(T1, T2);
+      auto factor_fun = [&]() { complexity = lz76Factorization(s_, args); };
+      auto rand_fun   = [&]() { random_run = ShuffleFactorization(s_, args); };
 
-      auto fh_fun = [&C_t1, &T1, &args]() { C_t1 = lz76Factorization(T1, args); };
+      utils::par_do(factor_fun, rand_fun);
 
-      auto lh_fun = [&C_t2, &T2, &args]() { C_t2 = lz76Factorization(T2, args); };
+#if __cplusplus >= 201703L
+      lz_double random_sum = std::reduce(PAR random_run.first.begin(), random_run.first.end());
+#else
+      auto random_sum = std::accumulate(PAR random_run.first.begin(), random_run.first.end(), 0.0);
+#endif
+      return 1.0 - ((lz_double)random_run.second * (lz_double)complexity) / random_sum;
+   }
 
-      auto all_fun = [&C_all, &z, &args]() {
-         auto args_cpy     = args;
-         args_cpy.alphabet = z.getAlphabetSize();
-         args_cpy.log_base = z.getAlphabetSize();
-         C_all             = lz76Factorization(z, args_cpy);
-      };
-
-      utils::par_do(fh_fun, lh_fun, all_fun);
-
-      auto res = (C_all - std::fmin(C_t1, C_t2)) / std::fmax(C_t1, C_t2);
-
-      return res;
+   lz_double lz76RandomShuffleDistance(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
+      auto MI = MutualInformation(T1, T2, args);
+      return 1 - MI;
    }
 
    // Mutual information using shuffle of merged (Z) sequence
-   lz_double MutualInformation(const sequence& s1, const sequence& s2, utils::LZ_Args args) {
+   lz_double MutualInformationZ(const sequence& s1, const sequence& s2, utils::LZ_Args args) {
       auto                                    seq = internal::MergeSequences(s1, s2);
       std::pair<std::vector<lz_int>, lz_size> random_run;
       lz_uint                                 complexity;
 
-      // auto s1_c = lz76Factorization(s1, args);
-      // auto s2_c = lz76Factorization(s2, args);
+      auto s1_c = lz76Factorization(s1, args);
+      auto s2_c = lz76Factorization(s2, args);
 
       args.alphabet = seq.getAlphabetSize();
       args.log_base = seq.getAlphabetSize();
@@ -454,8 +456,8 @@ namespace lz {
       return 1.0 - ((lz_double)random_run.second * (lz_double)complexity) / random_sum;
    }
 
-   lz_double lz76RandomShuffleDistance(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
-      auto MI = MutualInformation(T1, T2, args);
+   lz_double lz76RandomShuffleDistanceZ(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
+      auto MI = MutualInformationZ(T1, T2, args);
       return 1 - MI;
    }
 

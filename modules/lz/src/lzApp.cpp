@@ -132,18 +132,18 @@ namespace lz {
          //    {excess_entropy.max_block_size, excess_entropy.excess_value, terms});
          // lz.multi_information.push_back(excess_entropy.multi_information);
 
-         lz.setAllRandomShuffleComplexity(i, excess_entropy);
+         lz.setRandomShuffleComplexity(i, excess_entropy);
       }
 
       return EXIT_SUCCESS;
    }
 
-   lz_int lz76WholeRandomShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76RandomShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       return ShuffleCalc(
-         flags, lz, [&](sequence s, utils::LZ_Args args) { return lz76WholeRandomShuffleComplexity(s, args); });
+         flags, lz, [&](sequence s, utils::LZ_Args args) { return lz76RandomShuffleComplexity(s, args); });
    }
 
-   lz_int lz76RandomShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
+   lz_int lz76PairedShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       utils::LZ_Shuffle excess_entropy;
       auto              init_line = flags.shuffle_init_line;
       auto              end_line  = flags.shuffle_end_line;
@@ -167,7 +167,7 @@ namespace lz {
          if (str.size() < 1e4)
             new_args.chunks = 1;
 
-         excess_entropy = lz76RandomShuffleComplexity(str, new_args);
+         excess_entropy = lz76PairedShuffleComplexity(str, new_args);
 
          if (processAllLines || processOneLine || processRange) {
             terms = {i + 1, excess_entropy.summands};
@@ -176,7 +176,7 @@ namespace lz {
          // lz.random_shuffle_complexity.push_back({excess_entropy.max_block_size, excess_entropy.excess_value, terms});
          // lz.multi_information.push_back(excess_entropy.multi_information);
 
-         lz.setRandomShuffleComplexity(i, excess_entropy);
+         lz.setPairedShuffleComplexity(i, excess_entropy);
       }
 
       return EXIT_SUCCESS;
@@ -300,15 +300,11 @@ namespace lz {
             auto C_t1 = lz.data[i - 1].getComplexity();
             auto C_t2 = lz.data[i].getComplexity();
 
-            auto z            = internal::MergeSequences(flags.input[i - 1], flags.input[i]);
-            auto args_cpy     = flags.sa_args;
-            args_cpy.alphabet = z.getAlphabetSize();
-            args_cpy.log_base = z.getAlphabetSize();
-            auto _C           = lz76Factorization(z, args_cpy);
+            auto _C = lz76Factorization(text[i - 1] + text[i], flags.sa_args);
 
             res = (_C - std::fmin(C_t1, C_t2)) * 1.0 / std::fmax(C_t1, C_t2);
          } else {
-            res = lz76InformationDistanceZ(text[i - 1], text[i], flags.sa_args);
+            res = lz76InformationDistance(text[i - 1], text[i], flags.sa_args);
          }
          lz.info_distance.push_back(res);
       }
@@ -371,25 +367,7 @@ namespace lz {
          auto str       = flags.input[i];
          auto mid       = str.size() / 2;  // the half of the sequence
          auto sequences = str.Split(mid);
-         // if (lz.calculated_complexity[i]) {
-         //    std::pair<std::vector<lz_int>, lz_size> random_run;
-         //    lz_uint t2_cpx;
-         //    lz_double complexity = static_cast<lz_double>(lz.complexity[i]);
-         //    lz_double t1_cpx;
 
-         //    auto t1_fun = [&]() { t1_cpx = EntropyDensity(sequences.first, flags.sa_args); };
-         //    auto t2_fun = [&]() { t2_cpx = EntropyDensity(sequences.second, flags.sa_args); };
-         //    // auto factor_fun = [&]() { complexity = lz76Factorization(str, flags.sa_args); };
-         //    auto rand_fun = [&]() { random_run = ShuffleFactorization(str, flags.sa_args); };
-
-         //    utils::par_do(rand_fun, t1_fun, t2_fun);
-
-         //    auto [H_rand, mm] = random_run;
-
-         //    auto shuffle = ShuffleEntropyCalculation(str, complexity, H_rand, mm, false);
-
-         //    res = 1.0 - shuffle.excess_value / std::fmax(t1_cpx, t2_cpx);
-         // } else {
          res = lz76RandomShuffleDistance(sequences.first, sequences.second, flags.sa_args);
          // }
          lz.sequence_info_distance.push_back(res);

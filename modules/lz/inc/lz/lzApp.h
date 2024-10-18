@@ -30,11 +30,7 @@
 
 #pragma once
 
-#include <assert.h>
 #include <lz/lempelziv.h>
-
-#include <typeinfo>
-#include <vector>
 
 #include "flags.h"
 
@@ -56,8 +52,8 @@ namespace lz {
    //.........................................................................
    // Here comes the excess entropy by shuffling.
    //.........................................................................
-   auto lz76WholeRandomShuffleComplexity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
    auto lz76RandomShuffleComplexity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
+   auto lz76PairedShuffleComplexity(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
    auto lz76RandomShuffleComplexitySequential(utils::LZ_Flags&, utils::LZ_Output&) -> lz_int;
 
    //.........................................................................

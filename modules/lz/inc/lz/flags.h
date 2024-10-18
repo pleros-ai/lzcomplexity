@@ -26,8 +26,8 @@ namespace lz {
          // sequence std::vector<shuffle_info>
          //   random_shuffle_complexity;  //!> excess of entropy by shuffling of the merged sequence
          std::vector<lz_double> mutual_information;  //!> mutual information of two half of the sequences
-         std::vector<lz_double> info_distance;  //!> information distance of the two consecutive sequences (using the
-                                                //! merged sequence of both)
+         std::vector<lz_double> info_distance;       //!> information distance of the two consecutive sequences
+
          std::vector<lz_double> random_shuffle_distance;  //!> information distance of the two consecutive sequences
                                                           //!(using MI estimated by random shuffle)
          std::vector<lz_double> sequence_info_distance;   //!> information distance of each sequences
@@ -48,8 +48,8 @@ namespace lz {
          auto setComplexity(lz_size, lz_uint) -> void;
          auto setEntropyDensity(lz_size, lz_double) -> void;
          auto setFactors(lz_size, std::vector<lz_uint>) -> void;
+         auto setPairedShuffleComplexity(lz_size, LZ_Shuffle) -> void;
          auto setRandomShuffleComplexity(lz_size, LZ_Shuffle) -> void;
-         auto setAllRandomShuffleComplexity(lz_size, LZ_Shuffle) -> void;
          auto setEpsilon(lz_size, lz_double) -> void;
          auto setFactorsStddev(lz_size, lz_double) -> void;
          auto setNormalError(lz_size, lz_double) -> void;

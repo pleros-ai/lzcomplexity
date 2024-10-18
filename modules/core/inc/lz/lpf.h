@@ -27,6 +27,8 @@
 
 #pragma once
 
+#include <lz/parallel_utils.h>
+
 #include <utility>
 #include <vector>
 
@@ -229,40 +231,7 @@ namespace lz {
        * @param n     length of the arrays
        * @return number of elements in LPF
        */
-      inline lz_int LPF(std::vector<lz_uint>& lpf, std::vector<lz_uint> SA, std::vector<lz_uint> LCP, lz_size n) {
-         // if ((SA == nullptr) || (LCP == nullptr) || (n == 0)) {
-         //    return -1;
-         // }
-         if (n <= 1) {
-            if (n == 1)
-               lpf[0] = 0;
-            return 0;
-         }
-
-         LPFStack stack;
-         lz_uint  lcp = 0;
-
-         // SA and LCP must have allocated size n+1	!!!
-         SA.push_back(0);
-         LCP.push_back(0);
-
-         stack.push(0, SA[0] + 1);
-
-         for (lz_size i = 1; i <= n; ++i) {
-            lcp = LCP[i];
-
-            while (!stack.empty() && SA[i] + 1 < stack.TopPos()) {
-               lpf[stack.TopPos() - 1] = std::max(stack.TopLen(), lcp);
-               lcp                     = std::min(stack.TopLen(), lcp);
-               stack.pop();
-            }
-
-            if (i < n)
-               stack.push(lcp, SA[i] + 1);
-         }
-
-         return n;
-      };
+      lz_int LPF(std::vector<lz_uint>& lpf, std::vector<lz_uint> SA, std::vector<lz_uint> LCP, lz_size n);
 
       /**
        * \brief
@@ -275,39 +244,16 @@ namespace lz {
        * @param n     length of the arrays
        * @return number of elements in LPF
        */
-      inline lz_int LPF_opt(lz_int* lpf, lz_int* SA, lz_int* LCP, lz_size n) {
-         if ((SA == NULL) || (LCP == NULL) || (n == 0)) {
-            return -1;
-         }
-         if (n <= 1) {
-            if (n == 1)
-               lpf[0] = 0;
-            return 0;
-         }
+      lz_int LPF_opt(std::vector<lz_uint>& lpf, std::vector<lz_uint> SA, std::vector<lz_uint> LCP, lz_size n);
 
-         lz_int lcp                = 0;
-         SA[n]                     = -1;
-         LCP[n]                    = 0;
-         std::vector<lz_int> stack = {0};
+      lz_int LPF_par(std::vector<lz_uint>& lpf, std::vector<lz_uint> SA, std::vector<lz_uint> LCP, lz_size n);
 
-         for (lz_size i = 1; i < n; i++) {
-            lcp = LCP[i];
-            while (!stack.empty() &&
-                   (SA[i] < SA[stack.back()] || (SA[i] > SA[stack.back()] && LCP[i] <= LCP[stack.back()]))) {
-               if (SA[i] < SA[stack.back()]) {
-                  lpf[SA[stack.back()]] = std::max(LCP[i], LCP[stack.back()]);
-                  LCP[i]                = std::min(LCP[i], LCP[stack.back()]);
-               } else {
-                  lpf[SA[stack.back()]] = LCP[stack.back()];
-               }
-               stack.pop_back();
-            }
-            if (i < n)
-               stack.push_back(i);
-         }
-
-         return n;
-      };
+      lz_int LPF_2(const std::string    s,
+                   std::vector<lz_uint> sa,
+                   lz_int               n,
+                   std::vector<lz_uint> lcp,
+                   std::vector<lz_int>& lpf,
+                   lz_int*              prev_occ);
 
    }  // namespace utils
 

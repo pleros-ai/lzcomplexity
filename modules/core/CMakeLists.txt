@@ -27,11 +27,12 @@ include(useTbb)
 message(STATUS "is unix: ${UNIX} and tbb: ${LZ_TBB_LIBS}")
 # link_libraries(Threads::Threads)
 
+set(LZ_LPF ${CORE_SOURCE_DIR}/lpf.cpp)
 set(LZ_LZ76 ${CORE_SOURCE_DIR}/lz76.cpp)
 set(LZ_ALGS ${CORE_SOURCE_DIR}/lempelziv.cpp)
 set(LZ_SEQ ${CORE_SOURCE_DIR}/sequence.cpp)
 
-set(SOURCES ${LZ_SEQ} ${LZ_LZ76} ${LZ_ALGS})
+set(SOURCES ${LZ_SEQ} ${LZ_LPF} ${LZ_LZ76} ${LZ_ALGS})
 
 if(LZ_SHARE)
    add_library(${PROJECT_NAME} SHARED)

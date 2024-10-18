@@ -13,7 +13,7 @@ cmake_policy(VERSION 3.5...3.28)
 set(PROJECT_NAME lzcomplexity)
 set(namespace "lz")
 set(component "lz_cmd")
-set(VERSION 0.8.6)
+set(VERSION 0.8.7)
 project(
     ${PROJECT_NAME}
     VERSION ${VERSION}
@@ -209,8 +209,8 @@ if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
 
     # target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${MAIN_INCLUDE_DIR}>)
     # Compiler flags for the target.
-    target_include_directories(${PROJECT_NAME} 
-      PUBLIC 
+    target_include_directories(${PROJECT_NAME}
+      PUBLIC
         $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
         $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -221,16 +221,16 @@ if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
     target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
     target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
-    
+
     # Debug prefix for libs when build it in debug mode
-    set_target_properties(${PROJECT_NAME} 
-        PROPERTIES 
+    set_target_properties(${PROJECT_NAME}
+        PROPERTIES
           DEBUG_POSTFIX "_dbg"
     )
 
     if(IPO_CHECKED)
-        set_target_properties(${PROJECT_NAME} 
-        PROPERTIES 
+        set_target_properties(${PROJECT_NAME}
+        PROPERTIES
           INTERPROCEDURAL_OPTIMIZATION TRUE
           INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
     endif()
@@ -257,7 +257,7 @@ if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
         COMPONENT ${component} # must be here, not any line lower
         # these get default values from GNUInstallDirs, no need to set them
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
-        LIBRARY 
+        LIBRARY
             DESTINATION ${CMAKE_INSTALL_LIBDIR}
             NAMELINK_COMPONENT lz_headers
         ARCHIVE
@@ -278,7 +278,7 @@ if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   set(PROJECT_NAME lzdistance)
   set(namespace "lz")
   set(component "lz_dist_cmd")
-  set(VERSION 0.8.6)
+  set(VERSION 0.8.7)
   project(
     ${PROJECT_NAME}
     VERSION ${VERSION}
@@ -290,16 +290,16 @@ if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   add_executable(${PROJECT_NAME} lzdistance.cpp)
 
   # target_link_libraries(${PROJECT_NAME} PRIVATE ${GLOBAL_LZ_TBB_LIBS})
-  target_link_libraries(${PROJECT_NAME} PUBLIC LZCore)
+  target_link_libraries(${PROJECT_NAME} PUBLIC LZDist)
 
-  get_property(CORE_INCLUDE_DIR GLOBAL PROPERTY CORE_INCLUDE_DIR)
+  get_property(DIST_INCLUDE_DIR GLOBAL PROPERTY DIST_INCLUDE_DIR)
 
   message(STATUS "Core dir dist: ${LZ_CORE_INCLUDE_DIR}")
   # target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${MAIN_INCLUDE_DIR}>)
   # Compiler flags for the target.
-  target_include_directories(${PROJECT_NAME} 
-    PUBLIC 
-      $<BUILD_INTERFACE:${LZ_CORE_INCLUDE_DIR}>
+  target_include_directories(${PROJECT_NAME}
+    PUBLIC
+      $<BUILD_INTERFACE:${DIST_INCLUDE_DIR}>
       $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
@@ -308,7 +308,20 @@ if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
   target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
 
-  # set_target_properties(${PROJECT_NAME} PROPERTIES
+  # Debug prefix for libs when build it in debug mode
+  set_target_properties(${PROJECT_NAME}
+      PROPERTIES
+        DEBUG_POSTFIX "_dbg"
+  )
+
+  if(IPO_CHECKED)
+    set_target_properties(${PROJECT_NAME}
+    PROPERTIES
+      INTERPROCEDURAL_OPTIMIZATION TRUE
+      INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
+  endif()
+
+    # set_target_properties(${PROJECT_NAME} PROPERTIES
   #     BUNDLE True
   #     # MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.${CUR_TARGET}
   #     MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
@@ -330,7 +343,7 @@ if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
       COMPONENT ${component} # must be here, not any line lower
       # these get default values from GNUInstallDirs, no need to set them
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
-      LIBRARY 
+      LIBRARY
           DESTINATION ${CMAKE_INSTALL_LIBDIR}
           NAMELINK_COMPONENT lz_headers
       ARCHIVE
@@ -351,7 +364,7 @@ endif()
 if(BUILD_PYTHON)
     add_subdirectory(python)
   #   find_package(Python3 REQUIRED COMPONENTS Interpreter)
-    
+
   #   message(STATUS "python: ${Python3_FOUND}")
   #   install(CODE
   #   "execute_process(

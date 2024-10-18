@@ -30,8 +30,6 @@
 
 #pragma once
 
-#include <typeinfo>
-
 #include "lz76.h"
 #include "structures.h"
 
@@ -62,13 +60,13 @@ namespace lz {
    //.........................................................................
    auto lz76Factorization(const sequence&, utils::LZ_Args) -> lz_uint;
 
-   auto lz76Factorization(const sequence& text) -> lz_uint {
+   inline auto lz76Factorization(const sequence& text) -> lz_uint {
       return lz76Factorization(text, internal::getDefaultArgs(text));
    };
 
    auto lz76Factors(const sequence&, utils::LZ_Args) -> internal::LZ_Result;
 
-   auto lz76Factors(const sequence& text) -> internal::LZ_Result {
+   inline auto lz76Factors(const sequence& text) -> internal::LZ_Result {
       return lz76Factors(text, internal::getDefaultArgs(text));
    };
 
@@ -77,7 +75,7 @@ namespace lz {
    //.........................................................................
    auto lz76EntropyDensity(const sequence&, utils::LZ_Args) -> lz_double;
 
-   auto lz76EntropyDensity(const sequence& text) -> lz_double {
+   inline auto lz76EntropyDensity(const sequence& text) -> lz_double {
       return lz76EntropyDensity(text, internal::getDefaultArgs(text));
    };
 
@@ -88,10 +86,10 @@ namespace lz {
    auto lz76EffectiveComplexity(const sequence&, utils::LZ_Args) -> lz_int;
    auto lz76EffectiveComplexityNormalized(const sequence&, utils::LZ_Args) -> lz_double;
    // Variants
-   auto lz76EffectiveComplexity(const sequence& text) -> lz_int {
+   inline auto lz76EffectiveComplexity(const sequence& text) -> lz_int {
       return lz76EffectiveComplexity(text, internal::getDefaultArgs(text));
    };
-   auto lz76EffectiveComplexityNormalized(const sequence& text) -> lz_double {
+   inline auto lz76EffectiveComplexityNormalized(const sequence& text) -> lz_double {
       return lz76EffectiveComplexityNormalized(text, internal::getDefaultArgs(text));
    };
 
@@ -101,7 +99,7 @@ namespace lz {
    // Main function
    auto ShuffleFactorization(const sequence&, utils::LZ_Args) -> std::pair<std::vector<lz_int>, lz_size>;
    // Variant
-   auto ShuffleFactorization(const sequence& text) -> std::pair<std::vector<lz_int>, lz_size> {
+   inline auto ShuffleFactorization(const sequence& text) -> std::pair<std::vector<lz_int>, lz_size> {
       return ShuffleFactorization(text, internal::getDefaultArgs(text));
    };
 
@@ -111,15 +109,15 @@ namespace lz {
    // --> Z Random Shuffle Complexity use the Z sequence (the merge of both half)
    //.........................................................................
    // Main functions
-   auto lz76WholeRandomShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
    auto lz76RandomShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
+   auto lz76PairedShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
    auto lz76RandomShuffleComplexitySequential(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
    // Variants
-   auto lz76WholeRandomShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
-      return lz76WholeRandomShuffleComplexity(str, internal::getDefaultArgs(str));
-   };
-   auto lz76RandomShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
+   inline auto lz76RandomShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
       return lz76RandomShuffleComplexity(str, internal::getDefaultArgs(str));
+   };
+   inline auto lz76PairedShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
+      return lz76PairedShuffleComplexity(str, internal::getDefaultArgs(str));
    };
    //.........................................................................
    auto
@@ -133,7 +131,7 @@ namespace lz {
    // Main function
    auto lz76ExcessEntropyDistance(const sequence&, utils::LZ_Args) -> lz_double;
    // Variants
-   auto lz76ExcessEntropyDistance(const sequence& str) -> lz_double {
+   inline auto lz76ExcessEntropyDistance(const sequence& str) -> lz_double {
       return lz76ExcessEntropyDistance(str, internal::getDefaultArgs(str));
    };
 
@@ -146,24 +144,31 @@ namespace lz {
          -> lz_double;
 
    auto lz76InformationDistance(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
-   auto lz76InformationDistanceZ(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
    // Variants
-   auto lz76InformationDistance(const sequence& T1, const sequence& T2) -> lz_double {
+   inline auto lz76InformationDistance(const sequence& T1, const sequence& T2) -> lz_double {
       return lz76InformationDistance(T1, T2, internal::getDefaultArgs(T1));
    };
-   auto lz76InformationDistanceZ(const sequence& T1, const sequence& T2) -> lz_double {
-      return lz76InformationDistanceZ(T1, T2, internal::getDefaultArgs(T1));
+
+   //.........................................................................
+   // Distance between two sequences using shuffling over concatenated sequence
+   //.........................................................................
+   // Main functions
+   auto MutualInformation(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+   auto lz76RandomShuffleDistance(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+   // Variants
+   inline auto lz76RandomShuffleDistance(const sequence& T1, const sequence& T2) -> lz_double {
+      return lz76RandomShuffleDistance(T1, T2, internal::getDefaultArgs(T1));
    };
 
    //.........................................................................
    // Distance between two sequences using shuffling over merged (Z) sequence
    //.........................................................................
    // Main functions
-   auto MutualInformation(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
-   auto lz76RandomShuffleDistance(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+   auto MutualInformationZ(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+   auto lz76RandomShuffleDistanceZ(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
    // Variants
-   auto lz76RandomShuffleDistance(const sequence& T1, const sequence& T2) -> lz_double {
-      return lz76RandomShuffleDistance(T1, T2, internal::getDefaultArgs(T1));
+   inline auto lz76RandomShuffleDistanceZ(const sequence& T1, const sequence& T2) -> lz_double {
+      return lz76RandomShuffleDistanceZ(T1, T2, internal::getDefaultArgs(T1));
    };
 
    //.........................................................................
@@ -171,7 +176,7 @@ namespace lz {
    //.........................................................................
    auto lz76ExtraMeasures(const sequence&, utils::LZ_Args) -> utils::LZ_Extra;
 
-   auto lz76ExtraMeasures(const sequence& seq) -> utils::LZ_Extra {
+   inline auto lz76ExtraMeasures(const sequence& seq) -> utils::LZ_Extra {
       return lz76ExtraMeasures(seq, internal::getDefaultArgs(seq.size()));
    };
 
@@ -180,13 +185,13 @@ namespace lz {
    //.........................................................................
    auto lz76NormalError(const sequence&, utils::LZ_Args) -> lz_double;
 
-   auto lz76NormalError(const sequence& seq) -> lz_double {
+   inline auto lz76NormalError(const sequence& seq) -> lz_double {
       return lz76NormalError(seq, internal::getDefaultArgs(seq.size()));
    };
 
    auto lz76PoisonError(const sequence&, utils::LZ_Args) -> lz_double;
 
-   auto lz76PoisonError(const sequence& seq) -> lz_double {
+   inline auto lz76PoisonError(const sequence& seq) -> lz_double {
       return lz76PoisonError(seq, internal::getDefaultArgs(seq.size()));
    };
 }  // namespace lz
