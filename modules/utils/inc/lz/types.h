@@ -1,5 +1,9 @@
 #pragma once
 
+#if __cpp_lib_variant
+#include <variant>
+#endif
+
 #include <lz/sa_structures.h>
 
 #include "general.h"
