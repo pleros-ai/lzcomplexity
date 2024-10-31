@@ -38,7 +38,7 @@
 #include <string>
 #include <vector>
 
-#include "myexceptions.h"
+#include "exceptions.h"
 #include "utils.h"
 
 #define PBM_MAXCHARLINE 70
@@ -47,7 +47,7 @@
 #endif
 
 #ifndef CHARBITS
-#define CHARBITS \
+#define CHARBITS                                                                                                       \
    std::numeric_limits<unsigned char>::digits  // This is the number of bits not counting the sign bit and the padding
                                                // bits (if any).
 #endif
@@ -57,9 +57,9 @@ typedef enum { PNM_P1, PNM_P2, PNM_P3, PNM_P4, PNM_P5, PNM_P6, PNM_P7, PNM_RAWTX
 namespace lz {
    namespace utils {
       class pnm {
-        protected:
+     protected:
          MagickNumber magick_number;
-         std::string header_dump;
+         std::string  header_dump;
 
          unsigned int height;
          unsigned int width;
@@ -70,9 +70,9 @@ namespace lz {
 
          unsigned int linesizebound;  // maximum line size ( if linesizebound is exceeded a new line is forced)
 
-        public:
+     public:
          pnm(void)
-             : magick_number(PNM_P1), height(0), width(0), maxvalue(1), linesizebound(PBM_MAXCHARLINE){};
+           : magick_number(PNM_P1), height(0), width(0), maxvalue(1), linesizebound(PBM_MAXCHARLINE){};
          pnm(pnm& obj) { *this = obj; };
 
          pnm& operator=(pnm obj);
@@ -89,17 +89,29 @@ namespace lz {
          std::ostream& SavePGM(std::ostream& os, const std::vector<sequence>& s, bool binary = true, char maxv = 0);
          std::ostream& SavePGM(std::ostream& os, const sequence& s, bool binary = true, int newfile = 0, char maxv = 0);
 
-         std::ostream& SavePGM(std::ostream& os, const std::vector<unsigned int>::iterator start,
-                               const std::vector<unsigned int>::iterator end, bool binary, int newfile,
-                               unsigned int maxv = 0);
-         std::ostream& SavePGM(std::ostream& os, std::vector<unsigned int>& data, unsigned int width,
-                               bool binary = true, unsigned int maxv = 0);
+         std::ostream& SavePGM(std::ostream&                             os,
+                               const std::vector<unsigned int>::iterator start,
+                               const std::vector<unsigned int>::iterator end,
+                               bool                                      binary,
+                               int                                       newfile,
+                               unsigned int                              maxv = 0);
+         std::ostream& SavePGM(std::ostream&              os,
+                               std::vector<unsigned int>& data,
+                               unsigned int               width,
+                               bool                       binary = true,
+                               unsigned int               maxv   = 0);
 
-         std::ostream& SavePPM(std::ostream& os, const std::vector<unsigned int>::iterator start,
-                               const std::vector<unsigned int>::iterator end, bool binary, int newfile,
-                               unsigned int maxv = 0);
-         std::ostream& SavePPM(std::ostream& os, std::vector<unsigned int>& data, unsigned int width,
-                               bool binary = true, unsigned int maxv = 0);
+         std::ostream& SavePPM(std::ostream&                             os,
+                               const std::vector<unsigned int>::iterator start,
+                               const std::vector<unsigned int>::iterator end,
+                               bool                                      binary,
+                               int                                       newfile,
+                               unsigned int                              maxv = 0);
+         std::ostream& SavePPM(std::ostream&              os,
+                               std::vector<unsigned int>& data,
+                               unsigned int               width,
+                               bool                       binary = true,
+                               unsigned int               maxv   = 0);
 
          std::istream& ReadRAW(std::istream& is, sequence& s, bool bin);
          std::istream& ReadRAW(std::istream& is, std::vector<sequence>& s, bool bin);
@@ -110,7 +122,7 @@ namespace lz {
          unsigned int Height(void) const { return height; };
          unsigned int Width(void) const { return width; };
          unsigned int MaxChannelValue(void) const { return maxvalue; };
-         std::string TulType(void) const { return tultype; };
+         std::string  TulType(void) const { return tultype; };
 
          std::string HeaderClear() {
             std::string str = header_dump;
@@ -125,8 +137,8 @@ namespace lz {
 
          void Clear(void) {
             width = height = 0;
-            maxvalue = 1;
-            magick_number = PNM_P1;
+            maxvalue       = 1;
+            magick_number  = PNM_P1;
             header_dump.clear();
             linesizebound = 0;
             tultype.clear();

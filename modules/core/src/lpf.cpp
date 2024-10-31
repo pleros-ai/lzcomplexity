@@ -1,5 +1,4 @@
 #include <lz/lpf.h>
-#include <math.h>
 #include <tbb/blocked_range.h>
 
 namespace lz {
@@ -179,7 +178,7 @@ namespace lz {
 
       inline lz_int
          getLeft_opt(std::vector<std::vector<lz_uint>> table, lz_int depth, lz_int n, lz_int index, lz_int start) {
-         lz_int value = table[0][index];
+         auto value = table[0][index];
          if (value == table[depth - 1][0])
             return -1;
 
@@ -209,7 +208,7 @@ namespace lz {
 
       inline lz_int
          getRight_opt(std::vector<std::vector<lz_uint>> table, lz_int depth, lz_int n, lz_int index, lz_int start) {
-         lz_int value = table[0][index];
+         auto value = table[0][index];
          if (value == table[depth - 1][0])
             return -1;
 
@@ -237,7 +236,11 @@ namespace lz {
          return cur;
       }
 
-      void ComputeANSV_Linear(lz_uint a[], lz_int n, lz_int leftElements[], lz_int rightElements[], lz_int offset) {
+      void ComputeANSV_Linear(std::vector<lz_uint>& a,
+                              lz_int                n,
+                              std::vector<lz_int>&  leftElements,
+                              std::vector<lz_int>&  rightElements,
+                              lz_int                offset) {
          lz_int  i, top;
          lz_int* stack = new lz_int[n];
 
@@ -245,9 +248,9 @@ namespace lz {
             while (top > -1 && a[stack[top]] > a[i])
                top--;
             if (top == -1)
-               leftElements[i] = -1;
+               leftElements[i + offset] = -1;
             else
-               leftElements[i] = stack[top] + offset;
+               leftElements[i + offset] = stack[top] + offset;
             stack[++top] = i;
          }
 
@@ -255,15 +258,15 @@ namespace lz {
             while (top > -1 && a[stack[top]] > a[i])
                top--;
             if (top == -1)
-               rightElements[i] = -1;
+               rightElements[i + offset] = -1;
             else
-               rightElements[i] = stack[top] + offset;
+               rightElements[i + offset] = stack[top] + offset;
             stack[++top] = i;
          }
          delete[] stack;
       }
 
-      void ComputeANSV(std::vector<lz_uint> a, lz_int n, lz_int* left, lz_int* right) {
+      void ComputeANSV(std::vector<lz_uint>& a, lz_int n, std::vector<lz_int>& left, std::vector<lz_int>& right) {
          lz_int l2    = cflog2(n);
          lz_int depth = l2 + 1;
          // lz_int** table = new lz_int*[depth];
@@ -281,7 +284,7 @@ namespace lz {
          for (lz_int d = 1; d < depth; d++) {
             lz_int m2 = m / 2;
 
-            std::cout << m << " -- " << depth << std::endl;
+            // std::cout << m << " -- " << depth << std::endl;
             lz::utils::parallel_for(
                0, m2, [&](const lz_int i) { table[d][i] = std::min(table[d - 1][LEFT(i)], table[d - 1][RIGHT(i)]); });
 
@@ -292,67 +295,48 @@ namespace lz {
             m = (m + 1) / 2;
          }
 
-         std::cout << n << " -- " << depth << std::endl;
          lz::internal::parallel_for_impl_2(
             0,
             n,
             [&](tbb::blocked_range<lz_size> rng) {
-               for (lz_size i = rng.begin(); i < rng.end(); i++) {
-                  ComputeANSV_Linear(&a[i], rng.end() - i, left + i, right + i, i);
+               lz_int offset = rng.begin();
+               ComputeANSV_Linear(a, rng.size(), left, right, offset);
 
-                  lz_int i_copy = i;
-
-                  lz_int tmp = i;
-                  for (lz_int k = i; k < rng.end(); k++) {
-                     if (left[k] == -1) {
-                        if (tmp != -1 && a[tmp] >= a[k]) {
-                           tmp = getLeft_opt(table, depth, n, k, tmp);
-                        }
-                        left[k] = tmp;
+               lz_int tmp = offset;
+               for (lz_uint k = offset; k < rng.end(); k++) {
+                  if (left[k] == -1) {
+                     if (tmp != -1 && a[tmp] >= a[k]) {
+                        tmp = getLeft_opt(table, depth, n, k, tmp);
                      }
+                     left[k] = tmp;
                   }
+               }
 
-                  tmp = rng.end() - 1;
-                  for (lz_int k = rng.end() - 1; k >= i_copy; k--) {
-                     if (right[k] == -1) {
-                        if (tmp != -1 && a[tmp] >= a[k]) {
-                           tmp = getRight_opt(table, depth, n, k, tmp);
-                        }
-                        right[k] = tmp;
+               tmp = rng.end() - 1;
+               for (lz_int k = rng.end() - 1; k >= offset; k--) {
+                  if (right[k] == -1) {
+                     if (tmp != -1 && a[tmp] >= a[k]) {
+                        tmp = getRight_opt(table, depth, n, k, tmp);
                      }
+                     right[k] = tmp;
                   }
                }
             },
-            BLOCK_SIZE);
-
-         // for (lz_int i = 1; i < depth; i++)
-         //    delete table[i];
-
-         // delete table;
+            n / lz::utils::GetGlobalTaskArena()->TaskArenaSize());
       };
 
-      lz_int LPF_2(const std::string    s,
-                   std::vector<lz_uint> sa,
-                   lz_int               n,
-                   std::vector<lz_uint> lcp,
-                   std::vector<lz_int>& lpf,
-                   lz_int*              prev_occ) {
-         lz_int  d            = getDepth(n);
-         lz_int *leftElements = new lz_int[n], *rightElements = new lz_int[n];
+      lz_int LPF_2(const sequence& seq, std::vector<lz_uint> sa, lz_int n, std::vector<lz_int>& lpf) {
 
-         lz_int *leftLPF = new lz_int[n], *rightLPF = new lz_int[n];
-         lz_int* rank = lpf.data();
+         lz_int               d = getDepth(n);
+         std::vector<lz_int>  leftElements(n), rightElements(n);
+         std::vector<lz_int>  leftLPF(n), rightLPF(n);
+         std::vector<lz_int>& rank = lpf;
 
-         std::cout << "Calculate ANSV" << std::endl;
          ComputeANSV(sa, n, leftElements, rightElements);
-
-         std::cout << "Calculate ANSV2" << std::endl;
 
          lz::utils::parallel_for(0, n, [&](const lz_int i) { rank[sa[i]] = i; });
 
-         std::cout << "Calculate ANSV3" << std::endl;
          int p = lz::utils::GetGlobalTaskArena()->TaskArenaSize();
-
          p *= 2;
          lz_int size = (n + p - 1) / p;
 
@@ -360,86 +344,107 @@ namespace lz {
             0,
             n,
             [&](tbb::blocked_range<lz_size> rng) {
-               for (lz_size i = rng.begin(); i < rng.end(); i++) {
-                  lz_int j = std::min<lz_size>(rng.end(), n);
+               lz_int i = rng.begin();
+               lz_int j = rng.end();
 
-                  // compute lpf for first element
-                  lz_int mid = rank[i], left = leftElements[rank[i]], right = rightElements[rank[i]];
-                  lz_int llcp = 0, rlcp = 0;
+               // compute lpf for first element
+               lz_int mid = rank[i], left = leftElements[rank[i]], right = rightElements[rank[i]];
+               lz_int llcp = 0, rlcp = 0;
+
+               if (left != -1) {
+                  while (sa[left] + llcp < n && i + llcp < n && seq[sa[left] + llcp] == seq[i + llcp]) {
+                     llcp++;
+                  }
+                  leftLPF[i] = llcp;
+               } else
+                  leftLPF[i] = 0;
+
+               if (right != -1) {
+                  while (sa[right] + rlcp < n && i + rlcp < n && seq[sa[right] + rlcp] == seq[i + rlcp]) {
+                     rlcp++;
+                  }
+                  rightLPF[i] = rlcp;
+               } else
+                  rightLPF[i] = 0;
+
+               if (leftLPF[i] == 0 && rightLPF[i] == 0) {
+                  lpf[i] = 0;
+               } else if (leftLPF[i] > rightLPF[i]) {  // no neighbor
+                  lpf[i] = leftLPF[i];
+               } else {
+                  lpf[i] = rightLPF[i];
+               }
+
+               // compute lpf for rest elements
+               // TODO: try parallel for
+               lz::utils::parallel_for(i + 1, j, [&](const lz_int k) {
+                  left  = leftElements[rank[k]];
+                  right = rightElements[rank[k]];
 
                   if (left != -1) {
-                     while (s[sa[left] + llcp] == s[i + llcp])
+                     llcp = std::max<lz_int>(leftLPF[k - 1] - 1, 0);
+                     while (sa[left] + llcp < n && k + llcp < n && seq[sa[left] + llcp] == seq[k + llcp]) {
                         llcp++;
-                     leftLPF[i] = llcp;
+                     }
+                     leftLPF[k] = llcp;
                   } else
-                     leftLPF[i] = 0;
+                     leftLPF[k] = 0;
 
                   if (right != -1) {
-                     while (s[sa[right] + rlcp] == s[i + rlcp])
+                     rlcp = std::max<lz_int>(rightLPF[k - 1] - 1, 0);
+                     while (sa[right] + rlcp < n && k + rlcp < n && seq[sa[right] + rlcp] == seq[k + rlcp]) {
                         rlcp++;
-                     rightLPF[i] = rlcp;
+                     }
+                     rightLPF[k] = rlcp;
                   } else
-                     rightLPF[i] = 0;
+                     rightLPF[k] = 0;
 
-                  if (leftLPF[i] == 0 && rightLPF[i] == 0) {
-                     prev_occ[i] = -1;
-                     lpf[i]      = 0;
+                  if (leftLPF[k] == 0 && rightLPF[k] == 0) {
+                     lpf[k] = 0;
                   }
                   // no neighbor
-                  else if (leftLPF[i] > rightLPF[i]) {
-                     prev_occ[i] = sa[left];
-                     lpf[i]      = leftLPF[i];
+                  else if (leftLPF[k] > rightLPF[k]) {
+                     lpf[k] = leftLPF[k];
                   } else {
-                     prev_occ[i] = sa[right];
-                     lpf[i]      = rightLPF[i];
+                     lpf[k] = rightLPF[k];
                   }
+               });
+               // for (lz_int k = i + 1; k < j; k++) {
+               //    left  = leftElements[lpf[k]];
+               //    right = rightElements[lpf[k]];
 
-                  // compute lpf for rest elements
-                  for (lz_int k = i + 1; k < j; k++) {
-                     left  = leftElements[rank[k]];
-                     right = rightElements[rank[k]];
+               //    if (left != -1) {
+               //       llcp = std::max<lz_int>(leftLPF[k - 1] - 1, 0);
+               //       while (sa[left] + llcp < n && k + llcp < n && seq[sa[left] + llcp] == seq[k + llcp]) {
+               //          llcp++;
+               //       }
+               //       leftLPF[k] = llcp;
+               //    } else
+               //       leftLPF[k] = 0;
 
-                     if (left != -1) {
-                        llcp = std::max<lz_int>(leftLPF[k - 1] - 1, 0);
-                        while (s[sa[left] + llcp] == s[k + llcp])
-                           llcp++;
-                        leftLPF[k] = llcp;
-                     } else
-                        leftLPF[k] = 0;
+               //    if (right != -1) {
+               //       rlcp = std::max<lz_int>(rightLPF[k - 1] - 1, 0);
+               //       while (sa[right] + rlcp < n && k + rlcp < n && seq[sa[right] + rlcp] == seq[k + rlcp]) {
+               //          rlcp++;
+               //       }
+               //       rightLPF[k] = rlcp;
+               //    } else
+               //       rightLPF[k] = 0;
 
-                     if (right != -1) {
-                        rlcp = std::max<lz_int>(rightLPF[k - 1] - 1, 0);
-                        while (s[sa[right] + rlcp] == s[k + rlcp] && sa[right] + rlcp < n && k + rlcp < n) {
-                           std::cout << s[sa[right] + rlcp] << " " << s[k + rlcp] << std::endl;
-                           rlcp++;
-                        }
-                        rightLPF[k] = rlcp;
-                     } else
-                        rightLPF[k] = 0;
-
-                     if (leftLPF[k] == 0 && rightLPF[k] == 0) {
-                        prev_occ[k] = -1;
-                        lpf[k]      = 0;
-                     }
-                     // no neighbor
-                     else if (leftLPF[k] > rightLPF[k]) {
-                        prev_occ[k] = sa[left];
-                        lpf[k]      = leftLPF[k];
-                     } else {
-                        prev_occ[k] = sa[right];
-                        lpf[k]      = rightLPF[k];
-                     }
-                  }
-               }
+               //    if (leftLPF[k] == 0 && rightLPF[k] == 0) {
+               //       lpf[k] = 0;
+               //    }
+               //    // no neighbor
+               //    else if (leftLPF[k] > rightLPF[k]) {
+               //       lpf[k] = leftLPF[k];
+               //    } else {
+               //       lpf[k] = rightLPF[k];
+               //    }
+               // }
             },
             size);
 
-         std::cout << "---> lpf" << std::endl;
-
-         delete[] leftElements;
-         delete[] rightElements;
-         delete[] leftLPF;
-         delete[] rightLPF;
+         return n;
       };
 
    }  // namespace utils

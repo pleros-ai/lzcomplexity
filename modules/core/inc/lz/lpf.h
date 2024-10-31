@@ -32,6 +32,8 @@
 #include <utility>
 #include <vector>
 
+#include "sequence.h"
+
 namespace lz {
 
    namespace utils {
@@ -248,12 +250,7 @@ namespace lz {
 
       lz_int LPF_par(std::vector<lz_uint>& lpf, std::vector<lz_uint> SA, std::vector<lz_uint> LCP, lz_size n);
 
-      lz_int LPF_2(const std::string    s,
-                   std::vector<lz_uint> sa,
-                   lz_int               n,
-                   std::vector<lz_uint> lcp,
-                   std::vector<lz_int>& lpf,
-                   lz_int*              prev_occ);
+      lz_int LPF_2(const sequence& seq, std::vector<lz_uint> sa, lz_int n, std::vector<lz_int>& lpf);
 
    }  // namespace utils
 

@@ -3,10 +3,17 @@
 #include <lz/lz.h>
 #include <lz/lzApp.h>
 
+#include <filesystem>
+#include <fstream>
+#include <ostream>
 #include <string>
 
+#include "json.hpp"
+#include "lz/exceptions.h"
+#include "lz/general.h"
 #include "lz/utils.h"
 #include "main/config.h"
+#include "main/messages.h"
 
 #define VERSION "v0.8.7"
 
@@ -109,22 +116,34 @@ lz::lz_int process(lz_options& opt) {
       data = read_input(opt.input, opt.multiLine, opt.input_format);
    }
 
+   bool ignore_parallel = false;
    if (opt.verbose) {
       std::cout << print_msg(MSG::INFO, "Sequence to process: " + std::to_string(data.size())) << std::endl;
       std::map<lz::lz_int, lz::lz_int> map_size;
-      for (auto&& x: data)
+      for (auto&& x: data) {
+         if (x.length() < 5e3) {
+            ignore_parallel = true;
+         }
+
          if (map_size.count(x.size()) > 0) {
             map_size[x.size()] += 1;
          } else {
             map_size[x.size()] = 1;
          }
+      }
 
       for (auto [size, count]: map_size) {
          std::cout << print_msg(MSG::INFO,
                                 std::to_string(count) + " sequence with " + std::to_string(size) + " characters")
-                   << std::endl
                    << std::endl;
       }
+
+      if (opt.warn_out)
+         std::cout << std::endl;
+   }
+
+   if (!opt.warn_out) {
+      std::cout << print_msg(MSG::WARRING, warn_data_size) << std::endl << std::endl;
    }
 
    //? Input flags
@@ -134,21 +153,22 @@ lz::lz_int process(lz_options& opt) {
    //? Results
    lz::utils::LZ_Output lz(data.size());
 
-   bool ignore_parallel = false;
-   for (auto&& dat: in_flags.input) {
-      if (dat.length() < 5e3) {
-         ignore_parallel = true;
-         break;
-      }
-   }
-
    if (ignore_parallel) {
       in_flags.sa_args.chunks = 1;
       notify_warm             = true;
-      out_log << "[ WARN ] Ingoring parallel processing because data source is too sort" << std::endl;
+      out_log << warn_data_size << std::endl;
    }
 
-   lz::utils::EnabledMT(ignore_parallel ? 1 : opt.n_jobs);
+   // std::string s;
+   // std::string ch = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+   // auto size = 15;
+   // for (int i = 0; i < 1e7; i++) {
+   //    s += ch[rand() % size];
+   // }
+   // in_flags.input[0] = s;
+
+   lz::utils::EnabledMT(opt.n_jobs);
 
    // App functions
    if (opt.verbose) {
@@ -261,7 +281,7 @@ lz::lz_int process(lz_options& opt) {
       }
    }
 
-   if (opt.args.block_size >= 0) {
+   if (opt.args.block_size >= 0 && opt.get_paired_shuffle) {
       if (opt.verbose) {
          std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating paired shuffle complexity\n"
                    << lz::END_COLOR;
@@ -353,7 +373,7 @@ lz::lz_int process(lz_options& opt) {
    }
    save_data(in_flags, lz, opt);
 
-   if (notify_warm) {
+   if (notify_warm && !opt.warn_out) {
       std::cout << std::endl
                 << print_msg(MSG::WARRING, "Warning issues. Check " + opt.input + ".log log file") << std::endl;
       out_log.close();
@@ -371,10 +391,7 @@ lz::lz_int process(lz_options& opt) {
 }
 
 auto main(int argc, char const* argv[]) -> int {
-   cxxopts::options options("lzcomplexity",
-                            "LempelZiv-76 complexity engine. Suited for "
-                            "complexity analysis of time series. Send bug reports to estevez@fisica.uh.cu or "
-                            "efrenaragon96@gmail.com.\n");
+   cxxopts::options options("lzcomplexity", header);
 
    // clang-format off
    options.custom_help("[OPTIONS] <file>")
@@ -383,50 +400,50 @@ auto main(int argc, char const* argv[]) -> int {
    options.allow_unrecognised_options();
    // clang-format on
    auto opt_group = options.add_options("OPTIONS: ");
-   opt_group("a,alphabet",
-             "Alphabet cardinality. If auto it tries to guess the alphabet size.",
+   opt_group(opt_list["alphabet"].option_value,
+             opt_list["alphabet"].description,
              cxxopts::value<std::string>()->default_value("2"),
              "value");
-   opt_group("d,dlz",
-             "The LZ distance is calculated between consecutive lines. Only valid for multiline files (-m "
-             "option).");
+   opt_group(opt_list["distance"].option_value, opt_list["distance"].description);
+   opt_group(opt_list["shuffle"].option_value,
+             opt_list["shuffle"].description,
+             cxxopts::value<std::vector<std::string>>()->delimiter(':')->implicit_value("a"),
+             "[v1]:[f]:[v2]:[v3]");
    opt_group(
-      "e,entropy-shuffle",
-      "Random shuffle complexity with whole sequence. v1: maximum value for block shuffling, f: summands output, v2: "
-      "starting line for summands output, v3: ending line for summands output. All values are optionals",
-      cxxopts::value<std::vector<std::string>>()->delimiter(':')->implicit_value("a"),
-      "[v1]:[f]:[v2]:[v3]");
-   opt_group("f,factors", "Saves the factorization.", cxxopts::value<std::string>(), "file_name");
-   opt_group("F,format",
-             "Input file format. TXT for raw text format. CSV the input file is a csv array. PBM, PGM and PNM is for "
-             "the family of the graphic formats.",
+      opt_list["factors"].option_value, opt_list["factors"].description, cxxopts::value<std::string>(), "file_name");
+   opt_group(opt_list["format"].option_value,
+             opt_list["format"].description,
              cxxopts::value<std::string>()->default_value("AUTO"),
              "value");
-   opt_group("h,help", "Show this message.");
-   opt_group("i,mixed-entropy",
-             "The mixed entropy density of consecutive lines. Only valid for multiline files (-m "
-             "option).",
-             cxxopts::value<bool>()->default_value("false"));
-   opt_group("j,jobs",
-             "Number of threads.",
+   opt_group(opt_list["help"].option_value, opt_list["help"].description);
+   opt_group(
+      opt_list["mixed"].option_value, opt_list["mixed"].description, cxxopts::value<bool>()->default_value("false"));
+   opt_group(opt_list["jobs"].option_value,
+             opt_list["jobs"].description,
              cxxopts::value<lz::lz_uint>()->default_value(std::to_string(std::thread::hardware_concurrency())),
              "value");
-   opt_group("l,log-base",
-             "The log base value. The default is the alphabet cardinality.",
-             cxxopts::value<std::string>(),
+   opt_group("J,json",
+             "Input parameters as json format (ignore all other flags)",
+             cxxopts::value<std::string>()->default_value("")->hide(),
              "value");
-   opt_group("m,multi-line", "Treat each line in the input stream as a different sequence.");
-   opt_group("n,entropy-density", "Computes only the entropy density.");
-   opt_group("o,output",
-             "Output filename. Default appends to the end of input file a .json extension",
-             cxxopts::value<std::string>(),
-             "file_name");
-   opt_group("p,partitions",
-             "Number of partitions used for the parallel suffix array algorithm.",
+   opt_group(
+      opt_list["log_base"].option_value, opt_list["log_base"].description, cxxopts::value<std::string>(), "value");
+   opt_group(opt_list["multi_line"].option_value, opt_list["multi_line"].description);
+   opt_group(opt_list["entropy"].option_value, opt_list["entropy"].description);
+   opt_group(
+      opt_list["output"].option_value, opt_list["output"].description, cxxopts::value<std::string>(), "file_name");
+   opt_group(opt_list["partitions"].option_value,
+             opt_list["partitions"].description,
              cxxopts::value<lz::lz_int>()->default_value("2"),
              "value");
-   opt_group("v,verbose", "Verbose output.", cxxopts::value<bool>()->default_value("false"));
-   opt_group("V,version", "Output the version number.", cxxopts::value<bool>()->default_value("false"));
+   opt_group(opt_list["verbose"].option_value,
+             opt_list["verbose"].description,
+             cxxopts::value<bool>()->default_value("false"));
+   opt_group(opt_list["version"].option_value,
+             opt_list["version"].description,
+             cxxopts::value<bool>()->default_value("false"));
+   opt_group(
+      opt_list["warn"].option_value, opt_list["warn"].description, cxxopts::value<bool>()->default_value("false"));
 
    // opt_group("x,extras",
    //           "Computes additional measures based on lz76 (rajski distance, the uncertainty of both halves, pearson "

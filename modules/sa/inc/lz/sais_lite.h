@@ -40,6 +40,7 @@
 
 #pragma once
 
+#include <lz/exceptions.h>
 #include <lz/general.h>
 #include <lz/utils.h>
 
@@ -59,15 +60,15 @@ namespace lz {
    namespace suffixarray {
 
       class SAIS {
-        protected:
-         const char* T_;  // The input text.
-         lz_int* SA_;     // The suffix array.
-         lz_int* LCP_;    // The LCP array.
-         lz_int n_;       // Length of the input text.
+     protected:
+         const char* T_;    // The input text.
+         lz_int*     SA_;   // The suffix array.
+         lz_int*     LCP_;  // The LCP array.
+         lz_int      n_;    // Length of the input text.
 
-        public:
+     public:
          SAIS()
-             : SAIS("", 1){};
+           : SAIS("", 1){};
          SAIS(const char*, lz_int);
          SAIS(const char*, lz_int*, lz_int*, lz_int);
          // Copy constructs the suffix array object from `other`.
@@ -81,7 +82,7 @@ namespace lz {
             std::free(SA_);
             std::free(LCP_);
 
-            SA_ = static_cast<lz_int*>(std::malloc(n_ * sizeof(lz_int)));
+            SA_  = static_cast<lz_int*>(std::malloc(n_ * sizeof(lz_int)));
             LCP_ = static_cast<lz_int*>(std::malloc(n_ * sizeof(lz_int)));
          }
 

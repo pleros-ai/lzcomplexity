@@ -1,5 +1,6 @@
 #pragma once
 
+#include <lz/exceptions.h>
 #include <lz/utils.h>
 
 #include <vector>

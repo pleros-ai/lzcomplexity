@@ -173,7 +173,7 @@ namespace lz {
 
          while (i < obj.size()) {
             c = c << 1;
-            if (obj.const_at(i))
+            if (obj.at(i))
                ++c;  // adding 1 if bit is true
             ++bits;
             if (bits == CHARBITS) {  // The byte has been built
@@ -225,7 +225,7 @@ namespace lz {
          char                val      = 0;
 
          for (std::vector<bool>::size_type i = 0; i < obj.size(); ++i) {
-            val = (obj.const_at(i)) ? '1' : '0';
+            val = (obj.at(i)) ? '1' : '0';
             os << val;
             if (++linechar > linesizebound) {  // force a new line
                linechar = 0;
@@ -1079,14 +1079,14 @@ namespace lz {
          if (binary) {  // binary dump
             char val = 0;
             for (unsigned int i = 0; i < width && i < s.size(); ++i) {
-               val = s.const_at(i);
+               val = s.at(i);
                os << val;
             }
          } else {  // text dump
             unsigned int val      = 0;
             unsigned int linechar = linepos;
             for (unsigned int i = 0; i < width && i < s.size(); ++i) {
-               val = (unsigned char)s.const_at(i);
+               val = (unsigned char)s.at(i);
                os << std::to_string(val) << " ";
                linechar++;
 

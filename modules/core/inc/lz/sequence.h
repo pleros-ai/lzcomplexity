@@ -31,8 +31,8 @@
 
 #pragma once
 
+#include <lz/exceptions.h>
 #include <lz/general.h>
-#include <lz/myexceptions.h>
 
 #include <set>
 
@@ -148,8 +148,8 @@ namespace lz {
       char&       last(void);
       const char& last(void) const;
 
-      char& at(lz_size);
-      char  const_at(lz_size index) const;
+      char&       at(lz_size);
+      const char& at(lz_size index) const;
 
       char Min(void) const;
       char Min(lz_size start, lz_size final) const;
@@ -411,7 +411,7 @@ namespace lz {
    // Exceptions:
    //            None
    //..............................................................................
-   inline char sequence::const_at(lz_size index) const {
+   inline const char& sequence::at(lz_size index) const {
       return seq.at(index);
    }
 

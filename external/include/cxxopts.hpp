@@ -685,6 +685,9 @@ namespace cxxopts {
          CXXOPTS_NODISCARD
          bool get_no_value() const noexcept { return no_value_; }
 
+         CXXOPTS_NODISCARD
+         bool get_hide() const noexcept { return hide_; }
+
          /**
           * Sets default value.
           *
@@ -697,6 +700,12 @@ namespace cxxopts {
             default_value(T&& value) {
             default_ = true;
             default_value_.assign(std::forward<T>(value));
+            return shared_from_this();
+         }
+
+         /** Hide the value for help message */
+         std::shared_ptr<value_base> hide() {
+            hide_ = true;
             return shared_from_this();
          }
 
@@ -795,6 +804,8 @@ namespace cxxopts {
          bool implicit_{false};
          /// There should be no value for the option.
          bool no_value_{false};
+
+         bool hide_{false};
       };
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
@@ -1711,7 +1722,8 @@ namespace cxxopts {
          }
 
          // Add the help details.
-         help_[group].options.push_back(std::move(details));
+         if (!value->get_hide())
+            help_[group].options.push_back(std::move(details));
       }
 
       void add_one_option(const std::string& name, const std::shared_ptr<option_details>& details) {

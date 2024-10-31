@@ -21,16 +21,21 @@ struct lz_options {
    lz::lz_int excess_end_line =
       lz::utils::LZ_Args::UNDEFINED_LINES;  //?> Final line where get shuffle entropy deficit
                                             //? terms (valid for excess of entropy by shuffling).
-   lz::lz_uint  n_jobs          = 1;
-   MagickNumber input_format    = MagickNumber::PNM_RAWTXT;
-   bool         entropy_density = false;
-   bool         multiLine       = false;
-   bool         find_distance   = true;
-   bool         preprocess      = false;
-   bool         extras          = false;
-   bool         save_results    = false;  //! @deprecated --> remove in final version
-   bool         verbose         = false;
-   bool         mixed_entropy   = false;
+   lz::lz_uint  n_jobs             = 1;
+   MagickNumber input_format       = MagickNumber::PNM_RAWTXT;
+   bool         entropy_density    = false;
+   bool         multiLine          = false;
+   bool         find_distance      = true;
+   bool         preprocess         = false;
+   bool         extras             = false;
+   bool         save_results       = false;  //! @deprecated --> remove in final version
+   bool         verbose            = false;
+   bool         warn_out           = false;
+   bool         mixed_entropy      = false;
+   bool         get_paired_shuffle = false;
+
+   // Internal setting for Pleros
+   std::string json_params;
 
    lz_options(cxxopts::parse_result result) {
       input = !result.unmatched().empty() ? result.unmatched()[0] : "";
@@ -53,9 +58,12 @@ struct lz_options {
       find_distance   = result["dlz"].as<bool>();
       n_jobs          = result["jobs"].as<lz::lz_uint>();
       verbose         = result["verbose"].as<bool>();
+      warn_out        = result["warn_out"].as<bool>();
       entropy_density = result["entropy-density"].as<bool>();
       mixed_entropy   = result["mixed-entropy"].as<bool>();
       // preprocess      = result["process"].as<bool>();
+
+      json_params = result["json"].as<std::string>();
 
       auto opt_format = result["format"].as<std::string>();
       lz::utils::to_lowercase(opt_format);
@@ -88,7 +96,8 @@ struct lz_options {
 
       std::vector<std::string> excess_args;
       if (result.count("entropy-shuffle")) {
-         excess_args = result["entropy-shuffle"].as<std::vector<std::string>>();
+         get_paired_shuffle = true;
+         excess_args        = result["entropy-shuffle"].as<std::vector<std::string>>();
       }
 
       if (!excess_args.empty() && !excess_args[0].empty()) {
@@ -169,8 +178,83 @@ struct lz_options {
    }
 };
 
+inline void process_json_params(lz_options& opt, std::string file) {
+
+   namespace fs             = std::filesystem;
+   const fs::path json_path = file;
+
+   if (!fs::exists(json_path) || !fs::is_regular_file(json_path)) {
+      throw FileNameError();
+   }
+
+   if (json_path.has_extension() && json_path.extension() != ".json") {
+      throw FileFormatError();
+   }
+
+   nlohmann::json json_opt;
+   std::ifstream  dat(json_path);
+
+   if (!dat.is_open()) {
+      throw Errors("Unable to open the json file.");
+   }
+
+   dat >> json_opt;
+
+   if (json_opt.contains("jobs"))
+      opt.n_jobs = json_opt["jobs"];
+
+   if (json_opt.contains("multi_line"))
+      opt.multiLine = json_opt["multi_line"];
+
+   if (json_opt.contains("get_distance"))
+      opt.find_distance = json_opt["get_distance"];
+
+   if (json_opt.contains("output"))
+      opt.output = json_opt["output"];
+
+   if (json_opt.contains("input_format")) {
+      namespace utl = lz::utils;
+      switch (utl::hash(json_opt["input_format"].get<std::string>())) {
+         case utl::hash("pbm"):
+         case utl::hash("pbmbin"): opt.input_format = MagickNumber::PNM_P4; break;
+         case utl::hash("pbmtxt"): opt.input_format = MagickNumber::PNM_P1; break;
+         case utl::hash("pgm"):
+         case utl::hash("pgmbin"): opt.input_format = MagickNumber::PNM_P5; break;
+         case utl::hash("pgmtxt"): opt.input_format = MagickNumber::PNM_P2; break;
+         case utl::hash("raw"):
+         case utl::hash("rawbin"): opt.input_format = MagickNumber::PNM_RAWBIN; break;
+         case utl::hash("rawtxt"): opt.input_format = MagickNumber::PNM_RAWTXT; break;
+         case utl::hash("csv"): opt.input_format = MagickNumber::CSV; break;
+         default: opt.input_format = MagickNumber::AUTO; break;
+      }
+   }
+
+   if (json_opt.contains("get_paired_shuffle"))
+      opt.get_paired_shuffle = json_opt["get_paired_shuffle"];
+   // Arguments for LZ76 algoeithms
+   if (json_opt.contains("partitions"))
+      opt.args.chunks = json_opt["partitions"];
+   if (json_opt.contains("block_size"))
+      opt.args.block_size = json_opt["block_size"];
+   if (json_opt.contains("initial_line"))
+      opt.excess_init_line = json_opt["initial_line"];
+   if (json_opt.contains("final_line"))
+      opt.excess_end_line = json_opt["final_line"];
+   if (json_opt.contains("get_shuffle_terms"))
+      opt.args.get_shuffle_terms = json_opt["get_shuffle_terms"];
+
+   if (json_opt.contains("logs"))
+      opt.verbose = json_opt["logs"];
+   else
+      opt.verbose = false;
+}
+
 inline lz_options process_args(cxxopts::parse_result& result) {
    lz_options options(result);
+
+   if (!options.json_params.empty()) {
+      process_json_params(options, options.json_params);
+   }
 
    namespace fs = std::filesystem;
 

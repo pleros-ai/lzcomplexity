@@ -2,7 +2,6 @@
 
 // Local includes
 #include "general.h"
-#include "lzexceptions.h"
 
 namespace lz {
    namespace utils {

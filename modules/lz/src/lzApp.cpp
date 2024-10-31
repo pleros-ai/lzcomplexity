@@ -109,10 +109,8 @@ namespace lz {
 
          utils::shuffle_terms terms;
 
-         if (processAllLines || processOneLine || processRange) {
-            flags.sa_args.get_shuffle_terms = true;
-         } else {
-            flags.sa_args.get_shuffle_terms = false;
+         if (!processAllLines && !processOneLine && !processRange) {
+            continue;
          }
 
          if (lz.calculated_complexity[i]) {
@@ -157,10 +155,8 @@ namespace lz {
 
          utils::shuffle_terms terms;
 
-         if (processAllLines || processOneLine || processRange) {
-            flags.sa_args.get_shuffle_terms = true;
-         } else {
-            flags.sa_args.get_shuffle_terms = false;
+         if (!processAllLines && !processOneLine && !processRange) {
+            continue;
          }
 
          auto new_args = flags.sa_args;
