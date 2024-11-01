@@ -24,7 +24,6 @@ set(public_headers
   ${UTILS_INCLUDE_DIR}/lz/types.h
   ${UTILS_INCLUDE_DIR}/lz/parallel_utils.h
   ${UTILS_INCLUDE_DIR}/lz/lz_arena.h
-  ${UTILS_INCLUDE_DIR}/lz/myexceptions.h
-  ${UTILS_INCLUDE_DIR}/lz/lzexceptions.h
+  ${UTILS_INCLUDE_DIR}/lz/exceptions.h
   PARENT_SCOPE
 )
