@@ -1,5 +1,7 @@
 #include <csv.h>
 
+#include <array>
+
 #include "../../utils/src/lz_tbb_arena.h"
 #ifdef __cpp_lib_format
 #include <format>
@@ -12,8 +14,6 @@ constexpr inline auto                                  now      = std::chrono::h
 constexpr inline auto                                  duration = [](const std::chrono::nanoseconds& d) {
    return std::chrono::duration_cast<std::chrono::duration<double>>(d).count();
 };
-
-constexpr std::initializer_list<std::string> avoid_extensions = {".json", ".log"};
 
 namespace lz {
    namespace utils {
@@ -33,6 +33,8 @@ namespace lz {
          std::string           dirPath;
          std::vector<FileInfo> files;
 
+         const std::array<std::string, 2> avoid_extensions{".json", ".log"};
+
      public:
          DirectoryReader(const std::string& path)
            : dirPath(path) {
@@ -41,7 +43,10 @@ namespace lz {
             }
 
             for (const auto& entry: fs::directory_iterator(dirPath)) {
-               if (entry.is_regular_file()) {
+               if (entry.is_regular_file() &&
+                   !std::any_of(avoid_extensions.begin(), avoid_extensions.end(), [&entry](const auto& ext) {
+                      return entry.path().extension() == ext;
+                   })) {
                   FileInfo fileInfo;
                   fileInfo.name = entry.path().filename().string();
                   fileInfo.path = entry.path();
@@ -142,9 +147,10 @@ inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
                         : type == lz::utils::MSG_TYPE::INFO ? " [ Info ] "
                                                             : " [ Warning ] ";
 
-   for (auto str: allLines) {
+   for (auto i = 0ul; i < allLines.size(); i++) {
+      auto str    = allLines[i];
       auto offset = final_msg.size() > 0 ? std::string(header.size(), ' ') : "";
-      final_msg += offset + str + "\n";
+      final_msg += offset + str + (i != allLines.size() - 1 ? "\n" : "");
    }
 
    return color + header + lz::END_COLOR + final_msg;
@@ -288,9 +294,6 @@ inline std::vector<lz::sequence> read_dir(const std::string& ip_path, MagickNumb
 
    lz::utils::DirectoryReader reader(path);
 
-   std::cout << reader.getDirectory() << std::endl;
-   reader.displayFiles();
-
    const auto&               files = reader.getFiles();
    std::vector<lz::sequence> data(files.size());
 
@@ -298,9 +301,6 @@ inline std::vector<lz::sequence> read_dir(const std::string& ip_path, MagickNumb
       auto seq  = read_input(files[idx].path, false, format);
       data[idx] = seq[0];
    });
-
-   std::cout << "Data size: " << data.size() << std::endl;
-   std::cout << data[0] << std::endl;
 
    return data;
 }

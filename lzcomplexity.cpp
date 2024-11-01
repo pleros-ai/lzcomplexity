@@ -1,10 +1,10 @@
 #include "main/lzcomplexity.h"
 
 #include <lz/lz.h>
-#include <lz/lzApp.h>
 
 #include <filesystem>
 #include <fstream>
+#include <lz/lzApp.hpp>
 #include <ostream>
 #include <string>
 

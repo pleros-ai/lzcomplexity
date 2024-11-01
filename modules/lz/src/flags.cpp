@@ -1,4 +1,4 @@
-#include <lz/flags.h>
+#include <lz/flags.hpp>
 
 namespace lz {
    namespace utils {

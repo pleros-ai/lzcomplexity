@@ -1,350 +1,164 @@
-#include <bzlib.h>
+#include "main/lzdistance.hpp"
+
 #include <lz/lz.h>
-#include <zlib.h>
 
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <random>
-#include <sstream>
-#include <stdexcept>
-#include <string>
+#include <lzDistance/lzDistanceApp.hpp>
 
-#include "main/main.h"
+#include "main/config_distance.hpp"
 
-std::string compress_zlib(const std::string& str, int compressionlevel = Z_BEST_COMPRESSION) {
-   z_stream zs;  // z_stream is zlib's control structure
-   memset(&zs, 0, sizeof(zs));
+#define VERSION "0.8.7"
 
-   if (deflateInit2(&zs, compressionlevel, Z_DEFLATED, 8, 1, Z_DEFAULT_STRATEGY) != Z_OK)
-      throw(std::runtime_error("deflateInit failed while compressing."));
+using MSG = lz::utils::MSG_TYPE;
 
-   zs.next_in  = (Bytef*)str.data();
-   zs.avail_in = str.size();  // set the z_stream's input
+lz::lz_int process(lz_options& opt) {
+   std::vector<lz::sequence> first_data;
+   std::vector<lz::sequence> second_data;
 
-   int         ret;
-   char        outbuffer[32768];
-   std::string outstring;
+   auto           g_now         = now();
+   unsigned short verbose_index = 1;
 
-   // retrieve the compressed bytes blockwise
-   do {
-      zs.next_out  = reinterpret_cast<Bytef*>(outbuffer);
-      zs.avail_out = sizeof(outbuffer);
-
-      ret = deflate(&zs, Z_FINISH);
-
-      // ret = compress2(reinterpret_cast<Bytef*>(outbuffer), &l, (Bytef*)str.data(), str.length(), Z_BEST_COMPRESSION);
-
-      if (outstring.size() < zs.total_out) {
-         // append the block to the output string
-         outstring.append(outbuffer, zs.total_out - outstring.size());
-      }
-      std::cout << outstring << std::endl;
-      break;
-   } while (ret == Z_OK);
-
-   deflateEnd(&zs);
-
-   if (ret != Z_STREAM_END) {  // an error occurred that was not EOF
-      std::ostringstream oss;
-      oss << "Exception during zlib compression: (" << ret << ") " << zs.msg;
-      throw(std::runtime_error(oss.str()));
+   time_point_t init_time;
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2. " << lz::END_COLOR << "Processing the data...\n";
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << lz::END_COLOR
+                << ". Reading data sources: " << std::endl
+                << lz::GREEN_COLOR << " • " << lz::BLUE_COLOR
+                << (opt.is_first_directory ? "[ directory ] " : "[ file ] ") << lz::END_COLOR << lz::END_COLOR
+                << (opt.is_first_directory ? opt.first_input_dir : opt.first_input) << std::endl
+                << lz::GREEN_COLOR << " • " << lz::BLUE_COLOR
+                << (opt.is_second_directory ? "[ directory ] " : "[ file ] ") << lz::END_COLOR << lz::END_COLOR
+                << (opt.is_second_directory ? opt.second_input_dir : opt.second_input) << std::endl
+                << std::endl;
    }
 
-   return outstring;
-}
-
-auto compress_gzip(const std::string& str, int compressionlevel = Z_BEST_COMPRESSION) {
-   z_stream zs;  // z_stream is zlib's control structure
-   memset(&zs, 0, sizeof(zs));
-
-   if (deflateInit2(&zs, compressionlevel, Z_DEFLATED, 8, 1, Z_FILTERED) != Z_OK)
-      throw(std::runtime_error("deflateInit failed while compressing."));
-
-   zs.next_in  = (Bytef*)str.data();
-   zs.avail_in = str.size();  // set the z_stream's input
-
-   int         ret;
-   char        outbuffer[32768];
-   std::string outstring;
-
-   // retrieve the compressed bytes blockwise
-   do {
-      zs.next_out  = reinterpret_cast<Bytef*>(outbuffer);
-      zs.avail_out = sizeof(outbuffer);
-
-      ret = deflate(&zs, Z_FINISH);
-
-      // ret = compress2(reinterpret_cast<Bytef*>(outbuffer), &l, (Bytef*)str.data(), str.length(), Z_BEST_COMPRESSION);
-
-      if (outstring.size() < zs.total_out) {
-         // append the block to the output string
-         outstring.append(outbuffer, zs.total_out - outstring.size());
+   auto load_first_data = [&first_data, &opt]() {
+      if (opt.is_first_directory) {
+         first_data = read_dir(opt.first_input_dir, opt.input_format);
+      } else if (!opt.first_input.empty()) {
+         first_data = read_input(opt.first_input, opt.multiLine, opt.input_format);
       }
-      std::cout << outstring << std::endl;
-      break;
-   } while (ret == Z_OK);
+   };
 
-   deflateEnd(&zs);
-
-   if (ret != Z_STREAM_END) {  // an error occurred that was not EOF
-      std::ostringstream oss;
-      oss << "Exception during zlib compression: (" << ret << ") " << zs.msg;
-      throw(std::runtime_error(oss.str()));
-   }
-
-   return outstring;
-}
-
-auto compress_bzip(const std::string& str) {
-   bz_stream bz;
-   memset(&bz, 0, sizeof(bz));
-
-   // 9 best compression
-   if (BZ2_bzCompressInit(&bz, 9, 0, 30) != BZ_OK)
-      throw(std::runtime_error("deflateInit failed while compressing."));
-
-   bz.next_in  = (char*)str.data();
-   bz.avail_in = str.size();  // set the z_stream's input
-
-   int         ret;
-   char        outbuffer[32768];
-   std::string outstring;
-
-   // retrieve the compressed bytes blockwise
-   do {
-      bz.next_out  = reinterpret_cast<char*>(outbuffer);
-      bz.avail_out = sizeof(outbuffer);
-
-      ret = BZ2_bzCompress(&bz, BZ_FINISH);
-
-      std::cout << bz.avail_in << " " << bz.total_out_hi32 << " " << bz.total_out_lo32 << std::endl;
-
-      if (outstring.size() < bz.total_out_lo32) {
-         // append the block to the output string
-         outstring.append(outbuffer, bz.total_out_lo32 - outstring.size());
+   auto load_second_data = [&second_data, &opt]() {
+      if (opt.is_second_directory) {
+         second_data = read_dir(opt.second_input_dir, opt.input_format);
+      } else if (!opt.second_input.empty()) {
+         second_data = read_input(opt.second_input, opt.multiLine, opt.input_format);
       }
-      std::cout << outstring << std::endl;
-      break;
-   } while (ret == BZ_OK);
+   };
 
-   BZ2_bzCompressEnd(&bz);
+   lz::utils::par_do(load_first_data, load_second_data);
 
-   if (ret != BZ_STREAM_END) {  // an error occurred that was not EOF
-      std::ostringstream oss;
-      oss << "Exception during zlib compression: (" << ret << ") " << bz.state;
-      throw(std::runtime_error(oss.str()));
+   lz::dist::LZ_Flags flags(first_data, second_data, opt.args);
+   flags.first_dist_init = opt.is_second_directory ? opt.first_dir_init_line : opt.first_init_line;
+   flags.first_dist_end  = opt.is_second_directory ? opt.first_dir_end_line : opt.first_end_line;
+
+   flags.second_dist_init = opt.is_second_directory ? opt.second_dir_init_line : opt.second_init_line;
+   flags.second_dist_end  = opt.is_second_directory ? opt.second_dir_end_line : opt.second_end_line;
+
+   flags.revert_     = opt.revert_;
+   flags.text_       = opt.text_;
+   flags.binary_     = opt.binary_;
+   flags.adn_        = opt.adn_;
+   flags.trajectory_ = opt.trajectory_;
+
+   lz::dist::LZ_Output lz(first_data.size(), second_data.size());
+
+   lz::utils::EnabledMT(opt.n_jobs);
+
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << lz::END_COLOR
+                << ". Calculating information distance matrix\n";
+      init_time = now();
    }
-
-   return outstring;
-}
-
-/**
- * @details even two state process
- *
- * T0 = 1-p 0      T1 = 0 p
- *      p   0           0 1-p
- *
- * @param p probability of the transition
- * @param size size of the sequence. Defaults to 256.
- */
-std::string even_process(double p, unsigned size = 256) {
-   short       state = 0;
-   unsigned    idx   = 0;
-   std::string seq;
-
-   std::random_device rd_seed;
-   std::mt19937       random_engine(rd_seed());
-
-   // std::normal_distribution dist;
-   std::uniform_real_distribution<> dist(0, 1);
-
-   while (idx++ < size) {
-      double r = dist(random_engine);
-
-      if (state == 0) {
-         if (r <= p) {
-            state = 1;
-            seq += "0";
-         } else {
-            seq += "1";
+   lz::lz76DistanceMatrix(flags, lz);
+   if (opt.verbose) {
+      const auto end_time = now();
+      std::cout << print_msg(MSG::INFO, "Information distance matrix: ");
+      for (auto i = 0ul; i < first_data.size(); i++) {
+         if (i > 0)
+            std::cout << std::string(39, ' ');
+         for (auto j = 0ul; j < second_data.size(); j++) {
+            std::cout << lz.info_distance[i][j] << " ";
          }
-      } else {
-         state = 0;
-         seq += "0";
+         std::cout << std::endl;
       }
+      std::cout << print_msg(MSG::INFO, "Finished in: " + std::to_string(duration(end_time - init_time)) + " s")
+                << std::endl
+                << std::endl;
    }
 
-   return seq;
-}
-
-/**
- * @details two symmetric state process
- *
- * T0 = 1-p 0      T1 = 0 p
- *      p   0           0 1-p
- *
- * @param p probability of the transition
- * @param size size of the sequence. Defaults to 256.
- */
-std::string symmetric_process(double p, unsigned size = 256) {
-   short       state = 0;
-   unsigned    idx   = 0;
-   std::string seq;
-
-   std::random_device rd_seed;
-   std::mt19937       random_engine(rd_seed());
-
-   // std::normal_distribution dist;
-   std::uniform_real_distribution<> dist(0, 1);
-
-   while (idx++ < size) {
-      double r = dist(random_engine);
-
-      if (state == 0) {
-         if (r <= p) {
-            state = 1;
-            seq += "0";
-         } else {
-            seq += "1";
+   if (opt.verbose) {
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << lz::END_COLOR
+                << ". Calculating shuffle distance matrix\n";
+      init_time = now();
+   }
+   lz::lz76ShuffleDistanceMatrix(flags, lz);
+   if (opt.verbose) {
+      const auto end_time = now();
+      std::cout << print_msg(MSG::INFO, "Shuffle distance matrix: ");
+      for (auto i = 0ul; i < first_data.size(); i++) {
+         if (i > 0)
+            std::cout << std::string(35, ' ');
+         for (auto j = 0ul; j < second_data.size(); j++) {
+            std::cout << lz.shuffle_distance[i][j] << " ";
          }
-      } else {
-         if (r <= p) {
-            state = 0;
-            seq += "1";
-         } else {
-            seq += "0";
-         }
+         std::cout << std::endl;
       }
+      std::cout << print_msg(MSG::INFO, "Finished in: " + std::to_string(duration(end_time - init_time)) + " s")
+                << std::endl
+                << std::endl;
    }
 
-   return seq;
-}
-
-template<typename Fun>
-void generate_file(std::vector<double> sizes, Fun&& gen, std::string process) {
-   for (auto sz: sizes) {
-      for (auto i = 0.0; i <= 1.01; i += 0.05) {
-         auto res = gen(i, sz);
-
-         std::string s = std::to_string((int)sz);
-
-         std::stringstream stream;
-         stream << std::fixed << std::setprecision(2) << i;
-         std::string pr = stream.str();
-
-         std::ofstream out(process + s + "_prob" + pr);
-
-         if (out.is_open() && out.good()) {
-            out << res;
-         }
-
-         out.close();
-      }
+   auto g_end = now();
+   if (opt.verbose) {
+      std::cout << print_msg(MSG::INFO, "Total time elapsed: " + std::to_string(duration(g_end - g_now)) + " s")
+                << std::endl;
    }
-}
 
-void generate_h_result_file(std::vector<double> sizes, std::string process) {
-   std::vector<double> res;
-   lz::utils::EnabledMT(1);
-   for (auto sz: sizes) {
-      std::string s = std::to_string((int)sz);
-      for (auto i = 0.0; i < 1.01; i += 0.05) {
-         std::stringstream stream;
-         stream << std::fixed << std::setprecision(2) << std::fabs(1 - i);
-         std::string pr = stream.str();
-
-         std::ifstream in(process + s + "_prob" + pr);
-         std::string   seq;
-
-         if (in.is_open() && in.good()) {
-            in >> seq;
-
-            lz::utils::LZ_Args args;
-            args.chunks = 2;
-            auto h      = lz::lz76EntropyDensity(seq, args);
-            std::cout << h << " - " << pr << " - " << i << std::endl;
-            res.push_back(h);
-         }
-
-         in.close();
-      }
-
-      std::ofstream out(process + s + "_h");
-      if (out.is_open() && out.good()) {
-         for (auto r: res) {
-            out << r << " ";
-         }
-      }
-
-      out.close();
-   }
    lz::utils::DisabledMT();
-}
 
-void generate_E_result_file(std::vector<double> sizes, std::string process) {
-   std::vector<double> res;
-   lz::utils::EnabledMT(1);
-   for (auto sz: sizes) {
-      std::string s = std::to_string((int)sz);
-      for (auto i = 0.0; i < 1.01; i += 0.05) {
-         std::stringstream stream;
-         stream << std::fixed << std::setprecision(2) << std::fabs(1 - i);
-         std::string pr = stream.str();
+   return EXIT_SUCCESS;
+};
 
-         std::ifstream in(process + s + "_prob" + pr);
-         std::string   seq;
+auto main(int argc, char const* argv[]) -> int {
+   auto options = generateOptions();
 
-         if (in.is_open() && in.good()) {
-            in >> seq;
+   try {
+      auto result = options.parse(argc, argv);
 
-            lz::utils::LZ_Args args;
-            args.chunks = 2;
-            auto E      = lz::lz76RandomShuffleComplexity(seq, args);
-            std::cout << E.excess_value << " - " << pr << " - " << i << std::endl;
-            res.push_back(E.excess_value);
-         }
-
-         in.close();
+      if (result["version"].count() || result["v"].count()) {
+         std::cout << print_msg(MSG::INFO, "Version of lzdistance: v") << VERSION << std::endl;
+         return EXIT_SUCCESS;
       }
 
-      std::ofstream out(process + s + "_E");
-      if (out.is_open() && out.good()) {
-         for (auto r: res) {
-            out << r << " ";
-         }
+      if (result["h"].count() || result["help"].count() ||
+          (result.arguments().empty() && result.unmatched().size() == 0)) {
+         std::cout << lz::GREEN_COLOR << options.help() << lz::END_COLOR;
+         return EXIT_SUCCESS;
       }
 
-      out.close();
+      auto opt = process_args(result);
+
+      if (opt.first_input.empty() && opt.first_input_dir.empty()) {
+         std::cerr << print_msg(MSG::ERROR, "Input data source is missing") << std::endl;
+         return EXIT_FAILURE;
+      }
+
+      if (process(opt)) {
+         return EXIT_SUCCESS;
+      } else {
+         return EXIT_FAILURE;
+      }
+   } catch (Errors er) {
+      std::cerr << std::endl << print_msg(MSG::ERROR, std::string(er.msg)) << std::endl;
+      return EXIT_FAILURE;
+   } catch (std::exception err) {
+      std::string msg(err.what());
+      std::cerr << std::endl << print_msg(MSG::ERROR, "BOOM... " + msg) << std::endl;
+      return EXIT_FAILURE;
+   } catch (...) {
+      std::cerr << std::endl << print_msg(MSG::ERROR, "Fatal error BOOM!!!") << std::endl;
+      return EXIT_FAILURE;
    }
-   lz::utils::DisabledMT();
-}
-
-int main() {
-
-   std::cout << "LZ distance..." << std::endl;
-
-   std::string z = "1001010101001011101010100010010101101";
-
-   auto lz = lz::lz76EntropyDensity(z);
-
-   std::cout << lz << std::endl;
-
-   auto z_res = compress_zlib(z);
-   std::cout << z.size() << " -- " << z_res.size() / (double)z.size() << std::endl;
-
-   auto gz_res = compress_gzip(z);
-   std::cout << z.size() << " -- " << gz_res.size() / (double)z.size() << std::endl;
-
-   auto bzip_res = compress_bzip(z);
-   std::cout << z.size() << " -- " << bzip_res.size() / (double)z.size() << std::endl;
-
-   std::vector<double> sizes = {256, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9};
-
-   // generate_file({256}, symmetric_process, "symmetric");
-
-   generate_E_result_file({256}, "even");
-   // generate_h_result_file({256}, "symmetric");
-
-   return 0;
 }
