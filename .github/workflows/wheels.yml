@@ -4,10 +4,10 @@ name: Build python wheels
 
 on:
   push:
-    branches: ["main"]
+    # branches: ["main"]
+    branches: ["python"]
 
 jobs:
-
   build_python:
     defaults:
       run:
