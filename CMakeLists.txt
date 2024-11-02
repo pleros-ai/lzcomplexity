@@ -38,6 +38,7 @@ option(LZ_SHARE "Build shared library" ON)
 option(LZ_ONLY_LIBS "Build only the libraries (LZCore and LZApp)" OFF)
 option(LZ_ONLY_CORE "Build only the core library" OFF)
 
+option(LZ_APP "Build lzcomplexity application" ON)
 option(LZ_DISTANCE "Build lzdistance application" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -194,7 +195,7 @@ endif()
 add_subdirectory(modules)
 
 # Executable for the driver program.
-if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
+if(LZ_APP AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     set(MAIN_INCLUDE_DIR ${CMAKE_CURRENT_DIR}/main)
     add_executable(${PROJECT_NAME} lzcomplexity.cpp)
 

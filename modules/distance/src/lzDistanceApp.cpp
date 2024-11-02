@@ -1,3 +1,4 @@
+#include <future>
 #include <lzDistance/lzDistanceApp.hpp>
 
 template<typename... Args>
@@ -40,87 +41,118 @@ namespace lz {
       }
 
       auto DistanceMatrixDefault(dist::LZ_Flags& flags, auto& lz_dist, auto&& fun) -> lz_int {
+         const auto& second_input = flags.second_input.empty() ? flags.first_input : flags.second_input;
+
+         const auto first_len  = flags.first_input.size();
+         const auto second_len = second_input.size();
+
          auto for_fun = [&](auto&& idx) {
             if (!internal::canProcessTheLine(idx, flags.first_dist_init, flags.first_dist_end)) {
                return;
             }
 
-            auto f_seq = flags.first_input[idx];
+            const auto& f_seq = flags.first_input[idx];
 
-            for (auto j = 0ul; j < flags.second_input.size(); j++) {
+            for (auto j = 0ul; j < second_len; j++) {
                if (!internal::canProcessTheLine(j, flags.second_dist_init, flags.second_dist_end)) {
                   continue;
                }
 
-               auto s_seq      = flags.second_input[j];
-               auto res        = fun(f_seq, s_seq, flags.sa_args);
+               if (flags.second_input.empty() && j < idx) {
+                  continue;
+               }
+
+               auto s_seq = second_input[j];
+               auto res   = fun(f_seq, s_seq, flags.sa_args);
+
                lz_dist[idx][j] = res;
+               if (flags.second_input.empty())
+                  lz_dist[j][idx] = res;
             }
          };
 
-         utils::parallel_for(0ul, flags.first_input.size(), for_fun);
+         utils::parallel_for(0ul, first_len, for_fun);
          return EXIT_SUCCESS;
       }
 
       auto DistanceMatrixRevert(dist::LZ_Flags& flags, auto& lz_dist, auto&& fun) -> lz_int {
+         const auto& second_input = flags.second_input.empty() ? flags.first_input : flags.second_input;
+
+         const auto first_len  = flags.first_input.size();
+         const auto second_len = second_input.size();
+
          auto for_fun = [&](auto&& idx) {
             if (!internal::canProcessTheLine(idx, flags.first_dist_init, flags.first_dist_end)) {
                return;
             }
 
-            auto f_seq = flags.first_input[idx];
+            const auto& f_seq = flags.first_input[idx];
 
-            for (auto j = 0ul; j < flags.second_input.size(); j++) {
+            for (auto j = 0ul; j < second_len; j++) {
                if (!internal::canProcessTheLine(j, flags.second_dist_init, flags.second_dist_end)) {
                   return;
                }
 
-               auto s_seq = flags.second_input[j];
+               if (flags.second_input.empty() && j < idx) {
+                  continue;
+               }
+
+               auto s_seq = second_input[j];
                auto res   = fun(f_seq, s_seq.reverse(), flags.sa_args);
 
                lz_dist[idx][j] = res;
+               if (flags.second_input.empty())
+                  lz_dist[j][idx] = res;
             }
          };
 
-         utils::parallel_for(0ul, flags.first_input.size(), for_fun);
+         utils::parallel_for(0ul, first_len, for_fun);
          return EXIT_SUCCESS;
       }
 
       auto DistanceMatrixBinary(dist::LZ_Flags& flags, auto& lz_dist, auto&& fun) -> lz_int {
+         const auto& second_input = flags.second_input.empty() ? flags.first_input : flags.second_input;
+
+         const auto first_len  = flags.first_input.size();
+         const auto second_len = second_input.size();
+
          auto for_fun = [&](auto&& idx) {
             if (!internal::canProcessTheLine(idx, flags.first_dist_init, flags.first_dist_end)) {
                return;
             }
 
-            auto f_seq = flags.first_input[idx];
+            const auto& f_seq = flags.first_input[idx];
 
-            for (auto j = 0ul; j < flags.second_input.size(); j++) {
+            for (auto j = 0ul; j < second_len; j++) {
                if (!internal::canProcessTheLine(j, flags.second_dist_init, flags.second_dist_end)) {
                   return;
                }
 
-               auto      s_seq = flags.second_input[j];
-               lz_double dfl_res, inv_res, dfl_revert_res, inv_revert_res;
+               if (flags.second_input.empty() && j < idx) {
+                  continue;
+               }
+
+               const auto& s_seq = second_input[j];
+               lz_double   dfl_res, inv_res, dfl_revert_res, inv_revert_res;
+
+               auto mapped_seq = s_seq.map([](auto c) { return c == '0' ? '1' : '0'; });
 
                auto dfl_fun        = [&]() { dfl_res = fun(f_seq, s_seq, flags.sa_args); };
-               auto inv_fun        = [&]() { inv_res = fun(f_seq, s_seq.reverse(), flags.sa_args); };
-               auto dfl_revert_fun = [&]() {
-                  dfl_revert_res = fun(f_seq, s_seq.map([](auto c) { return c == '0' ? '1' : '0'; }), flags.sa_args);
-               };
-               auto inv_revert_fun = [&]() {
-                  inv_revert_res =
-                     fun(f_seq, s_seq.map([](auto c) { return c == '0' ? '1' : '0'; }).reverse(), flags.sa_args);
-               };
+               auto inv_fun        = [&]() { inv_res = fun(f_seq, s_seq.reverseCopy(), flags.sa_args); };
+               auto dfl_revert_fun = [&]() { dfl_revert_res = fun(f_seq, mapped_seq, flags.sa_args); };
+               auto inv_revert_fun = [&]() { inv_revert_res = fun(f_seq, mapped_seq.reverseCopy(), flags.sa_args); };
 
                utils::par_do(dfl_fun, inv_fun, dfl_revert_fun, inv_revert_fun);
 
-               auto res = std::min(std::min(dfl_res, inv_res), std::min(dfl_revert_res, inv_revert_res));
+               auto res = std::min({dfl_res, inv_res, dfl_revert_res, inv_revert_res});
 
                lz_dist[idx][j] = res;
+               if (flags.second_input.empty())
+                  lz_dist[j][idx] = res;
             }
          };
 
-         utils::parallel_for(0ul, flags.first_input.size(), for_fun);
+         utils::parallel_for(0ul, first_len, for_fun);
          return EXIT_SUCCESS;
       }
 
@@ -142,92 +174,102 @@ namespace lz {
             }
          };
 
+         const auto& second_input = flags.second_input.empty() ? flags.first_input : flags.second_input;
+
+         const auto first_len  = flags.first_input.size();
+         const auto second_len = second_input.size();
+
          auto for_fun = [&](auto&& idx) {
             if (!internal::canProcessTheLine(idx, flags.first_dist_init, flags.first_dist_end)) {
                return;
             }
 
-            auto f_seq = flags.first_input[idx];
+            const auto& f_seq = flags.first_input[idx];
 
-            for (auto j = 0ul; j < flags.second_input.size(); j++) {
+            for (auto j = 0ul; j < second_len; j++) {
                if (!internal::canProcessTheLine(j, flags.second_dist_init, flags.second_dist_end)) {
                   return;
                }
 
-               auto      s_seq = flags.second_input[j];
-               lz_double dfl_res, inv_res, AT_res, AT_inv_res, CG_res, CG_inv_res;
+               if (flags.second_input.empty() && j < idx) {
+                  continue;
+               }
 
-               auto dfl_fun = [&]() { dfl_res = fun(f_seq, s_seq, flags.sa_args); };
-               auto inv_fun = [&]() { inv_res = fun(f_seq, s_seq.reverse(), flags.sa_args); };
-               auto AT_fun  = [&]() {
-                  AT_res = fun(f_seq, s_seq.map([&](auto c) { return change_par(c, 'A'); }), flags.sa_args);
-               };
-               auto AT_revert_fun = [&]() {
-                  AT_inv_res =
-                     fun(f_seq, s_seq.map([&](auto c) { return change_par(c, 'A'); }).reverse(), flags.sa_args);
-               };
-               auto CG_fun = [&]() {
-                  CG_res = fun(f_seq, s_seq.map([&](auto c) { return change_par(c, 'C'); }), flags.sa_args);
-               };
-               auto CG_revert_fun = [&]() {
-                  CG_inv_res =
-                     fun(f_seq, s_seq.map([&](auto c) { return change_par(c, 'C'); }).reverse(), flags.sa_args);
-               };
+               const auto& s_seq = second_input[j];
+               lz_double   dfl_res, inv_res, AT_res, AT_inv_res, CG_res, CG_inv_res;
+
+               auto mappedAT_seq = s_seq.map([&](auto c) { return change_par(c, 'A'); });
+               auto mappedCG_seq = s_seq.map([&](auto c) { return change_par(c, 'A'); });
+
+               auto dfl_fun       = [&]() { dfl_res = fun(f_seq, s_seq, flags.sa_args); };
+               auto inv_fun       = [&]() { inv_res = fun(f_seq, s_seq.reverseCopy(), flags.sa_args); };
+               auto AT_fun        = [&]() { AT_res = fun(f_seq, mappedAT_seq, flags.sa_args); };
+               auto AT_revert_fun = [&]() { AT_inv_res = fun(f_seq, mappedAT_seq.reverseCopy(), flags.sa_args); };
+               auto CG_fun        = [&]() { CG_res = fun(f_seq, mappedCG_seq, flags.sa_args); };
+               auto CG_revert_fun = [&]() { CG_inv_res = fun(f_seq, mappedCG_seq.reverse(), flags.sa_args); };
 
                utils::par_do(dfl_fun, inv_fun, AT_fun, AT_revert_fun, CG_fun, CG_revert_fun);
 
-               auto res = std::min(std::min(dfl_res, inv_res), std::min(AT_res, AT_inv_res));
-               res      = std::min(res, std::min(CG_res, CG_inv_res));
+               auto res = std::min({dfl_res, inv_res, AT_res, AT_inv_res, CG_res, CG_inv_res});
 
                lz_dist[idx][j] = res;
+               if (flags.second_input.empty())
+                  lz_dist[j][idx] = res;
             }
          };
 
-         utils::parallel_for(0ul, flags.first_input.size(), for_fun);
+         utils::parallel_for(0ul, first_len, for_fun);
          return EXIT_SUCCESS;
       }
 
       auto DistanceMatrixTrajectory(dist::LZ_Flags& flags, auto& lz_dist, auto&& fun) -> lz_int {
          const std::vector<char> trajectories{'1', '2', '3', '4', '5', '6', '7', '8'};
 
+         const auto& second_input = flags.second_input.empty() ? flags.first_input : flags.second_input;
+
+         const auto first_len  = flags.first_input.size();
+         const auto second_len = second_input.size();
+
          auto tr_fun = [&](auto&& idx) {
             if (!internal::canProcessTheLine(idx, flags.first_dist_init, flags.first_dist_end)) {
                return;
             }
 
-            for (auto j = 0ul; j < flags.second_input.size(); j++) {
+            for (auto j = 0ul; j < second_len; j++) {
                if (!internal::canProcessTheLine(j, flags.second_dist_init, flags.second_dist_end)) {
                   return;
                }
 
-               std::vector<std::thread> functions;
-               std::vector<lz_double>   results(2 * trajectories.size());
+               std::vector<std::future<void>> functions;
+               std::vector<lz_double>         results(2 * trajectories.size());
 
                auto inner_tr_fun = [&](lz_size& tr_idx) {
-                  auto f_seq = flags.first_input[idx];
-                  auto s_seq = flags.second_input[j].map([&](lz_char x) {
+                  const auto& f_seq = flags.first_input[idx];
+                  const auto& s_seq = second_input[j].map([&](lz_char x) {
                      lz_int val = x - '0';
                      return trajectories[(val + tr_idx - 1) % trajectories.size()];
                   });
 
                   results[2 * tr_idx]     = fun(f_seq, s_seq, flags.sa_args);
-                  results[2 * tr_idx + 1] = fun(f_seq, s_seq.reverse(), flags.sa_args);
+                  results[2 * tr_idx + 1] = fun(f_seq, s_seq.reverseCopy(), flags.sa_args);
                };
 
                for (auto i = 0ul; i < trajectories.size(); i++) {
-                  functions.push_back(std::thread(inner_tr_fun, std::ref(i)));
+                  functions.push_back(std::async(std::launch::async, [&]() { inner_tr_fun(i); }));
                }
 
                for (auto& th: functions)
-                  th.join();
+                  th.get();
 
                auto res = *std::min_element(results.begin(), results.end());
 
                lz_dist[idx][j] = res;
+               if (flags.second_input.empty())
+                  lz_dist[j][idx] = res;
             }
          };
 
-         utils::parallel_for(0ul, flags.first_input.size(), tr_fun);
+         utils::parallel_for(0ul, first_len, tr_fun);
          return EXIT_SUCCESS;
       }
    }  // namespace internal

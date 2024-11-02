@@ -35,6 +35,30 @@ namespace lz {
       return *this;
    }
 
+   sequence sequence::reverseCopy(void) {
+      auto res = seq;
+
+#ifdef __cpp_lib_ranges
+      std::ranges::reverse(res);
+#else
+      std::reverse(res.begin(), res.end());
+#endif
+
+      return sequence(res, alphabet_size);
+   }
+
+   const sequence sequence::reverseCopy(void) const {
+      auto res = seq;
+
+#ifdef __cpp_lib_ranges
+      std::ranges::reverse(res);
+#else
+      std::reverse(res.begin(), res.end());
+#endif
+
+      return sequence(res, alphabet_size);
+   }
+
    sequence& sequence::rightShift(lz_uint ls) {
 #ifdef __cpp_lib_ranges
       std::ranges::rotate(seq.begin(), seq.begin() + (ls % seq.size()), seq.end());
@@ -101,6 +125,22 @@ namespace lz {
    }
 
    sequence sequence::map(std::function<lz_char(lz_char)> fn) {
+      sequence transformed_sequence;
+
+      transformed_sequence.seq.resize(seq.size());
+
+#ifdef __cpp_lib_ranges
+      std::ranges::copy(std::views::transform(seq, fn), std::back_inserter(transformed_sequence.seq));
+#else
+      std::transform(seq.begin(), seq.end(), transformed_sequence.seq.begin(), fn);
+#endif
+
+      transformed_sequence.alphabet_size = alphabet_size;
+
+      return transformed_sequence;
+   }
+
+   const sequence sequence::map(std::function<lz_char(lz_char)> fn) const {
       sequence transformed_sequence;
 
       transformed_sequence.seq.resize(seq.size());

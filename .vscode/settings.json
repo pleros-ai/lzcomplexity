@@ -92,7 +92,8 @@
     "print": "cpp",
     "filesystem": "cpp",
     "type_traits": "cpp",
-    "format": "cpp"
+    "format": "cpp",
+    "future": "cpp"
   },
   "C_Cpp.default.compilerPath": "/usr/bin/clang++",
   "editor.defaultFormatter": "xaver.clang-format",

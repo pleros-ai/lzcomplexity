@@ -172,9 +172,11 @@ namespace lz {
 
       sequence& pi(void);
       // sequence& negate(void);
-      sequence& reverse(void);
-      sequence& rightShift(lz_uint ls = 1);
-      sequence& leftShift(lz_uint ls = 1);
+      sequence&      reverse(void);
+      sequence       reverseCopy(void);
+      const sequence reverseCopy(void) const;
+      sequence&      rightShift(lz_uint ls = 1);
+      sequence&      leftShift(lz_uint ls = 1);
 
       sequence& operator=(sequence&);
       sequence& operator=(const sequence&);
@@ -211,6 +213,7 @@ namespace lz {
       friend bool     operator<=(const sequence&, const std::string&);
 
       sequence        map(std::function<char(char)> fn);
+      const sequence  map(std::function<char(char)> fn) const;
       friend sequence map(std::function<char(char)> fn, const sequence& s);
       friend sequence map(const sequence& s, std::function<char(char)> fn);
    };
