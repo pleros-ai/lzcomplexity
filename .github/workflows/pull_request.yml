@@ -27,51 +27,49 @@ jobs:
         run: patch -p0 -f -i patches/tbb.patch
   
       - name: Configure cmake
-         env:
-         CXX: g++
-         CC: gcc
-         run: |
+        env:
+        CXX: g++
+        CC: gcc
+        run: |
          cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=Release \
                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=ON -DLZ_APP=ON -DBUILTIN_TBB=ON \
                -S ${{ github.workspace }}
 
       - name: Build
-         run: |
+        run: |
          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config Release
 
 
-   build-mac:
+  build-mac:
+    defaults:
+      run:
+        shell: bash
+    
+    name: • macos-latest • clang++ •
+    runs-on: macos-latest
 
-  build-linux:
-   defaults:
-     run:
-       shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set reusable strings
+        id: build_path
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Patch TBB submodule
+        run: patch -p0 -f -i patches/tbb.patch
   
-   name: • macos-latest • clang++ •
-   runs-on: macos-latest
-
-   steps:
-     - uses: actions/checkout@v4
-       with:
-         submodules: true
-
-     - name: Set reusable strings
-       id: build_path
-       run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-
-     - name: Patch TBB submodule
-       run: patch -p0 -f -i patches/tbb.patch
- 
-     - name: Configure cmake
+      - name: Configure cmake
         env:
         CXX: clang++
         CC: clang
         run: |
-        cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=Release \
-              -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=ON -DLZ_APP=ON -DBUILTIN_TBB=ON \
-              -S ${{ github.workspace }}
+          cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=Release \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=ON -DLZ_APP=ON -DBUILTIN_TBB=ON \
+                -S ${{ github.workspace }}
 
-     - name: Build
-        run: |
-        cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config Release
+      - name: Build
+          run: |
+          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config Release
