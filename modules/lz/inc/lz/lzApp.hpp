@@ -32,7 +32,7 @@
 
 #include <lz/lempelziv.h>
 
-#include "flags.h"
+#include "flags.hpp"
 
 namespace lz {
 

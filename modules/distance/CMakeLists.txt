@@ -1,12 +1,12 @@
-message(STATUS "--- Init LZApp ---")
-set(PROJECT_NAME LZApp)
+message(STATUS "--- Init LZDist ---")
+set(PROJECT_NAME LZDist)
 set(namespace "lz")
-set(component "lz_library")
+set(component "lz_distance")
 
 project(
    ${PROJECT_NAME}
    VERSION ${VERSION}
-   DESCRIPTION "Lemepl-Ziv library for applications"
+   DESCRIPTION "Lemepl-Ziv library for calculate information distance"
    LANGUAGES CXX)
 
 if (NOT CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -15,13 +15,13 @@ else()
     message(STATUS "This project is a top-level one called [${PROJECT_NAME}] with version [${VERSION}]")
 endif()
 
-set(APP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
-set(APP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
-set_property(GLOBAL PROPERTY APP_INCLUDE_DIR ${APP_INCLUDE_DIR})
+set(DIST_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+set(DIST_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set_property(GLOBAL PROPERTY DIST_INCLUDE_DIR ${DIST_INCLUDE_DIR})
 
-# set(LZ_LZ76 ${APP_SOURCE_DIR}/lz76.cpp)
-set(LZ_ALG ${APP_SOURCE_DIR}/lzApp.cpp)
-set(LZ_FLAGS ${APP_SOURCE_DIR}/flags.cpp)
+# set(LZ_LZ76 ${DIST_SOURCE_DIR}/lz76.cpp)
+set(LZ_ALG ${DIST_SOURCE_DIR}/lzDistanceApp.cpp)
+set(LZ_FLAGS ${DIST_SOURCE_DIR}/flags.cpp)
 
 message(STATUS "rpath: ${CMAKE_INSTALL_RPATH} and mac: ${CMAKE_MACOSX_RPATH} and linux: ${CMAKE_INSTALL_RPATH_USE_LINK_PATH}")
 
@@ -52,7 +52,7 @@ endif()
 target_sources(${PROJECT_NAME} PRIVATE ${LZ_ALG} ${LZ_FLAGS})
 target_include_directories(${PROJECT_NAME} 
    PUBLIC 
-      $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
+      $<BUILD_INTERFACE:${DIST_INCLUDE_DIR}>
       $<BUILD_INTERFACE:${LZCore_INCLUDE_DIR}>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
@@ -67,8 +67,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${LZCore_LIB})
 set(public_headers 
   # LZ app headers
   ${public_headers}
-  ${APP_INCLUDE_DIR}/lz/flags.hpp
-  ${APP_INCLUDE_DIR}/lz/lzApp.hpp
+  ${DIST_INCLUDE_DIR}/lzDistance/flags.hpp
+  ${DIST_INCLUDE_DIR}/lzDistance/lzDistanceApp.hpp
 #   PARENT_SCOPE
 )
 
@@ -83,4 +83,4 @@ target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FL
 include(InstallingGeneral)
 include(InstallingConfigs)
 
-message(STATUS "--- End LZApp ---")
+message(STATUS "--- End LZDist ---")

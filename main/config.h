@@ -9,9 +9,9 @@
 std::string print_msg(lz::utils::MSG_TYPE type, std::string msg);
 
 struct lz_options {
-   std::string input;                               //? Input filepath.
-   std::string output         = "lz_results.json";  //? Output filepath.
-   std::string factors_output = "";                 //? Output filepath for factors.
+   std::string input;                                    //? Input filepath.
+   std::string output         = "lz_results.lz76.json";  //? Output filepath.
+   std::string factors_output = "";                      //? Output filepath for factors.
    /* Extra args for LZApp functions */
    lz::utils::LZ_Args args;
    /* flags */
@@ -42,9 +42,9 @@ struct lz_options {
 
       if (result.count("output")) {
          output = result["output"].as<std::string>();
-         output = output.empty() ? input + ".json" : output;
+         output = output.empty() ? input + ".lz76.json" : output;
       } else {
-         output = input + ".json";
+         output = input + ".lz76.json";
       }
 
       if (result.count("factors")) {
