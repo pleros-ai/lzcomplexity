@@ -28,8 +28,8 @@ jobs:
   
       - name: Configure cmake
         env:
-        CXX: g++
-        CC: gcc
+          CXX: g++
+          CC: gcc
         run: |
          cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=Release \
                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=ON -DLZ_APP=ON -DBUILTIN_TBB=ON \
@@ -63,13 +63,13 @@ jobs:
   
       - name: Configure cmake
         env:
-        CXX: clang++
-        CC: clang
+          CXX: clang++
+          CC: clang
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=Release \
                 -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=ON -DLZ_APP=ON -DBUILTIN_TBB=ON \
                 -S ${{ github.workspace }}
 
       - name: Build
-          run: |
+        run: |
           cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config Release
