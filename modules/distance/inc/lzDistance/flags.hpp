@@ -92,8 +92,6 @@ namespace lz {
       enum INPUT_DATA { FIRST, SECOND };
 
       struct LZ_Flags {
-         using INPUT_DATA = INPUT_DATA;
-
          lz_int first_dist_init = utils::LZ_Args::UNDEFINED_LINES;  //!> Line to start the distance calculation
          lz_int first_dist_end  = utils::LZ_Args::UNDEFINED_LINES;  //!> Line to end the distance calculation
 
