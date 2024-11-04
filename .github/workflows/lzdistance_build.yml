@@ -197,6 +197,61 @@ jobs:
           path: ./_packages
           retention-days: 1
 
+  build-rpm:
+    defaults:
+      run:
+        shell: bash
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runs-on: ubuntu-latest
+            build_type: "Release"
+            cxx: g++
+            cc: gcc
+            builtinTbb: ON
+
+    name: • RPM • ${{ matrix.cxx }} • builtinTbb-${{ matrix.builtinTbb }} •
+    runs-on: ${{ matrix.runs-on }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set reusable strings
+        id: build_path
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Patch TBB submodule
+        run: patch -p0 -i patches/tbb.patch
+
+      - name: Configure cmake
+        env:
+          CXX: ${{ matrix.cxx }}
+          CC: ${{ matrix.cc }}
+        run: |
+          cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=OFF -DLZ_APP=ON -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -S ${{ github.workspace }}
+  
+      - name: Build
+        run: |
+          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+      - name: Generate RPM package using CPack
+        run: |
+          cd build
+          cpack -G RPM
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lzcomplexity-redhat-${{matrix.cxx}}-package
+          path: ./_packages
+          retention-days: 1
+        
   # Test red hat compile
   # install-runner:
   #   runs-on: ubuntu-20.04

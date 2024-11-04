@@ -13,7 +13,7 @@ cmake_policy(VERSION 3.5...3.28)
 set(PROJECT_NAME lzcomplexity)
 set(namespace "lz")
 set(component "lz_cmd")
-set(VERSION 0.8.7)
+set(VERSION 0.8.8)
 project(
     ${PROJECT_NAME}
     VERSION ${VERSION}
@@ -281,7 +281,7 @@ if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   set(PROJECT_NAME lzdistance)
   set(namespace "lz")
   set(component "lz_dist_cmd")
-  set(VERSION 0.8.7)
+  set(VERSION 0.8.8)
   project(
     ${PROJECT_NAME}
     VERSION ${VERSION}

@@ -231,11 +231,6 @@ jobs:
       - name: Patch TBB submodule
         run: patch -p0 -i patches/tbb.patch
 
-      # - name: Install dependencies
-      #   run: |
-      #     sudo apt update
-      #     sudo apt install -y rpm build-essential
-
       - name: Configure cmake
         env:
           CXX: ${{ matrix.cxx }}
