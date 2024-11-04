@@ -1,4 +1,6 @@
 # these are cache variables, so they could be overwritten with -D,
+message(STATUS "PROJECT_NAME Package: ${PROJECT_NAME}")
+
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}"
     CACHE STRING "lz_library"
 )
@@ -74,6 +76,11 @@ if (UNIX)
         set(CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)#ONE_PER_GROUP)
         # without this you won't be able to pack only specified component
         set(CPACK_DEB_COMPONENT_INSTALL YES)
+
+        set(CPACK_DEBIAN_PACKAGE_SECTION "science")
+        set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS TRUE)
+        set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS TRUE)
+        set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS_POLICY "=")
     
         # Derive the correct filename for a Debian package because the DEB
         # generator doesn't do this correctly at present.
@@ -104,6 +111,8 @@ if (UNIX)
             set(CPACK_RPM_PACKAGE_NAME ${PROJECT_NAME})
             set(CPACK_RPM_PACKAGE_VERSION ${VERSION})
             set(CPACK_RPM_PACKAGE_DESCRIPTION ${LZ_DESCRIPTION})
+            set(CPACK_RPM_PACKAGE_AUTOREQ TRUE)
+            set(CPACK_RPM_PACKAGE_AUTOPROV TRUE)
         endif (RPMBUILDER)
     endif (FEDORA_FOUND)
 
@@ -119,6 +128,8 @@ if (UNIX)
             set(CPACK_RPM_PACKAGE_NAME "lz")
             set(CPACK_RPM_PACKAGE_VERSION ${VERSION})
             set(CPACK_RPM_PACKAGE_DESCRIPTION ${LZ_DESCRIPTION})
+            set(CPACK_RPM_PACKAGE_AUTOREQ TRUE)
+            set(CPACK_RPM_PACKAGE_AUTOPROV TRUE)
         endif (RPMBUILDER)
     endif (REDHAT_FOUND)
     
@@ -155,8 +166,8 @@ message(STATUS "SO detected ${CMAKE_OS_NAME}")
 # Finally, generate the CPack per-generator options file and include the
 # base CPack configuration.
 #
-configure_file(cmake/config/CMakeCPackOptions.cmake.in CMakeCPackOptions.cmake @ONLY)
-set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_BINARY_DIR}/CMakeCPackOptions.cmake)
+# configure_file(cmake/config/CMakeCPackOptions.cmake.in CMakeCPackOptions.cmake @ONLY)
+# set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_BINARY_DIR}/CMakeCPackOptions.cmake)
 
 # if(UNIX)
 #   set(CMAKE_MACOSX_RPATH 1)
