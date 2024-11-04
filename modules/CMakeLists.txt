@@ -2,7 +2,9 @@
 if(LZ_ONLY_CORE)
    add_subdirectory(core)
 else()
-   add_subdirectory(lz)
+   if(LZ_APP)
+      add_subdirectory(lz)
+   endif()
 
    if(LZ_DISTANCE)
       add_subdirectory(distance)

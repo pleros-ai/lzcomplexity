@@ -269,7 +269,9 @@ if(LZ_APP AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
     )
 
-    # include(packaging)
+    if(NOT LZ_DISTANCE)
+      include(packaging)
+    endif()
 endif()
 
 message(STATUS "Distance app: ${LZ_DISTANCE}")
@@ -355,10 +357,12 @@ if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
       INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
   )
 
-  # include(packaging)
+    if(NOT LZ_APP)
+      include(packaging)
+    endif()
 endif()
 
-if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
+if(LZ_DISTANCE AND LZ_APP AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   include(packaging)
 endif()
 

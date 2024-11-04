@@ -112,7 +112,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{matrix.runs-on}}-${{matrix.cxx}}-package
+          name: lzdistance-${{matrix.runs-on}}-${{matrix.cxx}}-package
           path: ./_packages
           retention-days: 1
 
@@ -193,7 +193,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{matrix.runs-on}}-${{matrix.cxx}}-package
+          name: lzdistance-${{matrix.runs-on}}-${{matrix.cxx}}-package
           path: ./_packages
           retention-days: 1
 

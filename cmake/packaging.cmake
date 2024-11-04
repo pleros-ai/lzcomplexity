@@ -101,7 +101,7 @@ if (UNIX)
         if (RPMBUILDER)
         # #construct .rpm
             set(CPACK_GENERATOR "RPM")
-            set(CPACK_RPM_PACKAGE_NAME "lzcomplexity")
+            set(CPACK_RPM_PACKAGE_NAME ${PROJECT_NAME})
             set(CPACK_RPM_PACKAGE_VERSION ${VERSION})
             set(CPACK_RPM_PACKAGE_DESCRIPTION ${LZ_DESCRIPTION})
         endif (RPMBUILDER)
