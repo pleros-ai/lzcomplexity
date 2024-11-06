@@ -5,29 +5,6 @@
 cmake_minimum_required(VERSION 3.5)
 cmake_policy(VERSION 3.5...3.28)
 
-# Better make
-# > export [CXX/CC]="path/to/compiler"
-# set(CMAKE_CXX_COMPILER /opt/homebrew/bin/g++-13)
-
-# Project name and languages used.
-set(PROJECT_NAME lzcomplexity)
-set(namespace "lz")
-set(component "lz_cmd")
-set(VERSION 0.8.8)
-project(
-    ${PROJECT_NAME}
-    VERSION ${VERSION}
-    DESCRIPTION "Lempel-Ziv factorization program"
-    LANGUAGES CXX
-)
-
-# Language standards and hard requirements for such.
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-# for clangd
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 option(ASAN "Enable ASAN (Address Sanitizer) instrumentation " OFF)
 option(ENABLE_ADDRESS_SANITIZER "Build with address sanitizer instrumentation " OFF)
 option(ENABLE_MEMORY_SANITIZER "Build with memory sanitizer instrumentation " OFF)
@@ -40,6 +17,38 @@ option(LZ_ONLY_CORE "Build only the core library" OFF)
 
 option(LZ_APP "Build lzcomplexity application" ON)
 option(LZ_DISTANCE "Build lzdistance application" OFF)
+
+
+# Project name and languages used.
+if (LZ_APP)
+  set(PROJECT_NAME lzcomplexity)
+  set(namespace "lz")
+  set(component "lz_cmd")
+  set(DESC "Lempel-Ziv factorization program")
+endif()
+
+if (LZ_DISTANCE)
+  set(PROJECT_NAME lzdistance)
+  set(namespace "lz")
+  set(component "lz_dist_cmd")
+  set(DESC "Infromation distance application using LempelZiv-76")
+  endif()
+
+
+set(VERSION 0.8.8)
+project(
+    ${PROJECT_NAME}
+    VERSION ${VERSION}
+    DESCRIPTION ${DESC}
+    LANGUAGES CXX
+)
+
+# Language standards and hard requirements for such.
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+# for clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Global cmake
@@ -268,27 +277,10 @@ if(LZ_APP AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
     )
-
-    if(NOT LZ_DISTANCE)
-      include(packaging)
-    endif()
 endif()
-
-message(STATUS "Distance app: ${LZ_DISTANCE}")
 
 # Executable for the driver program.
 if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
-  set(PROJECT_NAME lzdistance)
-  set(namespace "lz")
-  set(component "lz_dist_cmd")
-  set(VERSION 0.8.8)
-  project(
-    ${PROJECT_NAME}
-    VERSION ${VERSION}
-    DESCRIPTION "Infromation distance application using LempelZiv-76"
-    LANGUAGES CXX
-  )
-
   set(MAIN_INCLUDE_DIR ${CMAKE_CURRENT_DIR}/main)
   add_executable(${PROJECT_NAME} lzdistance.cpp)
 
@@ -356,13 +348,9 @@ if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
       PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
       INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
   )
-
-    if(NOT LZ_APP)
-      include(packaging)
-    endif()
 endif()
 
-if(LZ_DISTANCE AND LZ_APP AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
+if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   include(packaging)
 endif()
 

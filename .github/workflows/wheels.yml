@@ -4,8 +4,8 @@ name: Build python wheels
 
 on:
   push:
-    # branches: ["main"]
-    branches: ["python"]
+    branches: ["main"]
+    # branches: ["python"]
 
 jobs:
   build_python:
@@ -70,70 +70,70 @@ jobs:
           name: ${{ env.name }}
           path: ./wheelhouse/*.whl
      
-      - uses: mamba-org/setup-micromamba@v1.9.0
-        with:
-         init-shell: bash
-         environment-name: upload-env
-         post-cleanup: all
-         create-args: >-
-            anaconda-client
+  #     - uses: mamba-org/setup-micromamba@v1.9.0
+  #       with:
+  #        init-shell: bash
+  #        environment-name: upload-env
+  #        post-cleanup: all
+  #        create-args: >-
+  #           anaconda-client
 
-      - name: Upload wheels to Anaconda
-        shell: bash -el {0}
-        env:
-          # Secret variables need to be mapped to environment variables explicitly
-         #  SCIKIT_LEARN_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIKIT_LEARN_NIGHTLY_UPLOAD_TOKEN }}
-          LZCOMPLEXITY_UPLOAD_TOKEN: ${{ secrets.LZCOMPLEXITY_UPLOAD_TOKEN }}
-        # Force a replacement if the remote file already exists
-        run: |
-         source tools/upload_wheels.sh
-         # Set upload vars
-         set_upload_vars
-         # Upload wheels to anaconda env
-         upload_wheels
+  #     - name: Upload wheels to Anaconda
+  #       shell: bash -el {0}
+  #       env:
+  #         # Secret variables need to be mapped to environment variables explicitly
+  #        #  SCIKIT_LEARN_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIKIT_LEARN_NIGHTLY_UPLOAD_TOKEN }}
+  #         LZCOMPLEXITY_UPLOAD_TOKEN: ${{ secrets.LZCOMPLEXITY_UPLOAD_TOKEN }}
+  #       # Force a replacement if the remote file already exists
+  #       run: |
+  #        source tools/upload_wheels.sh
+  #        # Set upload vars
+  #        set_upload_vars
+  #        # Upload wheels to anaconda env
+  #        upload_wheels
 
-  build-sdist:
-      name: Build distribution
-      runs-on: ubuntu-latest
-      permissions:
-         contents: write  # IMPORTANT: mandatory for making GitHub Releases
-         id-token: write  # IMPORTANT: mandatory for sigstore
-      steps:
-        - uses: actions/checkout@v4
-          with:
-            submodules: true
+  # build-sdist:
+  #     name: Build distribution
+  #     runs-on: ubuntu-latest
+  #     permissions:
+  #        contents: write  # IMPORTANT: mandatory for making GitHub Releases
+  #        id-token: write  # IMPORTANT: mandatory for sigstore
+  #     steps:
+  #       - uses: actions/checkout@v4
+  #         with:
+  #           submodules: true
 
-        - name: Patch TBB submodule
-          run: patch -p0 -i patches/tbb.patch
+  #       - name: Patch TBB submodule
+  #         run: patch -p0 -i patches/tbb.patch
 
-        # Used to push the built wheels
-        - uses: actions/setup-python@v5
-          with:
-            python-version: "3.10"
+  #       # Used to push the built wheels
+  #       - uses: actions/setup-python@v5
+  #         with:
+  #           python-version: "3.10"
 
-        - name: Build sdist
-          run: |
-            python -m pip install -U pip build
-            python -m build --sdist
+  #       - name: Build sdist
+  #         run: |
+  #           python -m pip install -U pip build
+  #           python -m build --sdist
        
-        - uses: actions/upload-artifact@v4
-          with:
-            name: 'dist'
-            path: ./dist/*
+  #       - uses: actions/upload-artifact@v4
+  #         with:
+  #           name: 'dist'
+  #           path: ./dist/*
 
-        - uses: conda-incubator/setup-miniconda@v3.0.4
-          with:
-            auto-update-conda: true
-            python-version: "3.10"
+  #       - uses: conda-incubator/setup-miniconda@v3.0.4
+  #         with:
+  #           auto-update-conda: true
+  #           python-version: "3.10"
 
-        - name: Upload sdist
-          shell: bash -el {0}
-          env:
-            LZCOMPLEXITY_UPLOAD_TOKEN: ${{ secrets.LZCOMPLEXITY_UPLOAD_TOKEN }}
-          run: |
-            conda install -y anaconda-client
-            source tools/upload_wheels.sh
-            # Set upload vars
-            set_upload_vars
-            # Upload wheels to anaconda env
-            upload_wheels
+  #       - name: Upload sdist
+  #         shell: bash -el {0}
+  #         env:
+  #           LZCOMPLEXITY_UPLOAD_TOKEN: ${{ secrets.LZCOMPLEXITY_UPLOAD_TOKEN }}
+  #         run: |
+  #           conda install -y anaconda-client
+  #           source tools/upload_wheels.sh
+  #           # Set upload vars
+  #           set_upload_vars
+  #           # Upload wheels to anaconda env
+  #           upload_wheels

@@ -248,7 +248,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: lzcomplexity-redhat-${{matrix.cxx}}-package
+          name: lzdistance-redhat-${{matrix.cxx}}-package
           path: ./_packages
           retention-days: 1
         
