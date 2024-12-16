@@ -123,6 +123,7 @@ namespace lz {
    auto
       ShuffleEntropyCalculation(const sequence&, const utils::LZ_Args, const lz_int, const std::vector<lz_int>, lz_int)
          -> utils::LZ_Shuffle;
+   auto ShuffleEntropyCalculation(const sequence&, const utils::LZ_Args, const lz_int, lz_int) -> utils::LZ_Shuffle;
 
    //.........................................................................
    // Excess entropy by distance: E = [1 - d(X,Y)] * max(C(X), C(Y))

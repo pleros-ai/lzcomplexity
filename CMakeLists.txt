@@ -22,17 +22,17 @@ option(LZ_DISTANCE "Build lzdistance application" OFF)
 # Project name and languages used.
 if (LZ_APP)
   set(PROJECT_NAME lzcomplexity)
-  set(namespace "lz")
+  set(namespace "lzcomplexity")
   set(component "lz_cmd")
   set(DESC "Lempel-Ziv factorization program")
 endif()
 
 if (LZ_DISTANCE)
   set(PROJECT_NAME lzdistance)
-  set(namespace "lz")
+  set(namespace "lzdistance")
   set(component "lz_dist_cmd")
   set(DESC "Infromation distance application using LempelZiv-76")
-  endif()
+endif()
 
 
 set(VERSION 0.8.8)

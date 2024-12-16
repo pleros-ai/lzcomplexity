@@ -1,10 +1,6 @@
 #include <lz/lempelziv.h>
 
-#include <filesystem>
-
 #include "flags.hpp"
-
-namespace fs = std::filesystem;
 
 namespace lz {
 

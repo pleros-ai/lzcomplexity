@@ -42,6 +42,11 @@ jobs:
             cxx: g++
             cc: gcc
             builtinTbb: ON
+          - runs-on: ubuntu-20.04
+            build_type: "Release"
+            cxx: g++
+            cc: gcc
+            builtinTbb: ON
           # - runs-on: ubuntu-22.04
           #   build_type: "Release"
           #   cxx: clang++

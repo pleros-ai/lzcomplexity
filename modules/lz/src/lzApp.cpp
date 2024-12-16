@@ -28,6 +28,24 @@
 #include <lz/lzApp.hpp>
 
 namespace lz {
+   namespace internal {
+      auto canProcessTheLine(const auto idx, const auto init_rng, const auto end_rng) {
+         const auto processAllLines =
+            init_rng == utils::LZ_Args::ALL_LINES ||
+            (init_rng == utils::LZ_Args::UNDEFINED_LINES && end_rng == utils::LZ_Args::UNDEFINED_LINES);
+         const auto processOneLine = static_cast<lz_int>(idx + 1) == init_rng &&
+                                     (end_rng == utils::LZ_Args::UNDEFINED_LINES || init_rng == end_rng);
+         const auto processRange =
+            (init_rng <= static_cast<lz_int>(idx + 1) && end_rng >= static_cast<lz_int>(idx + 1)) ||
+            (init_rng <= static_cast<lz_int>(idx + 1) &&
+             (end_rng == utils::LZ_Args::ALL_LINES || end_rng == utils::LZ_Args::UNDEFINED_LINES)) ||
+            ((init_rng == utils::LZ_Args::ALL_LINES || init_rng == utils::LZ_Args::UNDEFINED_LINES) &&
+             end_rng >= static_cast<lz_int>(idx + 1));
+
+         return processAllLines || processOneLine || processRange;
+      }
+   }  // namespace internal
+
    //.......................................................................
    //                            THE BANANA
    //.......................................................................
@@ -101,35 +119,36 @@ namespace lz {
       auto              end_line  = flags.shuffle_end_line;
 
       for (lz_size i = 0; i < flags.input.size(); i++) {
-         auto       str             = flags.input[i];
-         const auto processAllLines = init_line == utils::LZ_Args::ALL_LINES;
-         const auto processOneLine =
-            static_cast<lz_int>(i + 1) == init_line && end_line == utils::LZ_Args::UNDEFINED_LINES;
-         const auto processRange = init_line <= static_cast<lz_int>(i + 1) && end_line >= static_cast<lz_int>(i + 1);
-
+         auto                 str = flags.input[i];
          utils::shuffle_terms terms;
 
-         if (!processAllLines && !processOneLine && !processRange) {
+         if (!internal::canProcessTheLine(i, init_line, end_line)) {
             continue;
+         } else {
+            terms = {i + 1, excess_entropy.summands};
          }
 
+         auto n = std::chrono::high_resolution_clock::now();
          if (lz.calculated_complexity[i]) {
-            std::pair<std::vector<lz_int>, lz_size> random_run = ShuffleFactorization(str, flags.sa_args);
-            auto [H_rand, mm]                                  = random_run;
+            // std::pair<std::vector<lz_int>, lz_size> random_run = ShuffleFactorization(str, flags.sa_args);
+            // auto [H_rand, mm]                                  = random_run;
+            lz_int mm = flags.sa_args.block_size;
+            if (mm <= 0) {
+               mm = utils::max_block_size(str.size());
+               mm += str.size() > 50 ? 10 : 0;
+            }
 
-            excess_entropy = ShuffleEntropyCalculation(str, flags.sa_args, lz.data[i].getComplexity(), H_rand, mm);
+            excess_entropy = ShuffleEntropyCalculation(str, flags.sa_args, lz.data[i].getComplexity(), mm);
          } else {
             excess_entropy = fun(str, flags.sa_args);
          }
 
-         if (processAllLines || processOneLine || processRange) {
-            terms = {i + 1, excess_entropy.summands};
-         }
+         auto e = std::chrono::high_resolution_clock::now();
+         std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(e - n).count() << std::endl;
 
          // lz.whole_random_shuffle_complexity.push_back(
          //    {excess_entropy.max_block_size, excess_entropy.excess_value, terms});
          // lz.multi_information.push_back(excess_entropy.multi_information);
-
          lz.setRandomShuffleComplexity(i, excess_entropy);
       }
 
@@ -147,16 +166,13 @@ namespace lz {
       auto              end_line  = flags.shuffle_end_line;
 
       for (lz_size i = 0; i < flags.input.size(); i++) {
-         auto       str             = flags.input[i];
-         const auto processAllLines = init_line == utils::LZ_Args::ALL_LINES;
-         const auto processOneLine =
-            static_cast<lz_int>(i + 1) == init_line && end_line == utils::LZ_Args::UNDEFINED_LINES;
-         const auto processRange = init_line <= static_cast<lz_int>(i + 1) && end_line >= static_cast<lz_int>(i + 1);
+         auto str = flags.input[i];
 
          utils::shuffle_terms terms;
-
-         if (!processAllLines && !processOneLine && !processRange) {
+         if (!internal::canProcessTheLine(i, init_line, end_line)) {
             continue;
+         } else {
+            terms = {i + 1, excess_entropy.summands};
          }
 
          auto new_args = flags.sa_args;
@@ -164,10 +180,6 @@ namespace lz {
             new_args.chunks = 1;
 
          excess_entropy = lz76PairedShuffleComplexity(str, new_args);
-
-         if (processAllLines || processOneLine || processRange) {
-            terms = {i + 1, excess_entropy.summands};
-         }
 
          // lz.random_shuffle_complexity.push_back({excess_entropy.max_block_size, excess_entropy.excess_value, terms});
          // lz.multi_information.push_back(excess_entropy.multi_information);

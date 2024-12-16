@@ -286,20 +286,49 @@ namespace lz {
       utils::LZ_Shuffle result;
       result.max_block_size = mm;
 
-      auto terms = utils::map(H_rand, [&str, &args, &complexity](lz_int val) {
-         return utils::log(str.size(), args.log_base) * std::fabs((lz_double)val - (lz_double)complexity) /
-                (str.size() * utils::log(args.alphabet, args.log_base));
-      });
-
-      if (args.get_shuffle_terms) {
-         result.summands = std::vector<lz_double>{terms.begin() + 1, terms.end() - 2};
-      }
-
-      result.multi_information = terms[1];
-
-      auto body = [&terms](const auto& rng, lz_double init) -> lz_double {
+      auto body = [&](const auto& rng, lz_double init) -> lz_double {
          for (auto idx = rng.begin(); idx != rng.end(); idx++) {
-            init += terms[idx];
+            auto term = utils::log(str.size(), args.log_base) *
+                        std::fabs((lz_double)H_rand[idx] - (lz_double)complexity) /
+                        (str.size() * utils::log(args.alphabet, args.log_base));
+            init += term;
+
+            if (args.get_shuffle_terms) {
+               result.summands[idx - 1] = term;
+            }
+
+            if (idx == 1)
+               result.multi_information = term;
+         }
+         return init;
+      };
+      auto reduce = [](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
+
+      // result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, body, reduce);
+      result.excess_value = utils::parallel_reduce(1, mm + 1, 0.0, body, reduce);
+      return result;
+   }
+
+   utils::LZ_Shuffle
+      ShuffleEntropyCalculation(const sequence& str, const utils::LZ_Args args, const lz_int complexity, lz_int mm) {
+      utils::LZ_Shuffle result;
+      result.max_block_size = mm;
+
+      auto body = [&](const auto& rng, lz_double init) -> lz_double {
+         for (auto idx = rng.begin(); idx != rng.end(); idx++) {
+            sequence rand_seq = Shuffle(str, idx, str.size() / 2);
+            auto     c_rand   = lz76Factorization(rand_seq, args);
+
+            auto term = utils::log(str.size(), args.log_base) * std::fabs((lz_double)c_rand - (lz_double)complexity) /
+                        (str.size() * utils::log(args.alphabet, args.log_base));
+            init += term;
+
+            if (args.get_shuffle_terms) {
+               result.summands[idx - 1] = term;
+            }
+
+            if (idx == 1)
+               result.multi_information = term;
          }
          return init;
       };
