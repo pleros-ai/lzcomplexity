@@ -23,7 +23,7 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
    nlohmann::json out_data;
 
    out_data["filename"] = opt.input;
-   out_data["format"]   = opt.input_format;
+   out_data["format"]   = MagicValues[opt.input_format];
    out_data["size"]     = flags.input.size();
 
    for (std::size_t i = 0; i < flags.input.size(); i++) {
