@@ -40,6 +40,12 @@ git submodule init
 git submodule update
 ```
 
+3. Apply oneTBB patch
+
+```bash
+patch external/tbb/CMakeLists.txt patches/tbb.patch 
+```
+
 ### Build and install locally
 ---
 

@@ -13,16 +13,15 @@ using MSG = lz::utils::MSG_TYPE;
 void save_data(lz::dist::LZ_Flags& flags, lz::dist::LZ_Output& results, lz_options& opt) {
    nlohmann::json out_data;
 
-   out_data["first_data_source"] = opt.is_first_directory ? opt.first_input_dir : opt.first_input;
-   out_data["first_dim"]         = flags.first_input.size();
+   out_data["first_data_source"]        = opt.is_first_directory ? opt.first_input_dir : opt.first_input;
+   out_data["first_dim"]                = flags.first_input.size();
+   out_data["first_data_source_format"] = opt.first_input_format;
 
-   if (!opt.first_input.empty() || !opt.first_input_dir.empty()) {
-      out_data["second_data_source"] = opt.is_second_directory ? opt.second_input_dir : opt.second_input;
-      out_data["second_dim"]         = flags.second_input.size();
+   if (!opt.second_input.empty() || !opt.second_input_dir.empty()) {
+      out_data["second_data_source"]        = opt.is_second_directory ? opt.second_input_dir : opt.second_input;
+      out_data["second_dim"]                = flags.second_input.size();
+      out_data["second_data_source_format"] = opt.second_input_format;
    }
-
-   out_data["first_data_source_format"]  = opt.first_input_format;
-   out_data["second_data_source_format"] = opt.second_input_format;
 
    out_data["information_distance"]         = results.info_distance;
    out_data["shuffle_information_distance"] = results.shuffle_distance;

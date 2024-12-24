@@ -219,8 +219,6 @@ struct lz_options {
          filters.clear();
       }
 
-      std::cout << filters.size() << std::endl;
-
       if (!filters.empty()) {
          if (filters.size() == 1) {
             if (!filters[0].empty()) {
@@ -252,8 +250,10 @@ struct lz_options {
       out << "Summary of options: " << std::endl;
       out << "First data source: " << (opt.is_first_directory ? " [directory] " : " [file] ")
           << (opt.is_first_directory ? opt.first_input_dir : opt.first_input) << std::endl;
-      out << "Second data source: " << (opt.is_second_directory ? " [directory] " : " [file] ")
-          << (opt.is_second_directory ? opt.second_input_dir : opt.second_input) << std::endl;
+      if (!opt.second_input.empty() || !opt.second_input_dir.empty()) {
+         out << "Second data source: " << (opt.is_second_directory ? " [directory] " : " [file] ")
+             << (opt.is_second_directory ? opt.second_input_dir : opt.second_input) << std::endl;
+      }
 
       out << "Format: ";
       if (opt.first_input_format == MagickNumber::PNM_P4 || opt.first_input_format == MagickNumber::PNM_P1) {

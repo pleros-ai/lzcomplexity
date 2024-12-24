@@ -1481,11 +1481,12 @@ namespace lz {
 
                   seq.clear();
                   // for (unsigned char c: line) seq.push((unsigned char)(c));
-                  if (line.size() > 0)
+                  if (line.size() > 0) {
                      seq = lz::sequence(line);
+                     s.push_back(seq);
+                  }
 
                   line.clear();
-                  s.push_back(seq);
                }  // while is.good()
                seq.clear();
             }  // if PNM_RAWTXT
