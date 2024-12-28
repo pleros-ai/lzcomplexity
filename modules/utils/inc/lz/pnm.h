@@ -36,6 +36,7 @@
 #include <iostream>
 #include <limits>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "exceptions.h"
@@ -53,6 +54,20 @@
 #endif
 
 typedef enum { PNM_P1, PNM_P2, PNM_P3, PNM_P4, PNM_P5, PNM_P6, PNM_P7, PNM_RAWTXT, PNM_RAWBIN, CSV, AUTO } MagickNumber;
+
+inline std::unordered_map<MagickNumber, std::string> MagicValues{
+   {MagickNumber::CSV, "CSV"},
+   {MagickNumber::AUTO, "AUTO"},
+   {MagickNumber::PNM_P1, "PNM_P1"},
+   {MagickNumber::PNM_P2, "PNM_P2"},
+   {MagickNumber::PNM_P3, "PNM_P3"},
+   {MagickNumber::PNM_P4, "PNM_P4"},
+   {MagickNumber::PNM_P5, "PNM_P5"},
+   {MagickNumber::PNM_P6, "PNM_P6"},
+   {MagickNumber::PNM_P7, "PNM_P7"},
+   {MagickNumber::PNM_RAWTXT, "PNM_RAWTXT"},
+   {MagickNumber::PNM_RAWBIN, "PNM_RAWBIN"},
+};
 
 namespace lz {
    namespace utils {
