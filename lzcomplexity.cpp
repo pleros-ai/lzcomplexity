@@ -15,7 +15,7 @@
 #include "main/config.h"
 #include "main/messages.h"
 
-#define VERSION "v0.8.8"
+#define VERSION "v0.8.9"
 
 using MSG = lz::utils::MSG_TYPE;
 

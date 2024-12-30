@@ -35,7 +35,7 @@ if (LZ_DISTANCE)
 endif()
 
 
-set(VERSION 0.8.8)
+set(VERSION 0.8.9)
 project(
     ${PROJECT_NAME}
     VERSION ${VERSION}
