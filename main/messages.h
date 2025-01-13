@@ -37,7 +37,7 @@ inline std::unordered_map<std::string, CMD_OPT> opt_list{
    {"partitions", {"p,partitions", "Number of partitions used for the parallel suffix array algorithm."}},
    {"verbose", {"v,verbose", "Verbose output."}},
    {"version", {"V,version", "Output the version number."}},
-   {"warn", {"w,warn_out", "Hide warning messages."}}};
+   {"warn", {"w,warn-out", "Hide warning messages."}}};
 
 inline const std::string warn_data_size     = "Ingoring parallel processing because data source is too sort";
 inline const std::string warn_data_size_log = "[ WARN ] " + warn_data_size;

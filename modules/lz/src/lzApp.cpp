@@ -128,7 +128,6 @@ namespace lz {
             terms = {i + 1, excess_entropy.summands};
          }
 
-         auto n = std::chrono::high_resolution_clock::now();
          if (lz.calculated_complexity[i]) {
             // std::pair<std::vector<lz_int>, lz_size> random_run = ShuffleFactorization(str, flags.sa_args);
             // auto [H_rand, mm]                                  = random_run;
@@ -142,9 +141,6 @@ namespace lz {
          } else {
             excess_entropy = fun(str, flags.sa_args);
          }
-
-         auto e = std::chrono::high_resolution_clock::now();
-         std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(e - n).count() << std::endl;
 
          // lz.whole_random_shuffle_complexity.push_back(
          //    {excess_entropy.max_block_size, excess_entropy.excess_value, terms});

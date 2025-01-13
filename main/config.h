@@ -58,7 +58,7 @@ struct lz_options {
       find_distance   = result["dlz"].as<bool>();
       n_jobs          = result["jobs"].as<lz::lz_uint>();
       verbose         = result["verbose"].as<bool>();
-      warn_out        = result["warn_out"].as<bool>();
+      warn_out        = result["warn-out"].as<bool>();
       entropy_density = result["entropy-density"].as<bool>();
       mixed_entropy   = result["mixed-entropy"].as<bool>();
       // preprocess      = result["process"].as<bool>();

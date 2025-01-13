@@ -115,7 +115,7 @@ inline void read_one_line(std::ifstream& in, lz::sequence& seq, MagickNumber for
 }
 
 // Read a csv file with multiple columns (date per column)
-inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text_col) {
+inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text_col, bool multiline) {
    namespace fs = std::filesystem;
    std::error_code ec;
    const auto      file_size = fs::file_size(ip_path, ec);
@@ -131,10 +131,14 @@ inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text
    auto        line = input.next_line();
    std::string str(line);
    auto        rows = split(str, ',');
-   text_col.reserve(rows.size());
+   text_col.reserve(multiline ? rows.size() : 1);
+   auto data_size = multiline ? rows.size() : 1;
 
    for (auto row: rows) {
       text_col.push_back(row);
+
+      if (!multiline)
+         break;
    }
 
    // std::vector<std::vector<std::string>> data_frame(rows.size());
@@ -142,7 +146,7 @@ inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text
    while (auto line = input.next_line()) {
       std::string str(line);
       auto        rows = split(str, ',');
-      for (size_t i = 0; i < rows.size(); i++) {
+      for (size_t i = 0; i < data_size; i++) {
          text_col[i] += rows[i];
       }
    }
@@ -169,8 +173,11 @@ inline std::vector<lz::sequence>
    lz::sequence              oneLine;
    std::vector<lz::sequence> data{};
 
+   std::string tmp_str;
+   std::getline(input, tmp_str);
+
    if (format == CSV) {
-      read_csv(ip_path, data);
+      read_csv(ip_path, data, multiline);
    } else if (multiline)
       read_multi_line(input, data, format);
    else {
