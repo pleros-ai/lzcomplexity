@@ -1,9 +1,16 @@
-message(STATUS "--- Init LZCore ---")
-set(PROJECT_NAME LZCore)
+if (app)
+   message(STATUS "--- Init ${app}Core ---")
+   set(PROJECT_NAME "${app}Core")
+else()
+   message(STATUS "--- Init LZCore ---")
+   set(PROJECT_NAME LZCore)
+endif()
+
+# set(PROJECT_NAME LZCore)
 set(namespace "lz")
 set(component "lz_library")
 
-if (TARGET LZCore)
+if (TARGET ${PROJECT_NAME})
    return()
 endif()
 

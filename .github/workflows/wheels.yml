@@ -55,8 +55,8 @@ jobs:
          CIBW="RUNNER_OS=macOS MACOSX_DEPLOYMENT_TARGET=12.0"
          echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"  
 
-      - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel==2.21.1
+      - name: Install cibuildwheel and twine
+        run: python -m pip install cibuildwheel==2.21.1 twine
 
       - name: Generate wheel
         run: python -m cibuildwheel --output-dir wheelhouse
@@ -70,6 +70,12 @@ jobs:
           name: ${{ env.name }}
           path: ./wheelhouse/*.whl
      
+      - name: Upload distribution to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload ./wheelhouse/*
+
   #     - uses: mamba-org/setup-micromamba@v1.9.0
   #       with:
   #        init-shell: bash

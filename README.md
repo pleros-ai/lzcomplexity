@@ -31,7 +31,7 @@ The project uses the submodules oneTBB for parallel works and pybind11 for build
 ```bash
 git submodule init
 ```
-1. Clone the submodules into your local directory:
+2. Clone the submodules into your local directory:
 
 ```bash
 git submodule update
@@ -77,6 +77,31 @@ lzcomplexity
 - `ENABLE_ADDRESS_SANITIZER` (**OFF** by default): activate the sanitizer address option for detect memory error.
 - `ENABLE_MEMORY_SANITIZER` (**OFF** by default): activate the sanitizer memory option for detect uninitialized memory reads.
 - `ENABLE_UNDEFINED_SANITIZER` (**OFF** by default): activate the sanitizer undefined option for detect undefined behavior.
+
+## Example Usage
+
+### C++ Example
+
+```cpp
+#include <lz/lempelziv.h>
+
+int main() {
+    lz::sequence seq = "some data sequence";
+    lz::internal::LZ_Result result = lz::internal::LempelZiv76().Factorize(seq);
+    std::cout << "LZ76 Complexity: " << result.factorization << std::endl;
+    return 0;
+}
+```
+
+### Python Example
+
+```python
+import lzcomplexity as lz
+
+seq = "some data sequence"
+result = lz.lz76(seq)
+print("LZ76 Complexity:", result.complexity)
+```
 
 # License
 ---

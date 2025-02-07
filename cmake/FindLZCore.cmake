@@ -1,4 +1,12 @@
-if(TARGET LZCore)
+if (app)
+   set(APP_NAME "${app}Core")
+else()
+   set(APP_NAME LZCore)
+endif()
+
+message(STATUS "Looking for APP_NAME: ${APP_NAME}")
+
+if(TARGET ${APP_NAME})
     message(STATUS "LZCore: ${LZCore_FOUND} and Lib: ${LZCore} with include: ${LZCore_INCLUDE_DIR}")
     return()
 endif()
@@ -47,13 +55,13 @@ ENDIF (CMAKE_SIZEOF_VOID_P EQUAL 8)
 LIST (APPEND _LZ_POSSIBLE_LIB_SUFFIXES lib)
 
 FIND_LIBRARY (LZ_LIBRARY_RELEASE
-  NAMES LZCore
+  NAMES ${APP_NAME}
   HINTS ${LZ_CORE_DIR}
   PATH_SUFFIXES ${_LZ_POSSIBLE_LIB_SUFFIXES}
   DOC "LZCore release library")
 
 FIND_LIBRARY (LZ_LIBRARY_DEBUG
-  NAMES LZCore_dbg
+  NAMES "${APP_NAME}_dbg"
   HINTS ${LZ_ROOT_DIR}
   PATH_SUFFIXES ${_LZ_POSSIBLE_LIB_SUFFIXES}
   DOC "LZCore debug library")

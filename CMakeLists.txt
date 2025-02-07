@@ -25,6 +25,7 @@ if (LZ_APP)
   set(namespace "lzcomplexity")
   set(component "lz_cmd")
   set(DESC "Lempel-Ziv factorization program")
+  set(app "LZApp")
 endif()
 
 if (LZ_DISTANCE)
@@ -32,10 +33,11 @@ if (LZ_DISTANCE)
   set(namespace "lzdistance")
   set(component "lz_dist_cmd")
   set(DESC "Infromation distance application using LempelZiv-76")
-endif()
+  set(app "LZDist")
+  endif()
 
 
-set(VERSION 0.8.9)
+set(VERSION 0.9.0)
 project(
     ${PROJECT_NAME}
     VERSION ${VERSION}

@@ -34,7 +34,7 @@ endif()
 # Alias for the library
 add_library(lz::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-# find_package(LZCore REQUIRED)
+find_package(LZCore REQUIRED)
 
 message(STATUS "LZCore: ${LZCore_FOUND}")
 
@@ -44,7 +44,12 @@ if(NOT LZCore_FOUND)
 
    message(STATUS "LZCore path: ${CORE_INCLUDE_DIR}")
    set(LZCore_INCLUDE_DIR ${CORE_INCLUDE_DIR})
-   set(LZCore_LIB LZCore)
+
+   if (app)
+      set(LZCore_LIB "${app}Core")
+   else()
+      set(LZCore_LIB LZCore)
+   endif()
 endif()
 
 # add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
