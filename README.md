@@ -72,6 +72,8 @@ lzcomplexity
 - `LZ_SHARE` (**ON** by default): build shared library.
 - `LZ_ONLY_LIBS` (**OFF** by default): build only the libraries (LZCore and LZApp).
 - `LZ_ONLY_CORE` (**OFF** by default): build only the core library.
+- `LZ_APP` (**ON** by default): build the lzcomplexity standalone application.
+- `LZ_DISTANCE` (**ON** by default): build the lzdistance standalone application.
 - `BUILD_PYTHON` (**OFF** by default): enable python binding.
 - `ASAN` (**OFF** by default): configure the build with sanitizer for debug the application (only for clang).
 - `ENABLE_ADDRESS_SANITIZER` (**OFF** by default): activate the sanitizer address option for detect memory error.

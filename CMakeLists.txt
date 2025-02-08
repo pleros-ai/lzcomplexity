@@ -15,6 +15,9 @@ option(LZ_SHARE "Build shared library" ON)
 option(LZ_ONLY_LIBS "Build only the libraries (LZCore and LZApp)" OFF)
 option(LZ_ONLY_CORE "Build only the core library" OFF)
 
+option(LZ_APP "Build lzcomplexity standalone" ON)
+option(LZ_DISTANCE "Build lzdistance stadnalone" ON)
+
 set(PROJECT_NAME standalone)
 set(DESC "Stadnalone applications of lzcomplexity and lzdistance")
 set(namespace "lz")
@@ -189,70 +192,74 @@ endif()
 add_subdirectory(modules)
 
 if(NOT LZ_ONLY_LIBS)
-  # lzcomplexity standalone
-  set(PROJECT_NAME lzcomplexity)
-  add_executable(${PROJECT_NAME} standalone/lzcomplexity.cpp)
-  target_link_libraries(${PROJECT_NAME} PUBLIC LZApp)
-  get_property(APP_INCLUDE_DIR GLOBAL PROPERTY APP_INCLUDE_DIR)
-  target_include_directories(${PROJECT_NAME}
-        PUBLIC
-          $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
-          $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
-          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-      )
-  target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
-  target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
-  target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
-  install(
-    TARGETS ${PROJECT_NAME}
-    EXPORT "${PROJECT_NAME}Targets"
-    COMPONENT ${component} # must be here, not any line lower
-    # these get default values from GNUInstallDirs, no need to set them
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
-    LIBRARY
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        NAMELINK_COMPONENT lz_headers
-    ARCHIVE
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        # NAMELINK_COMPONENT lz_headers
-    # except for public headers, as we want them to be inside a library folder
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
-  )
+  if(LZ_APP)
+    # lzcomplexity standalone
+    set(PROJECT_NAME lzcomplexity)
+    add_executable(${PROJECT_NAME} standalone/lzcomplexity.cpp)
+    target_link_libraries(${PROJECT_NAME} PUBLIC LZApp)
+    get_property(APP_INCLUDE_DIR GLOBAL PROPERTY APP_INCLUDE_DIR)
+    target_include_directories(${PROJECT_NAME}
+          PUBLIC
+            $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
+            $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        )
+    target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
+    target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
+    target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
+    install(
+      TARGETS ${PROJECT_NAME}
+      EXPORT "${PROJECT_NAME}Targets"
+      COMPONENT ${component} # must be here, not any line lower
+      # these get default values from GNUInstallDirs, no need to set them
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
+      LIBRARY
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          NAMELINK_COMPONENT lz_headers
+      ARCHIVE
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          # NAMELINK_COMPONENT lz_headers
+      # except for public headers, as we want them to be inside a library folder
+      PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
+    )
+  endif()
 
-  # lzdistance standalone
-  set(PROJECT_NAME lzdistance)
-  add_executable(${PROJECT_NAME} standalone/lzdistance.cpp)
-  target_link_libraries(${PROJECT_NAME} PUBLIC LZDist)
-  get_property(DIST_INCLUDE_DIR GLOBAL PROPERTY DIST_INCLUDE_DIR)
-  message(STATUS "Core dir dist: ${LZ_CORE_INCLUDE_DIR}")
-  # target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${MAIN_INCLUDE_DIR}>)
-  # Compiler flags for the target.
-  target_include_directories(${PROJECT_NAME}
-    PUBLIC
-      $<BUILD_INTERFACE:${DIST_INCLUDE_DIR}>
-      $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
-      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  )
-  target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE} -lz)
-  target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
-  target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
-  install(
-    TARGETS ${PROJECT_NAME}
-    EXPORT "${PROJECT_NAME}Targets"
-    COMPONENT ${component} # must be here, not any line lower
-    # these get default values from GNUInstallDirs, no need to set them
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
-    LIBRARY
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        NAMELINK_COMPONENT lz_headers
-    ARCHIVE
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        # NAMELINK_COMPONENT lz_headers
-    # except for public headers, as we want them to be inside a library folder
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
-  )
+  if(LZ_DISTANCE)
+    # lzdistance standalone
+    set(PROJECT_NAME lzdistance)
+    add_executable(${PROJECT_NAME} standalone/lzdistance.cpp)
+    target_link_libraries(${PROJECT_NAME} PUBLIC LZDist)
+    get_property(DIST_INCLUDE_DIR GLOBAL PROPERTY DIST_INCLUDE_DIR)
+    message(STATUS "Core dir dist: ${LZ_CORE_INCLUDE_DIR}")
+    # target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${MAIN_INCLUDE_DIR}>)
+    # Compiler flags for the target.
+    target_include_directories(${PROJECT_NAME}
+      PUBLIC
+        $<BUILD_INTERFACE:${DIST_INCLUDE_DIR}>
+        $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    )
+    target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE} -lz)
+    target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
+    target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
+    install(
+      TARGETS ${PROJECT_NAME}
+      EXPORT "${PROJECT_NAME}Targets"
+      COMPONENT ${component} # must be here, not any line lower
+      # these get default values from GNUInstallDirs, no need to set them
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
+      LIBRARY
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          NAMELINK_COMPONENT lz_headers
+      ARCHIVE
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          # NAMELINK_COMPONENT lz_headers
+      # except for public headers, as we want them to be inside a library folder
+      PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
+    )
+  endif()
 endif()
 
 if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
