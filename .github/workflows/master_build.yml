@@ -1,4 +1,6 @@
-name: CMake on multiple platforms for lzdistance library
+# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
+# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
+name: CMake on multiple platforms for lzcomplexity library
 
 on:
   push:
@@ -36,6 +38,11 @@ jobs:
             cc: gcc
             builtinTbb: ON
           - runs-on: ubuntu-22.04
+            build_type: "Release"
+            cxx: g++
+            cc: gcc
+            builtinTbb: ON
+          - runs-on: ubuntu-20.04
             build_type: "Release"
             cxx: g++
             cc: gcc
@@ -98,7 +105,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=ON -DLZ_APP=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
 
       - name: Build
@@ -112,7 +119,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: lzdistance-${{matrix.runs-on}}-${{matrix.cxx}}-package
+          name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package
           path: ./_packages
           retention-days: 1
 
@@ -178,7 +185,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=ON -DLZ_APP=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
 
       - name: Build
@@ -193,9 +200,10 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: lzdistance-${{matrix.runs-on}}-${{matrix.cxx}}-package
+          name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package
           path: ./_packages
           retention-days: 1
+
 
   build-rpm:
     defaults:
@@ -223,7 +231,7 @@ jobs:
       - name: Set reusable strings
         id: build_path
         run: |
-          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
       - name: Patch TBB submodule
         run: patch -p0 -i patches/tbb.patch
@@ -234,7 +242,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=OFF -DLZ_APP=ON -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
   
       - name: Build
@@ -248,10 +256,10 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: lzdistance-redhat-${{matrix.cxx}}-package
+          name: lzcomplexity-redhat-${{matrix.cxx}}-package
           path: ./_packages
           retention-days: 1
-        
+
   # Test red hat compile
   # install-runner:
   #   runs-on: ubuntu-20.04

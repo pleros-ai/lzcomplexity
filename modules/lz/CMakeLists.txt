@@ -45,11 +45,7 @@ if(NOT LZCore_FOUND)
    message(STATUS "LZCore path: ${CORE_INCLUDE_DIR}")
    set(LZCore_INCLUDE_DIR ${CORE_INCLUDE_DIR})
 
-   if (app)
-      set(LZCore_LIB "${app}Core")
-   else()
-      set(LZCore_LIB LZCore)
-   endif()
+   set(LZCore_LIB LZCore)
 endif()
 
 # add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)

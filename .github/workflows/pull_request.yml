@@ -31,13 +31,13 @@ jobs:
           CXX: g++
           CC: gcc
         run: |
-         cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=Release \
-               -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=ON -DLZ_APP=ON -DBUILTIN_TBB=ON \
-               -S ${{ github.workspace }}
-
+          cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -S ${{ github.workspace }}
+  
       - name: Build
         run: |
-         cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config Release
+          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
 
   build-mac:
@@ -67,7 +67,7 @@ jobs:
           CC: clang
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=Release \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=ON -DLZ_APP=ON -DBUILTIN_TBB=ON \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=ON \
                 -S ${{ github.workspace }}
 
       - name: Build

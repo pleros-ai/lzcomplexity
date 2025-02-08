@@ -70,33 +70,11 @@ jobs:
           name: ${{ env.name }}
           path: ./wheelhouse/*.whl
      
-      - name: Upload distribution to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload ./wheelhouse/*
-
-  #     - uses: mamba-org/setup-micromamba@v1.9.0
-  #       with:
-  #        init-shell: bash
-  #        environment-name: upload-env
-  #        post-cleanup: all
-  #        create-args: >-
-  #           anaconda-client
-
-  #     - name: Upload wheels to Anaconda
-  #       shell: bash -el {0}
-  #       env:
-  #         # Secret variables need to be mapped to environment variables explicitly
-  #        #  SCIKIT_LEARN_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIKIT_LEARN_NIGHTLY_UPLOAD_TOKEN }}
-  #         LZCOMPLEXITY_UPLOAD_TOKEN: ${{ secrets.LZCOMPLEXITY_UPLOAD_TOKEN }}
-  #       # Force a replacement if the remote file already exists
-  #       run: |
-  #        source tools/upload_wheels.sh
-  #        # Set upload vars
-  #        set_upload_vars
-  #        # Upload wheels to anaconda env
-  #        upload_wheels
+      # - name: Upload distribution to PyPI
+      #   env:
+      #     TWINE_USERNAME: __token__
+      #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      #   run: twine upload ./wheelhouse/*
 
   # build-sdist:
   #     name: Build distribution

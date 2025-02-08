@@ -1,4 +1,4 @@
-#include "main/lzcomplexity.h"
+#include "inc/lzcomplexity.h"
 
 #include <lz/lz.h>
 
@@ -8,12 +8,12 @@
 #include <ostream>
 #include <string>
 
+#include "inc/config.h"
+#include "inc/messages.h"
 #include "json.hpp"
 #include "lz/exceptions.h"
 #include "lz/general.h"
 #include "lz/utils.h"
-#include "main/config.h"
-#include "main/messages.h"
 
 #define VERSION "v0.9.1"
 

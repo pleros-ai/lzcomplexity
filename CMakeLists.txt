@@ -15,29 +15,12 @@ option(LZ_SHARE "Build shared library" ON)
 option(LZ_ONLY_LIBS "Build only the libraries (LZCore and LZApp)" OFF)
 option(LZ_ONLY_CORE "Build only the core library" OFF)
 
-option(LZ_APP "Build lzcomplexity application" ON)
-option(LZ_DISTANCE "Build lzdistance application" OFF)
-
-
-# Project name and languages used.
-if (LZ_APP)
-  set(PROJECT_NAME lzcomplexity)
-  set(namespace "lzcomplexity")
-  set(component "lz_cmd")
-  set(DESC "Lempel-Ziv factorization program")
-  set(app "LZApp")
-endif()
-
-if (LZ_DISTANCE)
-  set(PROJECT_NAME lzdistance)
-  set(namespace "lzdistance")
-  set(component "lz_dist_cmd")
-  set(DESC "Infromation distance application using LempelZiv-76")
-  set(app "LZDist")
-  endif()
-
-
+set(PROJECT_NAME standalone)
+set(DESC "Stadnalone applications of lzcomplexity and lzdistance")
+set(namespace "lz")
+set(component "lz_cmd")
 set(VERSION 0.9.1)
+
 project(
     ${PROJECT_NAME}
     VERSION ${VERSION}
@@ -205,92 +188,43 @@ endif()
 # add module subdirectory
 add_subdirectory(modules)
 
-# Executable for the driver program.
-if(LZ_APP AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
-    set(MAIN_INCLUDE_DIR ${CMAKE_CURRENT_DIR}/main)
-    add_executable(${PROJECT_NAME} lzcomplexity.cpp)
+if(NOT LZ_ONLY_LIBS)
+  # lzcomplexity standalone
+  set(PROJECT_NAME lzcomplexity)
+  add_executable(${PROJECT_NAME} standalone/lzcomplexity.cpp)
+  target_link_libraries(${PROJECT_NAME} PUBLIC LZApp)
+  get_property(APP_INCLUDE_DIR GLOBAL PROPERTY APP_INCLUDE_DIR)
+  target_include_directories(${PROJECT_NAME}
+        PUBLIC
+          $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
+          $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
+          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+      )
+  target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
+  target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
+  target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
+  install(
+    TARGETS ${PROJECT_NAME}
+    EXPORT "${PROJECT_NAME}Targets"
+    COMPONENT ${component} # must be here, not any line lower
+    # these get default values from GNUInstallDirs, no need to set them
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
+    LIBRARY
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        NAMELINK_COMPONENT lz_headers
+    ARCHIVE
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        # NAMELINK_COMPONENT lz_headers
+    # except for public headers, as we want them to be inside a library folder
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
+  )
 
-    message(STATUS "TBB: ${LZ_TBB_LIBS} and found: ${GLOBAL_LZ_TBB_LIBS}")
-
-    # target_link_libraries(${PROJECT_NAME} PRIVATE ${GLOBAL_LZ_TBB_LIBS})
-    target_link_libraries(${PROJECT_NAME} PUBLIC LZApp)
-
-    message(STATUS "SA Dir: ${SA_INCLUDE_DIR}")
-
-    get_property(APP_INCLUDE_DIR GLOBAL PROPERTY APP_INCLUDE_DIR)
-
-    # target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${MAIN_INCLUDE_DIR}>)
-    # Compiler flags for the target.
-    target_include_directories(${PROJECT_NAME}
-      PUBLIC
-        $<BUILD_INTERFACE:${APP_INCLUDE_DIR}>
-        $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    )
-
-    message(STATUS "SANITIZER: ${LZ_COMPILE_SANITIZE}")
-
-    target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
-    target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
-    target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
-
-    # Debug prefix for libs when build it in debug mode
-    set_target_properties(${PROJECT_NAME}
-        PROPERTIES
-          DEBUG_POSTFIX "_dbg"
-    )
-
-    if(IPO_CHECKED)
-        set_target_properties(${PROJECT_NAME}
-        PROPERTIES
-          INTERPROCEDURAL_OPTIMIZATION TRUE
-          INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
-    endif()
-
-    # set_target_properties(${PROJECT_NAME} PROPERTIES
-    #     BUNDLE True
-    #     # MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.${CUR_TARGET}
-    #     MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
-    #     MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}"
-    #     MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}"
-    #     # MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/customtemplate.plist.in
-    # )
-
-    message(STATUS "Paths for install lzcomplexity:")
-    message(STATUS "Prefix install dir: ${CMAKE_INSTALL_PREFIX}")
-    message(STATUS "Library dir: ${CMAKE_INSTALL_LIBDIR}")
-    message(STATUS "Inlude dir: ${CMAKE_INSTALL_INCLUDEDIR}")
-    message(STATUS "Binary dir: ${CMAKE_INSTALL_BINDIR}")
-
-    # install the target and create export-set
-    install(
-        TARGETS ${PROJECT_NAME}
-        EXPORT "${PROJECT_NAME}Targets"
-        COMPONENT ${component} # must be here, not any line lower
-        # these get default values from GNUInstallDirs, no need to set them
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
-        LIBRARY
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            NAMELINK_COMPONENT lz_headers
-        ARCHIVE
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            # NAMELINK_COMPONENT lz_headers
-        # except for public headers, as we want them to be inside a library folder
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
-    )
-endif()
-
-# Executable for the driver program.
-if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
-  set(MAIN_INCLUDE_DIR ${CMAKE_CURRENT_DIR}/main)
-  add_executable(${PROJECT_NAME} lzdistance.cpp)
-
-  # target_link_libraries(${PROJECT_NAME} PRIVATE ${GLOBAL_LZ_TBB_LIBS})
+  # lzdistance standalone
+  set(PROJECT_NAME lzdistance)
+  add_executable(${PROJECT_NAME} standalone/lzdistance.cpp)
   target_link_libraries(${PROJECT_NAME} PUBLIC LZDist)
-
   get_property(DIST_INCLUDE_DIR GLOBAL PROPERTY DIST_INCLUDE_DIR)
-
   message(STATUS "Core dir dist: ${LZ_CORE_INCLUDE_DIR}")
   # target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${MAIN_INCLUDE_DIR}>)
   # Compiler flags for the target.
@@ -300,55 +234,24 @@ if(LZ_DISTANCE AND NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
       $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
-
   target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE} -lz)
   target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
   target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
-
-  # Debug prefix for libs when build it in debug mode
-  set_target_properties(${PROJECT_NAME}
-      PROPERTIES
-        DEBUG_POSTFIX "_dbg"
-  )
-
-  if(IPO_CHECKED)
-    set_target_properties(${PROJECT_NAME}
-    PROPERTIES
-      INTERPROCEDURAL_OPTIMIZATION TRUE
-      INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE)
-  endif()
-
-    # set_target_properties(${PROJECT_NAME} PROPERTIES
-  #     BUNDLE True
-  #     # MACOSX_BUNDLE_GUI_IDENTIFIER my.domain.style.identifier.${CUR_TARGET}
-  #     MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
-  #     MACOSX_BUNDLE_BUNDLE_VERSION "${VERSION}"
-  #     MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION}"
-  #     # MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/customtemplate.plist.in
-  # )
-
-  message(STATUS "Paths for install lzdistance:")
-  message(STATUS "Prefix install dir: ${CMAKE_INSTALL_PREFIX}")
-  message(STATUS "Library dir: ${CMAKE_INSTALL_LIBDIR}")
-  message(STATUS "Inlude dir: ${CMAKE_INSTALL_INCLUDEDIR}")
-  message(STATUS "Binary dir: ${CMAKE_INSTALL_BINDIR}")
-
-  # install the target and create export-set
   install(
-      TARGETS ${PROJECT_NAME}
-      EXPORT "${PROJECT_NAME}Targets"
-      COMPONENT ${component} # must be here, not any line lower
-      # these get default values from GNUInstallDirs, no need to set them
-      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
-      LIBRARY
-          DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          NAMELINK_COMPONENT lz_headers
-      ARCHIVE
-          DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          # NAMELINK_COMPONENT lz_headers
-      # except for public headers, as we want them to be inside a library folder
-      PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
-      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
+    TARGETS ${PROJECT_NAME}
+    EXPORT "${PROJECT_NAME}Targets"
+    COMPONENT ${component} # must be here, not any line lower
+    # these get default values from GNUInstallDirs, no need to set them
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} # bin
+    LIBRARY
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        NAMELINK_COMPONENT lz_headers
+    ARCHIVE
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        # NAMELINK_COMPONENT lz_headers
+    # except for public headers, as we want them to be inside a library folder
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
   )
 endif()
 

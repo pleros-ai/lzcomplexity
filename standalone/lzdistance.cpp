@@ -1,10 +1,10 @@
-#include "main/lzdistance.hpp"
+#include "inc/lzdistance.hpp"
 
 #include <lz/lz.h>
 
 #include <lzDistance/lzDistanceApp.hpp>
 
-#include "main/config_distance.hpp"
+#include "inc/config_distance.hpp"
 
 #define VERSION "0.9.1"
 

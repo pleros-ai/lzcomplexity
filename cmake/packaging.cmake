@@ -207,21 +207,25 @@ cpack_add_install_type(minimal   DISPLAY_NAME "Minimal Installation")
 cpack_add_install_type(developer DISPLAY_NAME "Developer Installation")
 
 cpack_add_component(lz_cmd
-    DISPLAY_NAME "LZ cmd Applications"
-    DESCRIPTION "LZ application executable"
-     INSTALL_TYPES full minimal developer)
-
-cpack_add_component(lz_dist_cmd
-    DISPLAY_NAME "LZ cmd Applications for distance information"
-    DESCRIPTION "LZ application executable"
-     INSTALL_TYPES full minimal developer)
+    DISPLAY_NAME "lzcomplexity standalone"
+    DESCRIPTION "lzcomplexity standalone"
+    GROUP Runtime
+    INSTALL_TYPES full minimal developer)
 
 cpack_add_component(lz_library
-    DISPLAY_NAME "LZ Libraries for build apps"
-    DESCRIPTION "All LZ libraries and dictionaries"
-     INSTALL_TYPES full developer)
+    DISPLAY_NAME "lzcomplexity libraries"
+    DESCRIPTION "All lzcomplexity libraries used by the standalone"
+    GROUP Libraries
+    INSTALL_TYPES full minimal developer)
+
+cpack_add_component(lz_distance
+    DISPLAY_NAME "lzdistance libraries"
+    DESCRIPTION "All lzdistance libraries used by the standalone"
+    GROUP Libraries
+    INSTALL_TYPES full minimal developer)
 
 cpack_add_component(lz_headers
     DISPLAY_NAME "C++ Headers"
-    DESCRIPTION "These are needed to do any development"
-     INSTALL_TYPES full developer)
+    DESCRIPTION "Includes for developers to access lz functions"
+    GROUP Development
+    INSTALL_TYPES full developer)
