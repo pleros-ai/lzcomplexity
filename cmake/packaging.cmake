@@ -224,8 +224,10 @@ cpack_add_component(lz_distance
     GROUP Libraries
     INSTALL_TYPES full minimal developer)
 
-cpack_add_component(lz_headers
-    DISPLAY_NAME "C++ Headers"
-    DESCRIPTION "Includes for developers to access lz functions"
-    GROUP Development
-    INSTALL_TYPES full developer)
+if(LZ_APP AND LZ_DISTANCE)
+  cpack_add_component(lz_headers
+      DISPLAY_NAME "C++ Headers"
+      DESCRIPTION "Includes for developers to access lz functions"
+      GROUP Development
+      INSTALL_TYPES full developer)
+endif()

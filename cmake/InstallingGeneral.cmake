@@ -9,8 +9,10 @@ string(REGEX REPLACE "^([0-9]+).*$"             "\\1" MAJOR_V ${VERSION})
 string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*$"    "\\1" MINOR_V ${VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${MAJOR_V}.${MINOR_V}" SOVERSION ${MAJOR_V})
 
-include(lzMacros)
-LZ_INSTALL_HEADERS( HEADERS ${public_headers} )
+if(LZ_APP AND LZ_DISTANCE)
+    include(lzMacros)
+    LZ_INSTALL_HEADERS( HEADERS ${public_headers} )
+endif()
 
 # install the target and create export-set
 install(
