@@ -1,7 +1,7 @@
 message(STATUS "--- Init lzdist ---")
 set(PROJECT_NAME lzdist)
 set(namespace "lz")
-set(component "lz_distance")
+set(component "runtime")
 
 project(
    ${PROJECT_NAME}
@@ -45,7 +45,12 @@ if(NOT lzcore_FOUND)
    message(STATUS "lzcore path: ${CORE_INCLUDE_DIR}")
    set(lzcore_INCLUDE_DIR ${CORE_INCLUDE_DIR})
 
-   set(lzcore_LIB lzcore)
+   # set(lzcore_LIB lzcore)
+   if (LZ_APP AND LZ_DISTANCE)
+      set(lzcore_LIB lzcore)
+   else()
+      set(lzcore_LIB "lzdistcore")
+   endif()
 endif()
 
 # add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)

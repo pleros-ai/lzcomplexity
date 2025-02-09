@@ -6,7 +6,7 @@ include(CMakeParseArguments)
 function(LZ_INSTALL_HEADERS)
    cmake_parse_arguments(ARG "" "DESTINATION" "HEADERS" ${ARGN} )
    
-   set(component "lz_headers")
+   set(component devel)
    set(headers_destination)
    set(directory_name)
    set(header_file)

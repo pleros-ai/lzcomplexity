@@ -89,8 +89,10 @@ lzcomplexity
 
 int main() {
     lz::sequence seq = "some data sequence";
-    lz::internal::LZ_Result result = lz::internal::LempelZiv76().Factorize(seq);
-    std::cout << "LZ76 Complexity: " << result.factorization << std::endl;
+    int result = lz::lz76Factorization(seq);
+    double entropy = lz::lz76EntropyDensity(seq);
+    std::cout << "LZ76 Complexity: " << result << std::endl;
+    std::cout << "Entropy density: " << entropy << std::endl;
     return 0;
 }
 ```
@@ -103,6 +105,7 @@ import lzcomplexity as lz
 seq = "some data sequence"
 result = lz.lz76(seq)
 print("LZ76 Complexity:", result.complexity)
+print("Entropy density:", result.entropy)
 ```
 
 # License

@@ -21,7 +21,7 @@ option(LZ_DISTANCE "Build lzdistance stadnalone" ON)
 set(PROJECT_NAME standalone)
 set(DESC "Stadnalone applications of lzcomplexity and lzdistance")
 set(namespace "lz")
-set(component "lz_cmd")
+set(component "runtime")
 set(VERSION 0.9.1)
 
 project(

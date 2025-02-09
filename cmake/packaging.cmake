@@ -192,12 +192,13 @@ set(CPACK_SOURCE_IGNORE_FILES
     "/#"
 )
 
-include(CPack)
+if(LZ_APP AND LZ_DISTANCE)
+  set(CPACK_COMPONENTS_ALL runtime devel)
+else()
+  set(CPACK_COMPONENTS_ALL runtime)
+endif()
 
-# cpack_add_component(lz)
-# cpack_add_component(lz_headers)
-# cpack_add_component(lz_cmake)
-# cpack_add_component(lz_pkgconfig)
+include(CPack)
 
 #----------------------------------------------------------------------------------------------------
 # Define components and installation types (after CPack included!)
@@ -206,28 +207,16 @@ cpack_add_install_type(full      DISPLAY_NAME "Full Installation")
 cpack_add_install_type(minimal   DISPLAY_NAME "Minimal Installation")
 cpack_add_install_type(developer DISPLAY_NAME "Developer Installation")
 
-cpack_add_component(lz_cmd
-    DISPLAY_NAME "lzcomplexity standalone"
-    DESCRIPTION "lzcomplexity standalone"
-    GROUP Runtime
-    INSTALL_TYPES full minimal developer)
-
-cpack_add_component(lz_library
-    DISPLAY_NAME "lzcomplexity libraries"
-    DESCRIPTION "All lzcomplexity libraries used by the standalone"
-    GROUP Libraries
-    INSTALL_TYPES full minimal developer)
-
-cpack_add_component(lz_distance
-    DISPLAY_NAME "lzdistance libraries"
-    DESCRIPTION "All lzdistance libraries used by the standalone"
-    GROUP Libraries
-    INSTALL_TYPES full minimal developer)
-
 if(LZ_APP AND LZ_DISTANCE)
-  cpack_add_component(lz_headers
-      DISPLAY_NAME "C++ Headers"
-      DESCRIPTION "Includes for developers to access lz functions"
-      GROUP Development
-      INSTALL_TYPES full developer)
+  cpack_add_component(runtime
+      DISPLAY_NAME "standalone and shared libraries"
+      DESCRIPTION "Include the standalones and all shared libraries"
+      GROUP Runtime
+      INSTALL_TYPES full minimal)
+
+  cpack_add_component(devel
+      DISPLAY_NAME "development files"
+      DESCRIPTION "Include headers and configurations files"
+      GROUP Libraries
+      INSTALL_TYPES full minimal developer)
 endif()

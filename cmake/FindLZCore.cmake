@@ -1,4 +1,18 @@
-if(TARGET lzcore)
+if (LZ_APP AND LZ_DISTANCE)
+   message(STATUS "--- Init $lzcore ---")
+   set(lzlib lzcore)
+else()
+   message(STATUS "--- Init lzAppCore ---")
+   if(LZ_APP)
+      set(lzlib "lzappcore")
+   elseif(LZ_DISTANCE)
+      set(lzlib "lzdistcore")
+   else()
+      set(lzlib lzcore)
+   endif()
+endif()
+
+if(TARGET ${lzlib})
     message(STATUS "lzcore: ${lzcore_FOUND} and Lib: ${lzcore} with include: ${lzcore_INCLUDE_DIR}")
     return()
 endif()
@@ -47,13 +61,13 @@ ENDIF (CMAKE_SIZEOF_VOID_P EQUAL 8)
 LIST (APPEND _LZ_POSSIBLE_LIB_SUFFIXES lib)
 
 FIND_LIBRARY (LZ_LIBRARY_RELEASE
-  NAMES lzcore
+  NAMES ${lzlib}
   HINTS ${LZ_CORE_DIR}
   PATH_SUFFIXES ${_LZ_POSSIBLE_LIB_SUFFIXES}
   DOC "lzcore release library")
 
 FIND_LIBRARY (LZ_LIBRARY_DEBUG
-  NAMES lzcore_dbg
+  NAMES ${lzlib}_dbg
   HINTS ${LZ_ROOT_DIR}
   PATH_SUFFIXES ${_LZ_POSSIBLE_LIB_SUFFIXES}
   DOC "lzcore debug library")
