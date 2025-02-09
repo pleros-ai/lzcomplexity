@@ -176,8 +176,7 @@ namespace lz {
 
       const int BLOCK_SIZE = 8192;
 
-      inline lz_int
-         getLeft_opt(std::vector<std::vector<lz_uint>> table, lz_int depth, lz_int n, lz_int index, lz_int start) {
+      inline lz_int getLeft_opt(std::vector<std::vector<lz_uint>> table, lz_int depth, lz_int index, lz_int start) {
          auto value = table[0][index];
          if (value == table[depth - 1][0])
             return -1;
@@ -306,7 +305,7 @@ namespace lz {
                for (lz_uint k = offset; k < rng.end(); k++) {
                   if (left[k] == -1) {
                      if (tmp != -1 && a[tmp] >= a[k]) {
-                        tmp = getLeft_opt(table, depth, n, k, tmp);
+                        tmp = getLeft_opt(table, depth, k, tmp);
                      }
                      left[k] = tmp;
                   }
