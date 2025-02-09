@@ -195,6 +195,7 @@ set(CPACK_SOURCE_IGNORE_FILES
 if(LZ_APP AND LZ_DISTANCE)
   set(CPACK_COMPONENTS_ALL runtime devel)
 else()
+  set(CPACK_ARCHIVE_COMPONENT_INSTALL ON) # Enabled it for archive generator respect the components selection
   set(CPACK_COMPONENTS_ALL runtime)
 endif()
 
