@@ -58,62 +58,6 @@ inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
    return color + header + lz::END_COLOR + final_msg;
 }
 
-inline void read_multi_line(std::ifstream& in, std::vector<lz::sequence>& seq_vec, MagickNumber format) {
-   lz::utils::pnm parser;
-
-   try {
-      switch (format) {
-         case PNM_P1: parser.ReadPBM(in, seq_vec, false); break;
-         case PNM_P4: parser.ReadPBM(in, seq_vec, true); break;
-         case PNM_P2: parser.ReadPGM(in, seq_vec, false); break;
-         case PNM_P5: parser.ReadPGM(in, seq_vec, true); break;
-         case PNM_RAWTXT: parser.ReadRAW(in, seq_vec, false); break;
-         case PNM_RAWBIN: parser.ReadRAW(in, seq_vec, true); break;
-         default: parser.ReadPNM(in, seq_vec);
-      }
-   } catch (BadAlloc& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (lz::utils::PNMBadFileFormat& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (lz::utils::PNMUnknownError& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (Errors& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   }
-}
-
-inline void read_one_line(std::ifstream& in, lz::sequence& seq, MagickNumber format) {
-   lz::utils::pnm parser;
-
-   try {
-      switch (format) {
-         case PNM_P1: parser.ReadPBM(in, seq, false); break;
-         case PNM_P4: parser.ReadPBM(in, seq, true); break;
-         case PNM_P2: parser.ReadPGM(in, seq, false); break;
-         case PNM_P5: parser.ReadPGM(in, seq, true); break;
-         case PNM_RAWTXT: parser.ReadRAW(in, seq, false); break;
-         case PNM_RAWBIN: parser.ReadRAW(in, seq, true); break;
-         default: parser.ReadPNM(in, seq);
-      }
-   } catch (BadAlloc& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (lz::utils::PNMBadFileFormat& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (lz::utils::PNMUnknownError& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (Errors& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   }
-}
-
 // Read a csv file with multiple columns (date per column)
 inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text_col, bool multiline) {
    namespace fs = std::filesystem;
@@ -154,6 +98,80 @@ inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text
    // std::cout << text_col[0];
 }
 
+inline void read_multi_line(const std::string& ip_path, std::vector<lz::sequence>& seq_vec, MagickNumber format) {
+   lz::utils::pnm parser;
+   std::ifstream  in(ip_path);
+
+   try {
+      switch (format) {
+         case PNM_P1: parser.ReadPBM(in, seq_vec, false); break;
+         case PNM_P4: parser.ReadPBM(in, seq_vec, true); break;
+         case PNM_P2: parser.ReadPGM(in, seq_vec, false); break;
+         case PNM_P5: parser.ReadPGM(in, seq_vec, true); break;
+         case PNM_RAWTXT: parser.ReadRAW(in, seq_vec, false); break;
+         case PNM_RAWBIN: parser.ReadRAW(in, seq_vec, true); break;
+         default: parser.ReadPNM(in, seq_vec);
+      }
+
+      in.close();
+   } catch (BadAlloc& err) {
+      in.close();
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
+   } catch (lz::utils::PNMBadFileFormat& err) {
+      in.close();
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
+   } catch (lz::utils::PNMUnknownError& err) {
+      in.close();
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
+   } catch (Errors& err) {
+      in.close();
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
+   }
+}
+
+inline void read_one_line(const std::string& ip_path, std::vector<lz::sequence>& seq, MagickNumber format) {
+   lz::utils::pnm parser;
+   std::ifstream  in(ip_path);
+
+   if (seq.capacity() < 1) {
+      seq.emplace_back("");
+   }
+
+   try {
+      switch (format) {
+         case PNM_P1: parser.ReadPBM(in, seq[0], false); break;
+         case PNM_P4: parser.ReadPBM(in, seq[0], true); break;
+         case PNM_P2: parser.ReadPGM(in, seq[0], false); break;
+         case PNM_P5: parser.ReadPGM(in, seq[0], true); break;
+         case PNM_RAWTXT: parser.ReadRAW(in, seq[0], false); break;
+         case PNM_RAWBIN: parser.ReadRAW(in, seq[0], true); break;
+         default: parser.ReadPNM(in, seq);
+      }
+
+      in.close();
+   } catch (BadAlloc& err) {
+      in.close();
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
+   } catch (lz::utils::PNMBadFileFormat& err) {
+      in.close();
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "PNM incorrect format ...\n" + std::string(err.msg))
+                << std::endl;
+   } catch (lz::utils::PNMUnknownError& err) {
+      in.close();
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Unknown PNM format ...\n" + std::string(err.msg))
+                << std::endl;
+   } catch (Errors& err) {
+      in.close();
+      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
+                << std::endl;
+   }
+}
+
 // Read a plain text file with one line
 inline std::vector<lz::sequence>
    read_input(const std::string& ip_path, bool multiline = false, MagickNumber format = MagickNumber::PNM_RAWTXT) {
@@ -166,26 +184,22 @@ inline std::vector<lz::sequence>
       std::exit(EXIT_FAILURE);
    }
 
-   int           num_line = 0;
-   std::ifstream input(ip_path);
+   int num_line = 0;
 
    lz::utils::pnm            parser;
-   lz::sequence              oneLine;
    std::vector<lz::sequence> data{};
 
-   std::string tmp_str;
-   std::getline(input, tmp_str);
+   // std::string tmp_str;
+   // std::getline(input, tmp_str);
 
    if (format == CSV) {
       read_csv(ip_path, data, multiline);
    } else if (multiline)
-      read_multi_line(input, data, format);
+      read_multi_line(ip_path, data, format);
    else {
-      read_one_line(input, oneLine, format);
-      data.push_back(oneLine);
+      read_one_line(ip_path, data, format);
    }
 
-   input.close();
    return data;
 }
 
