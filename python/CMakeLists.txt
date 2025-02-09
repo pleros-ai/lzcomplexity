@@ -37,15 +37,15 @@ set(LZ_DIRS "${LZ_MODULES_PATH}/core/inc" "${LZ_MODULES_PATH}/utils/inc" "${LZ_M
 
 message(STATUS "LZ_DIRS: ${LZ_DIRS}")
 
-find_package(LZCore REQUIRED)
+find_package(lzcore REQUIRED)
 
-# if(NOT LZCore_FOUND)
+# if(NOT lzcore_FOUND)
 #    add_subdirectory(${CMAKE_SOURCE_DIR}/modules/core core)
 #    get_property(CORE_INCLUDE_DIR GLOBAL PROPERTY CORE_INCLUDE_DIR)
 
-#    message(STATUS "LZCore path: ${CORE_INCLUDE_DIR}")
-#    set(LZCore_INCLUDE_DIR ${CORE_INCLUDE_DIR})
-#    set(LZCore_LIB LZCore)
+#    message(STATUS "lzcore path: ${CORE_INCLUDE_DIR}")
+#    set(lzcore_INCLUDE_DIR ${CORE_INCLUDE_DIR})
+#    set(lzcore_LIB lzcore)
 # endif()
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/pybind11 pybind11)
@@ -68,7 +68,7 @@ if(NOT Python_FOUND AND NOT Python3_FOUND)
   find_package(Python 3.7 REQUIRED)
 endif()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE LZCore)
+target_link_libraries(${PROJECT_NAME} PRIVATE lzcore)
 target_include_directories(${PROJECT_NAME}
    PUBLIC
       $<BUILD_INTERFACE:${LZ_DIRS}>

@@ -70,7 +70,7 @@ lzcomplexity
 
 - `BUILTIN_TBB` (**OFF** by default): use local oneTBB project instead of system one.
 - `LZ_SHARE` (**ON** by default): build shared library.
-- `LZ_ONLY_LIBS` (**OFF** by default): build only the libraries (LZCore and LZApp).
+- `LZ_ONLY_LIBS` (**OFF** by default): build only the libraries (lzcore, lzapp and lzdist).
 - `LZ_ONLY_CORE` (**OFF** by default): build only the core library.
 - `LZ_APP` (**ON** by default): build the lzcomplexity standalone application.
 - `LZ_DISTANCE` (**ON** by default): build the lzdistance standalone application.

@@ -2,11 +2,11 @@ if (app)
    message(STATUS "--- Init ${app}Core ---")
    set(PROJECT_NAME "${app}Core")
 else()
-   message(STATUS "--- Init LZCore ---")
-   set(PROJECT_NAME LZCore)
+   message(STATUS "--- Init lzcore ---")
+   set(PROJECT_NAME lzcore)
 endif()
 
-# set(PROJECT_NAME LZCore)
+# set(PROJECT_NAME lzcore)
 set(namespace "lz")
 set(component "lz_library")
 
@@ -85,9 +85,9 @@ set(public_headers
 target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
 target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
 
-set(LZCore_FOUND TRUE)
+set(lzcore_FOUND TRUE)
 
 include(InstallingGeneral)
 include(InstallingConfigs)
 
-message(STATUS "--- End LZCore ---")
+message(STATUS "--- End lzcore ---")

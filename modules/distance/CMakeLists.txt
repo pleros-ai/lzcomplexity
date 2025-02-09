@@ -1,5 +1,5 @@
-message(STATUS "--- Init LZDist ---")
-set(PROJECT_NAME LZDist)
+message(STATUS "--- Init lzdist ---")
+set(PROJECT_NAME lzdist)
 set(namespace "lz")
 set(component "lz_distance")
 
@@ -34,18 +34,18 @@ endif()
 # Alias for the library
 add_library(lz::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-find_package(LZCore REQUIRED)
+find_package(lzcore REQUIRED)
 
-message(STATUS "LZCore: ${LZCore_FOUND}")
+message(STATUS "lzcore: ${lzcore_FOUND}")
 
-if(NOT LZCore_FOUND)
+if(NOT lzcore_FOUND)
    add_subdirectory(${CMAKE_SOURCE_DIR}/modules/core core)
    get_property(CORE_INCLUDE_DIR GLOBAL PROPERTY CORE_INCLUDE_DIR)
 
-   message(STATUS "LZCore path: ${CORE_INCLUDE_DIR}")
-   set(LZCore_INCLUDE_DIR ${CORE_INCLUDE_DIR})
+   message(STATUS "lzcore path: ${CORE_INCLUDE_DIR}")
+   set(lzcore_INCLUDE_DIR ${CORE_INCLUDE_DIR})
 
-   set(LZCore_LIB LZCore)
+   set(lzcore_LIB lzcore)
 endif()
 
 # add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
@@ -54,13 +54,13 @@ target_sources(${PROJECT_NAME} PRIVATE ${LZ_ALG} ${LZ_FLAGS})
 target_include_directories(${PROJECT_NAME} 
    PUBLIC 
       $<BUILD_INTERFACE:${DIST_INCLUDE_DIR}>
-      $<BUILD_INTERFACE:${LZCore_INCLUDE_DIR}>
+      $<BUILD_INTERFACE:${lzcore_INCLUDE_DIR}>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 
 # target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads ${LZ_TBB_LIBS})
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LZCore_LIB})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${lzcore_LIB})
 # set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${LZ_TBB_LIBS})
 
 # set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${LZ_CORE_LIB})
@@ -74,7 +74,7 @@ set(public_headers
 )
 
 message(STATUS "headers for ${PROJECT_NAME}: ${public_headers}")
-message(STATUS "found core: ${LZCore_FOUND}")
+message(STATUS "found core: ${lzcore_FOUND}")
 message(STATUS "dirs: ${CORE_INCLUDE_DIR} -- ${UTILS_INCLUDE_DIR}")
 # Compiler flags.
 # target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
@@ -84,4 +84,4 @@ target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FL
 include(InstallingGeneral)
 include(InstallingConfigs)
 
-message(STATUS "--- End LZDist ---")
+message(STATUS "--- End lzdist ---")

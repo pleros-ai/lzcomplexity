@@ -51,7 +51,7 @@ struct lz_options {
    std::string second_input_dir;                           //? Destination input directory filepath.
    std::string output         = "lz_results.lzdist.json";  //? Output filepath.
    std::string factors_output = "";                        //? Output filepath for factors.
-   /* Extra args for LZApp functions */
+   /* Extra args for lzapp functions */
    lz::utils::LZ_Args args;
    /* flags */
    lz::lz_int first_init_line = lz::utils::LZ_Args::ALL_LINES;   //?> Initial line where begin to calculate the lz

@@ -1,5 +1,5 @@
-if(TARGET LZCore)
-    message(STATUS "LZCore: ${LZCore_FOUND} and Lib: ${LZCore} with include: ${LZCore_INCLUDE_DIR}")
+if(TARGET lzcore)
+    message(STATUS "lzcore: ${lzcore_FOUND} and Lib: ${lzcore} with include: ${lzcore_INCLUDE_DIR}")
     return()
 endif()
 
@@ -9,13 +9,13 @@ FIND_PATH (LZ_CORE_DIR
   NAMES include/lz/lz.h
   PATHS ENV PATH
         # /opt/homebrew/Cellar/gcc/13.2.0/include/
-  DOC "LZCore root directory")
+  DOC "lzcore root directory")
 
-FIND_PATH (LZCore_INCLUDE_DIR
+FIND_PATH (lzcore_INCLUDE_DIR
   NAMES lz/lz.h
   HINTS ${LZ_CORE_DIR}
   PATH_SUFFIXES include
-  DOC "LZCore include directory")
+  DOC "lzcore include directory")
 
 
 IF (MSVC15)
@@ -47,36 +47,36 @@ ENDIF (CMAKE_SIZEOF_VOID_P EQUAL 8)
 LIST (APPEND _LZ_POSSIBLE_LIB_SUFFIXES lib)
 
 FIND_LIBRARY (LZ_LIBRARY_RELEASE
-  NAMES LZCore
+  NAMES lzcore
   HINTS ${LZ_CORE_DIR}
   PATH_SUFFIXES ${_LZ_POSSIBLE_LIB_SUFFIXES}
-  DOC "LZCore release library")
+  DOC "lzcore release library")
 
 FIND_LIBRARY (LZ_LIBRARY_DEBUG
-  NAMES LZCore_dbg
+  NAMES lzcore_dbg
   HINTS ${LZ_ROOT_DIR}
   PATH_SUFFIXES ${_LZ_POSSIBLE_LIB_SUFFIXES}
-  DOC "LZCore debug library")
+  DOC "lzcore debug library")
 
 IF (LZ_LIBRARY_RELEASE AND LZ_LIBRARY_DEBUG)
-    IF (NOT LZCore_LIB)
-        SET (LZCore_LIB optimized ${LZ_LIBRARY_RELEASE} debug ${LZ_LIBRARY_DEBUG}
+    IF (NOT lzcore_LIB)
+        SET (lzcore_LIB optimized ${LZ_LIBRARY_RELEASE} debug ${LZ_LIBRARY_DEBUG}
           CACHE STRING "LZ library" FORCE)
-    ENDIF (NOT LZCore_LIB)
+    ENDIF (NOT lzcore_LIB)
 ELSEIF (LZ_LIBRARY_RELEASE)
-    IF (NOT LZCore_LIB)
-        SET (LZCore_LIB ${LZ_LIBRARY_RELEASE} CACHE STRING "LZ library" FORCE)
-    ENDIF (NOT LZCore_LIB)
+    IF (NOT lzcore_LIB)
+        SET (lzcore_LIB ${LZ_LIBRARY_RELEASE} CACHE STRING "LZ library" FORCE)
+    ENDIF (NOT lzcore_LIB)
 ENDIF (LZ_LIBRARY_RELEASE AND LZ_LIBRARY_DEBUG)
 
-message(STATUS "LZCore dirs found")
+message(STATUS "lzcore dirs found")
 message(STATUS "Root dir: ${LZ_CORE_DIR}")
-message(STATUS "Lib dir: ${LZCore_LIB}")
-message(STATUS "Include dir: ${LZCore_INCLUDE_DIR}")
+message(STATUS "Lib dir: ${lzcore_LIB}")
+message(STATUS "Include dir: ${lzcore_INCLUDE_DIR}")
 
-IF(LZ_CORE_DIR AND LZCore_INCLUDE_DIR AND LZCore_LIB)
-  FIND_PACKAGE_HANDLE_STANDARD_ARGS (LZCore REQUIRED_VARS LZ_CORE_DIR
-      LZCore_INCLUDE_DIR LZCore_LIB HANDLE_COMPONENTS)
+IF(LZ_CORE_DIR AND lzcore_INCLUDE_DIR AND lzcore_LIB)
+  FIND_PACKAGE_HANDLE_STANDARD_ARGS (lzcore REQUIRED_VARS LZ_CORE_DIR
+      lzcore_INCLUDE_DIR lzcore_LIB HANDLE_COMPONENTS)
 ELSE()
-  SET(LZCore_FOUND FALSE)
+  SET(lzcore_FOUND FALSE)
 ENDIF()

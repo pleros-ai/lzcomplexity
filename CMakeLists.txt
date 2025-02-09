@@ -12,7 +12,7 @@ option(ENABLE_UNDEFINED_SANITIZER "Build with undefined behavior sanitizer instr
 option(BUILTIN_TBB "Use local TBB library" ON)
 option(BUILD_PYTHON "Build python binding of LZ lib" OFF)
 option(LZ_SHARE "Build shared library" ON)
-option(LZ_ONLY_LIBS "Build only the libraries (LZCore and LZApp)" OFF)
+option(LZ_ONLY_LIBS "Build only the libraries (lzcore, lzapp and lzdist)" OFF)
 option(LZ_ONLY_CORE "Build only the core library" OFF)
 
 option(LZ_APP "Build lzcomplexity standalone" ON)
@@ -191,12 +191,12 @@ endif()
 # add module subdirectory
 add_subdirectory(modules)
 
-if(NOT LZ_ONLY_LIBS)
+if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   if(LZ_APP)
     # lzcomplexity standalone
     set(PROJECT_NAME lzcomplexity)
     add_executable(${PROJECT_NAME} standalone/lzcomplexity.cpp)
-    target_link_libraries(${PROJECT_NAME} PUBLIC LZApp)
+    target_link_libraries(${PROJECT_NAME} PUBLIC lzapp)
     get_property(APP_INCLUDE_DIR GLOBAL PROPERTY APP_INCLUDE_DIR)
     target_include_directories(${PROJECT_NAME}
           PUBLIC
@@ -229,7 +229,7 @@ if(NOT LZ_ONLY_LIBS)
     # lzdistance standalone
     set(PROJECT_NAME lzdistance)
     add_executable(${PROJECT_NAME} standalone/lzdistance.cpp)
-    target_link_libraries(${PROJECT_NAME} PUBLIC LZDist)
+    target_link_libraries(${PROJECT_NAME} PUBLIC lzdist)
     get_property(DIST_INCLUDE_DIR GLOBAL PROPERTY DIST_INCLUDE_DIR)
     message(STATUS "Core dir dist: ${LZ_CORE_INCLUDE_DIR}")
     # target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${MAIN_INCLUDE_DIR}>)
@@ -260,9 +260,7 @@ if(NOT LZ_ONLY_LIBS)
       INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include
     )
   endif()
-endif()
 
-if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
   include(packaging)
 endif()
 

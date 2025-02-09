@@ -12,7 +12,7 @@ struct lz_options {
    std::string input;                                    //? Input filepath.
    std::string output         = "lz_results.lz76.json";  //? Output filepath.
    std::string factors_output = "";                      //? Output filepath for factors.
-   /* Extra args for LZApp functions */
+   /* Extra args for lzapp functions */
    lz::utils::LZ_Args args;
    /* flags */
    lz::lz_int excess_init_line =
