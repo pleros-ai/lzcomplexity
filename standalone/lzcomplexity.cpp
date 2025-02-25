@@ -15,7 +15,7 @@
 #include "lz/general.h"
 #include "lz/utils.h"
 
-#define VERSION "v0.9.1"
+#define VERSION "v0.9.2"
 
 using MSG = lz::utils::MSG_TYPE;
 

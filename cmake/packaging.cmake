@@ -197,6 +197,7 @@ if(LZ_APP AND LZ_DISTANCE)
   set(CPACK_PACKAGE_NAME "lztools"
     CACHE STRING "lz_library"
   )
+  set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
 else()
   set(CPACK_ARCHIVE_COMPONENT_INSTALL ON) # Enabled it for archive generator respect the components selection
   set(CPACK_COMPONENTS_ALL runtime)
