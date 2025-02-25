@@ -31,14 +31,24 @@ jobs:
           CXX: g++
           CC: gcc
         run: |
-          cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+          cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=Release \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=ON \
                 -S ${{ github.workspace }}
-  
+
       - name: Build
         run: |
-          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config Release
+      
+      - name: Packaging
+        run: |
+          cd build
+          cpack
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lztools-ubuntu-g++-package
+          path: ./_packages
+          retention-days: 1
 
   build-mac:
     defaults:
@@ -73,3 +83,14 @@ jobs:
       - name: Build
         run: |
           cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config Release
+
+      - name: Packaging
+        run: |
+          cd build
+          cpack
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lztools-macos-clang++-package
+          path: ./_packages
+          retention-days: 1
