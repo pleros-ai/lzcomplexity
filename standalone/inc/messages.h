@@ -16,8 +16,12 @@ inline std::unordered_map<std::string, CMD_OPT> opt_list{
    {"distance",
     {"d,dlz", "The LZ distance is calculated between consecutive lines. Only valid for multiline files (-m option)."}},
    {"shuffle",
-    {"e,entropy-shuffle",
-     "Random shuffle complexity with whole sequence. v1: maximum value for block shuffling, f: summands output, v2: "
+    {"z,zseq-shuffle",
+     "Random shuffle complexity with Z sequence generated with the both halves of original sequence."}},
+   {"excess_opt",
+    {"e,excess-options",
+     "Random shuffle complexity options for calculation. v1: maximum value for block shuffling, f: summands output, "
+     "v2: "
      "starting line for summands output, v3: ending line for summands output. All values are optionals"}},
    {"factors", {"f,factors", "Saves the factorization."}},
    {"format",

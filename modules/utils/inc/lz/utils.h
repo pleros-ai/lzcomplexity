@@ -125,6 +125,10 @@ namespace lz {
        *  @return std::vector<char>::lz_sizeype
        */
       inline lz_size max_block_size(lz_size size) {
+         if (size < 10) {
+            return 1;
+         }
+
          lz_size      M     = 10;
          lz_size      Mold  = 1;
          unsigned int count = 0;

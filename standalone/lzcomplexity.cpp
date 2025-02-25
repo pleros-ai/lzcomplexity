@@ -44,7 +44,7 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
          out_data["sequences"][i]["lz76RandomShuffleComplexity"]["summands"] = w_rsc.summands;
       }
 
-      if (opt.args.block_size >= 0) {
+      if (!opt.entropy_density && opt.get_paired_shuffle) {
          auto rsc = lz_result.getPairedShuffleComplexity();
 
          out_data["sequences"][i]["lz76PairedShuffleComplexity"]["value"]             = rsc.excess_value;
@@ -281,7 +281,7 @@ lz::lz_int process(lz_options& opt) {
       }
    }
 
-   if (opt.args.block_size >= 0 && opt.get_paired_shuffle) {
+   if (!opt.entropy_density && opt.get_paired_shuffle) {
       if (opt.verbose) {
          std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating paired shuffle complexity\n"
                    << lz::END_COLOR;
@@ -405,8 +405,8 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<std::string>()->default_value("2"),
              "value");
    opt_group(opt_list["distance"].option_value, opt_list["distance"].description);
-   opt_group(opt_list["shuffle"].option_value,
-             opt_list["shuffle"].description,
+   opt_group(opt_list["excess_opt"].option_value,
+             opt_list["excess_opt"].description,
              cxxopts::value<std::vector<std::string>>()->delimiter(':')->implicit_value("a"),
              "[v1]:[f]:[v2]:[v3]");
    opt_group(
@@ -444,6 +444,7 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<bool>()->default_value("false"));
    opt_group(
       opt_list["warn"].option_value, opt_list["warn"].description, cxxopts::value<bool>()->default_value("false"));
+   opt_group(opt_list["shuffle"].option_value, opt_list["shuffle"].description);
 
    // opt_group("x,extras",
    //           "Computes additional measures based on lz76 (rajski distance, the uncertainty of both halves, pearson "

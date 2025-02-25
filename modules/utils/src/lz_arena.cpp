@@ -37,10 +37,10 @@ namespace lz {
    namespace utils {
 
       LZArenaWrapper::LZArenaWrapper(unsigned maxConcurrency)
-          : fTBBArena(new internal::LZ_Arena{}) {
+        : fTBBArena(new internal::LZ_Arena{}) {
          const unsigned tbbDefaultNumberThreads = fTBBArena->max_concurrency();  // not initialized, automatic state
          maxConcurrency =
-             maxConcurrency > 0 ? std::min(maxConcurrency, tbbDefaultNumberThreads) : tbbDefaultNumberThreads;
+            maxConcurrency > 0 ? std::min(maxConcurrency, tbbDefaultNumberThreads) : tbbDefaultNumberThreads;
          const unsigned bcCpus = internal::CPU_Bandwidth();
          if (maxConcurrency > bcCpus) {
             std::cout << YELLOW_COLOR << "CPU Bandwith Control Active. Proceeding with " << bcCpus
@@ -57,23 +57,29 @@ namespace lz {
          fNWorkers = maxConcurrency;
       }
 
-      LZArenaWrapper::~LZArenaWrapper() { fNWorkers = 0u; }
+      LZArenaWrapper::~LZArenaWrapper() {
+         fNWorkers = 0u;
+      }
 
       unsigned LZArenaWrapper::fNWorkers = 0u;
 
-      internal::LZ_Arena& LZArenaWrapper::Access() { return *fTBBArena; }
+      internal::LZ_Arena& LZArenaWrapper::Access() {
+         return *fTBBArena;
+      }
 
-      unsigned LZArenaWrapper::TaskArenaSize() { return fNWorkers; }
+      unsigned LZArenaWrapper::TaskArenaSize() {
+         return fNWorkers;
+      }
 
       std::shared_ptr<lz::utils::LZArenaWrapper> GetGlobalTaskArena(unsigned maxConcurrency) {
          static std::weak_ptr<lz::utils::LZArenaWrapper> weak_GTAWrapper;
 
-         static std::mutex m;
+         static std::mutex                 m;
          const std::lock_guard<std::mutex> lock{m};
          if (auto sp = weak_GTAWrapper.lock()) {
             if (maxConcurrency && (sp->TaskArenaSize() != maxConcurrency)) {
-               std::cout << "There's already an active task arena. Proceeding with the current " << sp->TaskArenaSize()
-                         << " threads\n";
+               std::cout << YELLOW_COLOR << "There's already an active task arena. Proceeding with the current "
+                         << sp->TaskArenaSize() << " threads" << END_COLOR << std::endl;
             }
             return sp;
          }

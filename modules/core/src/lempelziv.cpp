@@ -286,6 +286,10 @@ namespace lz {
       utils::LZ_Shuffle result;
       result.max_block_size = mm;
 
+      if (args.get_shuffle_terms) {
+         result.summands = std::vector<lz_double>(mm);
+      }
+
       auto body = [&](const auto& rng, lz_double init) -> lz_double {
          for (auto idx = rng.begin(); idx != rng.end(); idx++) {
             auto term = utils::log(str.size(), args.log_base) *
@@ -313,6 +317,10 @@ namespace lz {
       ShuffleEntropyCalculation(const sequence& str, const utils::LZ_Args args, const lz_int complexity, lz_int mm) {
       utils::LZ_Shuffle result;
       result.max_block_size = mm;
+
+      if (args.get_shuffle_terms) {
+         result.summands = std::vector<lz_double>(mm);
+      }
 
       auto body = [&](const auto& rng, lz_double init) -> lz_double {
          for (auto idx = rng.begin(); idx != rng.end(); idx++) {

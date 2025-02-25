@@ -198,7 +198,8 @@ namespace lz {
       while (op1 > s.size() - block_size - 0x01)  // this goes on until we get a valid index
          op1 = block_size * dis(random_engine);   // the index for the first block
 
-      while (true) {                             // this goes on until we get a valid index
+      op2 = block_size * dis(random_engine);
+      while (true && s.size() > 10) {            // this goes on until we get a valid index
          op2 = block_size * dis(random_engine);  // the index for the second block
          if ((op2 < op1 || op2 > op1 + block_size) &&
              op2 < s.size() - block_size - 0x01)  // it does not overlap with the previous block and

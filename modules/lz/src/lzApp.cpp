@@ -119,13 +119,10 @@ namespace lz {
       auto              end_line  = flags.shuffle_end_line;
 
       for (lz_size i = 0; i < flags.input.size(); i++) {
-         auto                 str = flags.input[i];
-         utils::shuffle_terms terms;
+         auto str = flags.input[i];
 
          if (!internal::canProcessTheLine(i, init_line, end_line)) {
             continue;
-         } else {
-            terms = {i + 1, excess_entropy.summands};
          }
 
          if (lz.calculated_complexity[i]) {

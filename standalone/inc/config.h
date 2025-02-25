@@ -54,13 +54,14 @@ struct lz_options {
       }
 
       // flags
-      multiLine       = result["multi-line"].as<bool>();
-      find_distance   = result["dlz"].as<bool>();
-      n_jobs          = result["jobs"].as<lz::lz_uint>();
-      verbose         = result["verbose"].as<bool>();
-      warn_out        = result["warn-out"].as<bool>();
-      entropy_density = result["entropy-density"].as<bool>();
-      mixed_entropy   = result["mixed-entropy"].as<bool>();
+      multiLine          = result["multi-line"].as<bool>();
+      find_distance      = result["dlz"].as<bool>();
+      n_jobs             = result["jobs"].as<lz::lz_uint>();
+      verbose            = result["verbose"].as<bool>();
+      warn_out           = result["warn-out"].as<bool>();
+      entropy_density    = result["entropy-density"].as<bool>();
+      mixed_entropy      = result["mixed-entropy"].as<bool>();
+      get_paired_shuffle = result["zseq-shuffle"].as<bool>();
       // preprocess      = result["process"].as<bool>();
 
       json_params = result["json"].as<std::string>();
@@ -95,9 +96,9 @@ struct lz_options {
       }
 
       std::vector<std::string> excess_args;
-      if (result.count("entropy-shuffle")) {
-         get_paired_shuffle = true;
-         excess_args        = result["entropy-shuffle"].as<std::vector<std::string>>();
+      if (result.count("excess-options")) {
+         excess_args            = result["excess-options"].as<std::vector<std::string>>();
+         args.get_shuffle_terms = true;
       }
 
       if (!excess_args.empty() && !excess_args[0].empty()) {
