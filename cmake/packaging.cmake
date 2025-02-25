@@ -1,7 +1,7 @@
 # these are cache variables, so they could be overwritten with -D,
 message(STATUS "PROJECT_NAME Package: ${PROJECT_NAME}")
 
-set(CPACK_PACKAGE_NAME "${PROJECT_NAME}"
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME}
     CACHE STRING "lz_library"
 )
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})

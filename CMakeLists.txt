@@ -253,7 +253,7 @@ if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
           DESTINATION ${CMAKE_INSTALL_LIBDIR}
           NAMELINK_COMPONENT lz_headers
       ARCHIVE
-          DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          DESTINATION ${CMAKE_INSTALL_LIBDIR} 
           # NAMELINK_COMPONENT lz_headers
       # except for public headers, as we want them to be inside a library folder
       PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} # include/SomeProject
@@ -261,6 +261,7 @@ if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     )
   endif()
 
+  set(PROJECT_NAME standalone)
   include(packaging)
 endif()
 
