@@ -123,6 +123,34 @@ jobs:
           path: ./_packages
           retention-days: 1
 
+      - name: Install tools fof upload to PPA
+        run: sudo apt-get install -y ssh gnupg dput
+
+      # Decode SSH private key
+      - name: Decode SSH private key
+        run: |
+          echo "$LAUNCHPAD_SSH_PRIVATE_KEY" | base64 --decode > id_ed25519
+          chmod 600 id_ed25519
+
+      # Configure SSH
+      - name: Configure SSH
+        run: |
+          ssh-keyscan launchpad.net >> ~/.ssh/known_hosts
+          ssh -o "StrictHostKeyChecking=no" -i id_ed25519 launchpad.net true
+
+      # Upload .deb package to Launchpad
+      - name: Upload to Launchpad
+        env:
+          LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
+          LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
+          VERSION: 0.9.2
+        run: |
+          # Set up dput configuration
+          echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i id_ed25519" > ~/.dput.cf
+
+          # Upload package
+          dput ppa:${LAUNCHPAD_PPA} ./_packages/lzcomplexity_${VERSION}_amd64.deb
+
   build-mac:
     defaults:
       run:

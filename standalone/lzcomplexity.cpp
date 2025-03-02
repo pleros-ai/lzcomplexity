@@ -159,15 +159,6 @@ lz::lz_int process(lz_options& opt) {
       out_log << warn_data_size << std::endl;
    }
 
-   // std::string s;
-   // std::string ch = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-   // auto size = 15;
-   // for (int i = 0; i < 1e7; i++) {
-   //    s += ch[rand() % size];
-   // }
-   // in_flags.input[0] = s;
-
    lz::utils::EnabledMT(opt.n_jobs);
 
    // App functions
@@ -446,14 +437,6 @@ auto main(int argc, char const* argv[]) -> int {
       opt_list["warn"].option_value, opt_list["warn"].description, cxxopts::value<bool>()->default_value("false"));
    opt_group(opt_list["shuffle"].option_value, opt_list["shuffle"].description);
 
-   // opt_group("x,extras",
-   //           "Computes additional measures based on lz76 (rajski distance, the uncertainty of both halves, pearson "
-   //           "coefficient and redundancy).",
-   //           cxxopts::value<bool>()->default_value("false"));
-
-   // opt_group("r,process", "Clear input data.");
-   //    opt_group("m,max-context", "Max context for suffix comparisons (only for caps algorithm).",
-   //              cxxopts::value<lz::lz_int>()->default_value("0"), "num");
    try {
       auto result = options.parse(argc, argv);
 

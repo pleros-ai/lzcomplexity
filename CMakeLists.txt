@@ -18,7 +18,7 @@ option(LZ_ONLY_CORE "Build only the core library" OFF)
 option(LZ_APP "Build lzcomplexity standalone" ON)
 option(LZ_DISTANCE "Build lzdistance stadnalone" ON)
 
-set(PROJECT_NAME standalone)
+set(PROJECT_NAME lztools)
 set(DESC "Stadnalone applications of lzcomplexity and lzdistance")
 set(namespace "lz")
 set(component "runtime")
@@ -261,7 +261,7 @@ if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     )
   endif()
 
-  set(PROJECT_NAME standalone)
+  set(PROJECT_NAME lztools)
   include(packaging)
 endif()
 

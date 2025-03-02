@@ -49,6 +49,7 @@
 /test_data/**
 /lib/**
 /share/**
+.env
 
 /python/build/**
 /python/dist/**
