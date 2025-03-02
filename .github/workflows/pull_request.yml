@@ -44,12 +44,6 @@ jobs:
           cd build
           cpack
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: lztools-ubuntu-g++-package
-          path: ./_packages
-          retention-days: 1
-
   build-mac:
     defaults:
       run:
@@ -88,9 +82,3 @@ jobs:
         run: |
           cd build
           cpack
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: lztools-macos-clang++-package
-          path: ./_packages
-          retention-days: 1
