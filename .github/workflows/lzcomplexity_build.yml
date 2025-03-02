@@ -143,7 +143,7 @@ jobs:
         env:
           LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
           LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
-          VERSION: 0.9.2
+          VERSION: 0.9.3
         run: |
           # Set up dput configuration
           echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i id_ed25519" > ~/.dput.cf

@@ -67,8 +67,8 @@ if (UNIX)
         set(CPACK_DEBIAN_PACKAGE_VERSION ${VERSION})
         set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Efren Aragon")
         set(CPACK_PACKAGE_DESCRIPTION ${LZ_DESCRIPTION})
-        # package name for deb. If set, then instead of some-application-0.9.2-Linux.deb
-        # you'll get some-application_0.9.2_amd64.deb (note the underscores too)
+        # package name for deb. If set, then instead of some-application-0.9.3-Linux.deb
+        # you'll get some-application_0.9.3_amd64.deb (note the underscores too)
         set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
         # that is if you want every group to have its own package,
         # although the same will happen if this is not set (so it defaults to ONE_PER_GROUP)
