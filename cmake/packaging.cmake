@@ -1,7 +1,7 @@
 # these are cache variables, so they could be overwritten with -D,
 message(STATUS "PROJECT_NAME Package: ${PROJECT_NAME}")
 
-set(CPACK_PACKAGE_NAME "${PROJECT_NAME}"
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME}
     CACHE STRING "lz_library"
 )
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
@@ -67,8 +67,8 @@ if (UNIX)
         set(CPACK_DEBIAN_PACKAGE_VERSION ${VERSION})
         set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Efren Aragon")
         set(CPACK_PACKAGE_DESCRIPTION ${LZ_DESCRIPTION})
-        # package name for deb. If set, then instead of some-application-0.9.2-Linux.deb
-        # you'll get some-application_0.9.2_amd64.deb (note the underscores too)
+        # package name for deb. If set, then instead of some-application-0.9.3-Linux.deb
+        # you'll get some-application_0.9.3_amd64.deb (note the underscores too)
         set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
         # that is if you want every group to have its own package,
         # although the same will happen if this is not set (so it defaults to ONE_PER_GROUP)
@@ -195,7 +195,7 @@ set(CPACK_SOURCE_IGNORE_FILES
 if(LZ_APP AND LZ_DISTANCE)
   set(CPACK_COMPONENTS_ALL runtime devel)
   set(CPACK_PACKAGE_NAME "lztools"
-    CACHE STRING "lz_library"
+    CACHE STRING "lztools"
   )
   set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
 else()

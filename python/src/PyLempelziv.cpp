@@ -173,7 +173,7 @@ void PyLempelZiv(py::module& m) {
     seq : sequence
         The sequence to be analyzed.
     args : LZ_Args
-        The arguments for the analysis.
+        The arguments object with parameters for the analysis.
 
     Returns
     -------
@@ -188,7 +188,7 @@ void PyLempelZiv(py::module& m) {
     seq : Union[str, List[char], List[int]]
         The sequence to be analyzed.
     args : LZ_Args
-        The arguments for the analysis.
+        The arguments object with parameters for the analysis.
 
     Returns
     -------

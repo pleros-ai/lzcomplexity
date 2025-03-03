@@ -6,7 +6,7 @@
 
 #include "inc/config_distance.hpp"
 
-#define VERSION "0.9.2"
+#define VERSION "v0.9.3"
 
 using MSG = lz::utils::MSG_TYPE;
 
