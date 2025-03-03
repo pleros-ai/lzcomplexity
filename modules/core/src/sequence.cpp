@@ -10,8 +10,7 @@ namespace lz {
       // auto fun = [&](auto i) { aph.insert(str[i]); };
       // utils::parallel_for(0, str.size(), fun);
 
-      DetermineAlphabet();
-      alphabet_size = alphabet.size();
+      setAlphabetSize();
    }
 
    sequence::sequence(const std::vector<char> vec) {
@@ -21,8 +20,7 @@ namespace lz {
       // auto fun = [&](auto i) { aph.insert(vec[i]); };
       // utils::parallel_for(0, vec.size(), fun);
 
-      DetermineAlphabet();
-      alphabet_size = alphabet.size();
+      setAlphabetSize();
    }
 
    sequence& sequence::reverse(void) {

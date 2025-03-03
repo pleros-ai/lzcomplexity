@@ -94,8 +94,8 @@ inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text
          text_col[i] += rows[i];
       }
    }
-   // std::cout.setf(std::ios::left, std::ios::adjustfield);
-   // std::cout << text_col[0];
+
+   std::for_each(text_col.begin(), text_col.end(), [](auto& seq) { seq.setAlphabetSize(); });
 }
 
 inline void read_multi_line(const std::string& ip_path, std::vector<lz::sequence>& seq_vec, MagickNumber format) {

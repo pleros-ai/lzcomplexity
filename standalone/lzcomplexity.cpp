@@ -29,6 +29,9 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
    for (std::size_t i = 0; i < flags.input.size(); i++) {
       // out_data["input"] = opt.input;
       out_data["sequences"][i]["size"] = flags.input[i].size();
+      out_data["sequences"][i]["alphabet"] =
+         lz::utils::map(flags.input[i].getAlphabet(), [](char ch) { return static_cast<char>(ch); });
+      out_data["sequences"][i]["alphabet_size"] = flags.input[i].getAlphabetSize();
 
       auto lz_result = results.data[i];
 

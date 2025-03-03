@@ -88,11 +88,11 @@ namespace lz {
          std::vector<sequence> input;  //!> Input set of sequences
 
          LZ_Flags(std::string text, LZ_Args _sa_args)
-           : input({text}), alphabet_size(2), sa_args(_sa_args){};
+           : input({text}), alphabet_size(_sa_args.alphabet), sa_args(_sa_args){};
          LZ_Flags(sequence text, LZ_Args _sa_args)
-           : input({text}), alphabet_size(2), sa_args(_sa_args){};
+           : input({text}), alphabet_size(_sa_args.alphabet), sa_args(_sa_args){};
          LZ_Flags(std::vector<sequence> data, LZ_Args _sa_args)
-           : input(data), alphabet_size(2), sa_args(_sa_args){};
+           : input(data), alphabet_size(_sa_args.alphabet), sa_args(_sa_args){};
          // Copy construct
          LZ_Flags(const LZ_Flags& flags)
            : input(flags.input), alphabet_size(flags.alphabet_size), sa_args(flags.sa_args){};
