@@ -22,20 +22,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis"
 ]
 
-# [tool.setuptools.cmdclass]
-# build_ext = "setup.CMakeBuild"
-
-# [tool.setuptools_scm]
-# write_to = "python/src/_version.py"
-
-# [tool.setuptools.dynamic]
-# version = {attr = "lzcomplexity._version.__version__"}
-
 [tool.scikit-build]
 cmake.version = ">=3.5"
 cmake.verbose = true
 cmake.build-type = "Release"
-cmake.args = ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-DLZ_APP=OFF", "-DLZ_DISTANCE=OFF, "-GUnix Makefiles"]
+cmake.args = ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-GUnix Makefiles"]
 logging.level = "INFO"
 wheel.expand-macos-universal-tags = true
 # wheel.py-api = ["cp39", "cp310", "cp311", "cp312"]

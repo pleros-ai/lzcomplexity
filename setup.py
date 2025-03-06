@@ -160,11 +160,6 @@ setup(
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Information Analysis"
     ],
-    # install_requires=[
-    #     "setuptools>=42",
-    #     "wheel",
-    #     "cmake>=3.5",
-    # ],
     ext_modules=[CMakeExtension('')],
     python_requires='>=3.7',
     cmdclass=dict(build_ext=CMakeBuild),
