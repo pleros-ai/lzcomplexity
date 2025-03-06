@@ -2,8 +2,6 @@
 	path = external/tbb
 	url = https://github.com/oneapi-src/oneTBB.git
 	tag = v2022.0.0
-
-[submodule "external/pybind11"]
-	path = external/pybind11
-	url = https://github.com/pybind/pybind11.git
-	branch = v2.11
+[submodule "external/nanobind"]
+	path = external/nanobind
+	url = https://github.com/wjakob/nanobind

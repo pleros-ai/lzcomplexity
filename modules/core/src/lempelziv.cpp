@@ -48,6 +48,8 @@ namespace lz {
          auto chunks = utils::num_workers();
          if (seq_size < chunks * 10) {
             chunks = 1;
+         } else if (seq_size > 1e8) {
+            chunks = 1000;
          } else if (seq_size > 1e6) {
             chunks = 100;
          }

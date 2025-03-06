@@ -1,11 +1,16 @@
 #include <lz/caps.h>
 #include <lz/sais_lite.h>
-#include <pybind11/operators.h>
-#include <pybind11/stl.h>
+#include <nanobind/operators.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/unique_ptr.h>
+#include <nanobind/stl/vector.h>
+
+#include <tuple>
 
 // #include "lz_opaques.h"
 
-namespace py  = pybind11;
+namespace py  = nanobind;
 namespace suf = lz::suffixarray;
 namespace utl = lz::utils;
 
@@ -14,20 +19,20 @@ std::unique_ptr<suf::CaPS_SA>
    return std::unique_ptr<suf::CaPS_SA>{new suf::CaPS_SA({T.begin(), T.end()}, n, subproblem_count, max_context)};
 }
 
-void PyCaps(py::module& m) {
-   using namespace pybind11::literals;
+void PyCaps(py::module_& m) {
+   using namespace py::literals;
 
    py::class_<suf::CaPS_SA> caps(m, "CaPS");
    // Constructors and methods
    // Check why with subproblem_count = 0 BOOM!!! when should initialize p_ with default_subproblem_count
    caps
-      .def(py::init<std::vector<char>, lz::lz_int, lz::lz_int, lz::lz_int>(),
+      .def(py::init<std::vector<lz::lz_char>, lz::lz_int, lz::lz_int, lz::lz_int>(),
            "T"_a,
            "n"_a,
            "subproblem_count"_a = 0,
            "max_context"_a      = 0)
-      .def(py::init(&constructor_str), "T"_a, "n"_a, "subproblem_count"_a = 0, "max_context"_a = 0)
-      .def(py::init<lz::lz_int, lz::lz_int>(), "subproblem_count"_a = 0, "max_context"_a = 0)
+      .def(py::new_(&constructor_str), "T"_a, "n"_a, "subproblem_count"_a = 0u, "max_context"_a = 0u)
+      .def(py::init<lz::lz_int, lz::lz_int>(), "subproblem_count"_a = 0u, "max_context"_a = 0u)
       .def(py::init<utl::SA_Args>(), "args"_a)
       .def("__copy__", [](const suf::CaPS_SA& self) { return suf::CaPS_SA(self); })
       .def(
@@ -36,49 +41,49 @@ void PyCaps(py::module& m) {
          "construct",
          [](suf::CaPS_SA& self) { return self.construct(); },
          "Generate the suffix array from the text use for build the class",
-         py::return_value_policy::copy)
+         py::rv_policy::copy)
       .def("construct",
-           py::overload_cast<std::vector<char>, lz::lz_int>(&suf::CaPS_SA::construct),
+           py::overload_cast<std::vector<lz::lz_char>, lz::lz_int>(&suf::CaPS_SA::construct),
            "Generate the suffix array from a vector of characters",
-           py::return_value_policy::copy)
+           py::rv_policy::copy)
       .def("construct",
            py::overload_cast<const std::string&>(&suf::CaPS_SA::construct),
            "Generate the suffix array from the text",
-           py::return_value_policy::copy);
+           py::rv_policy::copy);
 
    // Attributes
-   caps.def_property_readonly("n_", &suf::CaPS_SA::n)
-      .def_property_readonly("T_", &suf::CaPS_SA::T)
-      .def_property_readonly("LCP_", &suf::CaPS_SA::LCP)
-      .def_property_readonly("SA_", &suf::CaPS_SA::SA);
+   caps.def_prop_ro("n_", &suf::CaPS_SA::n)
+      .def_prop_ro("T_", &suf::CaPS_SA::T)
+      .def_prop_ro("LCP_", &suf::CaPS_SA::LCP)
+      .def_prop_ro("SA_", &suf::CaPS_SA::SA);
 }
 
-void PySais(py::module& m) {
-   using namespace pybind11::literals;
+void PySais(py::module_& m) {
+   using namespace py::literals;
 
    py::class_<suf::SAIS> sais(m, "SAIS");
    // Constructors and methods
    // Check why with subproblem_count = 0 BOOM!!! when should initialize p_ with default_subproblem_count
-   sais.def(py::init<const char*, lz::lz_int>(), "T"_a, "n"_a)
+   sais.def(py::init<const lz::lz_char*, lz::lz_int>(), "T"_a, "n"_a)
       .def(
          "construct",
          [](suf::SAIS& self) { return self.construct(); },
          "Generate the suffix array from the text use for build the class",
-         py::return_value_policy::copy)
+         py::rv_policy::copy)
       .def("construct",
            py::overload_cast<const std::string&>(&suf::SAIS::construct),
            "Generate the suffix array from the text",
-           py::return_value_policy::copy);
+           py::rv_policy::copy);
 
    // Attributes
-   sais.def_property_readonly("n_", &suf::SAIS::n)
-      .def_property_readonly("T_", &suf::SAIS::T)
-      .def_property_readonly("LCP_", &suf::SAIS::LCP)
-      .def_property_readonly("SA_", &suf::SAIS::SA);
+   sais.def_prop_ro("n_", &suf::SAIS::n)
+      .def_prop_ro("T_", &suf::SAIS::T)
+      .def_prop_ro("LCP_", &suf::SAIS::LCP)
+      .def_prop_ro("SA_", &suf::SAIS::SA);
 }
 
-void PySaStructure(py::module& m) {
-   using namespace pybind11::literals;
+void PySaStructure(py::module_& m) {
+   using namespace py::literals;
 
    py::class_<utl::LZ_SuffixArray> LZ_SuffixArray(m, "LZ_SuffixArray");
 
@@ -87,15 +92,21 @@ void PySaStructure(py::module& m) {
       .def(py::init<std::vector<lz::lz_uint>, std::vector<lz::lz_uint>, lz::lz_uint>(), "SA_"_a, "LCP_"_a, "n_"_a)
       .def(py::init<std::vector<lz::lz_uint>, lz::lz_uint>(), "SA_"_a, "n_"_a)
       .def(py::init<lz::lz_uint* const, lz::lz_uint* const, lz::lz_uint>(), "SA_"_a, "LCP_"_a, "n_"_a)
-      .def(py::init<lz::lz_int* const, lz::lz_int* const, lz::lz_uint>(), "SA_"_a, "LCP_"_a, "n_"_a)
+      // .def(py::init<lz::lz_int* const, lz::lz_int* const, lz::lz_uint>(), "SA_"_a, "LCP_"_a, "n_"_a)
       .def(py::self == py::self)
       .def("Clear", &utl::LZ_SuffixArray::Clear, "Clear the SA and LCP arrays")
       .def("__copy__", [](const utl::LZ_SuffixArray& self) { return utl::LZ_SuffixArray(self); })
       .def(
-         "__deepcopy__", [](const utl::LZ_SuffixArray& self, py::dict) { return utl::LZ_SuffixArray(self); }, "memo"_a);
+         "__deepcopy__", [](const utl::LZ_SuffixArray& self, py::dict) { return utl::LZ_SuffixArray(self); }, "memo"_a)
+      .def("__getstate__", [](const utl::LZ_SuffixArray& sa) { return std::make_tuple(sa.SA, sa.LCP, sa.n); })
+      .def("__setstate__",
+           [](utl::LZ_SuffixArray&                                                               sa,
+              const std::tuple<std::vector<lz::lz_uint>, std::vector<lz::lz_uint>, lz::lz_uint>& state) {
+              new (&sa) utl::LZ_SuffixArray(std::get<0>(state), std::get<1>(state), std::get<2>(state));
+           });
 
    // Attributes
-   LZ_SuffixArray.def_readwrite("SA", &utl::LZ_SuffixArray::SA)
-      .def_readwrite("LCP", &utl::LZ_SuffixArray::LCP)
-      .def_readwrite("n", &utl::LZ_SuffixArray::n);
+   LZ_SuffixArray.def_rw("SA", &utl::LZ_SuffixArray::SA)
+      .def_rw("LCP", &utl::LZ_SuffixArray::LCP)
+      .def_rw("n", &utl::LZ_SuffixArray::n);
 }

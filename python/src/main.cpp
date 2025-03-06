@@ -1,37 +1,31 @@
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
-// #define VERSION_INFO 0.7.0
+#define VERSION_INFO 0.9.3
 
 int add(int i, int j) {
    return i + j;
 }
 
-namespace py = pybind11;
+namespace py = nanobind;
 
-void PyUtils(py::module&);
-void PySequence(py::module&);
-void PySaStructure(py::module&);
-void PyStructures(py::module&);
-void PyCaps(py::module&);
-void PySais(py::module&);
-void PyLempelZiv(py::module&);
+void PyUtils(py::module_&);
+void PySequence(py::module_&);
+void PySaStructure(py::module_&);
+void PyStructures(py::module_&);
+void PyCaps(py::module_&);
+// void PySais(py::module_&);
+void PyLempelZiv(py::module_&);
 
-PYBIND11_MODULE(lzcomplexity, m) {
+NB_MODULE(lzcomplexity, m) {
    m.doc() = R"pbdoc(
     _    ____  ____ __                      LempelZiv  -  description
    | |  |_  /_|__  / /                    -----------------------------
-   | |__ / /___|/ / _ \      LempelZiv analysis engine v0.7 2024 by Efren Aragon Perez.
+   | |__ / /___|/ / _ \      LempelZiv analysis engine v0.9.3 2025 by Efren Aragon Perez.
    |____/___|  /_/\___/  Send bug reports to estevez@fisica.uh.cu or efrenaragon96@gmail.com.
 
     )pbdoc";
-
-   // m.def("add", &add, R"pbdoc(
-   //      Add two numbers
-
-   //      Some other explanation about the add function.
-   //  )pbdoc");
 
    // Utils bindings
    PyUtils(m);

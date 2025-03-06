@@ -1,0 +1,60 @@
+[build-system]
+requires = ["scikit-build-core", "setuptools"]
+build-backend = "scikit_build_core.setuptools.build_meta"
+
+[project]
+name = "lzcomplexity"
+version = "0.9.3"
+description = "LempelZiv-76 complexity utilities as a library and also a standalone software"
+authors = [
+    { name = "Efren Aragon", email = "efrenaragon96@gmail.com" }
+]
+license = { file = "LICENSE" }
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.7"
+classifiers = [
+    "Development Status :: Beta",
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: C++",
+    "Topic :: Software Development :: Libraries"
+]
+
+# [tool.setuptools]
+# packages = ["modules.core", "modules.utils", "modules.sa"]
+# package-dir = { "" = "python/src" }
+
+# [tool.setuptools.ext_modules]
+# Custom CMake extension build
+# name = "lzcomplexity"
+# sources = [
+#     "modules/core/src/lempelziv.cpp",
+#     "modules/core/src/lz76.cpp",
+#     "modules/core/src/sequence.cpp",
+#     "modules/sa/src/caps.cpp"
+# ]
+
+# [tool.setuptools.cmdclass]
+# build_ext = "setup.CMakeBuild"
+
+# [tool.setuptools_scm]
+# write_to = "python/src/_version.py"
+
+# [tool.setuptools.dynamic]
+# version = {attr = "lzcomplexity._version.__version__"}
+
+[tool.scikit-build]
+cmake.version = ">=3.5"
+cmake.verbose = true
+cmake.build-type = "Release"
+cmake.args = ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-GUnix Makefiles"]
+logging.level = "INFO"
+wheel.expand-macos-universal-tags = true
+# wheel.py-api = ["cp39", "cp310", "cp311", "cp312"]
+
+[tool.scikit-build.cmake.define]
+# LZ_ONLY_CORE = true
+# BUILD_PYTHON = true

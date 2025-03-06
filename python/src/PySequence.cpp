@@ -1,9 +1,12 @@
-#include <lz/sequence.h>
-#include <pybind11/functional.h>
-#include <pybind11/operators.h>
-#include <pybind11/stl.h>
+#include "inc/PySequence.hpp"
 
-namespace py = pybind11;
+#include <nanobind/operators.h>
+#include <nanobind/stl/function.h>
+#include <nanobind/stl/pair.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/vector.h>
+
+namespace py = nanobind;
 
 char& first(lz::sequence& seq) {
    return seq.first();
@@ -94,24 +97,19 @@ std::string toString(const lz::sequence& seq) {
 //    return lz::Shuffle(seq, block, times);
 // }
 
-void PySequence(py::module& m) {
-   using namespace pybind11::literals;
+void PySequence(py::module_& m) {
+   using namespace py::literals;
 
    py::class_<lz::sequence> sequence(m, "sequence");
    // Define constructors and methods
    sequence.def(py::init())
       .def(py::init<lz::lz_int>(), "alphabet_size"_a)
-      .def(py::init<const std::string>(), "str"_a)
-      .def(py::init<const std::vector<char>>(), "vec"_a)
-      .def(py::init<const std::string, lz::lz_int>(), "str"_a, "aph"_a)
-      .def(py::init<const std::vector<char>, lz::lz_int>(), "vec"_a, "aph"_a)
-      .def(py::init([](std::vector<int> arr) {
-         auto string_view = arr | std::views::transform([](int num) { return std::to_string(num); });
-         auto res = std::accumulate(std::ranges::begin(string_view), std::ranges::end(string_view), std::string{});
-
-         return lz::sequence(res);
-      }))
+      .def(py::new_(generateSequenceConstructor()), "str"_a)
+      .def(py::new_(generateSequenceConstructorWithAlphabet()), "str"_a, "alphabet_size"_a)
       .def(py::self + py::self)
+      .def(py::self += py::self)
+      .def(py::self += std::string())
+      .def(py::self += std::vector<lz::lz_char>())
       .def(py::self == py::self)
       .def(py::self == std::string())
       .def(py::self != py::self)
@@ -124,9 +122,6 @@ void PySequence(py::module& m) {
       .def(py::self < std::string())
       .def(py::self <= py::self)
       .def(py::self <= std::string())
-      .def(py::self += py::self)
-      .def(py::self += std::string())
-      .def(py::self += std::vector<lz::lz_char>())
       .def("__str__", &::toString)
       .def("__getitem__", py::overload_cast<lz::lz_size>(&lz::sequence::operator[]))
       .def("first", &::first, "Get first character of the sequence")
@@ -136,15 +131,15 @@ void PySequence(py::module& m) {
       .def("Min", py::overload_cast<lz::sequence&>(&::Min), "Min character of the sequence")
       .def("Min",
            py::overload_cast<lz::sequence&, lz::lz_size, lz::lz_size>(&::Min),
-           "Min character between a range",
            "start"_a,
-           "final"_a)
+           "final"_a,
+           "Min character between a range")
       .def("Max", py::overload_cast<lz::sequence&>(&::Max), "Max character of the sequence")
       .def("Max",
            py::overload_cast<lz::sequence&, lz::lz_size, lz::lz_size>(&::Max),
-           "Max character between a range",
            "start"_a,
-           "final"_a)
+           "final"_a,
+           "Max character between a range")
       .def("push", &::push, "c"_a, "Push a character to the back of the sequence")
       .def("pop", &::pop, "Remove the las character of the sequence")
       .def("size", &::size, "Size of the sequence")
@@ -155,8 +150,8 @@ void PySequence(py::module& m) {
       .def("Granularity", &::Granularity, "gr"_a)
       .def("pi", &::pi, "Get the largest prefix of the sequence")
       .def("reverse", &::reverse, "Reverse the sequence")
-      .def("rightShift", &::rightShift, "ls"_a = 1, "Right shift the sequence by ls characters")
-      .def("leftShift", &::leftShift, "ls"_a = 1, "Left shift the sequence by ls characters")
+      .def("rightShift", &::rightShift, "ls"_a = 1u, "Right shift the sequence by ls characters")
+      .def("leftShift", &::leftShift, "ls"_a = 1u, "Left shift the sequence by ls characters")
       .def("clear", &::clear, "Clear the sequence")
       .def("map", &::map, "f"_a, "Execute a function over all elements of the sequence")
       .def("DetermineAlphabet", &::DetermineAlphabet)
@@ -164,9 +159,8 @@ void PySequence(py::module& m) {
       .def(
          "__deepcopy__", [](const lz::sequence& self, py::dict) { return lz::sequence(self); }, "memo"_a);
 
-   sequence
-      .def_property_readonly("alphabet_size", &lz::sequence::getAlphabetSize, "Size of the alphabet of the sequence")
-      .def_property_readonly("seq", &::SequenceVector, "Vector of characters of the sequence");
+   sequence.def_prop_ro("alphabet_size", &lz::sequence::getAlphabetSize, "Size of the alphabet of the sequence")
+      .def_prop_ro("seq", &::SequenceVector, "Vector of characters of the sequence");
 
    m.def("Shuffle", py::overload_cast<lz::sequence&, lz::lz_uint>(&lz::Shuffle), "seq"_a, "block_size"_a);
    m.def("Shuffle",

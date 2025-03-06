@@ -1,30 +1,4 @@
-#include <lz/lempelziv.h>
-#include <lz/utils.h>
-#include <pybind11/stl.h>
-
-#include <type_traits>
-#include <variant>
-
-namespace py  = pybind11;
-namespace utl = lz::utils;
-
-// helper type for the visitor #4
-template<class... Ts>
-struct overload : Ts... {
-   using Ts::operator()...;
-};
-// explicit deduction guide (not needed as of C++20)
-template<class... Ts>
-overload(Ts...) -> overload<Ts...>;
-
-using seq_type  = std::variant<lz::sequence, std::string, std::vector<char>, std::vector<int>>;
-using seq_type2 = std::variant<std::string, std::vector<char>, std::vector<int>>;
-
-template<typename T, typename VARIANT_T>
-struct isVariantMember;
-
-template<typename T, typename... ALL_T>
-struct isVariantMember<T, std::variant<ALL_T...>> : public std::disjunction<std::is_same<T, ALL_T>...> {};
+#include "utils.hpp"
 
 template<typename T, typename Fun>
 auto generateFunctionWithoutArgs(Fun&& fun) {
@@ -57,8 +31,6 @@ struct return_function {
 
          utl::LZ_Args args(params...);
 
-         std::cout << "variant: " << std::is_same_v<Seq, seq_type> << std::endl;
-         std::cout << "seq: " << std::is_same_v<Seq, lz::sequence> << std::endl;
          if (std::is_same_v<Seq, lz::sequence> == true) {
             return fun(seq, args);
          } else {
@@ -77,21 +49,6 @@ struct return_function {
       };
    };
 };
-
-// template<typename T, typename Fun>
-// auto generateFunctionSequenceWithArgs(Fun&& fun) {
-//    return return_function<T, lz::sequence, utl::LZ_Args>{}(fun);
-// }
-
-// template<typename T, typename Seq, typename Fun>
-// auto generateFunctionWithArgs(Fun&& fun) {
-//    return return_function<T, Seq, utl::LZ_Args>{}(fun);
-// }
-
-// template<typename T, typename Fun>
-// auto test2(Fun&& fun) {
-//    return return_function<T, lz::sequence, lz::lz_int, lz::lz_int, lz::lz_uint, lz::lz_uint>{}(fun);
-// }
 
 template<typename T, typename Fun>
 auto generateFunctionWithArgs(Fun&& fun) {

@@ -189,7 +189,7 @@ namespace lz {
          // CaPS_SA() :CaPS_SA("", 1, 1) {};
          CaPS_SA(utils::SA_Args);
          CaPS_SA(lz_int subproblem_count = 0, lz_int max_context = 0);
-         CaPS_SA(std::vector<char> T, lz_int n, lz_int subproblem_count = 0, lz_int max_context = 0);
+         CaPS_SA(std::vector<lz_char> T, lz_int n, lz_int subproblem_count = 0, lz_int max_context = 0);
 
          // Copy constructs the suffix array object from `other`.
          CaPS_SA(const CaPS_SA& other);

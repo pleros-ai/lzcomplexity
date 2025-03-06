@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: recursive
       
       - name: Setup python version
         uses: actions/setup-python@v5
@@ -70,11 +70,11 @@ jobs:
           name: ${{ env.name }}
           path: ./wheelhouse/*.whl
      
-      # - name: Upload distribution to PyPI
-      #   env:
-      #     TWINE_USERNAME: __token__
-      #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      #   run: twine upload ./wheelhouse/*
+      - name: Upload distribution to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload ./wheelhouse/*
 
   # build-sdist:
   #     name: Build distribution

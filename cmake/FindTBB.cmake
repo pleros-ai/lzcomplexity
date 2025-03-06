@@ -41,6 +41,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+if(TARGET TBB::tbb)
+  set(LZ_TBB_LIBS TBB::tbb)
+
+  if(TBB_INCLUDE_DIRS)
+    set(LZ_TBB_INCLUDES ${TBB_INCLUDE_DIRS})  
+  else()
+    set(LZ_TBB_INCLUDES ${CMAKE_SOURCE_DIR}/external/tbb/include)
+  endif()
+
+  return()
+endif()
+
 INCLUDE (FindPackageHandleStandardArgs)
 
 IF (CMAKE_VERSION VERSION_GREATER 2.8.7)
