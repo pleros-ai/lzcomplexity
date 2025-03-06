@@ -3,8 +3,10 @@
 name: CMake on multiple platforms for lzdistance library
 
 on:
-  push:
-    branches: ["main"]
+  # push:
+    # branches: ["main"]
+  workflow_dispatch:
+
 
 jobs:
   # codespell:

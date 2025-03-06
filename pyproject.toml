@@ -22,20 +22,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis"
 ]
 
-# [tool.setuptools]
-# packages = ["modules.core", "modules.utils", "modules.sa"]
-# package-dir = { "" = "python/src" }
-
-# [tool.setuptools.ext_modules]
-# Custom CMake extension build
-# name = "lzcomplexity"
-# sources = [
-#     "modules/core/src/lempelziv.cpp",
-#     "modules/core/src/lz76.cpp",
-#     "modules/core/src/sequence.cpp",
-#     "modules/sa/src/caps.cpp"
-# ]
-
 # [tool.setuptools.cmdclass]
 # build_ext = "setup.CMakeBuild"
 
@@ -49,7 +35,7 @@ classifiers = [
 cmake.version = ">=3.5"
 cmake.verbose = true
 cmake.build-type = "Release"
-cmake.args = ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-GUnix Makefiles"]
+cmake.args = ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-DLZ_APP=OFF", "-DLZ_DISTANCE=OFF, "-GUnix Makefiles"]
 logging.level = "INFO"
 wheel.expand-macos-universal-tags = true
 # wheel.py-api = ["cp39", "cp310", "cp311", "cp312"]

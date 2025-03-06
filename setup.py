@@ -127,7 +127,7 @@ class CMakeBuild(build_ext):
         if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
-        cmake_args += ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON"]
+        cmake_args += ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-DLZ_APP=OFF", "-DLZ_DISTANCE=OFF"]
 
         subprocess.run(
             ["cmake", ext.sourcedir, *cmake_args], cwd=build_temp, check=True
