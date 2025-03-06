@@ -152,14 +152,13 @@ setup(
     packages=find_packages(where="python/src", include=["modules/core/*", "modules/utils/*", "modules/sa/*"]),
     package_dir={"": "python/src"},
     classifiers=[
-         'Development Status :: Beta',
-         'Environment :: Console',
-         "Programming Language :: Python :: 3",
-         "Operating System :: POSIX :: Linux",
-         "Operating System :: MacOS :: MacOS X",
-         "Operating System :: Microsoft :: Windows",
-         'Programming Language :: C++',
-         'Topic :: Software Development :: Libraries',
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: C++",
+        "Topic :: Software Development :: Libraries",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Information Analysis"
     ],
     # install_requires=[
     #     "setuptools>=42",
