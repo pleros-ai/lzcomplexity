@@ -4,7 +4,7 @@
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "DySAG")
-set(CPACK_PACKAGE_DESCRIPTION "LempelZiv-76 complexity utilities as a library and also a standalone software. Suited for complexity analysis of time series.")
+set(CPACK_PACKAGE_DESCRIPTION "LempelZiv-76 complexity engine. Suited for complexity analysis of time series.")
 # set(CPACK_PACKAGE_HOMEPAGE_URL "https://root.cern")
 set(CPACK_PACKAGE_CONTACT "Maintainer <efrenaragon06@gmail.com>")
 

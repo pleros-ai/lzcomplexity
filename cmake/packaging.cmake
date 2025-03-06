@@ -13,7 +13,7 @@ string(TOLOWER ${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}_${CMAKE_BUILD_TYPE} CPACK
 
 set(CPACK_PACKAGE_CONTACT "efrenaragon96@gmail.com")
 
-set(LZ_DESCRIPTION "LempelZiv-76 complexity utilities as a library and also a standalone software. Suited for complexity analysis of time series.")
+set(LZ_DESCRIPTION "LempelZiv-76 complexity engine. Suited for complexity analysis of time series.")
 
 configure_file(LICENSE LICENSE.txt COPYONLY)
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_BINARY_DIR}/LICENSE.txt")

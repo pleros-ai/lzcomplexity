@@ -5,7 +5,7 @@ build-backend = "scikit_build_core.setuptools.build_meta"
 [project]
 name = "lzcomplexity"
 version = "0.9.3"
-description = "LempelZiv-76 complexity utilities as a library and also a standalone software"
+description = "LempelZiv-76 complexity engine. Suited for complexity analysis of time series."
 authors = [
     { name = "Efren Aragon", email = "efrenaragon96@gmail.com" }
 ]
