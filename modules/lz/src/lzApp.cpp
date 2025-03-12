@@ -271,9 +271,11 @@ namespace lz {
          auto   str     = flags.input[i];
          double density = 0.0;
 
+         const auto log_base = flags.sa_args.log_base == NO_ALPHABET ? str.getAlphabetSize() : flags.sa_args.log_base;
+         const auto alphabet = flags.sa_args.alphabet == NO_ALPHABET ? str.getAlphabetSize() : flags.sa_args.alphabet;
+
          if (lz.calculated_complexity[i]) {
-            lz_double div = str.size() * utils::log(flags.alphabet_size, flags.sa_args.log_base) /
-                            utils::log(str.size(), flags.sa_args.log_base);
+            lz_double div = str.size() * utils::log(alphabet, log_base) / utils::log(str.size(), log_base);
 
             density = lz.data[i].getComplexity() / div;
          } else {

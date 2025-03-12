@@ -394,10 +394,8 @@ auto main(int argc, char const* argv[]) -> int {
    options.allow_unrecognised_options();
    // clang-format on
    auto opt_group = options.add_options("OPTIONS: ");
-   opt_group(opt_list["alphabet"].option_value,
-             opt_list["alphabet"].description,
-             cxxopts::value<std::string>()->default_value("2"),
-             "value");
+   opt_group(
+      opt_list["alphabet"].option_value, opt_list["alphabet"].description, cxxopts::value<std::string>(), "value");
    opt_group(opt_list["distance"].option_value, opt_list["distance"].description);
    opt_group(opt_list["excess_opt"].option_value,
              opt_list["excess_opt"].description,

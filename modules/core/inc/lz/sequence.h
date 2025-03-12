@@ -348,6 +348,7 @@ namespace lz {
       al.resize(last - al.begin());
 #endif
 
+      alphabet_size   = al.size();
       return alphabet = al;
    }
 

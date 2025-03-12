@@ -98,8 +98,7 @@ namespace lz {
          lz_int second_dist_init = utils::LZ_Args::UNDEFINED_LINES;  //!> Line to start the distance calculation
          lz_int second_dist_end  = utils::LZ_Args::UNDEFINED_LINES;  //!> Line to end the distance calculation
 
-         lz_int         alphabet_size;  //!> Length of the alphabet of input sequences
-         utils::LZ_Args sa_args;        //!> Extra arguments for Suffix-array object and core functions
+         utils::LZ_Args sa_args;  //!> Extra arguments for Suffix-array object and core functions
 
          std::vector<sequence> first_input;   //!> First input set of sequences
          std::vector<sequence> second_input;  //!> Second input set of sequences
@@ -112,24 +111,20 @@ namespace lz {
          lz::lz_bool trajectory_ = false;  //!> Apply distance between trajectories sequences --> 17 options
 
          LZ_Flags(sequence text, utils::LZ_Args _sa_args)
-           : first_input({text}), second_input({text}), alphabet_size(2), sa_args(_sa_args){};
+           : first_input({text}), second_input({text}), sa_args(_sa_args){};
          LZ_Flags(sequence text1, sequence text2, utils::LZ_Args _sa_args)
-           : first_input({text1}), second_input({text2}), alphabet_size(2), sa_args(_sa_args){};
+           : first_input({text1}), second_input({text2}), sa_args(_sa_args){};
          LZ_Flags(std::vector<sequence> data, utils::LZ_Args _sa_args)
-           : first_input(data), second_input(data), alphabet_size(2), sa_args(_sa_args){};
+           : first_input(data), second_input(data), sa_args(_sa_args){};
          LZ_Flags(std::vector<sequence> data1, std::vector<sequence> data2, utils::LZ_Args _sa_args)
-           : first_input(data1), second_input(data2), alphabet_size(2), sa_args(_sa_args){};
+           : first_input(data1), second_input(data2), sa_args(_sa_args){};
          // Copy construct
          LZ_Flags(const LZ_Flags& flags)
-           : first_input(flags.first_input)
-           , second_input(flags.second_input)
-           , alphabet_size(flags.alphabet_size)
-           , sa_args(flags.sa_args){};
+           : first_input(flags.first_input), second_input(flags.second_input), sa_args(flags.sa_args){};
          // Move constructor
          LZ_Flags(LZ_Flags&& flags)
            : first_input(std::move(flags.first_input))
            , second_input(std::move(flags.second_input))
-           , alphabet_size(std::exchange(flags.alphabet_size, 0))
            , sa_args(std::move(flags.sa_args)){};
 
          ~LZ_Flags(){};
@@ -162,7 +157,6 @@ namespace lz {
             std::swap(this->first_input, rhs.first_input);
             std::swap(this->second_input, rhs.second_input);
             std::swap(this->sa_args, rhs.sa_args);
-            std::swap(this->alphabet_size, rhs.alphabet_size);
 
             std::swap(this->revert_, rhs.revert_);
             std::swap(this->adn_, rhs.adn_);

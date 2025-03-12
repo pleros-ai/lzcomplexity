@@ -45,6 +45,7 @@ namespace lz {
    using lz_str    = std::string;
 
    constexpr lz_uint ALPHABET_SIZE = 0x02;
+   constexpr lz_uint NO_ALPHABET   = std::numeric_limits<lz_uint>::max();
 
    template<typename _Ret, typename... _Args>
    class lz_fun : public std::function<_Ret(_Args...)> {};

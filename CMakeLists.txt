@@ -261,7 +261,10 @@ if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
     )
   endif()
 
-  set(PROJECT_NAME lztools)
+  if (LZ_APP AND LZ_DISTANCE)
+    set(PROJECT_NAME lztools)
+  endif()
+
   include(packaging)
 endif()
 

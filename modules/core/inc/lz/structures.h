@@ -25,8 +25,8 @@ namespace lz {
                                              //?  entropy by shuffle (not calculate by default).
          lz_bool get_shuffle_terms = false;  //?> If true, the shuffle entropy deficit
                                              //?  will return the excess of entropy by terms.
-         lz_uint alphabet = ALPHABET_SIZE;   //?> Size of the alphabet
-         lz_uint log_base = ALPHABET_SIZE;   //?> base of the logarithm
+         lz_uint alphabet = NO_ALPHABET;     //?> Size of the alphabet
+         lz_uint log_base = NO_ALPHABET;     //?> base of the logarithm
 
          LZ_Args() = default;
          LZ_Args(lz_int chunks)

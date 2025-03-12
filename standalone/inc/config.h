@@ -86,7 +86,7 @@ struct lz_options {
 
       // args for SA and Core functions
       args.chunks   = result["partitions"].as<lz::lz_int>();
-      args.alphabet = std::stoi(result["alphabet"].as<std::string>());
+      args.alphabet = result.count("alphabet") ? std::stoi(result["alphabet"].as<std::string>()) : lz::NO_ALPHABET;
 
       if (result.count("log-base")) {
          auto lg       = result["log-base"].as<std::string>();

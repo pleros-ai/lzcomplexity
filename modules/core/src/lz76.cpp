@@ -141,9 +141,11 @@ namespace lz {
          suffixarray::CaPS_SA  alg(sa_args);
          utils::LZ_SuffixArray _SA = alg.construct(seq.toString());
 
-         auto logn = std::log(sa_args.log_base);
-         epsilon =
-            2 * (1 + std::log(std::log(sa_args.alphabet * seq.size()) / logn) / logn) / (std::log(seq.size()) / logn);
+         const auto log_base = sa_args.log_base == NO_ALPHABET ? seq.getAlphabetSize() : sa_args.log_base;
+         const auto alphabet = sa_args.alphabet == NO_ALPHABET ? seq.getAlphabetSize() : sa_args.alphabet;
+
+         auto logn = std::log(log_base);
+         epsilon   = 2 * (1 + std::log(std::log(alphabet * seq.size()) / logn) / logn) / (std::log(seq.size()) / logn);
 
          lzf.reserve(_SA.n);
          std::vector<lz_uint>         lpf(_SA.n);

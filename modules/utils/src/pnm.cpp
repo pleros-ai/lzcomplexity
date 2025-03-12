@@ -1413,7 +1413,6 @@ namespace lz {
 
                ReadBin(is, s, fsize);
             } else if (magick_number == PNM_RAWTXT) {  // text data
-
                s.clear();
                line.clear();
 
@@ -1432,6 +1431,8 @@ namespace lz {
                   break;
                }  // while is.good()
             }
+
+            s.DetermineAlphabet();
          } catch (SequenceBadAlloc& ba) {
             throw SequenceBadAlloc();
          } catch (...) {
@@ -1462,6 +1463,8 @@ namespace lz {
                is.seekg(fpos);  // restore the file pointer to the initial position
 
                ReadBin(is, seq, fsize);
+
+               seq.DetermineAlphabet();
                s.push_back(seq);
             } else if (magick_number == PNM_RAWTXT) {  // text data
                s.clear();

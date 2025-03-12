@@ -131,7 +131,9 @@ namespace lz {
          factors       = L.getFactors();
       }
 
-      lz_double div = static_cast<double>(seq.size()) / utils::log(seq.size(), args.log_base);
+      const auto log_base = args.log_base == NO_ALPHABET ? seq.getAlphabetSize() : args.log_base;
+
+      lz_double div = static_cast<double>(seq.size()) / utils::log(seq.size(), log_base);
       // entropy density
       auto entropy = factorization / div;
       // random shuffle complexity (rsc)
@@ -150,7 +152,7 @@ namespace lz {
       utils::par_do(rsc_fun, w_rsc_fun, extra_fun);
 
       // Error for Normal distribution factors length
-      div               = std::sqrt(seq.size() / utils::log(seq.size(), args.log_base));
+      div               = std::sqrt(seq.size() / utils::log(seq.size(), log_base));
       auto normal_error = std::sqrt(entropy * entropy * entropy) * stddev / div;
       // Error for Poison distribution factors length
       auto poison_error = entropy / seq.size();
@@ -190,8 +192,10 @@ namespace lz {
    //-------------------- Entropy density functions ----------------------------//
    lz_double lz76EntropyDensity(const sequence& text, utils::LZ_Args args) {
       auto factorization = lz76Factorization(text, args);
+
+      const auto log_base = args.log_base == NO_ALPHABET ? text.getAlphabetSize() : args.log_base;
       // lz_double div = text.size() * std::log(text.getAlphabetSize()) / std::log(text.size());
-      lz_double div = static_cast<double>(text.size()) / utils::log(text.size(), args.log_base);
+      lz_double div = static_cast<double>(text.size()) / utils::log(text.size(), log_base);
 
       lz_double res = factorization / div;
       return res;
@@ -219,9 +223,12 @@ namespace lz {
    };
 
    lz_double lz76EffectiveComplexityNormalized(const sequence& text, utils::LZ_Args args) {
+      const auto log_base = args.log_base == NO_ALPHABET ? text.getAlphabetSize() : args.log_base;
+      const auto alphabet = args.alphabet == NO_ALPHABET ? text.getAlphabetSize() : args.alphabet;
+
       auto excess = lz76EffectiveComplexity(text, args);
       auto N      = text.size() / 2;
-      auto div    = (N * utils::log(args.alphabet, args.log_base)) / utils::log(N, args.log_base);
+      auto div    = (N * utils::log(alphabet, log_base)) / utils::log(N, log_base);
 
       return excess / div;
    }
@@ -233,6 +240,8 @@ namespace lz {
          mm += 10;                                // begin aggressive
       }
 
+      const auto        log_base = args.log_base == NO_ALPHABET ? str.getAlphabetSize() : args.log_base;
+      const auto        alphabet = args.alphabet == NO_ALPHABET ? str.getAlphabetSize() : args.alphabet;
       utils::LZ_Shuffle result;
       result.max_block_size    = mm;
       lz_double excess_entropy = 0;
@@ -243,9 +252,9 @@ namespace lz {
             str, m, str.size() / 2);  // Shuffling is made for half the size of the sequence, hope that is enough
          std::vector<unsigned int> slzf;
          auto                      rand_complexity = lz76Factorization(rand_seq, args);
-         lz_double                 ee_term         = utils::log(str.size(), args.log_base) *
+         lz_double                 ee_term         = utils::log(str.size(), log_base) *
                              std::fabs((lz_double)rand_complexity - (lz_double)complex) /
-                             (str.size() * utils::log(args.alphabet, args.log_base));
+                             (str.size() * utils::log(alphabet, log_base));
 
          excess_entropy += ee_term;
 
@@ -292,11 +301,13 @@ namespace lz {
          result.summands = std::vector<lz_double>(mm);
       }
 
+      const auto log_base = args.log_base == NO_ALPHABET ? str.getAlphabetSize() : args.log_base;
+      const auto alphabet = args.alphabet == NO_ALPHABET ? str.getAlphabetSize() : args.alphabet;
+
       auto body = [&](const auto& rng, lz_double init) -> lz_double {
          for (auto idx = rng.begin(); idx != rng.end(); idx++) {
-            auto term = utils::log(str.size(), args.log_base) *
-                        std::fabs((lz_double)H_rand[idx] - (lz_double)complexity) /
-                        (str.size() * utils::log(args.alphabet, args.log_base));
+            auto term = utils::log(str.size(), log_base) * std::fabs((lz_double)H_rand[idx] - (lz_double)complexity) /
+                        (str.size() * utils::log(alphabet, log_base));
             init += term;
 
             if (args.get_shuffle_terms) {
@@ -324,13 +335,16 @@ namespace lz {
          result.summands = std::vector<lz_double>(mm);
       }
 
+      const auto log_base = args.log_base == NO_ALPHABET ? str.getAlphabetSize() : args.log_base;
+      const auto alphabet = args.alphabet == NO_ALPHABET ? str.getAlphabetSize() : args.alphabet;
+
       auto body = [&](const auto& rng, lz_double init) -> lz_double {
          for (auto idx = rng.begin(); idx != rng.end(); idx++) {
             sequence rand_seq = Shuffle(str, idx, str.size() / 2);
             auto     c_rand   = lz76Factorization(rand_seq, args);
 
-            auto term = utils::log(str.size(), args.log_base) * std::fabs((lz_double)c_rand - (lz_double)complexity) /
-                        (str.size() * utils::log(args.alphabet, args.log_base));
+            auto term = utils::log(str.size(), log_base) * std::fabs((lz_double)c_rand - (lz_double)complexity) /
+                        (str.size() * utils::log(alphabet, log_base));
             init += term;
 
             if (args.get_shuffle_terms) {
@@ -363,8 +377,8 @@ namespace lz {
       // std::vector<lz_int>                     H_rand;
       lz_int complexity;
 
-      args.alphabet = new_seq.getAlphabetSize();
-      args.log_base = new_seq.getAlphabetSize();
+      // args.alphabet = new_seq.getAlphabetSize();
+      // args.log_base = new_seq.getAlphabetSize();
 
       auto factor_fun = [&complexity, new_seq, args]() { complexity = lz76Factorization(new_seq, args); };
       auto rand_fun   = [&random_run, new_seq, args]() { random_run = ShuffleFactorization(new_seq, args); };
@@ -479,8 +493,8 @@ namespace lz {
       auto s1_c = lz76Factorization(s1, args);
       auto s2_c = lz76Factorization(s2, args);
 
-      args.alphabet = seq.getAlphabetSize();
-      args.log_base = seq.getAlphabetSize();
+      // args.alphabet = seq.getAlphabetSize();
+      // args.log_base = seq.getAlphabetSize();
 
       auto factor_fun = [&]() { complexity = lz76Factorization(seq, args); };
       auto rand_fun   = [&]() { random_run = ShuffleFactorization(seq, args); };
@@ -505,10 +519,13 @@ namespace lz {
       internal::LempelZiv76 L;
       L.Factorize(seq, args);
 
-      auto entropy = L.getFactorization() * utils::log(seq.size(), args.log_base) / static_cast<double>(seq.size());
+      const auto log_base = args.log_base == NO_ALPHABET ? seq.getAlphabetSize() : args.log_base;
+      const auto alphabet = args.alphabet == NO_ALPHABET ? seq.getAlphabetSize() : args.alphabet;
+
+      auto entropy = L.getFactorization() * utils::log(seq.size(), log_base) / static_cast<double>(seq.size());
 
       auto entropy_c = entropy * entropy * entropy;
-      auto num       = std::sqrt(entropy_c * utils::log(seq.size(), args.log_base) / seq.size());
+      auto num       = std::sqrt(entropy_c * utils::log(seq.size(), log_base) / seq.size());
 
       return num * L.getStddev();
    }

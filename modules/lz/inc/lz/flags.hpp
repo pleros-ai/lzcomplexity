@@ -82,25 +82,22 @@ namespace lz {
       struct LZ_Flags {
          lz_int  shuffle_init_line = LZ_Args::UNDEFINED_LINES;  //!> Line to start the shuffle entropy deficit
          lz_int  shuffle_end_line  = LZ_Args::UNDEFINED_LINES;  //!> Line to end the shuffle entropy deficit
-         lz_int  alphabet_size;                                 //!> Length of the alphabet of input sequences
          LZ_Args sa_args;  //!> Extra arguments for Suffix-array object and core functions
 
          std::vector<sequence> input;  //!> Input set of sequences
 
          LZ_Flags(std::string text, LZ_Args _sa_args)
-           : input({text}), alphabet_size(_sa_args.alphabet), sa_args(_sa_args){};
+           : input({text}), sa_args(_sa_args){};
          LZ_Flags(sequence text, LZ_Args _sa_args)
-           : input({text}), alphabet_size(_sa_args.alphabet), sa_args(_sa_args){};
+           : input({text}), sa_args(_sa_args){};
          LZ_Flags(std::vector<sequence> data, LZ_Args _sa_args)
-           : input(data), alphabet_size(_sa_args.alphabet), sa_args(_sa_args){};
+           : input(data), sa_args(_sa_args){};
          // Copy construct
          LZ_Flags(const LZ_Flags& flags)
-           : input(flags.input), alphabet_size(flags.alphabet_size), sa_args(flags.sa_args){};
+           : input(flags.input), sa_args(flags.sa_args){};
          // Move constructor
          LZ_Flags(LZ_Flags&& flags)
-           : input(std::move(flags.input))
-           , alphabet_size(std::exchange(flags.alphabet_size, 0))
-           , sa_args(std::move(flags.sa_args)){};
+           : input(std::move(flags.input)), sa_args(std::move(flags.sa_args)){};
 
          ~LZ_Flags(){};
 
@@ -116,7 +113,6 @@ namespace lz {
          LZ_Flags& operator=(LZ_Flags rhs) {
             std::swap(this->input, rhs.input);
             std::swap(this->sa_args, rhs.sa_args);
-            std::swap(this->alphabet_size, rhs.alphabet_size);
             std::swap(this->shuffle_init_line, rhs.shuffle_init_line);
             std::swap(this->shuffle_end_line, rhs.shuffle_end_line);
 
