@@ -78,7 +78,10 @@ struct lz_options {
          case utl::hash("pgmbin"): input_format = MagickNumber::PNM_P5; break;
          case utl::hash("pgmtxt"): input_format = MagickNumber::PNM_P2; break;
          case utl::hash("raw"):
+         case utl::hash("bin"):
          case utl::hash("rawbin"): input_format = MagickNumber::PNM_RAWBIN; break;
+         case utl::hash("text"):
+         case utl::hash("txt"):
          case utl::hash("rawtxt"): input_format = MagickNumber::PNM_RAWTXT; break;
          case utl::hash("csv"): input_format = MagickNumber::CSV; break;
          default: input_format = MagickNumber::AUTO; break;

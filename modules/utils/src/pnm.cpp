@@ -262,7 +262,7 @@ namespace lz {
          is.get(c, 5);    // get signature
          is.seekg(fpos);  // restore the file pointer to the initial position
 
-         if (c[0] == 'P' || c[0] == 'p') {
+         if ((c[0] == 'P' || c[0] == 'p') && !std::isalpha(c[1])) {
             switch (c[1]) {
                case '1': magick_number = PNM_P1; break;
                case '2': magick_number = PNM_P2; break;
