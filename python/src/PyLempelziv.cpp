@@ -130,25 +130,37 @@ void PyLempelZiv(py::module_& m) {
       .def_prop_ro("factors_stddev", &utl::LempelZiv::getFactorsStddev);
 
    m.def("lz76", lz76WithArgs, "seq"_a, "args"_a, R"pbdoc(
-    The lz76 function for obtain all entropy measures from the input sequence of symbols.
-    - lz76 complexity
-    - lz76 factors
-    - entropy density
-    - effective complexity measure
+     Performs comprehensive Lempel-Ziv (LZ76) analysis on an input sequence.
+     Calculates complexity measures, entropy density, and effective complexity.
 
-    Parameters:
-    -----------
-    seq : Union[sequence, str, List[char], List[int]]
-        The sequence to be analyzed.
-    args : LZ_Args
-        The arguments object with parameters for the analysis.
+     Parameters:
+     -----------
+     seq : Union[sequence, str, List[char], List[int]]
+         Input sequence to analyze. Can be a string, character list, or integer list.
+     partitions : int, optional (default=1)
+         Number of partitions for parallel suffix array computation. Higher values may improve
+         performance on longer sequences.
+     alphabet : int, optional (default=2)
+         Size of the symbol alphabet. For binary sequences use 2, for DNA use 4, etc.
+     log_base : int, optional (default=2)
+         Base for logarithm calculations. Use 2 for bits, e for nats, 10 for decimal.
+     max_block_size : int, optional (default=-1)
+         Maximum block size for random shuffle complexity calculation.
+         Use -1 for automatic size determination.
+     jobs : int, optional (default=hardware_concurrency)
+         Number of parallel threads to use. Defaults to available CPU cores.
 
-    Returns:
-    --------
-    LempelZiv
-        The LZ76 measures extracted from the sequence, complexity, entropy density, 
-        effective complexity measured, factors, etc.
-)pbdoc")
+     Returns:
+     --------
+     LempelZiv
+         Object containing analysis results:
+         - complexity: LZ76 complexity measure
+         - entropy: Entropy density
+         - factors: LZ76 factorization
+         - paired_shuffle_complexity: Effective complexity using paired shuffling
+         - random_shuffle_complexity: Effective complexity using random shuffling
+         - extras: Additional metrics (Rajski distance, redundancy, uncertainties)
+     )pbdoc")
       .def("lz76",
            lz76,
            "seq"_a,
@@ -158,62 +170,63 @@ void PyLempelZiv(py::module_& m) {
            "max_block_size"_a = -1,
            "jobs"_a           = std::thread::hardware_concurrency(),
            R"pbdoc(
-           The lz76 function for obtain all entropy measures from the input sequence of symbols.
-           - lz76 complexity
-           - lz76 factors
-           - entropy density
-           - effective complexity measure
+     Performs comprehensive Lempel-Ziv (LZ76) analysis on an input sequence.
+     Calculates complexity measures, entropy density, and effective complexity.
 
-           Parameters:
-           -----------
-           seq : Union[sequence, str, List[char], List[int]]
-               The sequence to be analyzed.
-           partitions : int
-               The number of partitions used for the parallel suffix array algorithm.
-           alphabet : int
-               Size of the alphabet.
-           log_base : int
-               base for the logarithm.
-           max_block_size : int
-               Max length for the block in random shuffle complexity.
-           jobs : int
-               Number of threads.
+     Parameters:
+     -----------
+     seq : Union[sequence, str, List[char], List[int]]
+         Input sequence to analyze. Can be a string, character list, or integer list.
+     partitions : int, optional (default=1)
+         Number of partitions for parallel suffix array computation. Higher values may improve
+         performance on longer sequences.
+     alphabet : int, optional (default=2)
+         Size of the symbol alphabet. For binary sequences use 2, for DNA use 4, etc.
+     log_base : int, optional (default=2)
+         Base for logarithm calculations. Use 2 for bits, e for nats, 10 for decimal.
+     max_block_size : int, optional (default=-1)
+         Maximum block size for random shuffle complexity calculation.
+         Use -1 for automatic size determination.
+     jobs : int, optional (default=hardware_concurrency)
+         Number of parallel threads to use. Defaults to available CPU cores.
 
-           Returns:
-           --------
-           LempelZiv
-               The LZ76 measures extracted from the sequence, complexity, entropy density, 
-               effective complexity measured, factors, etc.
-           )pbdoc")
+     Returns:
+     --------
+     LempelZiv
+         Object containing analysis results:
+         - complexity: LZ76 complexity measure
+         - entropy: Entropy density
+         - factors: LZ76 factorization
+         - paired_shuffle_complexity: Effective complexity using paired shuffling
+         - random_shuffle_complexity: Effective complexity using random shuffling
+     )pbdoc")
       //!> LZ76 factorization
       .def("lz76Factorization", lz76FactorizationWithoutArgs, "seq"_a, R"pbdoc(
-    Calculates the lz76 factorization of a sequence.
+    Computes the LZ76 complexity or the number of factors of the Lempel-Ziv 76 factorization of a sequence.
 
-    Parameters:
-    -----------
-    seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
-    
-    Returns:
-    --------
-    int
-        The Lempel-Ziv factorization.
-      )pbdoc")
+     Parameters:
+     -----------
+     seq : Union[sequence, str, List[char], List[int]]
+         Input sequence to factorize.
+
+     Returns:
+     --------
+     int
+         The Lempel-Ziv 76 factorization.
+     )pbdoc")
       .def("lz76Factorization", lz76FactorizationWithArgs, "seq"_a, "args"_a, R"pbdoc(
-    Calculates the lz76 factorization of a sequence.
+     Computes the LZ76 complexity or the number of factors of the Lempel-Ziv 76 factorization of a sequence.
 
-    Parameters:
-    -----------
-    seq : Union[sequence, str, List[char], List[int]]
-        The sequence to be analyzed.
-    args : LZ_Args
-        The arguments object with parameters for execute the analysis.
-    
-    Returns:
-    --------
-    int
-        The Lempel-Ziv factorization.
-      )pbdoc")
+     Parameters:
+     -----------
+     seq : Union[sequence, str, List[char], List[int]]
+         Input sequence to factorize.
+
+     Returns:
+     --------
+     int
+         The Lempel-Ziv 76 factorization.
+     )pbdoc")
       //!> Function with all args
       .def("lz76Factorization",
            lz76Factorization,
@@ -223,54 +236,56 @@ void PyLempelZiv(py::module_& m) {
            "log_base"_a   = 2,
            "jobs"_a       = std::thread::hardware_concurrency(),
            R"pbdoc(
-    Calculates the lz76 factorization of a sequence.
+    Computes the LZ76 complexity or the number of factors of the Lempel-Ziv 76 factorization of a sequence.
 
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
-    partitions : int
-        The number of partitions used for the parallel suffix array algorithm.
-    alphabet : int
-        Size of the alphabet.
-    log_base : int
-        base for the logarithm.
-    jobs : int
-        Number of threads.
+        Input sequence to factorize.
+    partitions : int, optional (default=1)
+        Number of partitions for parallel processing.
+    alphabet : int, optional (default=2)
+        Size of the symbol alphabet.
+    log_base : int, optional (default=2)
+        Base for logarithm calculations.
+    jobs : int, optional (default=hardware_concurrency)
+        Number of parallel threads to use.
 
     Returns:
     --------
     int
-        The Lempel-Ziv factorization.
+        The Lempel-Ziv 76 factorization.
            )pbdoc")
       //!> Factor function
       .def("lz76Factors", lz76FactorsWithoutArgs, "seq"_a, R"pbdoc(
-    Calculates the lz76 factors of a sequence.
+    Computes the Lempel-Ziv 76 factorization of a sequence.
+    Factorization splits the sequence into minimal substrings that haven't appeared before.
 
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
+        Input sequence to analyze.
     
     Returns:
     --------
     List[int]
-        List of index with the inital position of the factor into the sequence.
+        Indices where each new factor begins in the sequence.
       )pbdoc")
       .def("lz76Factors", lz76FactorsWithArgs, "seq"_a, "args"_a, R"pbdoc(
-    Calculates the lz76 factors of a sequence.
+    Computes the Lempel-Ziv 76 factorization of a sequence.
+    Factorization splits the sequence into minimal substrings that haven't appeared before.
 
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
+        Input sequence to analyze.
     args : LZ_Args
-        The arguments object with parameters for execute the analysis.
+        Object with parameters for execute the analysis.
     
     Returns:
     --------
     List[int]
-        List of index with the inital position of the factor into the sequence.
+       Indices where each new factor begins in the sequence.
       )pbdoc")
       .def("lz76Factors",
            lz76Factors,
@@ -280,25 +295,26 @@ void PyLempelZiv(py::module_& m) {
            "log_base"_a   = 2,
            "jobs"_a       = std::thread::hardware_concurrency(),
            R"pbdoc(
-    Calculates the lz76 factors of a sequence.
+    Computes the Lempel-Ziv 76 factorization of a sequence.
+    Factorization splits the sequence into minimal substrings that haven't appeared before.
 
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
-    partitions : int
-        The number of partitions used for the parallel suffix array algorithm.
-    alphabet : int
-        Size of the alphabet.
-    log_base : int
-        base for the logarithm.
-    jobs : int
-        Number of threads.
+        Input sequence to factorize.
+    partitions : int, optional (default=1)
+        Number of partitions for parallel processing.
+    alphabet : int, optional (default=2)
+        Size of the symbol alphabet.
+    log_base : int, optional (default=2)
+        Base for logarithm calculations.
+    jobs : int, optional (default=hardware_concurrency)
+        Number of parallel threads to use.
 
     Returns:
     --------
     List[int]
-        List of index with the inital position of the factor into the sequence.
+        Indices where each new factor begins in the sequence.
            )pbdoc")
       //!> Entropy density
       .def("lz76EntropyDensity", lz76EntropyDensityWithoutArgs, "seq"_a, R"pbdoc(
@@ -307,7 +323,7 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
+        Input sequence to analyze.
     
     Returns:
     --------
@@ -320,9 +336,9 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
+        Input sequence to analyze.
     args : LZ_Args
-        The arguments object with parameters for execute the analysis.
+        Object with parameters for execute the analysis.
     
     Returns:
     --------
@@ -342,15 +358,15 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
-    partitions : int
-        The number of partitions used for the parallel suffix array algorithm.
-    alphabet : int
-        Size of the alphabet.
-    log_base : int
-        base for the logarithm.
-    jobs : int
-        Number of threads.
+        Input sequence to factorize.
+    partitions : int, optional (default=1)
+        Number of partitions for parallel processing.
+    alphabet : int, optional (default=2)
+        Size of the symbol alphabet.
+    log_base : int, optional (default=2)
+        Base for logarithm calculations.
+    jobs : int, optional (default=hardware_concurrency)
+        Number of parallel threads to use.
 
     Returns:
     --------
@@ -365,16 +381,16 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
+        Input sequence to analyze.
     
     Returns:
     --------
     LZ_Shuffle
-        An object with the paired shuffle complexity information.
-        - excess_value: The excess value of the random shuffle complexity.
-        - multi_information: The multi information of the sequence (block size =1).
-        - summands: The summands of the random shuffle complexity.
-        - max_block_size: The max block size used for the random shuffle complexity.
+        Object containing:
+        - excess_value: The excess complexity measures estimation
+        - multi_information: Multi-information using block size 1
+        - summands: Individual complexity contributions
+        - max_block_size: Block size used for analysis
       )pbdoc")
       .def("lz76PairedShuffleComplexity", lz76PairedShuffleWithArgs, "seq"_a, "args"_a, R"pbdoc(
     Calculates the effective complexity measure of a sequence using paired shuffle complexity algorithm.
@@ -383,18 +399,18 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq : sequence object
-        The sequence of symbols to be analyzed.
+        Input sequence to analyze.
     args : LZ_Args
-        The arguments object with parameters for execute the analysis.
+        Object with parameters for execute the analysis.
     
     Returns:
     --------
     LZ_Shuffle
-        An object with the paired shuffle complexity information.
-        - excess_value: The excess value of the random shuffle complexity.
-        - multi_information: The multi information of the sequence (block size =1).
-        - summands: The summands of the random shuffle complexity.
-        - max_block_size: The max block size used for the random shuffle complexity.
+        Object containing:
+        - excess_value: The excess complexity measures estimation
+        - multi_information: Multi-information using block size 1
+        - summands: Individual complexity contributions
+        - max_block_size: Block size used for analysis
       )pbdoc")
       .def("lz76PairedShuffleComplexity",
            lz76PairedShuffle,
@@ -411,26 +427,24 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
-    partitions : int
-        The number of partitions used for the parallel suffix array algorithm.
-    alphabet : int
-        Size of the alphabet.
-    log_base : int
-        base for the logarithm.
-    max_block_size : int
-        Max length for the block in random shuffle complexity.
-    jobs : int
-        Number of threads.
+        Input sequence to factorize.
+    partitions : int, optional (default=1)
+        Number of partitions for parallel processing.
+    alphabet : int, optional (default=2)
+        Size of the symbol alphabet.
+    log_base : int, optional (default=2)
+        Base for logarithm calculations.
+    jobs : int, optional (default=hardware_concurrency)
+        Number of parallel threads to use.
 
     Returns:
     --------
     LZ_Shuffle
-        An object with the paired shuffle complexity information.
-        - excess_value: The excess value of the random shuffle complexity.
-        - multi_information: The multi information of the sequence (block size =1).
-        - summands: The summands of the random shuffle complexity.
-        - max_block_size: The max block size used for the random shuffle complexity.
+        Object containing:
+        - excess_value: The excess complexity measures estimation
+        - multi_information: Multi-information using block size 1
+        - summands: Individual complexity contributions
+        - max_block_size: Block size used for analysis
            )pbdoc")
       .def("lz76RandomShuffleComplexity", lz76RandomShuffleWithoutArgs, "seq"_a, R"pbdoc(
     Calculates the effective complexity measure of a sequence using random shuffle complexity algorithm.
@@ -438,16 +452,16 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
+         Input sequence to analyze.
     
     Returns:
     --------
     LZ_Shuffle
-        An object with the random shuffle complexity information.
-        - excess_value: The excess value of the random shuffle complexity.
-        - multi_information: The multi information of the sequence (block size =1).
-        - summands: The summands of the random shuffle complexity.
-        - max_block_size: The max block size used for the random shuffle complexity.
+        Object containing:
+        - excess_value: The excess complexity measures estimation
+        - multi_information: Multi-information using block size 1
+        - summands: Individual complexity contributions
+        - max_block_size: Block size used for analysis
       )pbdoc")
       .def("lz76RandomShuffleComplexity", lz76RandomShuffleWithArgs, "seq"_a, "args"_a, R"pbdoc(
     Calculates the effective complexity measure of a sequence using random shuffle complexity algorithm.
@@ -455,18 +469,18 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
+         Input sequence to analyze.
     args : LZ_Args
-        The arguments object with parameters for execute the analysis.
+        Object with parameters for execute the analysis.
     
     Returns:
     --------
     LZ_Shuffle
-        An object with the random shuffle complexity information.
-        - excess_value: The excess value of the random shuffle complexity.
-        - multi_information: The multi information of the sequence (block size =1).
-        - summands: The summands of the random shuffle complexity.
-        - max_block_size: The max block size used for the random shuffle complexity.
+        Object containing:
+        - excess_value: The excess complexity measures estimation
+        - multi_information: Multi-information using block size 1
+        - summands: Individual complexity contributions
+        - max_block_size: Block size used for analysis
       )pbdoc")
       .def("lz76RandomShuffleComplexity",
            lz76RandomShuffle,
@@ -477,42 +491,45 @@ void PyLempelZiv(py::module_& m) {
            "max_block_size"_a = -1,
            "jobs"_a           = std::thread::hardware_concurrency(),
            R"pbdoc(
-    Calculates the effective complexity measure of a sequence using random shuffle complexity algorithm.
+     Calculates effective complexity measure using random shuffle complexity algorithm.
+     This method estimates the non-random information content by comparing original
+     and randomly shuffled sequence complexities.
 
-    Parameters:
-    -----------
-    seq : Union[sequence, str, List[char], List[int]]
-        The sequence of symbols to be analyzed.
-    partitions : int
-        The number of partitions used for the parallel suffix array algorithm.
-    alphabet : int
-        Size of the alphabet.
-    log_base : int
-        base for the logarithm.
-    max_block_size : int
-        Max length for the block in random shuffle complexity.
-    jobs : int
-        Number of threads.
+     Parameters:
+     -----------
+     seq : Union[sequence, str, List[char], List[int]]
+         Input sequence to analyze.
+     partitions : int, optional (default=1)
+         Number of partitions for parallel processing.
+     alphabet : int, optional (default=2)
+         Size of the symbol alphabet.
+     log_base : int, optional (default=2)
+         Base for logarithm calculations.
+     max_block_size : int, optional (default=-1)
+         Maximum size of blocks for shuffling. -1 for automatic.
+     jobs : int, optional (default=hardware_concurrency)
+         Number of parallel threads to use.
 
-    Returns:
-    --------
-    LZ_Shuffle
-        An object with the random shuffle complexity information.
-        - excess_value: The excess value of the random shuffle complexity.
-        - multi_information: The multi information of the sequence (block size =1).
-        - summands: The summands of the random shuffle complexity.
-        - max_block_size: The max block size used for the random shuffle complexity.
-           )pbdoc")
+     Returns:
+     --------
+     LZ_Shuffle
+         Object containing:
+         - excess_value: The excess complexity measures estimation
+         - multi_information: Multi-information using block size 1
+         - summands: Individual complexity contributions
+         - max_block_size: Block size used for analysis
+     )pbdoc")
       //!> Information distance
       .def("lz76InformationDistance", lz76InformationDistanceWithoutArgs, "seq1"_a, "seq2"_a, R"pbdoc(
-    Calculates the estimation of information distance between two sequences using lz76 complexity.
+    Estimates the information distance between two sequences using LZ76 complexity.
+    This metric measures how different two sequences are in terms of their information content.
 
     Parameters:
     -----------
     seq1 : Union[sequence, str, List[char], List[int]]
-        The first sequence of symbols to be analyzed.
-    seq2 : sequence
-        The second sequence of symbols to be analyzed.
+        First input sequence.
+    seq2 : Union[sequence, str, List[char], List[int]]
+        Second input sequence.
     
     Returns:
     --------
@@ -525,11 +542,11 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq1 : Union[sequence, str, List[char], List[int]]
-        The first sequence of symbols to be analyzed.
-    seq2 : sequence
-        The second sequence of symbols to be analyzed.
+        First input sequence.
+    seq2 : Union[sequence, str, List[char], List[int]]
+        Second input sequence.
     args : LZ_Args
-        The arguments object with parameters for execute the analysis.
+        Object with parameters for execute the analysis.
     
     Returns:
     --------
@@ -544,23 +561,24 @@ void PyLempelZiv(py::module_& m) {
            "alphabet"_a   = 2,
            "log_base"_a   = 2,
            "jobs"_a       = std::thread::hardware_concurrency(),
-           R"pbdoc(
-    Calculates the estimation of information distance between two sequences using lz76 complexity.
+           R"pbdoc(    
+    Estimates the information distance between two sequences using LZ76 complexity.
+    This metric measures how different two sequences are in terms of their information content.
 
     Parameters:
     -----------
     seq1 : Union[sequence, str, List[char], List[int]]
-        The first sequence of symbols to be analyzed.
-    seq2 : sequence
-        The second sequence of symbols to be analyzed.
-    partitions : int
-        The number of partitions used for the parallel suffix array algorithm.
-    alphabet : int
-        Size of the alphabet.
-    log_base : int
-        base for the logarithm.
-    jobs : int
-        Number of threads.
+        First input sequence.
+    seq2 : Union[sequence, str, List[char], List[int]]
+        Second input sequence.
+    partitions : int, optional (default=1)
+        Number of partitions for parallel processing.
+    alphabet : int, optional (default=2)
+        Size of the symbol alphabet.
+    log_base : int, optional (default=2)
+        Base for logarithm calculations.
+    jobs : int, optional (default=hardware_concurrency)
+        Number of parallel threads to use.
 
     Returns:
     --------
@@ -569,15 +587,15 @@ void PyLempelZiv(py::module_& m) {
            )pbdoc")
       //!> Information distance
       .def("lz76RandomShuffleDistance", lz76RandomShuffleDistanceWithoutArgs, "seq1"_a, "seq2"_a, R"pbdoc(
-    Calculates the estimation of information distance between two sequences 
+    Estimate the information distance between two sequences 
     using random shuffle complexity as estimation of mutual information.
 
     Parameters:
     -----------
     seq1 : Union[sequence, str, List[char], List[int]]
-        The first sequence of symbols to be analyzed.
-    seq2 : sequence
-        The second sequence of symbols to be analyzed.
+        First input sequence.
+    seq2 : Union[sequence, str, List[char], List[int]]
+        Second input sequence.
     
     Returns:
     --------
@@ -591,11 +609,11 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq1 : Union[sequence, str, List[char], List[int]]
-        The first sequence of symbols to be analyzed.
-    seq2 : sequence
-        The second sequence of symbols to be analyzed.
+        First input sequence.
+    seq2 : Union[sequence, str, List[char], List[int]]
+        Second input sequence.
     args : LZ_Args
-        The arguments object with parameters for execute the analysis.
+        Object with parameters for execute the analysis.
     
     Returns:
     --------
@@ -617,17 +635,17 @@ void PyLempelZiv(py::module_& m) {
     Parameters:
     -----------
     seq1 : Union[sequence, str, List[char], List[int]]
-        The first sequence of symbols to be analyzed.
-    seq2 : sequence
-        The second sequence of symbols to be analyzed.
-    partitions : int
-        The number of partitions used for the parallel suffix array algorithm.
-    alphabet : int
-        Size of the alphabet.
-    log_base : int
-        base for the logarithm.
-    jobs : int
-        Number of threads.
+        First input sequence.
+    seq2 : Union[sequence, str, List[char], List[int]]
+        Second input sequence.
+    partitions : int, optional (default=1)
+        Number of partitions for parallel processing.
+    alphabet : int, optional (default=2)
+        Size of the symbol alphabet.
+    log_base : int, optional (default=2)
+        Base for logarithm calculations.
+    jobs : int, optional (default=hardware_concurrency)
+        Number of parallel threads to use.
 
     Returns:
     --------

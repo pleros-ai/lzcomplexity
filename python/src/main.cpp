@@ -17,6 +17,7 @@ void PyStructures(py::module_&);
 void PyCaps(py::module_&);
 // void PySais(py::module_&);
 void PyLempelZiv(py::module_&);
+void PySpectral(py::module_&);
 
 NB_MODULE(lzcomplexity, m) {
    m.doc() = R"pbdoc(
@@ -37,6 +38,7 @@ NB_MODULE(lzcomplexity, m) {
    // PySais(m);
    // Lempel-ziv 76 functions
    PyLempelZiv(m);
+   PySpectral(m);
 
 #ifdef VERSION_INFO
    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

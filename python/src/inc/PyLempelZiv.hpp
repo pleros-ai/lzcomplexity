@@ -1,5 +1,12 @@
 #include "utils.hpp"
 
+/**
+ * Generate a function wrapper for sequence operations without arguments
+ * @tparam T Return type of the function
+ * @tparam Fun Function type to be wrapped
+ * @param fun Function to be wrapped
+ * @return Wrapped function that handles different sequence types
+ */
 template<typename T, typename Fun>
 auto generateFunctionWithoutArgs(Fun&& fun) {
    return [fun = std::forward<Fun>(fun)](const seq_type& seq) {
@@ -17,6 +24,13 @@ auto generateFunctionWithoutArgs(Fun&& fun) {
       return cpx;
    };
 }
+/**
+ * Generate a function wrapper for sequence operations without arguments
+ * @tparam T Return type of the function
+ * @tparam Fun Function type to be wrapped
+ * @param fun Function to be wrapped
+ * @return Wrapped function that handles different sequence types
+ */
 template<typename T, typename Fun>
 auto generateFunctionSequenceWithoutArgs(Fun&& fun) {
    return [fun = std::forward<Fun>(fun)](const lz::sequence& seq) { return fun(seq); };
@@ -50,6 +64,13 @@ struct return_function {
    };
 };
 
+/**
+ * Generate a function wrapper for sequence operations with arguments
+ * @tparam T Return type of the function
+ * @tparam Fun Function type to be wrapped
+ * @param fun Function to be wrapped
+ * @return Wrapped function that handles different sequence types with arguments
+ */
 template<typename T, typename Fun>
 auto generateFunctionWithArgs(Fun&& fun) {
    return [fun = std::forward<Fun>(fun)](const seq_type& seq, utl::LZ_Args& args) {
@@ -73,6 +94,13 @@ auto generateFunctionSequenceWithArgs(Fun&& fun) {
    return [fun = std::forward<Fun>(fun)](const lz::sequence& seq, utl::LZ_Args& args) { return fun(seq, args); };
 }
 
+/**
+ * Generate a function wrapper for sequence operations with arguments and flags
+ * @tparam T Return type of the function
+ * @tparam Fun Function type to be wrapped
+ * @param fun Function to be wrapped
+ * @return Wrapped function that handles different sequence types with arguments and flags
+ */
 template<typename T, typename Fun>
 auto generateFunctionWithArgsAndFlags(Fun&& fun) {
    return [fun = std::forward<Fun>(fun)](const seq_type& seq,
@@ -119,6 +147,13 @@ auto generateFunctionSequenceWithArgsAndFlags(Fun&& fun) {
    };
 }
 
+/**
+ * Generate a function wrapper for sequence operations with arguments and flags for shuffle operations
+ * @tparam T Return type of the function
+ * @tparam Fun Function type to be wrapped
+ * @param fun Function to be wrapped
+ * @return Wrapped function that handles different sequence types with arguments and flags for shuffle
+ */
 template<typename T, typename Fun>
 auto generateFunctionWithArgsAndFlagsForShuffle(Fun&& fun) {
    return [fun = std::forward<Fun>(fun)](const seq_type& seq,
@@ -179,6 +214,13 @@ auto generateFunctionSequenceWithoutArgsForDistance(Fun&& fun) {
    };
 }
 
+/**
+ * Generate a function wrapper for sequence distance operations without arguments
+ * @tparam T Return type of the function
+ * @tparam Fun Function type to be wrapped
+ * @param fun Function to be wrapped
+ * @return Wrapped function that handles distance calculations between sequences
+ */
 template<typename T, typename Fun>
 auto generateFunctionWithoutArgsForDistance(Fun&& fun) {
    return [fun = std::forward<Fun>(fun)](const seq_type& seq1, const seq_type& seq2) {

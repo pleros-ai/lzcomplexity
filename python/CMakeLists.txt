@@ -68,8 +68,11 @@ if(NOT Python_FOUND AND NOT Python3_FOUND)
     set(Python_ROOT_DIR "$ENV{pythonLocation}")
   endif()
 
-  # find_package(Python 3.7 REQUIRED)
-  find_package(Python 3.8 COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
+  if (FIXED_PYTHON)
+    find_package(Python ${FIXED_VERSION} EXACT COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
+  else()
+    find_package(Python ${FIXED_VERSION} COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
+  endif()
 endif()
 
 # add_subdirectory(${CMAKE_SOURCE_DIR}/external/pybind11 pybind11)

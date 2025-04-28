@@ -34,7 +34,7 @@ git submodule init
 2. Clone the submodules into your local directory:
 
 ```bash
-git submodule update
+git submodule update --recursive
 ```
 
 3. Apply the oneTBB patch:

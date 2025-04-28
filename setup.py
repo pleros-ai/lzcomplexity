@@ -2,13 +2,41 @@ import os
 import re
 import subprocess
 import sys
+import glob
+import shutil
 from pathlib import Path
 
 from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
-# from setuptools.command.install import install
+from setuptools.command.sdist import sdist as _sdist
 
-__version__ = "0.9.4"
+# Try to use tomli for TOML parsing, fall back to built-in if Python 3.11+
+try:
+    import tomli
+except ImportError:
+    try:
+        import tomllib as tomli
+    except ImportError:
+        tomli = None
+
+# Read version from pyproject.toml
+try:
+    if tomli:
+        with open("pyproject.toml", "rb") as f:
+            pyproject = tomli.load(f)
+        __version__ = pyproject["project"]["version"]
+    else:
+        # Simple fallback parser for Python 3.11+
+        import re
+        with open("pyproject.toml", "r", encoding="utf-8") as f:
+            content = f.read()
+            version_match = re.search(r'version\s*=\s*"([^"]+)"', content)
+            if version_match:
+                __version__ = version_match.group(1)
+            else:
+                __version__ = "0.9.4"  # Fallback version
+except (FileNotFoundError, KeyError, ImportError):
+    __version__ = "0.9.4"  # Fallback version
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {
@@ -22,18 +50,38 @@ PLAT_TO_CMAKE = {
 # A CMakeExtension needs a sourcedir instead of a file list.
 # The name must be the _single_ output extension from the CMake build.
 # If you need multiple extensions, see scikit-build.
+# Enhanced sdist command to include all necessary files
+class EnhancedSDist(_sdist):
+    def run(self):
+        # Make sure all necessary files are included
+        self.announce("Preparing source distribution")
+        # Run the standard sdist
+        _sdist.run(self)
+
+
 class CMakeExtension(Extension):
     def __init__(self, name: str, sourcedir: str = "") -> None:
-        super().__init__(name, sources=[])
+        # Find all source files
+        sources = (
+            glob.glob('modules/core/src/*.cpp') +
+            glob.glob('modules/sa/src/*.cpp') +
+            glob.glob('modules/utils/src/*.cpp') +
+            glob.glob('python/src/*.cpp')
+        )
+
+        # Initialize the extension with all source files
+        super().__init__(name, sources=sources)
+
+        # Set the source directory
         self.sourcedir = os.fspath(Path(sourcedir).resolve())
-        self.sources = [
-            'modules/core/src/lempelziv.cpp', 
-            'modules/core/src/lz76.cpp', 
-            'modules/core/src/sequence.cpp',
-            'modules/sa/src/caps.cpp'
+
+        # Include directories
+        self.include_dirs = [
+            'modules/core/inc',
+            'modules/utils/inc',
+            'modules/sa/inc',
+            'python/src/inc'
         ]
-        # self.include_dirs = ['modules/core/inc', 'modules/utils/inc', 'modules/sa/inc']
-        # self.runtime_library_dirs=["usr/local/lib"]
 
 
 class CMakeBuild(build_ext):
@@ -139,18 +187,27 @@ class CMakeBuild(build_ext):
         #     ["make"], cwd=build_temp, check=True
         # )
 
+# Read long description from README.md
+try:
+    with open("README.md", "r", encoding="utf-8") as f:
+        long_description = f.read()
+except FileNotFoundError:
+    long_description = "LempelZiv-76 complexity engine. Suited for complexity analysis of time series."
+
+
 setup(
     name="lzcomplexity",
     version=__version__,
-    #  url="https://github.com/pybind/python_example",
+    # url="https://github.com/ZentropyUH/LempelZiv",  # Update with your actual repository URL
     author="Efren Aragon",
     author_email="efrenaragon96@gmail.com",
     license="GNU General Public License",
     description="LempelZiv-76 complexity engine",
-    long_description="LempelZiv-76 complexity engine. Suited for complexity analysis of time series.",
+    long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=find_packages(where="python/src", include=["modules/core/*", "modules/utils/*", "modules/sa/*"]),
-    package_dir={"": "python/src"},
+    # Don't use find_packages for C++ extension
+    # packages=find_packages(where="python/src"),
+    # package_dir={"": "python/src"},
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
@@ -161,7 +218,14 @@ setup(
         "Topic :: Scientific/Engineering :: Information Analysis"
     ],
     ext_modules=[CMakeExtension('')],
-    python_requires='>=3.7',
-    cmdclass=dict(build_ext=CMakeBuild),
-    zip_safe=False
+    python_requires='>=3.9',
+    cmdclass={
+        'build_ext': CMakeBuild,
+        'sdist': EnhancedSDist,
+    },
+    zip_safe=False,
+    # Add any Python dependencies here
+    # install_requires=[
+    #     'numpy>=1.20.0',
+    # ],
 )

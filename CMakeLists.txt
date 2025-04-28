@@ -5,16 +5,27 @@
 cmake_minimum_required(VERSION 3.5)
 cmake_policy(VERSION 3.5...3.28)
 
+include(ProcessorCount)
+ProcessorCount(N)
+if(NOT N EQUAL 0)
+    set(CMAKE_BUILD_PARALLEL_LEVEL ${N})
+endif()
+
+# Sanitizer options
 option(ASAN "Enable ASAN (Address Sanitizer) instrumentation " OFF)
 option(ENABLE_ADDRESS_SANITIZER "Build with address sanitizer instrumentation " OFF)
 option(ENABLE_MEMORY_SANITIZER "Build with memory sanitizer instrumentation " OFF)
 option(ENABLE_UNDEFINED_SANITIZER "Build with undefined behavior sanitizer instrumentation " OFF)
+# Library options
 option(BUILTIN_TBB "Use local TBB library" ON)
-option(BUILD_PYTHON "Build python binding of LZ lib" OFF)
 option(LZ_SHARE "Build shared library" ON)
 option(LZ_ONLY_LIBS "Build only the libraries (lzcore, lzapp and lzdist)" OFF)
 option(LZ_ONLY_CORE "Build only the core library" OFF)
-
+# Python options
+option(BUILD_PYTHON "Build python binding of LZ lib" OFF)
+option(FIXED_PYTHON "Look for a fixed python version" OFF)
+set(FIXED_VERSION 3.8 CACHE STRING "The fixed python version to look for")
+# App build options
 option(LZ_APP "Build lzcomplexity standalone" ON)
 option(LZ_DISTANCE "Build lzdistance stadnalone" ON)
 
@@ -30,6 +41,8 @@ project(
     DESCRIPTION ${DESC}
     LANGUAGES CXX
 )
+
+message(STATUS "python fix: ${FIXED_PYTHON} with version ${FIXED_VERSION}")
 
 # Language standards and hard requirements for such.
 set(CMAKE_CXX_STANDARD 20)
@@ -278,4 +291,23 @@ if(BUILD_PYTHON)
   #     COMMAND ${Python3_EXECUTABLE} setup.py install
   #     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})"
   # )
+endif()
+
+# Only enable LTO for Release builds
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT supported OUTPUT error)
+    if(supported)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    endif()
+endif()
+
+# Add compiler and linker options for Release builds
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    if(UNIX)
+        add_compile_options(-Os)
+        add_link_options(-Wl,--gc-sections)
+    elseif(MSVC)
+        add_compile_options(/Os)
+    endif()
 endif()

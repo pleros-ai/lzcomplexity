@@ -141,6 +141,9 @@ inline void read_one_line(const std::string& ip_path, std::vector<lz::sequence>&
       seq.emplace_back("");
    }
 
+   std::cout << "Reading " << ip_path << std::endl;
+   std::cout << "Format: " << format << " - " << MagicValues[format] << std::endl;
+
    try {
       switch (format) {
          case PNM_P1: parser.ReadPBM(in, seq[0], false); break;
