@@ -31,7 +31,7 @@ jobs:
           - ["cp312", "3.12"]
 
     env:
-      name: lzcomplexity-${{ matrix.python }}-${{ matrix.buildplat[0] }}-${{ matrix.buildplat[1] }}
+      name: lzcomplexity-${{ matrix.python[0] }}-${{ matrix.buildplat[0] }}-${{ matrix.buildplat[1] }}
 
     name: • ${{ matrix.buildplat[0] }}-${{ matrix.buildplat[1] }} • ${{ matrix.python[0] }} •
     runs-on: ${{ matrix.buildplat[0] }}
@@ -57,14 +57,35 @@ jobs:
       #     python setup.py sdist
       #     echo "SDIST_FILE=$(basename $(find dist -name '*.tar.gz'))" >> $GITHUB_ENV
 
+      # - name: Generate wheel
+      #   uses: pypa/cibuildwheel@v2.23.2
+      #   with:
+      #     package-dir: .
+      #     output-dir: wheelhouse
+      #   env:
+      #     CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+      #     # CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+      #     CIBW_BEFORE_ALL: "pip install scikit-build-core"
+      #     CIBW_AFTER_BUILD: twine check {wheel}
+      #     CIBW_CMAKE_ARGS: >
+      #       -DPython_EXECUTABLE={python} 
+      #       -DPython_INCLUDE_DIR={python_include} 
+      #       -DPython_LIBRARY={python_lib}
+      #       -DLZ_ONLY_CORE=ON 
+      #       -DBUILD_PYTHON=ON 
+      #       -DFIXED_PYTHON=ON 
+      #       -DFIXED_VERSION=${{ matrix.python[1] }}
+      #     CMAKE_ARGS: "-DLZ_ONLY_CORE=ON -DBUILD_PYTHON=ON -DFIXED_PYTHON=ON -DFIXED_VERSION=${{ matrix.python[1] }}"
+
+      - name: Install cibuildwheel and twine
+        run: python -m pip install cibuildwheel==2.21.1 twine
+
       - name: Generate wheel
-        uses: pypa/cibuildwheel@v2.23.2
-        with:
-          package-dir: .
-          output-dir: wheelhouse
+        run: python -m cibuildwheel --output-dir wheelhouse
         env:
+          # CIBW_PRERELEASE_PYTHONS: True
+          # CIBW_FREE_THREADED_SUPPORT: True
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
-          # CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_BEFORE_ALL: "pip install scikit-build-core"
           CIBW_AFTER_BUILD: twine check {wheel}
           CIBW_CMAKE_ARGS: >
@@ -76,17 +97,6 @@ jobs:
             -DFIXED_PYTHON=ON 
             -DFIXED_VERSION=${{ matrix.python[1] }}
           CMAKE_ARGS: "-DLZ_ONLY_CORE=ON -DBUILD_PYTHON=ON -DFIXED_PYTHON=ON -DFIXED_VERSION=${{ matrix.python[1] }}"
-
-      # - name: Install cibuildwheel and twine
-      #   run: python -m pip install cibuildwheel==2.21.1 twine
-
-      # - name: Generate wheel
-      #   run: python -m cibuildwheel --output-dir wheelhouse
-      #   env:
-      #     CIBW_PRERELEASE_PYTHONS: True
-      #     CIBW_FREE_THREADED_SUPPORT: True
-      #     CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}-${{ matrix.buildplat[2] }}
-      #     CIBW_AFTER_BUILD: twine check {wheel}
 
       # - name: Generate wheel
       #   run: |
