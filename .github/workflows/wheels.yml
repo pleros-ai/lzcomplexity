@@ -49,45 +49,23 @@ jobs:
         with:
           python-version: 3.x
 
-      # - name: Install build dependencies
-      #   run: python -m pip install -U pip setuptools wheel build twine
-
-      # - name: Build sdist
-      #   run: |
-      #     python setup.py sdist
-      #     echo "SDIST_FILE=$(basename $(find dist -name '*.tar.gz'))" >> $GITHUB_ENV
-
-      # - name: Generate wheel
-      #   uses: pypa/cibuildwheel@v2.23.2
-      #   with:
-      #     package-dir: .
-      #     output-dir: wheelhouse
-      #   env:
-      #     CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
-      #     # CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-      #     CIBW_BEFORE_ALL: "pip install scikit-build-core"
-      #     CIBW_AFTER_BUILD: twine check {wheel}
-      #     CIBW_CMAKE_ARGS: >
-      #       -DPython_EXECUTABLE={python} 
-      #       -DPython_INCLUDE_DIR={python_include} 
-      #       -DPython_LIBRARY={python_lib}
-      #       -DLZ_ONLY_CORE=ON 
-      #       -DBUILD_PYTHON=ON 
-      #       -DFIXED_PYTHON=ON 
-      #       -DFIXED_VERSION=${{ matrix.python[1] }}
-      #     CMAKE_ARGS: "-DLZ_ONLY_CORE=ON -DBUILD_PYTHON=ON -DFIXED_PYTHON=ON -DFIXED_VERSION=${{ matrix.python[1] }}"
-
-      - name: Install cibuildwheel and twine
-        run: python -m pip install cibuildwheel==2.21.1 twine
+      - name: Setup macOS
+        if: matrix.buildplat[0] == 'macos-13' || matrix.buildplat[0] == 'macos-14'
+        run: |
+          CIBW="RUNNER_OS=macOS MACOSX_DEPLOYMENT_TARGET=12.0"
+          echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV" 
 
       - name: Generate wheel
-        run: python -m cibuildwheel --output-dir wheelhouse
+        uses: pypa/cibuildwheel@v2.23.2
+        with:
+          package-dir: .
+          output-dir: wheelhouse
         env:
-          # CIBW_PRERELEASE_PYTHONS: True
-          # CIBW_FREE_THREADED_SUPPORT: True
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
           CIBW_BEFORE_ALL: "pip install scikit-build-core"
           CIBW_AFTER_BUILD: twine check {wheel}
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_DEBUG_TRACEBACK: "TRUE"
           CIBW_CMAKE_ARGS: >
             -DPython_EXECUTABLE={python} 
             -DPython_INCLUDE_DIR={python_include} 
@@ -97,37 +75,31 @@ jobs:
             -DFIXED_PYTHON=ON 
             -DFIXED_VERSION=${{ matrix.python[1] }}
           CMAKE_ARGS: "-DLZ_ONLY_CORE=ON -DBUILD_PYTHON=ON -DFIXED_PYTHON=ON -DFIXED_VERSION=${{ matrix.python[1] }}"
+          CIBW_CMAKE_OPTIONS: "-DLZ_ONLY_CORE=ON -DBUILD_PYTHON=ON -DFIXED_PYTHON=ON -DFIXED_VERSION=${{ matrix.python[1] }}"
+
+      # - name: Install cibuildwheel and twine
+      #   run: python -m pip install cibuildwheel==2.21.1 twine
 
       # - name: Generate wheel
-      #   run: |
-      #     python -m pip wheel . --wheel-dir ./dist -v
-      #     for wheel in ./dist/*.whl; do
-      #       twine check "$wheel"
-      #     done
-
-      # - name: Fix macOS wheel ARM
-      #   if: matrix.buildplat[1] == 'macosx_arm64'
-      #   run: |
-      #     python -m pip install --upgrade delocate
-      #     for wheel in ./dist/*.whl; do
-      #       delocate-wheel --require-archs arm64 -w ./wheelhouse -v "$wheel"
-      #     done
-
-      # - name: Fix macOS wheel x86_64
-      #   if: matrix.buildplat[1] == 'macosx_x86_64'
-      #   run: |
-      #     python -m pip install --upgrade delocate
-      #     for wheel in ./dist/*.whl; do
-      #       delocate-wheel --require-archs x86_64 -w ./wheelhouse -v "$wheel"
-      #     done
-
-      # - name: Fix Linux wheel
-      #   if: matrix.buildplat[1] == 'manylinux_x86_64' || matrix.buildplat[1] == 'musllinux_x86_64'
-      #   run: |
-      #     python -m pip install auditwheel
-      #     for wheel in ./dist/*.whl; do
-      #       auditwheel repair --plat manylinux2014_x86_64 -w ./wheelhouse "$wheel"
-      #     done
+      #   run: python -m cibuildwheel --output-dir wheelhouse
+      #   env:
+      #     # CIBW_PRERELEASE_PYTHONS: True
+      #     # CIBW_FREE_THREADED_SUPPORT: True
+      #     CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+      #     CIBW_BEFORE_ALL: "pip install scikit-build-core"
+      #     CIBW_AFTER_BUILD: twine check {wheel}
+      #     CIBW_BUILD_VERBOSITY: 1
+      #     CIBW_DEBUG_TRACEBACK: "TRUE"
+      #     CIBW_CMAKE_ARGS: >
+      #       -DPython_EXECUTABLE={python} 
+      #       -DPython_INCLUDE_DIR={python_include} 
+      #       -DPython_LIBRARY={python_lib}
+      #       -DLZ_ONLY_CORE=ON 
+      #       -DBUILD_PYTHON=ON 
+      #       -DFIXED_PYTHON=ON 
+      #       -DFIXED_VERSION=${{ matrix.python[1] }}
+      #     CMAKE_ARGS: "-DLZ_ONLY_CORE=ON -DBUILD_PYTHON=ON -DFIXED_PYTHON=ON -DFIXED_VERSION=${{ matrix.python[1] }}"
+      #     CIBW_CMAKE_OPTIONS: "-DLZ_ONLY_CORE=ON -DBUILD_PYTHON=ON -DFIXED_PYTHON=ON -DFIXED_VERSION=${{ matrix.python[1] }}"
 
       - uses: actions/upload-artifact@v4
         with:
