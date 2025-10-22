@@ -48,6 +48,7 @@ auto py_effective_spectral_complexity = [](std::vector<double> signal,
                                            int                 block_size,
                                            bool                use_complex,
                                            bool                cut,
+                                           bool                change_shuffle,
                                            int                 step,
                                            bool                use_window,
                                            std::string         win) {
@@ -59,7 +60,7 @@ auto py_effective_spectral_complexity = [](std::vector<double> signal,
    sig.cut         = cut;
    sig.window      = win;
 
-   return lz::effective_spectral_complexity(sig, block_size, step);
+   return lz::effective_spectral_complexity(sig, block_size, step, change_shuffle);
 };
 
 void PySpectral(py::module_& m) {
@@ -178,13 +179,14 @@ void PySpectral(py::module_& m) {
          py_effective_spectral_complexity,
          "signal"_a,
          "sample_frequency"_a,
-         "block_size"_a   = 0,
-         "use_complex"_a  = true,
-         "cut"_a          = false,
-         "step"_a         = 10,
-         "apply_window"_a = false,
-         "win"_a          = "hann"
-                            R"pbdoc(
+         "block_size"_a     = 0,
+         "use_complex"_a    = true,
+         "cut"_a            = false,
+         "change_shuffle"_a = false,
+         "step"_a           = 10,
+         "apply_window"_a   = false,
+         "win"_a            = "hann"
+                              R"pbdoc(
       Calculates the effective spectral complexity of a signal by comparing its spectral entropy
     to the spectral entropy of randomly shuffled versions of the same signal.
     
@@ -211,6 +213,10 @@ void PySpectral(py::module_& m) {
         Whether to segment the signal into blocks of size `sample_frequency`.
         - True: Divides the signal into segments of length `sample_frequency`
         - False: Processes the entire signal as a single segment
+    change_shuffle: bool, optional (default=False)
+        Modify the order where shuffle is apply into the process
+        - True: Apply the shuffle to PSD
+        - False: Apply the shuffle to signal
     step : int, optional (default=10)
         Step size for processing when cutting the signal into segments.
         Only relevant when `cut=True`. Smaller values provide more overlap between segments.

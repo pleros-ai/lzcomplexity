@@ -53,10 +53,11 @@
                                                // bits (if any).
 #endif
 
-typedef enum { PNM_P1, PNM_P2, PNM_P3, PNM_P4, PNM_P5, PNM_P6, PNM_P7, PNM_RAWTXT, PNM_RAWBIN, CSV, AUTO } MagickNumber;
+typedef enum { PNM_P1, PNM_P2, PNM_P3, PNM_P4, PNM_P5, PNM_P6, PNM_P7, PNM_RAWTXT, PNM_RAWBIN, CSV, TCSV, AUTO } MagickNumber;
 
 inline std::unordered_map<MagickNumber, std::string> MagicValues{
    {MagickNumber::CSV, "CSV"},
+   {MagickNumber::TCSV, "CSV"},
    {MagickNumber::AUTO, "AUTO"},
    {MagickNumber::PNM_P1, "PNM_P1"},
    {MagickNumber::PNM_P2, "PNM_P2"},

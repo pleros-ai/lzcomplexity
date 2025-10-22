@@ -20,13 +20,14 @@ inline std::unordered_map<std::string, CMD_OPT> opt_list{
      "Random shuffle complexity with Z sequence generated with the both halves of original sequence."}},
    {"excess_opt",
     {"e,excess-options",
-     "Random shuffle complexity options for calculation. v1: maximum value for block shuffling, f: summands output, "
+     "Random shuffle complexity options for calculation. v1: maximum value for block shuffling, f: summand factors, "
      "v2: "
-     "starting line for summands output, v3: ending line for summands output. All values are optionals"}},
+     "starting line for summand factors, v3: ending line for summand factors. All values are optionals"}},
    {"factors", {"f,factors", "Saves the factorization."}},
    {"format",
     {"F,format",
-     "Input file format. TXT for raw text format. CSV the input file is a csv array. PBM, PGM and PNM is for "
+     "Input file format. TXT for raw text format. CSV the input file is a csv array with ',' as delimiter. TCSV the "
+     "input file is a csv array with ' ' as delimiter. PBM, PGM and PNM is for "
      "the family of the graphic formats."}},
    {"help", {"h,help", "Show this message."}},
    {"mixed",

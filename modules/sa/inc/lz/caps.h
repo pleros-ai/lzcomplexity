@@ -65,7 +65,7 @@ namespace lz {
       // The Suffix Array (SA) and the Longest Common Prefix (LCP) array constructor
       // class for some given sequence.
       class CaPS_SA {
-     private:
+     protected:
          std::vector<char>   T_;     //!> The input text.
          lz_int              n_;     //!> Length of the input text.
          std::vector<lz_int> SA_;    //!> The suffix array.

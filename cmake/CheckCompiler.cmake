@@ -195,7 +195,7 @@ int main() {}
 " GLIBCXX_USE_CXX11_ABI)
 
 string(REGEX REPLACE "-[UD]NDEBUG(=.*)?" "" "CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}" "${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}}")
-string(REGEX REPLACE "-O3 " "-Ofast" "CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}" "${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}}")
+string(REGEX REPLACE "-O3 " "-O3" "CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}" "${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}}")
 
 #---Print the final compiler flags--------------------------------------------------------------------
 message(STATUS "Platform: ${LZ_PLATFORM}")

@@ -55,5 +55,8 @@ namespace lz {
    auto spectral_entropy(const Signal& signal, int step = 10) -> double;
 
    // auto effective_spectral_complexity(const std::vector<double>& signal) -> double;
-   auto effective_spectral_complexity(const Signal& signal, int block_size = 0, int step = 10) -> double;
+   auto effective_spectral_complexity(const Signal& signal,
+                                      int           block_size     = 0,
+                                      int           step           = 10,
+                                      bool          change_shuffle = false) -> double;
 }  // namespace lz

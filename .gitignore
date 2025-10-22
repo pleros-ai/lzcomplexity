@@ -43,6 +43,7 @@
 /_packages/**
 /dist/**
 /build/**
+/modules/sa/sa_build/**
 /bin/**
 /install/**
 /data/**

@@ -366,14 +366,46 @@ namespace lz {
       return {res, mm};
    }
 
-   auto effective_spectral_complexity(const Signal& signal, lz_int block_size, lz_int step) -> double {
+   std::pair<std::vector<double>, lz_size> ShuffleSpectralSignal(const std::vector<double>& signal,
+                                                                 lz_int                     block_size = 0) {
+      lz_int mm = block_size;
+      if (mm <= 0) {
+         mm = utils::max_block_size(signal.size());  // the maximum number for the sum in the entropy estimation
+         mm += signal.size() > 50 ? 10 : 0;          // begin aggressive
+      }
+
+      std::vector<double> res(mm + 3);  // Reserve the number of blocks for shuffling + 3
+
+      auto fun = [&res, &signal](lz_size idx) {
+         auto rand_seq = Shuffle(signal, idx, signal.size() / 2);  // Shuffling is made for half the
+                                                                   // size of the sequence, hope that is enough
+         auto spectral_random_h = spectral_entropy(signal);
+         res[idx]               = spectral_random_h;
+      };
+
+      utils::parallel_for(1, mm + 1, fun);
+
+      return {res, mm};
+   }
+
+   auto effective_spectral_complexity(const Signal& signal, lz_int block_size, lz_int step, bool change_shuffle)
+      -> double {
       std::pair<std::vector<lz_double>, lz_size> random_spectral_entropy;
       lz_int                                     spectral_entropy_h;
 
-      auto factor_fun = [&]() { spectral_entropy_h = spectral_entropy(signal, step); };
-      auto rand_fun   = [&]() { random_spectral_entropy = ShuffleSpectralSignal(signal, block_size); };
+      if (!change_shuffle) {
+         auto factor_fun = [&]() { spectral_entropy_h = spectral_entropy(signal, step); };
+         auto rand_fun   = [&]() { random_spectral_entropy = ShuffleSpectralSignal(signal, block_size); };
 
-      utils::par_do(factor_fun, rand_fun);
+         utils::par_do(factor_fun, rand_fun);
+      } else {
+         auto new_signal = process_signal(signal, step);
+
+         auto factor_fun = [&]() { spectral_entropy_h = spectral_entropy(new_signal); };
+         auto rand_fun   = [&]() { random_spectral_entropy = ShuffleSpectralSignal(new_signal, block_size); };
+
+         utils::par_do(factor_fun, rand_fun);
+      }
 
       // auto [H_rand, mm] = random_spectral_entropy;
       auto H_rand = random_spectral_entropy.first;

@@ -124,7 +124,7 @@ lz::lz_int process(lz_options& opt) {
       std::cout << print_msg(MSG::INFO, "Sequence to process: " + std::to_string(data.size())) << std::endl;
       std::map<lz::lz_int, lz::lz_int> map_size;
       for (auto&& x: data) {
-         if (x.length() < 5e3) {
+         if (x.size() < 5e3) {
             ignore_parallel = true;
          }
 
@@ -145,7 +145,7 @@ lz::lz_int process(lz_options& opt) {
          std::cout << std::endl;
    }
 
-   if (!opt.warn_out) {
+   if (!opt.warn_out && ignore_parallel) {
       std::cout << print_msg(MSG::WARRING, warn_data_size) << std::endl << std::endl;
    }
 

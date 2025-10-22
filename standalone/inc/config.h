@@ -42,9 +42,9 @@ struct lz_options {
 
       if (result.count("output")) {
          output = result["output"].as<std::string>();
-         output = output.empty() ? input + ".lz76.json" : output;
+         output = output.empty() ? std::filesystem::path(input).replace_extension(".lz76.json").string() : output;
       } else {
-         output = input + ".lz76.json";
+         output = std::filesystem::path(input).replace_extension(".lz76.json").string();
       }
 
       if (result.count("factors")) {
@@ -84,6 +84,7 @@ struct lz_options {
          case utl::hash("txt"):
          case utl::hash("rawtxt"): input_format = MagickNumber::PNM_RAWTXT; break;
          case utl::hash("csv"): input_format = MagickNumber::CSV; break;
+         case utl::hash("tcsv"): input_format = MagickNumber::TCSV; break;
          default: input_format = MagickNumber::AUTO; break;
       }
 
@@ -146,7 +147,7 @@ struct lz_options {
          out << "PGM" << std::endl;
       } else if (opt.input_format == MagickNumber::PNM_RAWTXT || opt.input_format == MagickNumber::PNM_RAWBIN) {
          out << "TXT" << std::endl;
-      } else if (opt.input_format == MagickNumber::CSV) {
+      } else if (opt.input_format == MagickNumber::CSV || opt.input_format == MagickNumber::TCSV) {
          out << "CSV" << std::endl;
       } else {
          out << "AUTO" << std::endl;
