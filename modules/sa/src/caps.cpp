@@ -38,7 +38,7 @@ namespace lz {
         , LCP_()
         , SA_w(nullptr)
         , LCP_w(nullptr)
-        , p_(subproblem_count > 0 ? subproblem_count : default_subproblem_count)
+        , p_(subproblem_count)
         , max_context(max_context > 0 ? max_context : n_)
         , pivot_(nullptr)
         , pivot_per_part_(p_ == 1 ? 1 : p_ - 1)
@@ -55,7 +55,7 @@ namespace lz {
         , LCP_()
         , SA_w(nullptr)
         , LCP_w(nullptr)
-        , p_(args.chunks > 0 ? args.chunks : default_subproblem_count)
+        , p_(args.chunks)
         , max_context(args.max_context > 0 ? args.max_context : n_)
         , pivot_(nullptr)
         , pivot_per_part_(p_ == 1 ? 1 : p_ - 1)
@@ -502,6 +502,13 @@ namespace lz {
          T_ = std::move(T);
          n_ = n;
 
+         p_ = p_ > 0     ? p_
+             : n_ < 100  ? 1
+             : n_ < 1e6  ? utils::num_workers()
+             : n_ < 1e7  ? 100
+                         : default_subproblem_count;
+         c     = p_ == 1 ? 1 : p_ - 1;
+
          refresh();
          return construct();
       }
@@ -511,6 +518,12 @@ namespace lz {
 
          // T_ = std::vector<const char>();
          n_ = T.length();
+         p_ = p_ > 0     ? p_
+             : n_ < 100  ? 1
+             : n_ < 1e6  ? utils::num_workers()
+             : n_ < 1e7  ? 100
+                         : default_subproblem_count;
+         c     = p_ == 1 ? 1 : p_ - 1;
 
          refresh();
          return construct();

@@ -435,7 +435,7 @@ auto main(int argc, char const* argv[]) -> int {
       opt_list["output"].option_value, opt_list["output"].description, cxxopts::value<std::string>(), "file_name");
    opt_group(opt_list["partitions"].option_value,
              opt_list["partitions"].description,
-             cxxopts::value<lz::lz_int>()->default_value("2"),
+             cxxopts::value<lz::lz_int>()->default_value("0"),
              "value");
    opt_group(opt_list["verbose"].option_value,
              opt_list["verbose"].description,

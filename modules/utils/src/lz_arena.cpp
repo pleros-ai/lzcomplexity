@@ -13,20 +13,20 @@ namespace lz {
    namespace internal {
 
       // To honor cgroup quotas if set: see https://github.com/oneapi-src/oneTBB/issues/190
-      int CPU_Bandwidth() {
+      lz_int CPU_Bandwidth() {
 #ifdef R__LINUX
          // Check for CFS bandwith control
          std::ifstream f("/sys/fs/cgroup/cpuacct/cpu.cfs_quota_us");  // quota file
          if (f) {
-            float cfs_quota;
+            lz_float cfs_quota;
             f >> cfs_quota;
             f.close();
             if (cfs_quota > 0) {
                f.open("/sys/fs/cgroup/cpuacct/cpu.cfs_period_us");  // period file
-               float cfs_period;
+               lz_float cfs_period;
                f >> cfs_period;
                f.close();
-               return static_cast<int>(std::ceil(cfs_quota / cfs_period));
+               return static_cast<lz_int>(std::ceil(cfs_quota / cfs_period));
             }
          }
 #endif
