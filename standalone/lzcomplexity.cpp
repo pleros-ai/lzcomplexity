@@ -46,7 +46,7 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
       if (w_rsc.summands.size() > 0) {
          out_data["sequences"][i]["lz76RandomShuffleComplexity"]["summands"] = w_rsc.summands;
       }
-
+#ifdef PLEROS_INTERNAL
       if (!opt.entropy_density && opt.get_paired_shuffle) {
          auto rsc = lz_result.getPairedShuffleComplexity();
 
@@ -57,6 +57,7 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
             out_data["sequences"][i]["lz76PairedShuffleComplexity"]["summands"] = rsc.summands;
          }
       }
+#endif
 
       if (!opt.multiLine)
          break;
@@ -67,9 +68,11 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
       out_data["lz76Distance"]["InformationDistance"]   = results.info_distance;
    }
 
+#ifdef PLEROS_INTERNAL
    if (opt.mixed_entropy) {
       out_data["lz76MixedEntropyDensity"] = results.mixed_entropy_density;
    }
+#endif
 
    std::ofstream out(opt.output);
    if (out.is_open() && out.good()) {
@@ -275,6 +278,7 @@ lz::lz_int process(lz_options& opt) {
       }
    }
 
+#ifdef PLEROS_INTERNAL
    if (!opt.entropy_density && opt.get_paired_shuffle) {
       if (opt.verbose) {
          std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating paired shuffle complexity\n"
@@ -308,7 +312,9 @@ lz::lz_int process(lz_options& opt) {
                    << std::endl;
       }
    }
+#endif
 
+#ifdef PLEROS_INTERNAL
    if (opt.mixed_entropy) {
       if (opt.verbose) {
          std::cout << lz::GREEN_COLOR << "2." << verbose_index++
@@ -329,6 +335,7 @@ lz::lz_int process(lz_options& opt) {
                    << std::endl;
       }
    }
+#endif
 
    if (opt.find_distance) {
       if (opt.verbose) {
@@ -408,8 +415,10 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<std::string>()->default_value("AUTO"),
              "value");
    opt_group(opt_list["help"].option_value, opt_list["help"].description);
+#ifdef PLEROS_INTERNAL
    opt_group(
       opt_list["mixed"].option_value, opt_list["mixed"].description, cxxopts::value<bool>()->default_value("false"));
+#endif
    opt_group(opt_list["jobs"].option_value,
              opt_list["jobs"].description,
              cxxopts::value<lz::lz_uint>()->default_value(std::to_string(std::thread::hardware_concurrency())),
@@ -436,7 +445,9 @@ auto main(int argc, char const* argv[]) -> int {
              cxxopts::value<bool>()->default_value("false"));
    opt_group(
       opt_list["warn"].option_value, opt_list["warn"].description, cxxopts::value<bool>()->default_value("false"));
+#ifdef PLEROS_INTERNAL
    opt_group(opt_list["shuffle"].option_value, opt_list["shuffle"].description);
+#endif
 
    try {
       auto result = options.parse(argc, argv);

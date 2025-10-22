@@ -28,6 +28,8 @@ set(FIXED_VERSION 3.8 CACHE STRING "The fixed python version to look for")
 # App build options
 option(LZ_APP "Build lzcomplexity standalone" ON)
 option(LZ_DISTANCE "Build lzdistance stadnalone" ON)
+# Enable Pleros internal features (mixed entropy and paired shuffle)
+option(PLEROS_INTERNAL "Enable internal Pleros features (mixed entropy and paired shuffle)" OFF)
 
 set(PROJECT_NAME lztools)
 set(DESC "Stadnalone applications of lzcomplexity and lzdistance")
@@ -217,6 +219,10 @@ if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
             $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         )
+    # Add PLEROS_INTERNAL definition if enabled
+    if(PLEROS_INTERNAL)
+      target_compile_definitions(${PROJECT_NAME} PRIVATE PLEROS_INTERNAL)
+    endif()
     target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
     target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
     target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})

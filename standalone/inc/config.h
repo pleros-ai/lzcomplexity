@@ -31,8 +31,10 @@ struct lz_options {
    bool         save_results       = false;  //! @deprecated --> remove in final version
    bool         verbose            = false;
    bool         warn_out           = false;
+#ifdef PLEROS_INTERNAL
    bool         mixed_entropy      = false;
    bool         get_paired_shuffle = false;
+#endif
 
    // Internal setting for Pleros
    std::string json_params;
@@ -60,8 +62,10 @@ struct lz_options {
       verbose            = result["verbose"].as<bool>();
       warn_out           = result["warn-out"].as<bool>();
       entropy_density    = result["entropy-density"].as<bool>();
+#ifdef PLEROS_INTERNAL
       mixed_entropy      = result["mixed-entropy"].as<bool>();
       get_paired_shuffle = result["zseq-shuffle"].as<bool>();
+#endif
       // preprocess      = result["process"].as<bool>();
 
       json_params = result["json"].as<std::string>();
@@ -234,8 +238,10 @@ inline void process_json_params(lz_options& opt, std::string file) {
       }
    }
 
+#ifdef PLEROS_INTERNAL
    if (json_opt.contains("get_paired_shuffle"))
       opt.get_paired_shuffle = json_opt["get_paired_shuffle"];
+#endif
    // Arguments for LZ76 algoeithms
    if (json_opt.contains("partitions"))
       opt.args.chunks = json_opt["partitions"];

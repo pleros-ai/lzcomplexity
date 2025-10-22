@@ -25,9 +25,9 @@ inline std::vector<std::string> split(const std::string& s, char delim) {
    std::string              token;
    std::istringstream       tokenStream(s);
    while (std::getline(tokenStream, token, delim)) {
-     if(token.size() > 0) { 
-       tokens.push_back(token);
-     }
+      if (token.size() > 0) {
+         tokens.push_back(token);
+      }
    }
    return tokens;
 }
@@ -72,7 +72,8 @@ inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
 }
 
 // Read a csv file with multiple columns (date per column)
-inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text_col, bool multiline, char delimiter = ',') {
+inline void
+   read_csv(const std::string& ip_path, std::vector<lz::sequence>& text_col, bool multiline, char delimiter = ',') {
    namespace fs = std::filesystem;
    std::error_code ec;
    const auto      file_size = fs::file_size(ip_path, ec);
@@ -102,7 +103,7 @@ inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text
 
    while (auto line = input.next_line()) {
       std::string str(line);
-      auto        rows = split(str, delimiter); 
+      auto        rows = split(str, delimiter);
       for (size_t i = 0; i < data_size; i++) {
          text_col[i] += rows[i];
       }
