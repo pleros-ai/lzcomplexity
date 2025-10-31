@@ -58,8 +58,8 @@ endif()
 add_library(lz::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 # Suffix array algorithms form part of the core
-add_subdirectory(${CMAKE_SOURCE_DIR}/modules/sa sa)
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
+add_subdirectory(${CMAKE_SOURCE_DIR}/modules/sa sa)
 message(STATUS "headers for ${PROJECT_NAME}: ${public_headers}")
 
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})

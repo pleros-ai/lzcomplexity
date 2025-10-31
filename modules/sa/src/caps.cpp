@@ -469,11 +469,26 @@ namespace lz {
       void CaPS_SA::clean_up() {
          const auto t_s = now();
 
-         std::free(SA_w);
-         std::free(LCP_w);
+         if (SA_w != nullptr){
+            std::free(SA_w);
+            SA_w = nullptr;
+         }
+         
+         if (LCP_w != nullptr){
+            std::free(LCP_w);
+            LCP_w = nullptr;
+         }
 
-         std::free(pivot_);
-         std::free(part_size_scan_);
+         if (pivot_ != nullptr){
+            std::free(pivot_);
+            pivot_ = nullptr;
+         }
+         
+         if (part_size_scan_ != nullptr){
+            std::free(part_size_scan_);
+            part_size_scan_ = nullptr;
+         }
+
          // std::free(part_ruler_);
 
          const auto t_e = now();
