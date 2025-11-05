@@ -2,7 +2,7 @@
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
-#define VERSION_INFO 0.9.5
+#define VERSION_INFO 0.9.6
 
 int add(int i, int j) {
    return i + j;
@@ -23,7 +23,7 @@ NB_MODULE(lzcomplexity, m) {
    m.doc() = R"pbdoc(
     _    ____  ____ __                      LempelZiv  -  description
    | |  |_  /_|__  / /                    -----------------------------
-   | |__ / /___|/ / _ \      LempelZiv analysis engine v0.9.5 2025 by Efren Aragon Perez.
+   | |__ / /___|/ / _ \      LempelZiv analysis engine v0.9.6 2025 by Efren Aragon Perez.
    |____/___|  /_/\___/  Send bug reports to estevez@fisica.uh.cu or efrenaragon96@gmail.com.
 
     )pbdoc";

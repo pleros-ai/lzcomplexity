@@ -35,7 +35,7 @@ set(PROJECT_NAME lztools)
 set(DESC "Stadnalone applications of lzcomplexity and lzdistance")
 set(namespace "lz")
 set(component "runtime")
-set(VERSION 0.9.5)
+set(VERSION 0.9.6)
 
 project(
     ${PROJECT_NAME}
