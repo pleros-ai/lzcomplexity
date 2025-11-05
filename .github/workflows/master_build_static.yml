@@ -1,12 +1,8 @@
 # This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms for lztools
+name: CMake on multiple platforms for lztools with static libs
 
 on:
-  push:
-    # branches: ["main"]
-    tags:
-      - 'v*'
   workflow_dispatch:
 
 
@@ -109,7 +105,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_SHARE=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
 
       - name: Build
@@ -189,7 +185,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_SHARE=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
 
       - name: Build
@@ -245,7 +241,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_SHARE=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
   
       - name: Build
