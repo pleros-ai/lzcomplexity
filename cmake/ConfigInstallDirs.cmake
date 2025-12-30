@@ -73,14 +73,14 @@ endif()
 # the cache and store the defaults in local variables if the cache values are
 # not set explicitly.  This auto-updates the defaults as DATAROOTDIR changes.
 
-# if(NOT CMAKE_INSTALL_MANDIR)
-#   set(CMAKE_INSTALL_MANDIR "" CACHE PATH "man documentation (DATAROOTDIR/man)")
-#   if(gnuinstall)
-#     set(CMAKE_INSTALL_MANDIR "${CMAKE_INSTALL_DATAROOTDIR}/man")
-#   else()
-#     set(CMAKE_INSTALL_MANDIR "man")
-#   endif()
-# endif()
+if(NOT CMAKE_INSTALL_MANDIR)
+  set(CMAKE_INSTALL_MANDIR "" CACHE PATH "man documentation (DATAROOTDIR/man)")
+  if(gnuinstall)
+    set(CMAKE_INSTALL_MANDIR "${CMAKE_INSTALL_DATAROOTDIR}/man")
+  else()
+    set(CMAKE_INSTALL_MANDIR "man")
+  endif()
+endif()
 
 
 if(NOT CMAKE_INSTALL_SRCDIR)

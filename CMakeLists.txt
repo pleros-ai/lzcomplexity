@@ -27,7 +27,9 @@ option(FIXED_PYTHON "Look for a fixed python version" OFF)
 set(FIXED_VERSION 3.8 CACHE STRING "The fixed python version to look for")
 # App build options
 option(LZ_APP "Build lzcomplexity standalone" ON)
-option(LZ_DISTANCE "Build lzdistance stadnalone" ON)
+option(LZ_DISTANCE "Build lzdistance standalone" ON)
+# Documentation options
+option(LZ_INSTALL_MAN "Install man pages" ON)
 # Enable Pleros internal features (mixed entropy and paired shuffle)
 option(PLEROS_INTERNAL "Enable internal Pleros features (mixed entropy and paired shuffle)" OFF)
 
@@ -282,6 +284,21 @@ if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
 
   if (LZ_APP AND LZ_DISTANCE)
     set(PROJECT_NAME lztools)
+  endif()
+
+  # Install man pages
+  if(LZ_INSTALL_MAN)
+    set(MAN_INSTALL_DIR "${CMAKE_INSTALL_MANDIR}/man1")
+    if(LZ_APP AND EXISTS "${CMAKE_SOURCE_DIR}/doc/man/lzcomplexity.1")
+      install(FILES "${CMAKE_SOURCE_DIR}/doc/man/lzcomplexity.1"
+              DESTINATION "${MAN_INSTALL_DIR}"
+              COMPONENT documentation)
+    endif()
+    if(LZ_DISTANCE AND EXISTS "${CMAKE_SOURCE_DIR}/doc/man/lzdistance.1")
+      install(FILES "${CMAKE_SOURCE_DIR}/doc/man/lzdistance.1"
+              DESTINATION "${MAN_INSTALL_DIR}"
+              COMPONENT documentation)
+    endif()
   endif()
 
   include(packaging)

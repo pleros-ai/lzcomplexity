@@ -1,0 +1,162 @@
+.\" Man page for lzcomplexity
+.\" Contact estevez@fisica.uh.cu or efrenaragon96@gmail.com for corrections.
+.TH LZCOMPLEXITY 1 "December 2024" "lzcomplexity 0.9.6" "User Commands"
+.SH NAME
+lzcomplexity \- compute Lempel-Ziv 76 complexity and entropy measures for symbolic sequences
+.SH SYNOPSIS
+.B lzcomplexity
+[\fIOPTIONS\fR] \fIfile\fR
+.SH DESCRIPTION
+.B lzcomplexity
+is a high-performance tool for computing entropy and complexity measures of symbolic sequences based on the Lempel-Ziv 76 (LZ76) factorization algorithm.
+.PP
+The program computes the LZ76 complexity, entropy density, excess entropy by random shuffling, and information distance between sequences. Results are output in JSON format.
+.SH OPTIONS
+.TP
+.BR \-a ", " \-\-alphabet =\fIvalue\fR
+Alphabet cardinality. If not specified, the program attempts to automatically determine the alphabet size from the input data.
+.TP
+.BR \-d ", " \-\-dlz
+Calculate the LZ distance between consecutive lines. Only valid when used with the \fB\-m\fR option for multiline files.
+.TP
+.BR \-e ", " \-\-excess\-options =\fI[v1]:[f]:[v2]:[v3]\fR
+Random shuffle complexity calculation options:
+.RS
+.IP \fIv1\fR
+Maximum value for block shuffling.
+.IP \fIf\fR
+Enable summand factors output.
+.IP \fIv2\fR
+Starting line for summand factors.
+.IP \fIv3\fR
+Ending line for summand factors.
+.PP
+All values are optional.
+.RE
+.TP
+.BR \-f ", " \-\-factors =\fIfile_name\fR
+Save the LZ76 factorization to the specified file.
+.TP
+.BR \-F ", " \-\-format =\fIvalue\fR
+Input file format. Supported formats:
+.RS
+.IP \fBTXT\fR
+Raw text format (default).
+.IP \fBCSV\fR
+Comma-separated values with ',' as delimiter.
+.IP \fBTCSV\fR
+Tab/space-separated values with ' ' as delimiter.
+.IP \fBPBM\fR
+Portable Bitmap format.
+.IP \fBPGM\fR
+Portable Graymap format.
+.IP \fBPNM\fR
+Portable Anymap format.
+.IP \fBAUTO\fR
+Automatic format detection.
+.RE
+.TP
+.BR \-h ", " \-\-help
+Display help message and exit.
+.TP
+.BR \-j ", " \-\-jobs =\fIvalue\fR
+Number of threads for parallel computation. Default is the number of available CPU cores.
+.TP
+.BR \-l ", " \-\-log\-base =\fIvalue\fR
+Logarithm base for entropy calculations. Default is the alphabet cardinality.
+.TP
+.BR \-m ", " \-\-multi\-line
+Treat each line in the input file as a separate sequence.
+.TP
+.BR \-n ", " \-\-entropy\-density
+Compute only the entropy density (skip shuffle complexity calculations).
+.TP
+.BR \-o ", " \-\-output =\fIfile_name\fR
+Output filename for results. Default appends \fI.lz76.json\fR extension to the input filename.
+.TP
+.BR \-p ", " \-\-partitions =\fIvalue\fR
+Number of partitions for the parallel suffix array construction algorithm (CaPS). Default is automatically determined.
+.TP
+.BR \-v ", " \-\-verbose
+Enable verbose output showing progress and intermediate results.
+.TP
+.BR \-V ", " \-\-version
+Display version information and exit.
+.TP
+.BR \-w ", " \-\-warn\-out
+Suppress warning messages.
+.SH OUTPUT FORMAT
+Results are saved in JSON format containing:
+.IP \(bu 2
+\fBlz76Complexity\fR: The LZ76 factorization complexity (number of factors).
+.IP \(bu 2
+\fBlz76EntropyDensity\fR: Normalized entropy density estimate.
+.IP \(bu 2
+\fBlz76RandomShuffleComplexity\fR: Excess entropy estimated by random shuffling.
+.IP \(bu 2
+\fBlz76Distance\fR: Information distance metrics (when \fB\-d\fR is used).
+.SH THEORETICAL BACKGROUND
+The LZ76 complexity \fIc(S)\fR of a sequence \fIS\fR of length \fIn\fR is the minimum number of factors in a factorization where each factor is either a new symbol or the longest substring that appeared earlier.
+.PP
+The normalized entropy density \fIh\fR is estimated as:
+.PP
+.RS
+h ≈ c(S) · log_k(n) / n
+.RE
+.PP
+where \fIk\fR is the alphabet size. This converges to the true entropy rate for ergodic sources as \fIn → ∞\fR.
+.SH EXAMPLES
+Compute LZ76 complexity for a text file:
+.PP
+.RS
+.B lzcomplexity data.txt
+.RE
+.PP
+Process a multiline file with verbose output:
+.PP
+.RS
+.B lzcomplexity \-m \-v sequences.txt
+.RE
+.PP
+Compute only entropy density using 4 threads:
+.PP
+.RS
+.B lzcomplexity \-n \-j 4 data.txt
+.RE
+.PP
+Process a CSV file and save results to a specific file:
+.PP
+.RS
+.B lzcomplexity \-F csv \-o results.json data.csv
+.RE
+.SH EXIT STATUS
+.TP
+.B 0
+Successful execution.
+.TP
+.B 1
+An error occurred (invalid input, file not found, etc.).
+.SH FILES
+.TP
+.I input.lz76.json
+Default output file (input filename with .lz76.json extension).
+.TP
+.I input.log
+Log file created when warnings occur.
+.SH SEE ALSO
+.BR lzdistance (1)
+.SH REFERENCES
+.IP 1. 4
+Lempel, A., & Ziv, J. (1976). On the complexity of finite sequences. \fIIEEE Transactions on Information Theory\fR, 22(1), 75-81.
+.IP 2. 4
+Kontoyiannis, I., et al. (1998). Nonparametric entropy estimation for stationary processes and random fields. \fIIEEE Transactions on Information Theory\fR, 44(3), 1319-1327.
+.IP 3. 4
+Khan, J., et al. (2023). Fast, Parallel, and Cache-Friendly Suffix Array Construction. \fIarXiv:2305.07024\fR.
+.SH BUGS
+Report bugs to estevez@fisica.uh.cu or efrenaragon96@gmail.com.
+.SH AUTHORS
+Efren Aragon Perez <efrenaragon96@gmail.com>
+.br
+Ernesto Estevez Rams <estevez@fisica.uh.cu>
+.SH COPYRIGHT
+Copyright \(co 2024 Efren Aragon Perez. License: MIT.
