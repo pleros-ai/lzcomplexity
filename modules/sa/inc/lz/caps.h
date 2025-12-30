@@ -59,58 +59,100 @@ constexpr std::size_t hardware_constructive_interference_size = 64;
 constexpr std::size_t hardware_destructive_interference_size  = 64;
 #endif
 
+/**
+ * @file caps.h
+ * @brief CaPS (Cache-friendly Parallel Suffix array) algorithm implementation.
+ *
+ * Implements a fast, parallel, and cache-friendly suffix array construction
+ * algorithm based on the paper by Khan et al. (2023).
+ */
 namespace lz {
    namespace suffixarray {
 
-      // The Suffix Array (SA) and the Longest Common Prefix (LCP) array constructor
-      // class for some given sequence.
+      /**
+       * @brief Cache-friendly Parallel Suffix array (CaPS) construction algorithm.
+       *
+       * Implements parallel suffix array and LCP array construction using a
+       * divide-and-conquer approach optimized for cache efficiency. The algorithm
+       * divides the problem into p subproblems, sorts them independently in parallel,
+       * then merges using pivot-based partitioning.
+       *
+       * Key features:
+       * - Parallel construction using OneTBB
+       * - Cache-friendly memory access patterns
+       * - Configurable subproblem count for load balancing
+       * - Optional AVX2 optimization for LCP computation
+       *
+       * @note Preferred over SAIS for large inputs on multi-core systems.
+       */
       class CaPS_SA {
      protected:
-         std::vector<char>   T_;     //!> The input text.
-         lz_int              n_;     //!> Length of the input text.
-         std::vector<lz_int> SA_;    //!> The suffix array.
-         std::vector<lz_int> LCP_;   //!> The LCP array.
-         lz_int*             SA_w;   //!> Working space for the SA construction.
-         lz_int*             LCP_w;  //!> Working space for the LCP construction.
-         // TODO: make constant and delete copy constructor and equal operators
-         lz_int  p_;                       //!> Count of subproblems used in construction.
-         lz_int  max_context;              //!> Maximum prefix-context length for comparing suffixes.
-         lz_int* pivot_;                   //!> Pivots for the global suffix array.
-         lz_int  pivot_per_part_;          //!> Number of pivots to sample per sub-array.
-         lz_int* part_size_scan_;          //!> Inclusive scan (prefix sum) of the sizes of the pivoted final
-                                           //! partitions containing appropriate sorted sub-subarrays.
-         std::vector<lz_int> part_ruler_;  //!> "Ruler" for the partitions—contains the indices of each
-                                           //! sub-sub-array in each partition.
-         std::atomic_uint64_t solved_;     //!> Progress tracker—number of subproblems solved in some step.
-         lz_int               c;           //!> constant for select the number of pivots by partitions
+         std::vector<char> T_;       ///< The input text.
+         lz_int n_;                  ///< Length of the input text.
+         std::vector<lz_int> SA_;    ///< The computed suffix array.
+         std::vector<lz_int> LCP_;   ///< The computed LCP array.
+         lz_int* SA_w;               ///< Working space for SA construction.
+         lz_int* LCP_w;              ///< Working space for LCP construction.
 
-         static constexpr lz_int default_subproblem_count = 8192;  //!> Default subproblem-count to use in construction.
-         static constexpr lz_int nested_par_grain_size    = (100);  //!> Granularity for nested parallelism to kick in.
+         lz_int p_;                  ///< Number of subproblems for parallel construction.
+         lz_int max_context;         ///< Maximum prefix length for suffix comparison.
+         lz_int* pivot_;             ///< Pivot values for partitioning.
+         lz_int pivot_per_part_;     ///< Number of pivots sampled per subarray.
+         lz_int* part_size_scan_;    ///< Prefix sum of partition sizes.
+         std::vector<lz_int> part_ruler_;  ///< Indices of sub-subarrays in each partition.
+         std::atomic_uint64_t solved_;     ///< Progress counter for solved subproblems.
+         lz_int c;                   ///< Constant for pivot count selection.
 
-         // Fields for profiling time.
+         static constexpr lz_int default_subproblem_count = 8192;  ///< Default number of subproblems.
+         static constexpr lz_int nested_par_grain_size = 100;      ///< Granularity threshold for nested parallelism.
+
+         /// @brief Type alias for time points.
          typedef std::chrono::high_resolution_clock::time_point time_point_t;
-         constexpr static auto                                  now      = std::chrono::high_resolution_clock::now;
-         constexpr static auto                                  duration = [](const std::chrono::nanoseconds& d) {
+         constexpr static auto now = std::chrono::high_resolution_clock::now;
+         constexpr static auto duration = [](const std::chrono::nanoseconds& d) {
             return std::chrono::duration_cast<std::chrono::duration<double>>(d).count();
          };
 
-         // Returns the LCP length of `x` and `y`, where `min_len` is the length of
-         // the shorter of `x` and `y`.
+         /**
+          * @brief Computes LCP length between two strings.
+          * @param x First string.
+          * @param y Second string.
+          * @param min_len Length of the shorter string.
+          * @return The length of the longest common prefix.
+          */
          static lz_int lcp(const char* x, const char* y, lz_int min_len);
 
-         // Returns the LCP length of `x` and `y`, where `min_len` is the length of
-         // the shorter of `x` and `y`. Optimized with some poor man's vectorization.
+         /**
+          * @brief Optimized LCP computation using word-level comparison.
+          * @param x First string.
+          * @param y Second string.
+          * @param min_len Length of the shorter string.
+          * @return The length of the longest common prefix.
+          */
          static lz_int lcp_opt(const char* x, const char* y, lz_int min_len);
 
 #if (defined(__i386__) || defined(__x86_64__)) && defined(__AVX2__)
-         // Returns the LCP length of `x` and `y`, where `min_len` is the length of
-         // the shorter of `x` and `y`. Optimized with some poor man's vectorization.
+         /**
+          * @brief AVX2-optimized LCP computation.
+          * @param x First string.
+          * @param y Second string.
+          * @param min_len Length of the shorter string.
+          * @return The length of the longest common prefix.
+          */
          static lz_int lcp_opt_avx(const char* x, const char* y, lz_int min_len);
 #endif
 
-         // Merges the sorted collections of suffixes, `X` and `Y`, with lengths
-         // `len_x` and `len_y` and LCP arrays `LCP_x` and `LCP_y` respectively, into
-         // `Z`. Also constructs `Z`'s LCP array in `LCP_z`.
+         /**
+          * @brief Merges two sorted suffix collections with their LCP arrays.
+          * @param X First sorted suffix collection.
+          * @param len_x Length of X.
+          * @param Y Second sorted suffix collection.
+          * @param len_y Length of Y.
+          * @param LCP_x LCP array for X.
+          * @param LCP_y LCP array for Y.
+          * @param Z Output merged collection.
+          * @param LCP_z Output LCP array for Z.
+          */
          void merge(const lz_int* X,
                     lz_int        len_x,
                     const lz_int* Y,
@@ -120,89 +162,148 @@ namespace lz {
                     lz_int*       Z,
                     lz_int*       LCP_z) const;
 
-         // Merge-sorts the suffix collection `X` of length `n` into `Y`. Also
-         // constructs the LCP array of `X` in `LCP`, using `W` as working space.
-         // A necessary precondition is that `Y` must be equal to `X`.  `X` may
-         // not remain the same after the sort.
+         /**
+          * @brief Merge-sorts a suffix collection and constructs its LCP array.
+          * @param X Input suffix collection (may be modified).
+          * @param Y Output sorted collection (must initially equal X).
+          * @param n Length of the collection.
+          * @param LCP Output LCP array.
+          * @param W Working space.
+          */
          void merge_sort(lz_int* X, lz_int* Y, lz_int n, lz_int* LCP, lz_int* W) const;
 
-         // Initializes internal data structures for the construction algorithm.
+         /**
+          * @brief Initializes internal data structures for construction.
+          */
          void initialize();
 
-         // Sorts uniform-sized subarrays independently.
+         /**
+          * @brief Sorts uniform-sized subarrays independently in parallel.
+          */
          void sort_subarrays();
 
-         // Samples `m` pivots from the sorted suffix collection `X` of size `n`
-         // into `P`.
+         /**
+          * @brief Samples m pivots from a sorted suffix collection.
+          * @param X Sorted suffix collection.
+          * @param n Size of X.
+          * @param m Number of pivots to sample.
+          * @param P Output pivot array.
+          */
          static void sample_pivots(const lz_int* X, lz_int n, lz_int m, lz_int* P);
 
-         // Selects pivots for parallel merging of the sorted subarrays.
+         /**
+          * @brief Selects pivots for parallel merging of sorted subarrays.
+          */
          void select_pivots();
 
-         // Locates the positions (upper-bounds) of the selected pivots in the sorted
-         // subarrays and flattens them in `P`. Besides these pivots, two flanking
-         // pivots, `0` and `|X_i|`, for each subarray `X_i` are also placed.
+         /**
+          * @brief Locates pivot positions in sorted subarrays.
+          * @param P Output array for flattened pivot positions.
+          */
          void locate_pivots(lz_int* P) const;
 
-         // Returns the first index `idx` into the sorted suffix collection `X` of
-         // length `n` such that `X[idx]` is strictly greater than the query pattern
-         // `P` of length `P_len`.
+         /**
+          * @brief Finds upper bound for a pattern in a sorted suffix collection.
+          * @param X Sorted suffix collection.
+          * @param n Size of X.
+          * @param P Query pattern.
+          * @param P_len Length of the pattern.
+          * @return First index where X[idx] > P.
+          */
          lz_int upper_bound(const lz_int* X, lz_int n, const char* P, lz_int P_len) const;
 
-         // Collates the sub-subarrays delineated by the pivot locations in each
-         // sorted subarray, present in `P`, into appropriate partitions.
+         /**
+          * @brief Partitions sub-subarrays based on pivot locations.
+          * @param P Pivot location array.
+          */
          void partition_sub_subarrays(const lz_int* P);
 
-         // Merges the sorted sub-subarrays laid flat together in each partition.
+         /**
+          * @brief Merges sorted sub-subarrays within each partition.
+          */
          void merge_sub_subarrays();
 
-         // Computes the LCPs at the partition boundaries, specifically at the
-         // starting index of each partition in their flat collection.
+         /**
+          * @brief Computes LCP values at partition boundaries.
+          */
          void compute_partition_boundary_lcp();
 
-         // Merge-sorts the collection `X` that contains `n` sorted arrays of
-         // suffixes laid flat together, into `Y`. `S` contains the delimiter indices
-         // of the `n` arrays in `X`. The LCP array of sorted `X` is constructed in
-         // `LCP_y`; `LCP_x` contains the LCP arrays of the `n` arrays of `X`.
-         // A necessary precondition is that `Y` must be equal to `X`, and `LCP_y` to
-         // `LCP_x`. `X` and `LCP_x` may not remain the same after the sort.
+         /**
+          * @brief Sorts a partition containing multiple sorted sub-subarrays.
+          * @param X Input collection (may be modified).
+          * @param Y Output sorted collection.
+          * @param n Number of sub-subarrays.
+          * @param S Delimiter indices of sub-subarrays.
+          * @param LCP_x Input LCP arrays.
+          * @param LCP_y Output LCP array.
+          */
          void sort_partition(lz_int* X, lz_int* Y, lz_int n, const lz_int* S, lz_int* LCP_x, lz_int* LCP_y);
 
-         // Cleans up after the construction algorithm.
+         /**
+          * @brief Cleans up temporary data after construction.
+          */
          void clean_up();
+
+         /**
+          * @brief Refreshes internal state for reuse.
+          */
          void refresh();
 
-         // Returns pointer to a memory-allocation for `size` elements of type `T_`.
-         // static lz_int* allocate(lz_int size) { return static_cast<lz_int*>(std::malloc(size *
-         // sizeof(T_))); }
-
-         // Returns true iff `X` is a valid (partial) suffix array with size `n`.
+         /**
+          * @brief Validates that a suffix array is correctly sorted.
+          * @param X Suffix array to validate.
+          * @param n Size of X.
+          * @return true if X is a valid sorted suffix array.
+          */
          bool is_sorted(const lz_int* X, lz_int n) const;
 
      public:
-         bool debug;
-         // Constructs a suffix array object for the input text `T` of size
-         // `n`. Optionally, the number of subproblems to decompose the original
-         // construction problem into can be provided with `subproblem_count`, and
-         // the maximum prefix-context length for the suffixes can be bounded by
-         // `max_context`.
-         // CaPS_SA() :CaPS_SA("", 1, 1) {};
+         bool debug;  ///< Enable debug output.
+
+         /**
+          * @brief Constructs CaPS_SA from configuration arguments.
+          * @param args SA_Args containing chunk count and max context.
+          */
          CaPS_SA(utils::SA_Args);
+
+         /**
+          * @brief Constructs CaPS_SA with optional parameters.
+          * @param subproblem_count Number of subproblems (0 = auto).
+          * @param max_context Maximum prefix length for comparison (0 = unlimited).
+          */
          CaPS_SA(lz_int subproblem_count = 0, lz_int max_context = 0);
+
+         /**
+          * @brief Constructs CaPS_SA with input text.
+          * @param T The input text.
+          * @param n Length of the text.
+          * @param subproblem_count Number of subproblems (0 = auto).
+          * @param max_context Maximum prefix length (0 = unlimited).
+          */
          CaPS_SA(std::vector<lz_char> T, lz_int n, lz_int subproblem_count = 0, lz_int max_context = 0);
 
-         // Copy constructs the suffix array object from `other`.
+         /**
+          * @brief Copy constructor.
+          * @param other The CaPS_SA object to copy.
+          */
          CaPS_SA(const CaPS_SA& other);
 
-         // Move constructs the suffix array object from `other`.
+         /**
+          * @brief Move constructor.
+          * @param other The CaPS_SA object to move from.
+          */
          CaPS_SA(CaPS_SA&& other) noexcept;
 
+         /**
+          * @brief Destructor. Frees allocated memory.
+          */
          ~CaPS_SA();
 
-         // auto operator()(std::string str) -> utils::LZ_SuffixArray { return construct(str); }
-         // auto operator()(const char* str, lz_int n) -> utils::LZ_SuffixArray { return construct(str, n); }
-
-         // Copy assignment
+         /**
+          * @brief Copy assignment operator.
+          * @param rhs The object to copy from.
+          * @return Reference to this object.
+          */
          const CaPS_SA& operator=(const CaPS_SA& rhs) {
             if (this != &rhs) {
                this->~CaPS_SA();
@@ -211,10 +312,13 @@ namespace lz {
             return *this;
          };
 
-         // Move assignment
+         /**
+          * @brief Move assignment operator.
+          * @param rhs The object to move from.
+          * @return Reference to this object.
+          */
          const CaPS_SA& operator=(CaPS_SA&& rhs) {
             if (this != &rhs) {
-               // T_              = std::exchange(rhs.T_, nullptr);
                T_              = std::move(rhs.T_);
                n_              = std::exchange(rhs.n_, std::numeric_limits<lz_int>::max());
                SA_             = std::move(rhs.SA_);
@@ -227,33 +331,82 @@ namespace lz {
             return *this;
          };
 
+         /**
+          * @brief Swaps the contents of two CaPS_SA objects.
+          * @param first First object.
+          * @param second Second object.
+          */
          friend void swap(CaPS_SA& first, CaPS_SA& second);
 
+         /**
+          * @brief Equality comparison based on configuration and input.
+          * @return true if objects have same configuration and text.
+          */
          friend bool operator==(const CaPS_SA& lhs, const CaPS_SA& rhs) {
             return lhs.n_ == rhs.n_ && lhs.p_ == rhs.p_ && lhs.max_context == rhs.max_context && lhs.T_ == rhs.T_;
          }
 
+         /**
+          * @brief Inequality comparison.
+          * @return true if objects differ.
+          */
          friend bool operator!=(const CaPS_SA& lhs, const CaPS_SA& rhs) { return !operator==(lhs, rhs); }
 
-         // Returns the text.
+         /**
+          * @brief Returns the input text.
+          * @return The text vector.
+          */
          auto T() const { return T_; }
 
-         // Returns the length of the text.
+         /**
+          * @brief Returns the length of the input text.
+          * @return The text length.
+          */
          auto n() const { return n_; }
 
-         // Returns the suffix array.
+         /**
+          * @brief Returns the computed suffix array.
+          * @return The SA vector.
+          */
          auto SA() const { return SA_; }
 
-         // Returns the LCP array.
+         /**
+          * @brief Returns the computed LCP array.
+          * @return The LCP vector.
+          */
          auto LCP() const { return LCP_; }
 
-         // Constructs the suffix array and the LCP array.
+         /**
+          * @brief Constructs SA and LCP for the stored text.
+          * @return LZ_SuffixArray containing the computed arrays.
+          */
          utils::LZ_SuffixArray construct();
+
+         /**
+          * @brief Constructs SA and LCP for a given string.
+          * @param str The input string.
+          * @return LZ_SuffixArray containing the computed arrays.
+          */
          utils::LZ_SuffixArray construct(const std::string&);
+
+         /**
+          * @brief Constructs SA and LCP for a given character vector.
+          * @param T The input text.
+          * @param n Length of the text.
+          * @return LZ_SuffixArray containing the computed arrays.
+          */
          utils::LZ_SuffixArray construct(std::vector<char>, lz_int);
 
-         // Dumps the suffix array and the LCP array into the stream `output`.
+         /**
+          * @brief Dumps SA and LCP to a binary output stream.
+          * @param output The output file stream.
+          */
          void dump(std::ofstream& output);
+
+         /**
+          * @brief Dumps SA and LCP to a plain text output stream.
+          * @param output The output file stream.
+          */
          void dump_plain(std::ofstream& output);
       };
 
