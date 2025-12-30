@@ -38,76 +38,203 @@
 #include "sequence.h"
 #include "structures.h"
 
+/**
+ * @file lz76.h
+ * @brief Lempel-Ziv 76 factorization algorithm implementation.
+ */
 namespace lz {
-   //................................................
-   //             Lempel-Ziv 76
-   //...............................................
+
    namespace internal {
 
+      /**
+       * @brief Result structure for LZ76 factorization.
+       *
+       * Contains the factorization complexity, epsilon value, and the
+       * vector of factor starting positions.
+       */
       struct LZ_Result {
-         lz_uint              factorization;  //!> factorization (Lempel-Ziv 76 complexity)
-         lz_double            epsilon;        //!> epsilon value for the sequence
-         std::vector<lz_uint> lzf;            //!> vector of factors.
+         lz_uint factorization;        ///< LZ76 complexity (number of factors).
+         lz_double epsilon;            ///< Epsilon value for entropy estimation.
+         std::vector<lz_uint> lzf;     ///< Factor boundaries (starting index of each factor).
       };
 
+      /**
+       * @brief Computes Lempel-Ziv 76 factorization of sequences.
+       *
+       * Implements the LZ76 algorithm using suffix arrays (CaPS algorithm)
+       * for efficient factorization. The LZ76 complexity is the number of
+       * distinct factors in the factorization.
+       */
       class LempelZiv76 {
      private:
+         /**
+          * @brief Resets the object to initial state.
+          */
          void FreshStart(void);
 
      protected:
-         lz_uint              factorization;  //!> The LZ76 factorization.
-         std::vector<lz_uint> lzf;            //!> The factorization vector.
-
-         lz_double epsilon;
-         lz_double factors_stddev;
+         lz_uint factorization;        ///< The computed LZ76 complexity.
+         std::vector<lz_uint> lzf;     ///< Factor boundaries vector.
+         lz_double epsilon;            ///< Epsilon value for entropy estimation.
+         lz_double factors_stddev;     ///< Standard deviation of factor lengths.
 
      public:
+         /**
+          * @brief Default constructor. Initializes factorization to 0.
+          */
          LempelZiv76()
-           : factorization(0){};                     //!> default constructor.
-         LempelZiv76(const utils::LZ_SuffixArray&);  //!> default constructor.
-         LempelZiv76(const LempelZiv76&);            //!> copy constructor.
-         LempelZiv76(LempelZiv76&&);                 //!> move constructor.
+           : factorization(0){};
 
-         LZ_Result Factorize(const sequence&);  //!> Find the factors and calculate the lz76 complexity using CaPS.
-         LZ_Result Factorize(const sequence&, utils::LZ_Args&);  //!> Find the factors and calculate the lz76 complexity
-                                                                 //! using CaPS with the parameters specified.
-         LZ_Result Factorize(const utils::LZ_SuffixArray);       //!> Find the factors and calculate the lz76 complexity
+         /**
+          * @brief Constructs and computes factorization from a suffix array.
+          * @param SA The pre-computed suffix array.
+          */
+         LempelZiv76(const utils::LZ_SuffixArray&);
 
-         // #if defined(__cpp_lib_concepts) && defined(__cpp_lib_variant)
-         //          template <typename... SAImpl>
-         //          LZ_Result Factorize(const sequence, utils::sa_type_t<SAImpl...>);  //!> Find the factors and
-         //          calculate the
-         //                                                                             //! lz76 complexity using a SA
-         //                                                                             algorithm.
-         // #endif
+         /**
+          * @brief Copy constructor.
+          * @param lz The LempelZiv76 object to copy.
+          */
+         LempelZiv76(const LempelZiv76&);
 
+         /**
+          * @brief Move constructor.
+          * @param lz The LempelZiv76 object to move from.
+          */
+         LempelZiv76(LempelZiv76&&);
+
+         /**
+          * @brief Computes LZ76 factorization using the CaPS algorithm.
+          * @param seq The input sequence to factorize.
+          * @return LZ_Result containing complexity, epsilon, and factors.
+          */
+         LZ_Result Factorize(const sequence&);
+
+         /**
+          * @brief Computes LZ76 factorization from a raw character array.
+          * @param str Pointer to the character array.
+          * @param N Length of the array.
+          * @return LZ_Result containing complexity, epsilon, and factors.
+          */
+         LZ_Result Factorize(const char*, int N);
+
+         /**
+          * @brief Computes LZ76 factorization with custom parameters.
+          * @param seq The input sequence to factorize.
+          * @param args Configuration parameters for the algorithm.
+          * @return LZ_Result containing complexity, epsilon, and factors.
+          */
+         LZ_Result Factorize(const sequence&, utils::LZ_Args&);
+
+         /**
+          * @brief Computes LZ76 factorization from a pre-computed suffix array.
+          * @param SA The suffix array structure.
+          * @return LZ_Result containing complexity, epsilon, and factors.
+          */
+         LZ_Result Factorize(const utils::LZ_SuffixArray);
+
+         /**
+          * @brief Computes the standard deviation of factor lengths.
+          * @return The standard deviation value.
+          */
          lz_double FoundStddev(void);
 
-         void Clear();    //!> Clears the field of the object freeing memory.
-         ~LempelZiv76();  //!> Destructor.
+         /**
+          * @brief Clears all data and frees memory.
+          */
+         void Clear();
 
-         constexpr auto getFactorization(void) const;  //!> Returns the LZ76 complexity of the string.
-         auto           getFactors(void) const;        //!> Returns the LZ76 factors
+         /**
+          * @brief Destructor. Frees all allocated memory.
+          */
+         ~LempelZiv76();
+
+         /**
+          * @brief Returns the LZ76 complexity (number of factors).
+          * @return The factorization complexity.
+          */
+         constexpr auto getFactorization(void) const;
+
+         /**
+          * @brief Returns the factor boundaries vector.
+          * @return Vector of starting indices for each factor.
+          */
+         auto getFactors(void) const;
+
+         /**
+          * @brief Returns the epsilon value for entropy estimation.
+          * @return The epsilon value.
+          */
          constexpr auto getEpsilon(void) const;
+
+         /**
+          * @brief Returns the standard deviation of factor lengths.
+          * @return The standard deviation value.
+          */
          constexpr auto getStddev(void) const;
 
+         /**
+          * @brief Returns an iterator to the beginning of the factors vector.
+          * @return Iterator to the first factor.
+          */
          auto getFactorsBegin() const { return lzf.begin(); }
+
+         /**
+          * @brief Returns an iterator to the end of the factors vector.
+          * @return Iterator past the last factor.
+          */
          auto getFactorsEnd() const { return lzf.end(); }
 
-         // LempelZiv76& operator=(LempelZiv76);
+         /**
+          * @brief Copy assignment operator.
+          * @param lz The object to copy from.
+          * @return Reference to this object.
+          */
          LempelZiv76& operator=(const LempelZiv76&);
+
+         /**
+          * @brief Move assignment operator.
+          * @param lz The object to move from.
+          * @return Reference to this object.
+          */
          LempelZiv76& operator=(LempelZiv76&&);
 
+         /**
+          * @brief Equality comparison based on factorization.
+          * @param lhs First object.
+          * @param rhs Second object.
+          * @return true if factorizations are identical.
+          */
          friend bool operator==(const LempelZiv76&, const LempelZiv76&);
+
+         /**
+          * @brief Inequality comparison based on factorization.
+          * @param lhs First object.
+          * @param rhs Second object.
+          * @return true if factorizations differ.
+          */
          friend bool operator!=(const LempelZiv76&, const LempelZiv76&);
 
-         // void printFactors(std::ostream&, std::string&); //!< pretty print the factors
-         friend std::ostream& operator<<(std::ostream&, LempelZiv76&);  //!< the usual io
+         /**
+          * @brief Outputs the factorization to a stream.
+          * @param os The output stream.
+          * @param lz The LempelZiv76 object to output.
+          * @return Reference to the output stream.
+          */
+         friend std::ostream& operator<<(std::ostream&, LempelZiv76&);
 
+         /**
+          * @brief Swaps the contents of two LempelZiv76 objects.
+          * @param lhs First object.
+          * @param rhs Second object.
+          */
          friend void swap(LempelZiv76&, LempelZiv76&);
       };
 
-      //................. Constructors  .................................
+      //*****************************************************
+      //               Inline implementations
+      //*****************************************************
+
       inline void LempelZiv76::FreshStart(void) {
          factorization = 0;
       }
@@ -124,63 +251,29 @@ namespace lz {
          *this = std::move(lz);
       }
 
-      /// @brief
-      /// Destructor. Frees all allocated memory
-      /// @sa LempelZiv76()
       inline LempelZiv76::~LempelZiv76() {
          LempelZiv76::Clear();
       }
 
-      //....................................... End constructors ...........................................
-
-      /// @brief
-      /// Frees all allocated memory
-      /// @sa ~LempelZiv76()
       inline void LempelZiv76::Clear() {
          lzf.clear();
       }
 
-      /// @brief
-      /// Returns the factorization of the sequence
-      /// @return The factorization  of the sequence
       inline constexpr auto LempelZiv76::getFactorization(void) const {
          return factorization;
       }
 
-      /// @brief
-      /// Returns the Lempel-Ziv factors of the sequence
-      /// @return The array of Lempel-Ziv factors
       inline auto LempelZiv76::getFactors(void) const {
          return lzf;
       }
 
-      /// @brief
-      /// Returns the Lempel-Ziv factors of the sequence
-      /// @return The array of Lempel-Ziv factors
       inline constexpr auto LempelZiv76::getEpsilon(void) const {
          return epsilon;
       }
 
-      /// @brief
-      /// Returns standard deviation of the factors
-      /// @return The value of standard deviation
       inline constexpr auto LempelZiv76::getStddev(void) const {
          return factors_stddev;
       }
-
-      //............................ Assignment operator  ..........................
-
-      /// @brief
-      /// Copy operator
-      /// @param lz the source
-      /// @return *this
-      // inline LempelZiv76& LempelZiv76::operator=(LempelZiv76 lz) {
-      //    if (this != &lz) {
-      //       this->~LempelZiv76();
-      //       new (this) LempelZiv76(lz);
-      //    }
-      //    return *this;
-      // }
 
       inline LempelZiv76& LempelZiv76::operator=(const LempelZiv76& lz) {
          if (*this != lz) {
@@ -199,32 +292,14 @@ namespace lz {
          return *this;
       };
 
-      //............................ Logical operators  ..........................
-
-      /// @brief
-      /// logical non-equality operator. Compares factorizations, not complexities.
-      /// @param lhs one of the source
-      /// @param rhs another source
-      /// @return *this
       inline bool operator==(const LempelZiv76& lhs, const LempelZiv76& rhs) {
          return lhs.lzf == rhs.lzf;
       }
 
-      /// @brief
-      /// logical non-equality operator. Compares factorizations, not complexities.
-      /// @param lhs one of the source
-      /// @param rhs another source
-      /// @return *this
       inline bool operator!=(const LempelZiv76& lhs, const LempelZiv76& rhs) {
          return !(lhs == rhs);
       }
 
-      /**
-       * @brief
-       * Swap the contents of two LempelZiv76 objects.
-       * @param lhs LempelZiv76 object
-       * @param rhs LempelZiv76 object
-       */
       inline void swap(LempelZiv76& lhs, LempelZiv76& rhs) {
          std::swap(lhs.factorization, rhs.factorization);
          std::swap(lhs.epsilon, rhs.epsilon);

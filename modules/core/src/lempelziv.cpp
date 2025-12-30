@@ -27,7 +27,8 @@
 
 #include <lz/lempelziv.h>
 
-#include <map>
+#include <unordered_map>
+#include "lz/sequence.h"
 
 #ifdef _LIBCPP_HAS_PARALLEL_ALGORITHMS
 #include <execution>
@@ -89,23 +90,25 @@ namespace lz {
          return {factorization, half_lz, stddev, epsilon};
       };
 
-      sequence MergeSequences(sequence s1, sequence s2) {
+      sequence MergeSequences(const sequence& s1, const sequence& s2) {
          std::vector<char>           seq;
-         std::map<std::string, char> new_alphabet;
+         std::unordered_map<std::string, char> new_alphabet;
          const lz_size               max_iter = std::min(s1.size(), s2.size());
          // for now both sequence have the same alphabet
          for (auto i = 0ul; i < max_iter; i++) [[likely]] {
             std::string key{s1[i], s2[i]};
-            if (auto val = new_alphabet.find(key); val != new_alphabet.end())
-               seq.push_back(val->second);
-            else {
+            
+            auto it = new_alphabet.find(key);
+            if (it != new_alphabet.end()) {
+               seq.push_back(it->second);
+            } else {
                char new_element = '0' + new_alphabet.size();
-               new_alphabet.insert({key, new_element});
+               new_alphabet.emplace(key, new_element);
                seq.push_back(new_element);
             }
          }
 
-         return sequence{seq, s1.getAlphabetSize() + s2.getAlphabetSize()};
+         return sequence{seq, s1.getAlphabetSize() * s2.getAlphabetSize()};
       }
 
       std::map<char, lz_double> CheckCharDensity(const sequence& seq) {
