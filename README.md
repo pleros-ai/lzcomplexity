@@ -183,8 +183,9 @@ print(f"Effective complexity: {result.effective_complexity}")
 If you use this library in your research, please cite:
 
 ```bibtex
-@article{Aragon-Perez_Estévez-Rams_2025, 
-  title={Lzcomplexity: Entropy Measurement Library}, 
+@article{lzcomplexity_2025, 
+  title={Lzcomplexity: Entropy Measurement Library},
+  author={Aragon-Perez, Efren; Estevez-Rams, Ernesto},
   url={https://www.revistacubanadefisica.org/index.php/rcf/article/view/31}, 
   volume={42}, 
   number={2}, 
