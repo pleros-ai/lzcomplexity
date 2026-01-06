@@ -1,3 +1,12 @@
+/**
+ * @file PyLempelziv.cpp
+ * @brief Python bindings for LZ76 complexity analysis functions.
+ *
+ * This file provides Python bindings for all Lempel-Ziv 76 complexity
+ * analysis functions including factorization, entropy density, shuffle
+ * complexity, and information distance measures.
+ */
+
 #include "inc/PyLempelZiv.hpp"
 
 // Factorization
@@ -83,18 +92,95 @@ auto lz76 = generateFunctionWithArgsAndFlagsForShuffle<utl::LempelZiv>(lz76_seq_
 void PyLempelZiv(py::module_& m) {
    using namespace nanobind::literals;
 
-   py::class_<lz::internal::LZ_Result> LZ_Result(m, "LZ_Result");
-   LZ_Result.def(py::init())
+   // =========================================================================
+   // LZ_Result class - Raw factorization results
+   // =========================================================================
+   py::class_<lz::internal::LZ_Result> LZ_Result(m, "LZ_Result", R"pbdoc(
+Raw results from LZ76 factorization.
+
+This class contains the raw factorization data including the complexity
+value and the positions of factor boundaries.
+
+Attributes
+----------
+factorization : int
+    The LZ76 complexity (number of factors).
+lzf : List[int]
+    List of factor boundary positions in the sequence.
+
+Examples
+--------
+>>> import lzcomplexity as lz
+>>> result = lz.lz76Factors("ABRACADABRA")
+>>> print(f"Complexity: {result.factorization}")
+>>> print(f"Factor positions: {result.lzf}")
+)pbdoc");
+
+   LZ_Result.def(py::init(), "Create an empty LZ_Result object.")
       .def("__copy__", [](const lz::internal::LZ_Result& self) { return lz::internal::LZ_Result(self); })
+      .def("__repr__",
+           [](const lz::internal::LZ_Result& self) {
+              return "LZ_Result(factorization=" + std::to_string(self.factorization) + ")";
+           })
       .def(
          "__deepcopy__",
          [](const lz::internal::LZ_Result& self, py::dict) { return lz::internal::LZ_Result(self); },
          "memo"_a)
-      .def_rw("factorization", &lz::internal::LZ_Result::factorization)
-      .def_rw("lzf", &lz::internal::LZ_Result::lzf);
+      .def_rw("factorization",
+              &lz::internal::LZ_Result::factorization,
+              "int: The LZ76 complexity (number of factors in the factorization).")
+      .def_rw("lzf",
+              &lz::internal::LZ_Result::lzf,
+              "List[int]: Factor boundary positions in the sequence.");
 
-   py::class_<utl::LempelZiv> LempelZiv(m, "LempelZiv");
-   LempelZiv.def(py::init())
+   // =========================================================================
+   // LempelZiv class - Complete analysis results
+   // =========================================================================
+   py::class_<utl::LempelZiv> LempelZiv(m, "LempelZiv", R"pbdoc(
+Complete results from LZ76 complexity analysis.
+
+This class contains all computed measures from a comprehensive LZ76 analysis,
+including complexity, entropy density, shuffle complexity, and additional
+information-theoretic measures.
+
+Attributes
+----------
+complexity : int
+    The LZ76 complexity (number of factors in the factorization).
+entropy : float
+    Normalized entropy density. Estimated as c(S) * log_k(n) / n,
+    where c(S) is complexity, k is alphabet size, n is sequence length.
+factors : List[int]
+    Factor boundary positions in the sequence.
+factors_stddev : float
+    Standard deviation of factor lengths.
+random_shuffle_complexity : LZ_Shuffle
+    Effective complexity computed via random block shuffling.
+paired_shuffle_complexity : LZ_Shuffle
+    Effective complexity computed via paired shuffling method.
+lz_normal_error : float
+    Error estimate assuming normal distribution of factor sizes.
+lz_poison_error : float
+    Error estimate assuming Poisson distribution of factor sizes.
+extras : LZ_Extra
+    Additional measures (Rajski distance, redundancy, uncertainties).
+
+Examples
+--------
+>>> import lzcomplexity as lz
+>>> result = lz.lz76("ABRACADABRA")
+>>> print(f"Complexity: {result.complexity}")
+>>> print(f"Entropy density: {result.entropy}")
+>>> print(f"Effective complexity: {result.random_shuffle_complexity.excess_value}")
+
+Notes
+-----
+The LempelZiv object is returned by the lz76() function which performs
+a complete analysis. For individual measures, use the specific functions
+like lz76Factorization(), lz76EntropyDensity(), etc.
+)pbdoc");
+
+   LempelZiv.def(py::init(), "Create an empty LempelZiv object.")
       .def(py::init<lz::lz_uint,
                     std::vector<lz::lz_uint>,
                     lz::lz_double,
@@ -114,20 +200,46 @@ void PyLempelZiv(py::module_& m) {
            "_lz_poison_errors"_a,
            "_eps"_a,
            "_factors_stddev"_a,
-           "_extra"_a)
+           "_extra"_a,
+           "Create a LempelZiv object with all analysis results.")
       .def("__copy__", [](const utl::LempelZiv& self) { return utl::LempelZiv(self); })
+      .def("__repr__",
+           [](const utl::LempelZiv& self) {
+              return "LempelZiv(complexity=" + std::to_string(self.getComplexity()) +
+                     ", entropy=" + std::to_string(self.getEntropyDensity()) + ")";
+           })
       .def(
          "__deepcopy__", [](const utl::LempelZiv& self, py::dict) { return utl::LempelZiv(self); }, "memo"_a);
 
-   LempelZiv.def_prop_ro("complexity", &utl::LempelZiv::getComplexity)
-      .def_prop_ro("entropy", &utl::LempelZiv::getEntropyDensity)
-      .def_prop_ro("paired_shuffle_complexity", &utl::LempelZiv::getPairedShuffleComplexity)
-      .def_prop_ro("random_shuffle_complexity", &utl::LempelZiv::getRandomShuffleComplexity)
-      .def_prop_ro("lz_normal_error", &utl::LempelZiv::getNormalError)
-      .def_prop_ro("lz_poison_error", &utl::LempelZiv::getPoisonError)
-      .def_prop_ro("extras", &utl::LempelZiv::getExtras)
-      .def_prop_ro("factors", &utl::LempelZiv::getFactors)
-      .def_prop_ro("factors_stddev", &utl::LempelZiv::getFactorsStddev);
+   // Properties with detailed docstrings
+   LempelZiv
+      .def_prop_ro("complexity",
+                   &utl::LempelZiv::getComplexity,
+                   "int: LZ76 complexity (number of factors in the factorization).")
+      .def_prop_ro("entropy",
+                   &utl::LempelZiv::getEntropyDensity,
+                   "float: Normalized entropy density estimate h ≈ c(S) * log_k(n) / n.")
+      .def_prop_ro("paired_shuffle_complexity",
+                   &utl::LempelZiv::getPairedShuffleComplexity,
+                   "LZ_Shuffle: Effective complexity via paired shuffling method.")
+      .def_prop_ro("random_shuffle_complexity",
+                   &utl::LempelZiv::getRandomShuffleComplexity,
+                   "LZ_Shuffle: Effective complexity via random block shuffling.")
+      .def_prop_ro("lz_normal_error",
+                   &utl::LempelZiv::getNormalError,
+                   "float: Error estimate assuming normal distribution of factor sizes.")
+      .def_prop_ro("lz_poison_error",
+                   &utl::LempelZiv::getPoisonError,
+                   "float: Error estimate assuming Poisson distribution of factor sizes.")
+      .def_prop_ro("extras",
+                   &utl::LempelZiv::getExtras,
+                   "LZ_Extra: Additional measures (Rajski distance, redundancy, etc.).")
+      .def_prop_ro("factors",
+                   &utl::LempelZiv::getFactors,
+                   "List[int]: Factor boundary positions in the sequence.")
+      .def_prop_ro("factors_stddev",
+                   &utl::LempelZiv::getFactorsStddev,
+                   "float: Standard deviation of factor lengths.");
 
    m.def("lz76", lz76WithArgs, "seq"_a, "args"_a, R"pbdoc(
      Performs comprehensive Lempel-Ziv (LZ76) analysis on an input sequence.

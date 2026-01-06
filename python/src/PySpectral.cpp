@@ -1,3 +1,11 @@
+/**
+ * @file PySpectral.cpp
+ * @brief Python bindings for spectral analysis functions.
+ *
+ * This file provides Python bindings for spectral entropy and power
+ * spectral density analysis of time-domain signals.
+ */
+
 #include <nanobind/stl/function.h>
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/string.h>
