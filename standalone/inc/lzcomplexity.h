@@ -26,7 +26,7 @@ inline std::vector<std::string> split(const std::string& s, char delim) {
    std::istringstream       tokenStream(s);
    while (std::getline(tokenStream, token, delim)) {
       if (token.size() > 0) {
-         tokens.push_back(token);
+         tokens.emplace_back(token);
       }
    }
    return tokens;
@@ -38,7 +38,7 @@ inline std::vector<std::string> split_whitespace(const std::string& s) {
    std::istringstream       tokenStream(s);
    std::string              token;
    while (tokenStream >> token) {
-      tokens.push_back(token);
+      tokens.emplace_back(token);
    }
    return tokens;
 }
@@ -93,7 +93,7 @@ inline void
    auto data_size = multiline ? rows.size() : 1;
 
    for (auto row: rows) {
-      text_col.push_back(row);
+      text_col.emplace_back(row);
 
       if (!multiline)
          break;
@@ -152,7 +152,7 @@ inline void read_one_line(const std::string& ip_path, std::vector<lz::sequence>&
    std::ifstream  in(ip_path);
 
    if (seq.capacity() < 1) {
-      seq.emplace_back("");
+      seq.emplace_back(std::string_view{""});
    }
 
    std::cout << "Reading " << ip_path << std::endl;
@@ -251,12 +251,12 @@ inline void multiLineToOneLine(const std::string& ip_path, std::vector<lz::seque
       if (process) {
          final_str += line.Take(line.size() - 1);
       } else {
-         text_col.push_back(line);
+         text_col.emplace_back(line);
       }
    }
 
    if (process)
-      text_col.push_back(final_str);
+      text_col.emplace_back(final_str);
    input.close();
    std::cout << "End read: size --> " << final_str.size() << "\n";
 }
@@ -291,7 +291,11 @@ inline std::vector<std::pair<std::string, std::vector<int>>> read_csv(std::strin
       while (std::getline(ss, colname, ',')) {
 
          // Initialize and add <colname, int vector> pairs to result
-         result.push_back({colname, std::vector<int>{}});
+         result.push_back({
+            std::piecewise_construct, 
+            std::forward_as_tuple(colname), 
+            std::forward_as_tuple(std::vector<int>{})
+         });
       }
    }
 

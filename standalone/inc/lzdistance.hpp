@@ -45,11 +45,11 @@ namespace lz {
                    !std::any_of(avoid_extensions.begin(), avoid_extensions.end(), [&entry](const auto& ext) {
                       return entry.path().extension() == ext;
                    })) {
-                  FileInfo fileInfo;
-                  fileInfo.name = entry.path().filename().string();
-                  fileInfo.path = entry.path();
-                  fileInfo.size = fs::file_size(entry.path());
-                  files.push_back(fileInfo);
+                  files.emplace_back(FileInfo{
+                     static_cast<double>(fs::file_size(entry.path())),
+                     entry.path().filename().string(),
+                     entry.path()
+                  });
                }
             }
          }
@@ -65,10 +65,11 @@ namespace lz {
 
             for (const auto& entry: fs::directory_iterator(dirPath)) {
                if (entry.is_regular_file()) {
-                  FileInfo fileInfo;
-                  fileInfo.name = entry.path().filename().string();
-                  fileInfo.size = entry.file_size();
-                  files.push_back(fileInfo);
+                  files.emplace_back(FileInfo{
+                     static_cast<double>(entry.file_size()),
+                     entry.path().filename().string(),
+                     entry.path()
+                  });
                }
             }
          }
@@ -121,7 +122,7 @@ inline std::vector<std::string> split(const std::string& s, char delim) {
    std::string              token;
    std::istringstream       tokenStream(s);
    while (std::getline(tokenStream, token, delim)) {
-      tokens.push_back(token);
+      tokens.emplace_back(token);
    }
    return tokens;
 }
@@ -230,7 +231,7 @@ inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text
    text_col.reserve(rows.size());
 
    for (auto row: rows) {
-      text_col.push_back(row);
+      text_col.emplace_back(row);
    }
 
    // std::vector<std::vector<std::string>> data_frame(rows.size());
@@ -272,7 +273,7 @@ inline std::vector<lz::sequence>
       read_multi_line(input, data, format);
    else {
       read_one_line(input, oneLine, format);
-      data.push_back(oneLine);
+      data.emplace_back(oneLine);
    }
 
    input.close();

@@ -254,7 +254,7 @@ namespace lz {
           * @brief Appends a single string as a new sequence to the input collection.
           * @param data String to add as a sequence.
           */
-         auto addData(std::string data) -> void { input.push_back(data); };
+         auto addData(std::string data) -> void { input.emplace_back(data); };
 
          /**
           * @brief Appends multiple strings as new sequences to the input collection.
@@ -262,9 +262,9 @@ namespace lz {
           */
          auto addData(std::vector<std::string> data) -> void {
 #ifdef __cpp_lib_ranges
-            std::ranges::for_each(data, [&](auto&& elem) { input.push_back(elem); });
+            std::ranges::for_each(data, [&](auto&& elem) { input.emplace_back(elem); });
 #else
-            std::for_each(data.begin(), data.end(), [&](auto&& elem) { input.push_back(elem); });
+            std::for_each(data.begin(), data.end(), [&](auto&& elem) { input.emplace_back(elem); });
 #endif
          };
 

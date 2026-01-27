@@ -131,24 +131,24 @@ namespace lz {
 
          auto addData(INPUT_DATA in, std::string data) -> void {
             if (in == FIRST)
-               first_input.push_back(data);
+               first_input.emplace_back(data);
             else
-               second_input.push_back(data);
+               second_input.emplace_back(data);
          };
          auto addData(INPUT_DATA in, std::vector<std::string> data) -> void {
 #ifdef __cpp_lib_ranges
             std::ranges::for_each(data, [&](auto&& elem) {
                if (in == FIRST)
-                  first_input.push_back(elem);
+                  first_input.emplace_back(elem);
                else
-                  second_input.push_back(elem);
+                  second_input.emplace_back(elem);
             });
 #else
             std::for_each(data.begin(), data.end(), [&](auto&& elem) {
                if (in == FIRST)
-                  first_input.push_back(elem);
+                  first_input.emplace_back(elem);
                else
-                  second_input.push_back(elem);
+                  second_input.emplace_back(elem);
             });
 #endif
          };

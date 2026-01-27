@@ -522,7 +522,7 @@ namespace lz {
                   if (!is.good())
                      break;
                   ReadBin(is, bs, width);
-                  s.push_back(bs);
+                  s.emplace_back(bs);
                }
             } else {  // text data
                if (bin)
@@ -562,7 +562,7 @@ namespace lz {
 
                      if (++currentwidth >= width) {
                         currentwidth = 0;
-                        s.push_back(bs);
+                        s.emplace_back(bs);
                         currentline++;
                         bs.clear();
                      }
@@ -956,7 +956,7 @@ namespace lz {
                      value = is.get();
                      bs.push((unsigned char)value);
                   }
-                  s.push_back(bs);
+                  s.emplace_back(bs);
                   bs.clear();
                }
             } else {  // text data
@@ -994,7 +994,7 @@ namespace lz {
                      bs.push((unsigned char)val);
 
                      if (++currentwidth >= width) {
-                        s.push_back(bs);
+                        s.emplace_back(bs);
                         currentwidth = 0;
                         currentline++;
                         bs.clear();
@@ -1465,7 +1465,7 @@ namespace lz {
                ReadBin(is, seq, fsize);
 
                seq.DetermineAlphabet();
-               s.push_back(seq);
+               s.emplace_back(seq);
             } else if (magick_number == PNM_RAWTXT) {  // text data
                s.clear();
 
@@ -1486,7 +1486,7 @@ namespace lz {
                   // for (unsigned char c: line) seq.push((unsigned char)(c));
                   if (line.size() > 0) {
                      seq = lz::sequence(line);
-                     s.push_back(seq);
+                     s.emplace_back(seq);
                   }
 
                   line.clear();
@@ -1559,14 +1559,14 @@ namespace lz {
                ReadPBM(is, bseq, false);
                for (auto bs: bseq) {
                   s = bs;
-                  sv.push_back(s);
+                  sv.emplace_back(s);
                }
                break;
             case PNM_P4:
                ReadPBM(is, bseq, true);
                for (auto bs: bseq) {
                   s = bs;
-                  sv.push_back(s);
+                  sv.emplace_back(s);
                }
                break;
             case PNM_P2: ReadPGM(is, sv, false); break;

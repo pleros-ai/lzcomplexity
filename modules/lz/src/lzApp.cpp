@@ -52,7 +52,7 @@ namespace lz {
    lz_int lz76(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
       for (auto& seq: flags.input) {
          auto res = lz76(seq, flags.sa_args);
-         lz.data.push_back(res);
+         lz.data.emplace_back(res);
       }
 
       return EXIT_SUCCESS;
@@ -66,8 +66,8 @@ namespace lz {
       for (lz_size idx = 0; idx < flags.input.size(); idx++) {
          auto str = flags.input[idx];
          auto clx = internal::lz76Factorization(str, flags.sa_args);
-         // lz.complexity.push_back(clx.factorization);
-         lz.half_complexity.push_back(clx.half_factorization);
+         // lz.complexity.emplace_back(clx.factorization);
+         lz.half_complexity.emplace_back(clx.half_factorization);
          lz.calculated_complexity[idx] = true;
 
          lz.setComplexity(idx, clx.factorization);
@@ -106,7 +106,7 @@ namespace lz {
             res = lz76EffectiveComplexityNormalized(str, flags.sa_args);
          }
 
-         lz.lz_effective_complexity.push_back(res);
+         lz.lz_effective_complexity.emplace_back(res);
       }
 
       return EXIT_SUCCESS;
@@ -215,7 +215,7 @@ namespace lz {
             res = lz76ExcessEntropyDistance(str, flags.sa_args);
          }
 
-         lz.excess_entropy_dist.push_back(res);
+         lz.excess_entropy_dist.emplace_back(res);
       }
 
       return EXIT_SUCCESS;
@@ -309,7 +309,7 @@ namespace lz {
          } else {
             res = lz76InformationDistance(text[i - 1], text[i], flags.sa_args);
          }
-         lz.info_distance.push_back(res);
+         lz.info_distance.emplace_back(res);
       }
 
       return EXIT_SUCCESS;
@@ -326,7 +326,7 @@ namespace lz {
       std::vector<sequence> text = flags.input;
       for (std::size_t i = 1; i < text.size(); i++) {
          res = lz76RandomShuffleDistance(text[i - 1], text[i], flags.sa_args);
-         lz.random_shuffle_distance.push_back(res);
+         lz.random_shuffle_distance.emplace_back(res);
       }
 
       return EXIT_SUCCESS;
@@ -354,7 +354,7 @@ namespace lz {
          } else {
             res = lz76InformationDistance(sequences.first, sequences.second, flags.sa_args);
          }
-         lz.sequence_info_distance.push_back(res);
+         lz.sequence_info_distance.emplace_back(res);
       }
 
       return EXIT_SUCCESS;
@@ -373,7 +373,7 @@ namespace lz {
 
          res = lz76RandomShuffleDistance(sequences.first, sequences.second, flags.sa_args);
          // }
-         lz.sequence_info_distance.push_back(res);
+         lz.sequence_info_distance.emplace_back(res);
       }
 
       return EXIT_SUCCESS;
@@ -410,7 +410,7 @@ namespace lz {
          // } else {
          res = MutualInformation(sequences.first, sequences.second, flags.sa_args);
          // }
-         lz.mutual_information.push_back(res);
+         lz.mutual_information.emplace_back(res);
       }
 
       return EXIT_SUCCESS;
@@ -431,7 +431,7 @@ namespace lz {
          args_cpy.log_base = z.getAlphabetSize();
 
          res = lz76EntropyDensity(z, args_cpy);
-         lz.mixed_entropy_density.push_back(res);
+         lz.mixed_entropy_density.emplace_back(res);
       }
 
       return EXIT_SUCCESS;

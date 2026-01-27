@@ -13,6 +13,11 @@ namespace lz {
       setAlphabetSize();
    }
 
+   sequence::sequence(const std::string_view str) {
+      seq = std::vector<char>(str.begin(), str.end());
+      setAlphabetSize();
+   }
+
    sequence::sequence(const std::vector<char> vec) {
       seq = vec;
       // tbb::concurrent_set<char> aph;

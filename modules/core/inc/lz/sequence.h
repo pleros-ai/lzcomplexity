@@ -82,6 +82,7 @@ namespace lz {
        * @param str The string.
        */
       sequence(const std::string str);
+      sequence(const std::string_view str);
 
       /**
        * @brief Constructor that initializes the sequence with a vector of characters and a specified alphabet size.
