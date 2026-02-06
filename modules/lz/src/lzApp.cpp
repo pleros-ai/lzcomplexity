@@ -225,7 +225,6 @@ namespace lz {
       // std::vector<lz_int> excess_entropy_dist;
       lz.excess_entropy_dist.clear();
       lz.excess_entropy_dist.reserve(flags.input.size());
-      lz_double res = 0;
 
       for (lz_size i = 0; i < flags.input.size(); i++) {
          auto str = flags.input[i];

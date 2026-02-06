@@ -213,7 +213,7 @@ namespace lz {
           * @param _sa_args Algorithm configuration parameters.
           */
          LZ_Flags(std::string text, LZ_Args _sa_args)
-           : input({text}), sa_args(_sa_args){};
+           : sa_args(_sa_args), input({text}) {};
 
          /**
           * @brief Constructs flags from a single sequence with algorithm arguments.
@@ -221,7 +221,7 @@ namespace lz {
           * @param _sa_args Algorithm configuration parameters.
           */
          LZ_Flags(sequence text, LZ_Args _sa_args)
-           : input({text}), sa_args(_sa_args){};
+           : sa_args(_sa_args), input({text}) {};
 
          /**
           * @brief Constructs flags from multiple sequences with algorithm arguments.
@@ -229,21 +229,21 @@ namespace lz {
           * @param _sa_args Algorithm configuration parameters.
           */
          LZ_Flags(std::vector<sequence> data, LZ_Args _sa_args)
-           : input(data), sa_args(_sa_args){};
+           : sa_args(_sa_args), input(data) {};
 
          /**
           * @brief Copy constructor.
           * @param flags Source flags to copy from.
           */
          LZ_Flags(const LZ_Flags& flags)
-           : input(flags.input), sa_args(flags.sa_args){};
+           : sa_args(flags.sa_args), input(flags.input) {};
 
          /**
           * @brief Move constructor.
           * @param flags Source flags to move from.
           */
          LZ_Flags(LZ_Flags&& flags)
-           : input(std::move(flags.input)), sa_args(std::move(flags.sa_args)){};
+           : sa_args(std::move(flags.sa_args)), input(std::move(flags.input)) {};
 
          /**
           * @brief Destructor.

@@ -111,21 +111,21 @@ namespace lz {
          lz::lz_bool trajectory_ = false;  //!> Apply distance between trajectories sequences --> 17 options
 
          LZ_Flags(sequence text, utils::LZ_Args _sa_args)
-           : first_input({text}), second_input({text}), sa_args(_sa_args){};
+           :sa_args(_sa_args), first_input({text}), second_input({text}) {};
          LZ_Flags(sequence text1, sequence text2, utils::LZ_Args _sa_args)
-           : first_input({text1}), second_input({text2}), sa_args(_sa_args){};
+           : sa_args(_sa_args), first_input({text1}), second_input({text2}) {};
          LZ_Flags(std::vector<sequence> data, utils::LZ_Args _sa_args)
-           : first_input(data), second_input(data), sa_args(_sa_args){};
+           : sa_args(_sa_args), first_input(data), second_input(data) {};
          LZ_Flags(std::vector<sequence> data1, std::vector<sequence> data2, utils::LZ_Args _sa_args)
-           : first_input(data1), second_input(data2), sa_args(_sa_args){};
+           : sa_args(_sa_args), first_input(data1), second_input(data2) {};
          // Copy construct
          LZ_Flags(const LZ_Flags& flags)
-           : first_input(flags.first_input), second_input(flags.second_input), sa_args(flags.sa_args){};
+           : sa_args(flags.sa_args), first_input(flags.first_input), second_input(flags.second_input) {};
          // Move constructor
          LZ_Flags(LZ_Flags&& flags)
-           : first_input(std::move(flags.first_input))
-           , second_input(std::move(flags.second_input))
-           , sa_args(std::move(flags.sa_args)){};
+           : sa_args(std::move(flags.sa_args))
+           , first_input(std::move(flags.first_input))
+           , second_input(std::move(flags.second_input)) {};
 
          ~LZ_Flags(){};
 

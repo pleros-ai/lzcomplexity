@@ -46,12 +46,10 @@ inline std::vector<std::string> split_whitespace(const std::string& s) {
 inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
    auto                     color = getColor(type);
    std::vector<std::string> allLines;
-   std::va_list             args;
    std::string::size_type   maxLen = 0;
 
    std::string final_msg = "";
    std::string delimiter = "\n";
-   size_t      pos       = 0;
 
    allLines = split(msg, '\n');
    for (auto tmp: allLines) {
@@ -76,8 +74,7 @@ inline void
    read_csv(const std::string& ip_path, std::vector<lz::sequence>& text_col, bool multiline, char delimiter = ',') {
    namespace fs = std::filesystem;
    std::error_code ec;
-   const auto      file_size = fs::file_size(ip_path, ec);
-   int             num_line  = 0;
+   fs::file_size(ip_path, ec);
 
    if (ec) {
       std::cerr << lz::RED_COLOR << ip_path << " : " << ec.message() << "\n" << lz::END_COLOR;
@@ -194,14 +191,12 @@ inline std::vector<lz::sequence>
    read_input(const std::string& ip_path, bool multiline = false, MagickNumber format = MagickNumber::PNM_RAWTXT) {
    namespace fs = std::filesystem;
    std::error_code ec;
-   const auto      file_size = fs::file_size(ip_path, ec);
+   fs::file_size(ip_path, ec);
 
    if (ec) {
       std::cerr << lz::RED_COLOR << ip_path << " : " << ec.message() << "\n" << lz::END_COLOR;
       std::exit(EXIT_FAILURE);
    }
-
-   int num_line = 0;
 
    lz::utils::pnm            parser;
    std::vector<lz::sequence> data{};
@@ -227,7 +222,7 @@ inline void multiLineToOneLine(const std::string& ip_path, std::vector<lz::seque
    namespace fs = std::filesystem;
    std::error_code ec;
 
-   const auto file_size = fs::file_size(ip_path, ec);
+   fs::file_size(ip_path, ec);
    int        num_line  = 0;
 
    if (ec) {

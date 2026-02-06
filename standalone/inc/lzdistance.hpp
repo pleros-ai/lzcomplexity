@@ -130,12 +130,10 @@ inline std::vector<std::string> split(const std::string& s, char delim) {
 inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
    auto                     color = getColor(type);
    std::vector<std::string> allLines;
-   std::va_list             args;
    std::string::size_type   maxLen = 0;
 
    std::string final_msg = "";
    std::string delimiter = "\n";
-   size_t      pos       = 0;
 
    allLines = split(msg, '\n');
    for (auto tmp: allLines) {
@@ -215,8 +213,7 @@ inline void read_one_line(std::ifstream& in, lz::sequence& seq, MagickNumber for
 inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text_col) {
    namespace fs = std::filesystem;
    std::error_code ec;
-   const auto      file_size = fs::file_size(ip_path, ec);
-   int             num_line  = 0;
+   fs::file_size(ip_path, ec);
 
    if (ec) {
       std::cerr << lz::RED_COLOR << ip_path << " : " << ec.message() << "\n" << lz::END_COLOR;
@@ -260,7 +257,6 @@ inline std::vector<lz::sequence>
       throw FileFormatError(ip_path + " : " + ec.message());
    }
 
-   int           num_line = 0;
    std::ifstream input(ip_path);
 
    lz::utils::pnm            parser;
