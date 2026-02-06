@@ -38,7 +38,32 @@ set_property(GLOBAL PROPERTY CORE_INCLUDE_DIR ${CORE_INCLUDE_DIR})
 
 include(useTbb)
 message(STATUS "is unix: ${UNIX} and tbb: ${LZ_TBB_LIBS}")
-# link_libraries(Threads::Threads)
+
+# OpenMP setup (with macOS Homebrew libomp support)
+# if(APPLE)
+#     execute_process(
+#         COMMAND brew --prefix libomp
+#         OUTPUT_VARIABLE LIBOMP_PREFIX
+#         OUTPUT_STRIP_TRAILING_WHITESPACE
+#         ERROR_QUIET
+#     )
+#     if(LIBOMP_PREFIX)
+#         set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${LIBOMP_PREFIX}/include" CACHE STRING "" FORCE)
+#         set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${LIBOMP_PREFIX}/include" CACHE STRING "" FORCE)
+#         set(OpenMP_C_LIB_NAMES "omp" CACHE STRING "" FORCE)
+#         set(OpenMP_CXX_LIB_NAMES "omp" CACHE STRING "" FORCE)
+#         set(OpenMP_omp_LIBRARY "${LIBOMP_PREFIX}/lib/libomp.dylib" CACHE FILEPATH "" FORCE)
+#     endif()
+# endif()
+
+# find_package(OpenMP)
+# if(OpenMP_CXX_FOUND)
+#     target_link_libraries(lz_parallel INTERFACE OpenMP::OpenMP_CXX)
+#     message(STATUS "[${PROJECT_NAME}] OpenMP: FOUND (version ${OpenMP_CXX_VERSION})")
+# else()
+#     message(STATUS "[${PROJECT_NAME}] OpenMP: NOT FOUND (parallel features may be limited)")
+# endif()
+
 
 set(LZ_LPF ${CORE_SOURCE_DIR}/lpf.cpp)
 set(LZ_LZ76 ${CORE_SOURCE_DIR}/lz76.cpp)

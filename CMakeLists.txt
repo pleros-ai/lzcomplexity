@@ -158,60 +158,12 @@ if(ASAN)
 endif()
 
 # -----------------------------------------------------------------------------
-# lz_parallel: Parallel computing libraries (Threads + OpenMP)
+# lz_parallel: Parallel computing libraries (Threads)
 # -----------------------------------------------------------------------------
 add_library(lz_parallel INTERFACE)
 add_library(lz::parallel ALIAS lz_parallel)
 
 target_link_libraries(lz_parallel INTERFACE Threads::Threads)
-
-# OpenMP setup (with macOS Homebrew libomp support)
-if(APPLE)
-    execute_process(
-        COMMAND brew --prefix libomp
-        OUTPUT_VARIABLE LIBOMP_PREFIX
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-    if(LIBOMP_PREFIX)
-        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${LIBOMP_PREFIX}/include" CACHE STRING "" FORCE)
-        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${LIBOMP_PREFIX}/include" CACHE STRING "" FORCE)
-        set(OpenMP_C_LIB_NAMES "omp" CACHE STRING "" FORCE)
-        set(OpenMP_CXX_LIB_NAMES "omp" CACHE STRING "" FORCE)
-        set(OpenMP_omp_LIBRARY "${LIBOMP_PREFIX}/lib/libomp.dylib" CACHE FILEPATH "" FORCE)
-    endif()
-endif()
-
-find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(lz_parallel INTERFACE OpenMP::OpenMP_CXX)
-    message(STATUS "[${PROJECT_NAME}] OpenMP: FOUND (version ${OpenMP_CXX_VERSION})")
-else()
-    message(STATUS "[${PROJECT_NAME}] OpenMP: NOT FOUND (parallel features may be limited)")
-endif()
-
-# -----------------------------------------------------------------------------
-# lz_external_libs: External static libraries (divsufsort, libprange)
-# -----------------------------------------------------------------------------
-add_library(lz_external_libs INTERFACE)
-add_library(lz::external_libs ALIAS lz_external_libs)
-
-# divsufsort library
-if(EXISTS "${CMAKE_SOURCE_DIR}/libdivsufsort.a")
-    target_link_libraries(lz_external_libs INTERFACE "${CMAKE_SOURCE_DIR}/libdivsufsort.a")
-    message(STATUS "[${PROJECT_NAME}] libdivsufsort: FOUND")
-endif()
-
-# libprange library
-if(EXISTS "${CMAKE_SOURCE_DIR}/liblibprange.a")
-    target_link_libraries(lz_external_libs INTERFACE "${CMAKE_SOURCE_DIR}/liblibprange.a")
-    message(STATUS "[${PROJECT_NAME}] liblibprange: FOUND")
-endif()
-
-# External libs require OpenMP runtime
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(lz_external_libs INTERFACE lz::parallel)
-endif()
 
 # -----------------------------------------------------------------------------
 # lz_common: Combined interface for all common dependencies
@@ -285,7 +237,6 @@ function(lz_add_executable TARGET_NAME SOURCE_FILE LINK_LIB INCLUDE_PROP)
     target_link_libraries(${TARGET_NAME} PRIVATE
         ${LINK_LIB}
         lz::common
-        lz::external_libs
         lz::release_opts
     )
 
