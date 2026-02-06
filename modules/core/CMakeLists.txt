@@ -89,9 +89,10 @@ set(public_headers
 )
 
 # Compiler flags.
+target_link_libraries(${PROJECT_NAME} PRIVATE lz_compiler_config)
 # target_link_options(${PROJECT_NAME} PUBLIC ${CMAKE_CXX_LINK_FLAGS})
-target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
-target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
+# target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
+# target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
 
 set(lzcore_FOUND TRUE)
 

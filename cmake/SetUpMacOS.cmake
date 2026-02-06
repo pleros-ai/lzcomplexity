@@ -1,100 +1,178 @@
-set(LZ_ARCHITECTURE macosx)
-set(LZ_PLATFORM macosx)
+# =============================================================================
+# SetUpMacOS.cmake - macOS Platform Configuration
+# =============================================================================
 
-if (CMAKE_SYSTEM_NAME MATCHES Darwin)
-  EXECUTE_PROCESS(COMMAND sw_vers "-productVersion"
-                  COMMAND cut -d . -f 1-2
-                  OUTPUT_VARIABLE MACOSX_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+include_guard(GLOBAL)
 
-  MESSAGE(STATUS "Found a macOS system ${MACOSX_VERSION}")
-
-  if(MACOSX_VERSION VERSION_GREATER 10.7 AND ${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
-    set(libcxx ON CACHE BOOL "Build using libc++" FORCE)
-  endif()
-
-  if(MACOSX_VERSION VERSION_GREATER 10.4)
-    #TODO: check haveconfig and rpath -> set rpath true
-    #TODO: check Thread, define link command
-    #TODO: more stuff check configure script
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES 64)
-       if(CMAKE_SYSTEM_PROCESSOR MATCHES arm64)
-          MESSAGE(STATUS "Found an AArch64 system")
-          set(LZ_ARCHITECTURE macosxarm64)
-       else()
-          MESSAGE(STATUS "Found an x86_64 system")
-          set(LZ_ARCHITECTURE macosx64)
-          SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -m64")
-       endif()
-
-       SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
-       SET(CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS "${CMAKE_SHARED_LIBRARY_CREATE_C_FLAGS} -m64")
-       SET(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS} -m64")
-       SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
-       SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
-    else()
-       SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
-       SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-       SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -m32")
-    endif()
-  endif()
-
-  if(MACOSX_VERSION VERSION_GREATER 10.6)
-    set(MACOSX_SSL_DEPRECATED ON)
-  endif()
-  if(MACOSX_VERSION VERSION_GREATER 10.7)
-    set(MACOSX_ODBC_DEPRECATED ON)
-  endif()
-  if(MACOSX_VERSION VERSION_GREATER 10.8)
-    set(MACOSX_GLU_DEPRECATED ON)
-  endif()
-
-  if (CMAKE_COMPILER_IS_GNUCXX)
-     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -W -Wshadow -Wall -Woverloaded-virtual -fsigned-char -fno-common")
-     SET(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS} -Wl,-dead_strip_dylibs")
-     set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -m64")
-
-  elseif(${CMAKE_CXX_COMPILER_ID} MATCHES Clang)
-     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -W -Wall -Woverloaded-virtual -fsigned-char -fno-common -Qunused-arguments")
-     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8)
-       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
-     endif()
-
-     SET(CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_CREATE_CXX_FLAGS} -Wl,-dead_strip_dylibs")
-
-     set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -m64")
-
-     message(STATUS "asan value: ${asan}")
-
-     if(asan)
-       # See also core/sanitizer/README.md for what's happening.
-
-       #This should be the right way to do it, but clang 10 seems to have a bug
-       #execute_process(COMMAND ${CMAKE_CXX_COMPILER} --print-file-name=libclang_rt.asan_osx_dynamic.dylib OUTPUT_VARIABLE ASAN_RUNTIME_LIBRARY OUTPUT_STRIP_TRAILING_WHITESPACE)
-       execute_process(COMMAND mdfind -name libclang_rt.asan_osx_dynamic.dylib OUTPUT_VARIABLE ASAN_RUNTIME_LIBRARY OUTPUT_STRIP_TRAILING_WHITESPACE)
-       set(ASAN_EXTRA_CXX_FLAGS -fsanitize=address -fno-omit-frame-pointer -fsanitize-address-use-after-scope)
-       set(ASAN_EXTRA_SHARED_LINKER_FLAGS "-fsanitize=address -static-libsan")
-       set(ASAN_EXTRA_EXE_LINKER_FLAGS "-fsanitize=address -static-libsan -Wl,-u,___asan_default_options -Wl,-u,___lsan_default_options -Wl,-u,___lsan_default_suppressions")
-     endif()
-
-     if(LZ_SHARE)
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
-    endif()
-  else()
-    MESSAGE(FATAL_ERROR "There is no setup for this compiler with ID=${CMAKE_CXX_COMPILER_ID} up to now. Don't know what to do. Stop cmake at this point.")
-  endif()
-
-  #---Set Linker flags----------------------------------------------------------------------
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mmacosx-version-min=${MACOSX_VERSION}")
-else (CMAKE_SYSTEM_NAME MATCHES Darwin)
-  MESSAGE(FATAL_ERROR "There is no setup for this this Apple system up to now. Don't know what to do. Stop cmake at this point.")
-endif (CMAKE_SYSTEM_NAME MATCHES Darwin)
-
-#---Avoid putting the libraires and executables in different configuration locations
-if(CMAKE_GENERATOR MATCHES Xcode)
-  foreach( _conf ${CMAKE_CONFIGURATION_TYPES} )
-    string( TOUPPER ${_conf} _conf )
-    set( CMAKE_RUNTIME_OUTPUT_DIRECTORY_${_conf} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} )
-    set( CMAKE_LIBRARY_OUTPUT_DIRECTORY_${_conf} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
-    set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${_conf} ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY} )
-  endforeach()
+if(NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    message(FATAL_ERROR "SetUpMacOS.cmake included on non-Darwin system")
 endif()
+
+set(LZ_PLATFORM macosx)
+set(LZ_ARCHITECTURE macosx)
+
+# -----------------------------------------------------------------------------
+# macOS Version Detection
+# -----------------------------------------------------------------------------
+execute_process(
+    COMMAND sw_vers -productVersion
+    OUTPUT_VARIABLE MACOSX_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+# Extract major.minor
+string(REGEX MATCH "^[0-9]+\\.[0-9]+" MACOSX_VERSION "${MACOSX_VERSION}")
+
+message(STATUS "[macOS] Detected version: ${MACOSX_VERSION}")
+
+# -----------------------------------------------------------------------------
+# Architecture Detection
+# -----------------------------------------------------------------------------
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+    set(LZ_ARCHITECTURE "macosxarm64")
+    message(STATUS "[macOS] Architecture: Apple Silicon (arm64)")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+    set(LZ_ARCHITECTURE "macosx64")
+    message(STATUS "[macOS] Architecture: Intel (x86_64)")
+endif()
+
+# Determine bitness flag (arm64 doesn't need -m64)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+    set(LZ_MACOS_ARCH_FLAG "-m64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i386")
+    set(LZ_MACOS_ARCH_FLAG "-m32")
+else()
+    set(LZ_MACOS_ARCH_FLAG "")
+endif()
+
+# -----------------------------------------------------------------------------
+# Deprecation Flags (for compatibility checks)
+# -----------------------------------------------------------------------------
+if(MACOSX_VERSION VERSION_GREATER "10.6")
+    set(MACOSX_SSL_DEPRECATED ON)
+endif()
+if(MACOSX_VERSION VERSION_GREATER "10.7")
+    set(MACOSX_ODBC_DEPRECATED ON)
+    # Enable libc++ by default for Clang on 10.7+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(libcxx ON CACHE BOOL "Build using libc++" FORCE)
+    endif()
+endif()
+if(MACOSX_VERSION VERSION_GREATER "10.8")
+    set(MACOSX_GLU_DEPRECATED ON)
+endif()
+
+# -----------------------------------------------------------------------------
+# macOS Platform Interface Library
+# -----------------------------------------------------------------------------
+add_library(lz_platform_macos INTERFACE)
+add_library(lz::platform ALIAS lz_platform_macos)
+
+# Architecture flags
+if(LZ_MACOS_ARCH_FLAG)
+    target_compile_options(lz_platform_macos INTERFACE ${LZ_MACOS_ARCH_FLAG})
+    target_link_options(lz_platform_macos INTERFACE ${LZ_MACOS_ARCH_FLAG})
+endif()
+
+# Minimum deployment target
+target_link_options(lz_platform_macos INTERFACE
+    -mmacosx-version-min=${MACOSX_VERSION}
+)
+
+# Dead strip unused dylibs
+target_link_options(lz_platform_macos INTERFACE
+    "LINKER:-dead_strip_dylibs"
+)
+
+# -----------------------------------------------------------------------------
+# Compiler-Specific Configuration
+# -----------------------------------------------------------------------------
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(lz_platform_macos INTERFACE
+        -pipe
+        -W
+        -Wshadow
+        -Wall
+        -Woverloaded-virtual
+        -fsigned-char
+        -fno-common
+    )
+
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(lz_platform_macos INTERFACE
+        -pipe
+        -W
+        -Wall
+        -Woverloaded-virtual
+        -fsigned-char
+        -fno-common
+        -Qunused-arguments
+        $<$<VERSION_LESS:${CMAKE_CXX_COMPILER_VERSION},8>:-Wshadow>
+        $<$<BOOL:${LZ_SHARE}>:-fPIC>
+    )
+
+else()
+    message(FATAL_ERROR "[macOS] Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
+endif()
+
+# -----------------------------------------------------------------------------
+# Address Sanitizer Support
+# -----------------------------------------------------------------------------
+add_library(lz_asan_macos INTERFACE)
+
+option(asan "Enable Address Sanitizer" OFF)
+
+if(asan)
+    message(STATUS "[macOS] ASan enabled")
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        # Find ASan runtime library
+        execute_process(
+            COMMAND mdfind -name libclang_rt.asan_osx_dynamic.dylib
+            OUTPUT_VARIABLE ASAN_RUNTIME_LIBRARY
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        # Take first result if multiple found
+        string(REGEX MATCH "^[^\n]+" ASAN_RUNTIME_LIBRARY "${ASAN_RUNTIME_LIBRARY}")
+
+        target_compile_options(lz_asan_macos INTERFACE
+            -fsanitize=address
+            -fno-omit-frame-pointer
+            -fsanitize-address-use-after-scope
+        )
+        target_link_options(lz_asan_macos INTERFACE
+            -fsanitize=address
+            -static-libsan
+            "-Wl,-u,___asan_default_options"
+            "-Wl,-u,___lsan_default_options"
+            "-Wl,-u,___lsan_default_suppressions"
+        )
+
+        if(ASAN_RUNTIME_LIBRARY)
+            message(STATUS "[macOS] ASan runtime: ${ASAN_RUNTIME_LIBRARY}")
+        endif()
+    endif()
+endif()
+
+# -----------------------------------------------------------------------------
+# Xcode Generator Configuration
+# -----------------------------------------------------------------------------
+if(CMAKE_GENERATOR MATCHES "Xcode")
+    # Ensure consistent output directories across configurations
+    foreach(_conf IN LISTS CMAKE_CONFIGURATION_TYPES)
+        string(TOUPPER "${_conf}" _conf_upper)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${_conf_upper} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${_conf_upper} "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${_conf_upper} "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
+    endforeach()
+endif()
+
+# -----------------------------------------------------------------------------
+# Combined macOS Interface
+# -----------------------------------------------------------------------------
+add_library(lz_macos INTERFACE)
+target_link_libraries(lz_macos INTERFACE
+    lz_platform_macos
+    $<$<BOOL:${asan}>:lz_asan_macos>
+)
+
+message(STATUS "[macOS] Platform: ${LZ_PLATFORM}, Architecture: ${LZ_ARCHITECTURE}")

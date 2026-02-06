@@ -5,9 +5,11 @@ set_target_properties(${PROJECT_NAME}
     # INTERPROCEDURAL_OPTIMIZATION_DEBUG FALSE
 )
 
-string(REGEX REPLACE "^([0-9]+).*$"             "\\1" MAJOR_V ${VERSION})
-string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*$"    "\\1" MINOR_V ${VERSION})
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION "${MAJOR_V}.${MINOR_V}" SOVERSION ${MAJOR_V})
+# Use CMake's built-in version variables (set by project() command)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    VERSION   "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+    SOVERSION ${PROJECT_VERSION_MAJOR}
+)
 
 include(lzMacros)
 LZ_INSTALL_HEADERS( HEADERS ${public_headers} )

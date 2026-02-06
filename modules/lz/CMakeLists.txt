@@ -82,9 +82,10 @@ message(STATUS "headers for ${PROJECT_NAME}: ${public_headers}")
 message(STATUS "found core: ${lzcore_FOUND}")
 message(STATUS "dirs: ${CORE_INCLUDE_DIR} -- ${UTILS_INCLUDE_DIR}")
 # Compiler flags.
+target_link_libraries(${PROJECT_NAME} PRIVATE lz_compiler_config)
 # target_link_options(${PROJECT_NAME} PUBLIC ${LZ_LINK_SANITIZE})
-target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
-target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
+# target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
+# target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})
 
 include(InstallingGeneral)
 include(InstallingConfigs)
