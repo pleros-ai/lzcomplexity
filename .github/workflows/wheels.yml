@@ -22,7 +22,7 @@ jobs:
           - [ubuntu-22.04, musllinux_x86_64, ""]
           # - [ubuntu-24.04, musllinux_x86_64]
           # - [ubuntu-22.04-arm, manylinux_aarch64]
-          - [macos-13, macosx_x86_64, accelerate]
+          # - [macos-13, macosx_x86_64, accelerate] ## deprecates x86_64 arch on MacOS
           - [macos-14, macosx_arm64, accelerate]
         python:
           - ["cp39", "3.9"]
