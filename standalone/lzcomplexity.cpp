@@ -188,7 +188,7 @@ lz::lz_int process(lz_options& opt) {
       std::vector<lz::internal::LZ_Result> f;
       for (auto seq: in_flags.input) {
          auto flz = lz::lz76Factors(seq);
-         f.push_back(flz);
+         f.emplace_back(flz);
          
          if (opt.verbose) {
             std::cout << print_msg(MSG::INFO, "Factors: [ ");
