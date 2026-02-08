@@ -33,7 +33,6 @@ option(ENABLE_UNDEFINED_SANITIZER  "Build with undefined behavior sanitizer inst
 option(UNDEFINED_BEHAVIOR_IS_FATAL "Make undefined behavior sanitizer errors fatal"               OFF)
 
 # Library options
-option(BUILTIN_TBB    "Use local TBB library"                                    ON)
 option(LZ_SHARE       "Build shared library"                                     ON)
 option(LZ_ONLY_LIBS   "Build only the libraries (lzcore, lzapp and lzdist)"      OFF)
 option(LZ_ONLY_CORE   "Build only the core library"                              OFF)

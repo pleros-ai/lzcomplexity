@@ -33,8 +33,6 @@
 
 #include <lz/lz76.h>
 
-#include "../../utils/src/lz_tbb_arena.h"
-
 #ifdef _LIBCPP_HAS_PARALLEL_ALGORITHMS
 #include <execution>
 #define PAR std::execution::par,

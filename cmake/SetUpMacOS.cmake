@@ -62,6 +62,28 @@ if(MACOSX_VERSION VERSION_GREATER "10.8")
 endif()
 
 # -----------------------------------------------------------------------------
+# macOS Deployment Target
+# -----------------------------------------------------------------------------
+# Allow override via environment variable or CMake option
+# Default to 11.0 for broad compatibility (supports both Intel and Apple Silicon)
+if(DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
+    set(LZ_MACOS_DEPLOYMENT_TARGET "$ENV{MACOSX_DEPLOYMENT_TARGET}" CACHE STRING "macOS deployment target")
+elseif(NOT DEFINED LZ_MACOS_DEPLOYMENT_TARGET)
+    set(LZ_MACOS_DEPLOYMENT_TARGET "11.0" CACHE STRING "macOS deployment target")
+endif()
+
+# Ensure deployment target doesn't exceed current system version
+if(LZ_MACOS_DEPLOYMENT_TARGET VERSION_GREATER MACOSX_VERSION)
+    message(WARNING "[macOS] Deployment target ${LZ_MACOS_DEPLOYMENT_TARGET} > system version ${MACOSX_VERSION}, using ${MACOSX_VERSION}")
+    set(LZ_MACOS_DEPLOYMENT_TARGET "${MACOSX_VERSION}")
+endif()
+
+message(STATUS "[macOS] Deployment target: ${LZ_MACOS_DEPLOYMENT_TARGET}")
+
+# Set CMake's deployment target variable (used by some generators)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "${LZ_MACOS_DEPLOYMENT_TARGET}" CACHE STRING "" FORCE)
+
+# -----------------------------------------------------------------------------
 # macOS Platform Interface Library
 # -----------------------------------------------------------------------------
 add_library(lz_platform_macos INTERFACE)
@@ -73,9 +95,12 @@ if(LZ_MACOS_ARCH_FLAG)
     target_link_options(lz_platform_macos INTERFACE ${LZ_MACOS_ARCH_FLAG})
 endif()
 
-# Minimum deployment target
+# Minimum deployment target - apply to both compile and link
+target_compile_options(lz_platform_macos INTERFACE
+    -mmacosx-version-min=${LZ_MACOS_DEPLOYMENT_TARGET}
+)
 target_link_options(lz_platform_macos INTERFACE
-    -mmacosx-version-min=${MACOSX_VERSION}
+    -mmacosx-version-min=${LZ_MACOS_DEPLOYMENT_TARGET}
 )
 
 # Dead strip unused dylibs

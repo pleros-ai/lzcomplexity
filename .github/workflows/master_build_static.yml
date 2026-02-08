@@ -105,7 +105,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_SHARE=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_SHARE=OFF -DLZ_PARALLEL_BACKEND=TBB -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
 
       - name: Build
@@ -185,7 +185,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_SHARE=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_SHARE=OFF -DLZ_PARALLEL_BACKEND=TBB -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
 
       - name: Build
@@ -241,7 +241,7 @@ jobs:
           CC: ${{ matrix.cc }}
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_SHARE=OFF -DBUILTIN_TBB=${{matrix.builtinTbb}} \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_SHARE=OFF -DLZ_PARALLEL_BACKEND=TBB -DBUILTIN_TBB=${{matrix.builtinTbb}} \
                 -S ${{ github.workspace }}
   
       - name: Build

@@ -25,7 +25,7 @@ The Lempel-Ziv complexity is a non-parametric measure of algorithmic complexity 
 - **Effective Complexity**: Excess entropy measures quantifying statistical dependencies between sequence halves
 - **Shuffle-based Entropy**: Monte Carlo estimation of entropy excess through random permutations
 - **Information Distance**: Normalized compression-based distance metrics for sequence comparison
-- **Parallel Processing**: Multi-threaded computation using Intel OneTBB for large-scale analysis
+- **Parallel Processing**: Multi-threaded computation with support for multiple backends (OpenMP, Intel TBB, Cilk, or sequential fallback)
 
 ### Theoretical Background
 
@@ -48,11 +48,16 @@ which converges to the true entropy rate for ergodic sources as *n → ∞* [2].
   - apple-clang >= 14
   - clang >= 17
   - GNU >= 9.4
+- At least one parallel backend (optional but recommended):
+  - **OpenMP** (default, widely available)
+  - **Intel oneTBB** (bundled or system installation)
+  - **OpenCilk** or Intel Cilk Plus
+  - Falls back to sequential execution if none available
 
 ## Prepare the Local Workspace
 
 The project uses external submodules:
-- **[oneTBB](https://github.com/oneapi-src/oneTBB)**: Intel's Threading Building Blocks for parallel computation
+- **[oneTBB](https://github.com/oneapi-src/oneTBB)**: Intel's Threading Building Blocks for parallel computation (optional)
 - **[nanobind](https://github.com/wjakob/nanobind)**: Small binding library for C++/Python interoperability for the Python bindings
 
 1. Initialize the submodules:
@@ -109,7 +114,6 @@ To disable man page installation, use `-DLZ_INSTALL_MAN=OFF` during CMake config
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `BUILTIN_TBB` | OFF | Use bundled oneTBB instead of system installation |
 | `LZ_SHARE` | ON | Build as shared library (`.so`/`.dylib`) |
 | `LZ_ONLY_LIBS` | OFF | Build only libraries (lzcore, lzapp, lzdist) without executables |
 | `LZ_ONLY_CORE` | OFF | Build only the core library |
@@ -117,6 +121,46 @@ To disable man page installation, use `-DLZ_INSTALL_MAN=OFF` during CMake config
 | `LZ_DISTANCE` | ON | Build the `lzdistance` standalone application |
 | `LZ_INSTALL_MAN` | ON | Install man pages for command-line tools |
 | `BUILD_PYTHON` | OFF | Enable Python bindings via nanobind |
+
+### Parallel Backend Configuration
+
+The library supports multiple parallel computing backends. By default, it auto-detects the best available backend.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `LZ_PARALLEL_BACKEND` | AUTO | Parallel backend selection: `AUTO`, `OPENMP`, `TBB`, `CILK`, `THREADS` |
+| `LZ_PARALLEL_FORCE` | OFF | Force the selected backend (fail if not found) |
+| `BUILTIN_TBB` | OFF | Use bundled oneTBB instead of system installation |
+
+**Backend Priority (AUTO mode):**
+1. **OpenMP** - Default choice, widely available on most systems
+2. **TBB** - Intel Threading Building Blocks, excellent for fine-grained parallelism
+3. **Cilk** - OpenCilk or Intel Cilk Plus, good for divide-and-conquer algorithms
+4. **Threads** - Sequential fallback using `std::thread` utilities only
+
+**Examples:**
+
+```bash
+# Auto-detect best available backend (default)
+cmake -B build
+
+# Force OpenMP backend
+cmake -B build -DLZ_PARALLEL_BACKEND=OPENMP
+
+# Force TBB with bundled version
+cmake -B build -DLZ_PARALLEL_BACKEND=TBB -DBUILTIN_TBB=ON
+
+# Force Cilk backend (requires OpenCilk compiler)
+cmake -B build -DLZ_PARALLEL_BACKEND=CILK
+
+# Sequential only (no parallelism)
+cmake -B build -DLZ_PARALLEL_BACKEND=THREADS
+```
+
+**macOS Note:** For OpenMP on macOS, install libomp via Homebrew:
+```bash
+brew install libomp
+```
 
 ### Debug and Sanitizer Options
 
@@ -183,16 +227,11 @@ print(f"Effective complexity: {result.effective_complexity}")
 If you use this library in your research, please cite:
 
 ```bibtex
-@article{lzcomplexity_2025, 
-  title={Lzcomplexity: Entropy Measurement Library},
-  author={Aragon-Perez, Efren; Estevez-Rams, Ernesto},
-  url={https://www.revistacubanadefisica.org/index.php/rcf/article/view/31}, 
-  volume={42}, 
-  number={2}, 
-  journal={Revista Cubana de Física}, 
-  year={2025}, 
-  month={Dec.}, 
-  pages={80–86} 
+@software{lzcomplexity_2025, 
+  title={lzcomplexity: an entropy measurement library},
+  author={Efren Aragon-Perez},
+  url={https://github.com/efrenaragon96/LempelZiv}, 
+  year={2025} 
 }
 ```
 

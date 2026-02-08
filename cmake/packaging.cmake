@@ -78,7 +78,19 @@ if (UNIX)
         set(CPACK_DEB_COMPONENT_INSTALL YES)
 
         set(CPACK_DEBIAN_PACKAGE_SECTION "science")
-        set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS TRUE)
+        
+        # Handle shlibdeps based on parallel backend
+        # TBB with BUILTIN requires special handling since libtbb won't be in system paths
+        if(BUILTIN_TBB OR (DEFINED LZ_PARALLEL_BACKEND_USED AND LZ_PARALLEL_BACKEND_USED STREQUAL "TBB"))
+            # Disable automatic dependency detection - TBB may not be in system paths
+            set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
+            # Manually specify dependencies
+            set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.17), libstdc++6 (>= 9)")
+            message(STATUS "[CPack] TBB backend: disabling shlibdeps, using manual dependencies")
+        else()
+            set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS TRUE)
+        endif()
+        
         set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS TRUE)
         set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS_POLICY "=")
     

@@ -1,6 +1,5 @@
 #include <csv.h>
 
-#include "../../utils/src/lz_tbb_arena.h"
 #ifdef __cpp_lib_format
 #include <format>
 #endif

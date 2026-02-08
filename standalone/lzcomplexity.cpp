@@ -189,22 +189,25 @@ lz::lz_int process(lz_options& opt) {
       for (auto seq: in_flags.input) {
          auto flz = lz::lz76Factors(seq);
          f.push_back(flz);
-         std::cout << print_msg(MSG::INFO, "Factors: [ ");
-         for (auto f: flz.lzf)
-            std::cout << f << " ";
-         std::cout << "]" << std::endl;
+         
+         if (opt.verbose) {
+            std::cout << print_msg(MSG::INFO, "Factors: [ ");
+            for (auto f: flz.lzf)
+               std::cout << f << " ";
+            std::cout << "]" << std::endl;
 
-         std::cout << print_msg(MSG::INFO, "epsilon: " + std::to_string(flz.epsilon)) << "\n";
+            std::cout << print_msg(MSG::INFO, "epsilon: " + std::to_string(flz.epsilon)) << "\n";
 
-         auto en = lz::lz76NormalError(seq);
-         auto ep = lz::lz76PoisonError(seq);
-         std::cout << print_msg(MSG::INFO, "Normal error: " + std::to_string(en)) << std::endl;
-         std::cout << print_msg(MSG::INFO, "Poison error: " + std::to_string(ep)) << std::endl;
-         // std::string txt = seq.toString();
-         // for (int i = 1; i < flz.lzf.size(); i++) {
-         //    std::cout << txt.substr(flz.lzf[i - 1], flz.lzf[i]) + ".";
-         // }
-         // std::cout << "]" << std::endl;
+            auto en = lz::lz76NormalError(seq);
+            auto ep = lz::lz76PoisonError(seq);
+            std::cout << print_msg(MSG::INFO, "Normal error: " + std::to_string(en)) << std::endl;
+            std::cout << print_msg(MSG::INFO, "Poison error: " + std::to_string(ep)) << std::endl;
+            // std::string txt = seq.toString();
+            // for (int i = 1; i < flz.lzf.size(); i++) {
+            //    std::cout << txt.substr(flz.lzf[i - 1], flz.lzf[i]) + ".";
+            // }
+            // std::cout << "]" << std::endl;
+         }
       }
 
       save_factors(in_flags, f, opt);

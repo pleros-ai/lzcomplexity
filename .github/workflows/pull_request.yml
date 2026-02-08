@@ -32,7 +32,7 @@ jobs:
           CC: gcc
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=Release \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=ON \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_PARALLEL_BACKEND=TBB -DBUILTIN_TBB=ON \
                 -S ${{ github.workspace }}
 
       - name: Build
@@ -71,7 +71,7 @@ jobs:
           CC: clang
         run: |
           cmake -B ${{ steps.build_path.outputs.build-output-dir }} -DCMAKE_BUILD_TYPE=Release \
-                -Dasan=OFF -DBUILD_PYTHON=OFF -DBUILTIN_TBB=ON \
+                -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_PARALLEL_BACKEND=TBB -DBUILTIN_TBB=ON \
                 -S ${{ github.workspace }}
 
       - name: Build

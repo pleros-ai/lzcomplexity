@@ -37,8 +37,6 @@
 #define PAR
 #endif
 
-#include "../../utils/src/lz_tbb_arena.h"
-
 namespace lz {
    //.......................................................................//
    //                            THE BANANA                                 //

@@ -1,8 +1,8 @@
 if (LZ_APP AND LZ_DISTANCE)
-   message(STATUS "--- Init $lzcore ---")
+   message(STATUS "[lzcore] Init lzcore")
    set(PROJECT_NAME lzcore)
 else()
-   message(STATUS "--- Init lzAppCore ---")
+   message(STATUS "[lzcore] Init lzappcore")
    if(LZ_APP)
       set(PROJECT_NAME "lzappcore")
    elseif(LZ_DISTANCE)
@@ -27,43 +27,17 @@ project(
    LANGUAGES CXX)
 
 if (NOT CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-    message(STATUS "This project has a top-level one called [${CMAKE_PROJECT_NAME}] with version [${CMAKE_PROJECT_VERSION}]")
+    message(STATUS "[lzcore] This project has a top-level one called [${CMAKE_PROJECT_NAME}] with version [${CMAKE_PROJECT_VERSION}]")
 else()
-    message(STATUS "This project is a top-level one called [${PROJECT_NAME}] with version [${VERSION}]")
+    message(STATUS "[lzcore] This project is a top-level one called [${PROJECT_NAME}] with version [${VERSION}]")
 endif()
 
 set(CORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 set(CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_property(GLOBAL PROPERTY CORE_INCLUDE_DIR ${CORE_INCLUDE_DIR})
 
-include(useTbb)
-message(STATUS "is unix: ${UNIX} and tbb: ${LZ_TBB_LIBS}")
-
-# OpenMP setup (with macOS Homebrew libomp support)
-# if(APPLE)
-#     execute_process(
-#         COMMAND brew --prefix libomp
-#         OUTPUT_VARIABLE LIBOMP_PREFIX
-#         OUTPUT_STRIP_TRAILING_WHITESPACE
-#         ERROR_QUIET
-#     )
-#     if(LIBOMP_PREFIX)
-#         set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp -I${LIBOMP_PREFIX}/include" CACHE STRING "" FORCE)
-#         set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I${LIBOMP_PREFIX}/include" CACHE STRING "" FORCE)
-#         set(OpenMP_C_LIB_NAMES "omp" CACHE STRING "" FORCE)
-#         set(OpenMP_CXX_LIB_NAMES "omp" CACHE STRING "" FORCE)
-#         set(OpenMP_omp_LIBRARY "${LIBOMP_PREFIX}/lib/libomp.dylib" CACHE FILEPATH "" FORCE)
-#     endif()
-# endif()
-
-# find_package(OpenMP)
-# if(OpenMP_CXX_FOUND)
-#     target_link_libraries(lz_parallel INTERFACE OpenMP::OpenMP_CXX)
-#     message(STATUS "[${PROJECT_NAME}] OpenMP: FOUND (version ${OpenMP_CXX_VERSION})")
-# else()
-#     message(STATUS "[${PROJECT_NAME}] OpenMP: NOT FOUND (parallel features may be limited)")
-# endif()
-
+# Include parallel library configuration (OpenMP, TBB, Cilk, or Threads)
+include(AddParallelLib)
 
 set(LZ_LPF ${CORE_SOURCE_DIR}/lpf.cpp)
 set(LZ_LZ76 ${CORE_SOURCE_DIR}/lz76.cpp)
@@ -85,21 +59,15 @@ add_library(lz::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 # Suffix array algorithms form part of the core
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/sa sa)
-message(STATUS "headers for ${PROJECT_NAME}: ${public_headers}")
+message(STATUS "[lzcore] Headers for ${PROJECT_NAME}: ${public_headers}")
 
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
 target_include_directories(${PROJECT_NAME} 
    PUBLIC 
       $<BUILD_INTERFACE:${CORE_INCLUDE_DIR}>
       $<BUILD_INTERFACE:${EXTERNAL_INCLUDE_DIR}>
-      $<BUILD_INTERFACE:${LZ_TBB_INCLUDES}>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-
-# possible
-add_dependencies(${PROJECT_NAME} ${LZ_TBB_LIBS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${LZ_TBB_LIBS})
-# set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH ${LZ_TBB_LIBS})
 
 set(public_headers 
   # LZ factorization headers
@@ -113,6 +81,14 @@ set(public_headers
   PARENT_SCOPE
 )
 
+# Link parallel library (provides OpenMP, TBB, Cilk, or Threads based on configuration)
+target_link_libraries(${PROJECT_NAME} PRIVATE lz::parallel_lib)
+# possible
+if(LZ_PARALLEL_BACKEND_USED STREQUAL "TBB")
+   find_package(TBB REQUIRED)
+   add_dependencies(${PROJECT_NAME} ${LZ_TBB_LIBS})
+endif()
+
 # Compiler flags.
 target_link_libraries(${PROJECT_NAME} PRIVATE lz_compiler_config)
 # target_link_options(${PROJECT_NAME} PUBLIC ${CMAKE_CXX_LINK_FLAGS})
@@ -124,4 +100,4 @@ set(lzcore_FOUND TRUE)
 include(InstallingGeneral)
 include(InstallingConfigs)
 
-message(STATUS "--- End lzcore ---")
+message(STATUS "[lzcore] End configuration")
