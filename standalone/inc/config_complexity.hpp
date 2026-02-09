@@ -38,7 +38,8 @@ inline constexpr std::array<CmdOpt, 17> OptList{{
      "v2: starting line for summand factors, v3: ending line for summand factors. All values are optionals"},
    {"factors", "f,factors", "Saves the factorization."},
    {"format", "F,format", "Input file format. TXT for raw text format. CSV the input file is a csv array with ',' as delimiter. TCSV the "
-     "input file is a csv array with ' ' as delimiter. PBM, PGM and PNM is for the family of the graphic formats."},
+     "input file is a csv array with ' ' as delimiter. PBM, PGM and PNM is for the family of the graphic formats. DNA, RNA and FASTA "
+     "are for the files with the biological sequences that use .fasta or .fna extensions."},
    {"help", "h,help", "Show this message."},
    {"mixed", "i,mixed-entropy", "The mixed entropy density of consecutive lines. Only valid for multiline files (-m option)."},
    {"jobs", "j,jobs", "Number of threads."},
@@ -202,6 +203,16 @@ struct lz_options {
 
       // Parse format using unified function
       input_format = detail::parseFormat(result["format"].as<std::string>());
+
+      if (input_format == MagickNumber::AUTO) {
+         auto input_extension = std::filesystem::path(input).extension();
+
+         if (input_extension == ".fna" || input_extension == ".fasta" || input_extension == ".gz") {
+            input_format = MagickNumber::FASTA;
+         } else if (input_extension == ".csv") {
+            input_format = MagickNumber::CSV;
+         }
+      }
 
       // Core algorithm args
       args.chunks   = result["partitions"].as<lz::lz_int>();
