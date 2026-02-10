@@ -32,15 +32,12 @@
 #include <lz/sequence.h>
 
 #include <cctype>
-#include <fstream>
 #include <iostream>
-#include <limits>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "exceptions.h"
-#include "utils.h"
 
 #define PBM_MAXCHARLINE 70
 #ifndef PPM_MAXVALUE
@@ -65,6 +62,9 @@ typedef enum {
    PNM_RAWBIN,
    CSV,
    TCSV,
+   DNA,
+   RNA,
+   FASTA,
    AUTO
 } MagickNumber;
 
@@ -212,20 +212,17 @@ namespace lz {
       class PNMUnknownError : public UnknownError {};
       class PNMInsuficientData : public Errors {};
 
-      // .............................................................................
-      // Name: operator=
-      //
-      // Synopsis: Copy operator
-      //
-      // Parameters:
-      //			pnm obj     -----> source operand
-      //
-      // Returns:
-      //         *this         -----> The object
-      //
-      // Exceptions:
-      //            None
-      //..............................................................................
+      /**
+       * @name operator=
+       *
+       * @brief Copy operator
+       *
+       * @param obj     source operand
+       *
+       * @return *this         The object
+       *
+       * @throws None
+       */
       inline pnm& pnm::operator=(pnm obj) {
          swap(*this, obj);
 
@@ -234,40 +231,34 @@ namespace lz {
 
       // ........................  Friend functions .................................
 
-      // .............................................................................
-      // Name: SameSizeQ
-      //
-      // Synopsis: Bool operator. Compares images sizes.
-      //
-      // Parameters:
-      //			const pnm & obj1 -----> first operand
-      //			const pnm & obj2 -----> second operand
-      //
-      // Returns:
-      //         true if both images have equal size
-      //
-      // Exceptions:
-      //            None
-      //..............................................................................
+      /**
+       * @name SameSizeQ
+       *
+       * @brief Bool operator. Compares images sizes.
+       *
+       * @param obj1 first operand
+       * @param obj2 second operand
+       *
+       * @return true if both images have equal size
+       *
+       * @throws None
+       */
       inline bool SameSizeQ(const pnm& obj1, const pnm& obj2) {
          return obj1.height == obj2.height && obj1.width == obj2.width;
       }
 
-      // .............................................................................
-      // Name: swap
-      //
-      // Synopsis: swap operands
-      //
-      // Parameters:
-      //			const pnm & obj1 -----> first operand
-      //			const pnm & obj2 -----> second operand
-      //
-      // Returns:
-      //         None
-      //
-      // Exceptions:
-      //            None
-      //..............................................................................
+      /**
+       * @name swap
+       *
+       * @brief swap operands
+       *
+       * @param obj1 first operand
+       * @param obj2 second operand
+       *
+       * @return None
+       *
+       * @throws None
+       */
       inline void swap(pnm& obj1, pnm& obj2) {
          std::swap(obj1.magick_number, obj2.magick_number);
          std::swap(obj1.header_dump, obj2.header_dump);

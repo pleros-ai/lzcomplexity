@@ -1,318 +1,325 @@
+#pragma once
+
 #include <lz/general.h>
 #include <lz/lz.h>
 #include <lz/pnm.h>
 
 #include <cxxopts.hpp>
 #include <json.hpp>
-#include <unordered_map>
 
-typedef struct CMD_OPT {
-   std::string option_value;
-   std::string description;
-} CMD_OPT;
+#include "config_utils.hpp"
 
-inline std::unordered_map<std::string, CMD_OPT> opt_list{
-   {"adn", {"a,adn", "Calculates the distance between two sets of ADN sequences."}},
-   {"binary", {"b,binary", "Calculate the distance between two sets of sequences in binary format."}},
-   {"default", {"d,default", "Calculates the distance between two sets of sequences."}},
-   {"factors", {"f,factors", "Saves the factorization."}},
-   {"first_format",
-    {"I,first-format",
-     "First data source format. TXT for raw text format. CSV the input file is a csv array. PBM, PGM and PNM is for "
-     "the family of the graphic formats."}},
-   {"second_format",
-    {"S,second-format",
-     "Second data source format. TXT for raw text format. CSV the input file is a csv array. PBM, PGM and PNM is for "
-     "the family of the graphic formats."}},
-   {"help", {"h,help", "Show this message."}},
-   {"first", {"i,first", "Range of lines/files will be process from the first data source."}},
-   {"jobs", {"j,jobs", "Number of threads."}},
-   {"log_base", {"l,log-base", "The log base value. The default is the alphabet cardinality."}},
-   {"verbose", {"L,logs", "Verbose output."}},
-   // {"multi_line", {"m,multi-line", "Treat each line in the input stream as a different sequence."}},
-   {"reverse",
-    {"r,reverse",
-     "Calculate the distance between the first set of sequences and the reverse "
-     "of the second set of sequences."}},
-   {"output", {"o,output", "Output filename. Default appends to the end of input file a .json extension"}},
-   {"partitions", {"p,partitions", "Number of partitions used for the parallel suffix array algorithm."}},
-   {"second", {"s,second", "Range of lines/files will be process from the second data source."}},
-   {"text", {"t,text", "Calculates the distance between two text."}},
-   {"version", {"v,version", "Output the version number."}},
-   {"trajectory", {"y,trajectory", "Calculates the distance between two sets of trajectories."}}};
+using lz::standalone::print_msg;
 
-// define print_msg function for pretty print
-std::string print_msg(lz::utils::MSG_TYPE type, std::string msg);
+// ============================================================================
+// Command-line option definitions - compile-time constant
+// ============================================================================
+
+namespace detail {
+
+struct CmdOpt {
+   std::string_view key;
+   std::string_view option_value;
+   std::string_view description;
+};
+
+// Compile-time constant array instead of runtime unordered_map
+inline constexpr std::array<CmdOpt, 18> OptList{{
+   {"adn", "a,adn", "Calculates the distance between two sets of ADN sequences."},
+   {"binary", "b,binary", "Calculate the distance between two sets of sequences in binary format."},
+   {"default", "d,default", "Calculates the distance between two sets of sequences."},
+   {"factors", "f,factors", "Saves the factorization."},
+   {"first_format", "I,first-format",
+    "First data source format. TXT for raw text format. CSV the input file is a csv array. PBM, PGM and PNM is for "
+    "the family of the graphic formats."},
+   {"second_format", "S,second-format",
+    "Second data source format. TXT for raw text format. CSV the input file is a csv array. PBM, PGM and PNM is for "
+    "the family of the graphic formats."},
+   {"help", "h,help", "Show this message."},
+   {"first", "i,first", "Range of lines/files will be process from the first data source."},
+   {"jobs", "j,jobs", "Number of threads."},
+   {"log_base", "l,log-base", "The log base value. The default is the alphabet cardinality."},
+   {"verbose", "L,logs", "Verbose output."},
+   {"reverse", "r,reverse",
+    "Calculate the distance between the first set of sequences and the reverse of the second set of sequences."},
+   {"output", "o,output", "Output filename. Default appends to the end of input file a .json extension"},
+   {"partitions", "p,partitions", "Number of partitions used for the parallel suffix array algorithm."},
+   {"second", "s,second", "Range of lines/files will be process from the second data source."},
+   {"text", "t,text", "Calculates the distance between two text."},
+   {"trajectory", "y,trajectory", "Calculates the distance between two sets of trajectories."},
+   {"version", "v,version", "Output the version number."},
+}};
+
+// Compile-time lookup for option by key
+[[nodiscard]] constexpr const CmdOpt* findOpt(std::string_view key) noexcept {
+   for (const auto& opt : OptList) {
+      if (opt.key == key) return &opt;
+   }
+   return nullptr;
+}
+
+// Helper to get option value string
+[[nodiscard]] inline std::string getOptValue(std::string_view key) {
+   if (const auto* opt = findOpt(key)) {
+      return std::string(opt->option_value);
+   }
+   return {};
+}
+
+// Helper to get option description string
+[[nodiscard]] inline std::string getOptDesc(std::string_view key) {
+   if (const auto* opt = findOpt(key)) {
+      return std::string(opt->description);
+   }
+   return {};
+}
+
+// ============================================================================
+// Format parsing - unified function to avoid code duplication
+// ============================================================================
+
+[[nodiscard]] inline MagickNumber parseFormat(std::string_view format_str) noexcept {
+   namespace utl = lz::utils;
+   
+   // Create lowercase copy for comparison
+   std::string lower;
+   lower.reserve(format_str.size());
+   for (char c : format_str) {
+      lower.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+   }
+   
+   switch (utl::hash(lower)) {
+      case utl::hash("pbm"):
+      case utl::hash("pbmbin"):  return MagickNumber::PNM_P4;
+      case utl::hash("pbmtxt"):  return MagickNumber::PNM_P1;
+      case utl::hash("pgm"):
+      case utl::hash("pgmbin"):  return MagickNumber::PNM_P5;
+      case utl::hash("pgmtxt"):  return MagickNumber::PNM_P2;
+      case utl::hash("raw"):
+      case utl::hash("bin"):
+      case utl::hash("rawbin"):  return MagickNumber::PNM_RAWBIN;
+      case utl::hash("text"):
+      case utl::hash("txt"):
+      case utl::hash("rawtxt"):  return MagickNumber::PNM_RAWTXT;
+      case utl::hash("csv"):     return MagickNumber::CSV;
+      case utl::hash("tcsv"):    return MagickNumber::TCSV;
+      case utl::hash("dna"):     return MagickNumber::DNA;
+      case utl::hash("rna"):     return MagickNumber::RNA;
+      case utl::hash("fasta"):   return MagickNumber::FASTA;
+      default:                    return MagickNumber::AUTO;
+   }
+}
+
+// ============================================================================
+// Line range parsing - unified function
+// ============================================================================
+
+struct LineRange {
+   lz::lz_int init = lz::utils::LZ_Args::UNDEFINED_LINES;
+   lz::lz_int end  = lz::utils::LZ_Args::UNDEFINED_LINES;
+};
+
+[[nodiscard]] inline LineRange parseLineRange(const std::vector<std::string>& filters) noexcept {
+   LineRange range;
+   
+   if (filters.empty()) return range;
+   
+   if (!filters[0].empty()) {
+      try {
+         range.init = std::stoi(filters[0]);
+      } catch (...) {
+         // Keep default on parse error
+      }
+   }
+   
+   if (filters.size() > 1) {
+      if (filters[1].empty()) {
+         range.end = lz::utils::LZ_Args::ALL_LINES;
+      } else {
+         try {
+            range.end = std::stoi(filters[1]);
+         } catch (...) {
+            range.end = lz::utils::LZ_Args::ALL_LINES;
+         }
+      }
+   }
+   
+   return range;
+}
+
+// ============================================================================
+// Format name lookup for display
+// ============================================================================
+
+[[nodiscard]] inline std::string_view formatName(MagickNumber format) noexcept {
+   switch (format) {
+      case MagickNumber::PNM_P4:
+      case MagickNumber::PNM_P1:     return "PBM";
+      case MagickNumber::PNM_P5:
+      case MagickNumber::PNM_P2:     return "PGM";
+      case MagickNumber::PNM_RAWTXT:
+      case MagickNumber::PNM_RAWBIN: return "TXT";
+      case MagickNumber::CSV:        
+      case MagickNumber::TCSV:       return "CSV";
+      case MagickNumber::DNA:        return "DNA";
+      case MagickNumber::RNA:        return "RNA";
+      case MagickNumber::FASTA:      return "FASTA";
+      default:                       return "AUTO";
+   }
+}
+
+}  // namespace detail
 
 struct lz_options {
-   std::string first_input;                                //? Source input filepath.
-   std::string second_input;                               //? Destination input filepath.
-   std::string first_input_dir;                            //? Source input directory filepath.
-   std::string second_input_dir;                           //? Destination input directory filepath.
-   std::string output         = "lz_results.lzdist.json";  //? Output filepath.
-   std::string factors_output = "";                        //? Output filepath for factors.
-   /* Extra args for lzapp functions */
+   // Data source paths
+   std::string first_input;
+   std::string second_input;
+   std::string first_input_dir;
+   std::string second_input_dir;
+   std::string output         = "lz_results.lzdist.json";
+   std::string factors_output;
+   
+   // Core algorithm args
    lz::utils::LZ_Args args;
-   /* flags */
-   lz::lz_int first_init_line = lz::utils::LZ_Args::ALL_LINES;   //?> Initial line where begin to calculate the lz
-                                                                 //?> distance in the source input.
-   lz::lz_int first_end_line = lz::utils::LZ_Args::ALL_LINES;    //?> Final line where ends to calculate the lz
-                                                                 //?> distance in the source input.
-   lz::lz_int second_init_line = lz::utils::LZ_Args::ALL_LINES;  //?> Initial line where begin to calculate
-                                                                 //?> the lz distance in the destination input.
-   lz::lz_int second_end_line = lz::utils::LZ_Args::ALL_LINES;   //?> Final line where ends to calculate the lz
-                                                                 //?> distance in the destination input.
+   
+   // Line/file range for first source
+   detail::LineRange first_range;
+   detail::LineRange first_dir_range;
+   
+   // Line/file range for second source
+   detail::LineRange second_range;
+   detail::LineRange second_dir_range;
 
-   lz::lz_int first_dir_init_line = lz::utils::LZ_Args::ALL_LINES;   //?> Initial file where begin to calculate
-                                                                     //?> the lz distance in the source directory.
-   lz::lz_int first_dir_end_line = lz::utils::LZ_Args::ALL_LINES;    //?> Final file where ends to calculate the lz
-                                                                     //?> distance in the source directory.
-   lz::lz_int second_dir_init_line = lz::utils::LZ_Args::ALL_LINES;  //?> Initial file where begin to calculate the
-                                                                     //?> lz distance in the destination directory.
-   lz::lz_int second_dir_end_line = lz::utils::LZ_Args::ALL_LINES;   //?> Final file where ends to calculate the lz
-                                                                     //?> distance in the destination directory.
-
+   // Runtime settings
    lz::lz_uint  n_jobs              = 1;
    MagickNumber first_input_format  = MagickNumber::PNM_RAWTXT;
    MagickNumber second_input_format = MagickNumber::PNM_RAWTXT;
-   bool         is_first_directory  = false;
-   bool         is_second_directory = false;
-   // lz::lz_bool  multiLine           = false;
-   lz::lz_bool save_results = false;  //! @deprecated --> remove in final version
-   lz::lz_bool verbose      = false;
+   
+   // Flags - grouped for cache efficiency
+   bool is_first_directory  : 1 = false;
+   bool is_second_directory : 1 = false;
+   bool verbose             : 1 = false;
+   bool revert_             : 1 = false;
+   bool text_               : 1 = false;
+   bool binary_             : 1 = false;
+   bool adn_                : 1 = false;
+   bool trajectory_         : 1 = false;
 
-   lz::lz_bool revert_     = false;
-   lz::lz_bool text_       = false;
-   lz::lz_bool binary_     = false;
-   lz::lz_bool adn_        = false;
-   lz::lz_bool trajectory_ = false;
+   // Backward compatibility accessors
+   [[nodiscard]] lz::lz_int first_init_line() const noexcept { return first_range.init; }
+   [[nodiscard]] lz::lz_int first_end_line() const noexcept { return first_range.end; }
+   [[nodiscard]] lz::lz_int second_init_line() const noexcept { return second_range.init; }
+   [[nodiscard]] lz::lz_int second_end_line() const noexcept { return second_range.end; }
+   [[nodiscard]] lz::lz_int first_dir_init_line() const noexcept { return first_dir_range.init; }
+   [[nodiscard]] lz::lz_int first_dir_end_line() const noexcept { return first_dir_range.end; }
+   [[nodiscard]] lz::lz_int second_dir_init_line() const noexcept { return second_dir_range.init; }
+   [[nodiscard]] lz::lz_int second_dir_end_line() const noexcept { return second_dir_range.end; }
 
-   lz_options(cxxopts::parse_result result) {
-
-      auto first  = !result.unmatched().empty() ? result.unmatched()[0] : "";
-      auto second = !result.unmatched().empty() && result.unmatched().size() > 1 ? result.unmatched()[1] : "";
-
-      if (std::filesystem::is_directory(first)) {
-         first_input_dir    = first;
-         is_first_directory = true;
-      } else {
-         first_input        = first;
-         is_first_directory = false;
+   explicit lz_options(const cxxopts::parse_result& result) {
+      const auto& unmatched = result.unmatched();
+      
+      // Parse first source
+      if (!unmatched.empty()) {
+         const auto& first = unmatched[0];
+         is_first_directory = std::filesystem::is_directory(first);
+         (is_first_directory ? first_input_dir : first_input) = first;
+      }
+      
+      // Parse second source
+      if (unmatched.size() > 1) {
+         const auto& second = unmatched[1];
+         is_second_directory = std::filesystem::is_directory(second);
+         (is_second_directory ? second_input_dir : second_input) = second;
       }
 
-      if (std::filesystem::is_directory(second)) {
-         second_input_dir    = second;
-         is_second_directory = true;
-      } else {
-         second_input        = second;
-         is_second_directory = false;
-      }
-
+      // Output path
+      const auto& primary_source = is_first_directory ? first_input_dir : first_input;
       if (result.count("output")) {
          output = result["output"].as<std::string>();
-         output = output.empty() ? (is_first_directory ? first_input_dir : first_input) + ".lzdist.json" : output;
+         if (output.empty()) output = primary_source + ".lzdist.json";
       } else {
-         output = (is_first_directory ? first_input_dir : first_input) + ".lzdist.json";
+         output = primary_source + ".lzdist.json";
       }
 
+      // Factors output
       if (result.count("factors")) {
          factors_output = result["factors"].as<std::string>();
-      } else {
-         factors_output = "";
       }
 
-      // flags
-      // multiLine = result["multi-line"].as<bool>();
+      // Runtime settings
       n_jobs  = result["jobs"].as<lz::lz_uint>();
       verbose = result["logs"].as<bool>();
 
+      // Mode flags
       revert_     = result["reverse"].as<bool>();
       text_       = result["text"].as<bool>();
       binary_     = result["binary"].as<bool>();
       adn_        = result["adn"].as<bool>();
       trajectory_ = result["trajectory"].as<bool>();
 
-      auto opt_format = result["first-format"].as<std::string>();
-      lz::utils::to_lowercase(opt_format);
+      // Parse formats using unified function
+      first_input_format  = detail::parseFormat(result["first-format"].as<std::string>());
+      second_input_format = detail::parseFormat(result["second-format"].as<std::string>());
 
-      namespace utl = lz::utils;
-      switch (utl::hash(opt_format)) {
-         case utl::hash("pbm"):
-         case utl::hash("pbmbin"): first_input_format = MagickNumber::PNM_P4; break;
-         case utl::hash("pbmtxt"): first_input_format = MagickNumber::PNM_P1; break;
-         case utl::hash("pgm"):
-         case utl::hash("pgmbin"): first_input_format = MagickNumber::PNM_P5; break;
-         case utl::hash("pgmtxt"): first_input_format = MagickNumber::PNM_P2; break;
-         case utl::hash("raw"):
-         case utl::hash("rawbin"): first_input_format = MagickNumber::PNM_RAWBIN; break;
-         case utl::hash("rawtxt"): first_input_format = MagickNumber::PNM_RAWTXT; break;
-         case utl::hash("csv"): first_input_format = MagickNumber::CSV; break;
-         default: first_input_format = MagickNumber::AUTO; break;
-      }
-
-      opt_format = result["second-format"].as<std::string>();
-      lz::utils::to_lowercase(opt_format);
-
-      namespace utl = lz::utils;
-      switch (utl::hash(opt_format)) {
-         case utl::hash("pbm"):
-         case utl::hash("pbmbin"): second_input_format = MagickNumber::PNM_P4; break;
-         case utl::hash("pbmtxt"): second_input_format = MagickNumber::PNM_P1; break;
-         case utl::hash("pgm"):
-         case utl::hash("pgmbin"): second_input_format = MagickNumber::PNM_P5; break;
-         case utl::hash("pgmtxt"): second_input_format = MagickNumber::PNM_P2; break;
-         case utl::hash("raw"):
-         case utl::hash("rawbin"): second_input_format = MagickNumber::PNM_RAWBIN; break;
-         case utl::hash("rawtxt"): second_input_format = MagickNumber::PNM_RAWTXT; break;
-         case utl::hash("csv"): second_input_format = MagickNumber::CSV; break;
-         default: second_input_format = MagickNumber::AUTO; break;
-      }
-
-      // args for SA and Core functions
+      // Core algorithm args
       args.chunks = result["partitions"].as<lz::lz_int>();
-
       if (result.count("log-base")) {
-         auto lg       = result["log-base"].as<std::string>();
+         const auto& lg = result["log-base"].as<std::string>();
          args.log_base = lg.empty() ? args.alphabet : std::stoi(lg);
       } else {
          args.log_base = args.alphabet;
       }
 
-      lz::lz_int init_line = lz::utils::LZ_Args::UNDEFINED_LINES, end_line = lz::utils::LZ_Args::UNDEFINED_LINES;
-      std::vector<std::string> filters;
-
+      // Parse line ranges using unified function
       if (result.count("first")) {
-         filters = result["first"].as<std::vector<std::string>>();
+         auto range = detail::parseLineRange(result["first"].as<std::vector<std::string>>());
+         (is_first_directory ? first_dir_range : first_range) = range;
       }
-
-      if (!filters.empty()) {
-         if (filters.size() == 1) {
-            if (!filters[0].empty()) {
-               init_line = std::stoi(filters[0]);
-            }
-         } else {
-            if (!filters[0].empty()) {
-               init_line = std::stoi(filters[0]);
-            }
-
-            if (filters[1].empty()) {
-               end_line = lz::utils::LZ_Args::ALL_LINES;
-            } else {
-               end_line = std::stoi(filters[1]);
-            }
-         }
-      }
-
-      if (is_first_directory) {
-         first_dir_init_line = init_line;
-         first_dir_end_line  = end_line;
-      } else {
-         first_init_line = init_line;
-         first_end_line  = end_line;
-      }
-
-      init_line = lz::utils::LZ_Args::UNDEFINED_LINES;
-      end_line  = lz::utils::LZ_Args::UNDEFINED_LINES;
+      
       if (result.count("second")) {
-         filters = result["second"].as<std::vector<std::string>>();
-      } else {
-         filters.clear();
-      }
-
-      if (!filters.empty()) {
-         if (filters.size() == 1) {
-            if (!filters[0].empty()) {
-               init_line = std::stoi(filters[0]);
-            }
-         } else {
-            if (!filters[0].empty()) {
-               init_line = std::stoi(filters[0]);
-            }
-
-            if (filters[1].empty()) {
-               end_line = lz::utils::LZ_Args::ALL_LINES;
-            } else {
-               end_line = std::stoi(filters[1]);
-            }
-         }
-      }
-
-      if (is_second_directory) {
-         second_dir_init_line = init_line;
-         second_dir_end_line  = end_line;
-      } else {
-         second_init_line = init_line;
-         second_end_line  = end_line;
+         auto range = detail::parseLineRange(result["second"].as<std::vector<std::string>>());
+         (is_second_directory ? second_dir_range : second_range) = range;
       }
    }
 
    friend std::ostream& operator<<(std::ostream& out, const lz_options& opt) {
-      out << "Summary of options: " << std::endl;
-      out << "First data source: " << (opt.is_first_directory ? " [directory] " : " [file] ")
-          << (opt.is_first_directory ? opt.first_input_dir : opt.first_input) << std::endl;
+      out << "Summary of options:\n";
+      out << "First data source:" << (opt.is_first_directory ? " [directory] " : " [file] ")
+          << (opt.is_first_directory ? opt.first_input_dir : opt.first_input) << '\n';
+      
       if (!opt.second_input.empty() || !opt.second_input_dir.empty()) {
-         out << "Second data source: " << (opt.is_second_directory ? " [directory] " : " [file] ")
-             << (opt.is_second_directory ? opt.second_input_dir : opt.second_input) << std::endl;
+         out << "Second data source:" << (opt.is_second_directory ? " [directory] " : " [file] ")
+             << (opt.is_second_directory ? opt.second_input_dir : opt.second_input) << '\n';
       }
 
-      out << "Format: ";
-      if (opt.first_input_format == MagickNumber::PNM_P4 || opt.first_input_format == MagickNumber::PNM_P1) {
-         out << "PBM" << std::endl;
-      } else if (opt.first_input_format == MagickNumber::PNM_P5 || opt.first_input_format == MagickNumber::PNM_P2) {
-         out << "PGM" << std::endl;
-      } else if (opt.first_input_format == MagickNumber::PNM_RAWTXT ||
-                 opt.first_input_format == MagickNumber::PNM_RAWBIN) {
-         out << "TXT" << std::endl;
-      } else if (opt.first_input_format == MagickNumber::CSV) {
-         out << "CSV" << std::endl;
-      } else {
-         out << "AUTO" << std::endl;
-      }
-
-      out << "Output: " << opt.output << std::endl;
-      out << "Number of jobs: " << opt.n_jobs << std::endl;
-      out << "Partitions use in parallel suffix array: " << opt.args.chunks << std::endl;
+      out << "Format: " << detail::formatName(opt.first_input_format) << '\n';
+      out << "Output: " << opt.output << '\n';
+      out << "Number of jobs: " << opt.n_jobs << '\n';
+      out << "Partitions use in parallel suffix array: " << opt.args.chunks << '\n';
+      
       if (!opt.factors_output.empty()) {
-         out << "Save factors in: " << opt.factors_output << std::endl;
+         out << "Save factors in: " << opt.factors_output << '\n';
       }
 
-      out << "Data used for the distance calculation: ";
-      if (opt.first_init_line >= 0 && opt.first_end_line >= 0) {
-         out << "First file from line: " << opt.first_init_line << std::endl;
-         out << "First file to line: " << opt.first_end_line << std::endl;
-      } else if (opt.first_init_line >= 0 && opt.first_end_line == lz::utils::LZ_Args::ALL_LINES) {
-         out << "First file from line: " << opt.first_init_line << std::endl;
-         out << "First file to final line" << std::endl;
-      } else if (opt.first_init_line >= 0) {
-         out << "First file for line: " << opt.first_init_line << std::endl;
-      }
-      if (opt.first_dir_init_line >= 0 && opt.first_dir_end_line >= 0) {
-         out << "First directory from file: " << opt.first_dir_init_line << std::endl;
-         out << "First directory to file: " << opt.first_dir_end_line << std::endl;
-      } else if (opt.first_dir_init_line >= 0 && opt.first_dir_end_line == lz::utils::LZ_Args::ALL_LINES) {
-         out << "First directory from file: " << opt.first_dir_init_line << std::endl;
-         out << "First directory to final file" << std::endl;
-      } else if (opt.first_dir_init_line >= 0) {
-         out << "First directory for file: " << opt.first_dir_init_line << std::endl;
-      }
-      if (opt.second_init_line >= 0 && opt.second_end_line >= 0) {
-         out << "Second file from line: " << opt.second_init_line << std::endl;
-         out << "Second file to line: " << opt.second_end_line << std::endl;
-      } else if (opt.second_init_line >= 0 && opt.second_end_line == lz::utils::LZ_Args::ALL_LINES) {
-         out << "Second file from line: " << opt.second_init_line << std::endl;
-         out << "Second file to final line" << std::endl;
-      } else if (opt.second_init_line >= 0) {
-         out << "Second file for line: " << opt.second_init_line << std::endl;
-      }
-      if (opt.first_dir_init_line >= 0 && opt.second_dir_end_line >= 0) {
-         out << "Second directory from file: " << opt.first_dir_init_line << std::endl;
-         out << "Second directory to file: " << opt.second_dir_end_line << std::endl;
-      } else if (opt.first_dir_init_line >= 0 && opt.second_dir_end_line == lz::utils::LZ_Args::ALL_LINES) {
-         out << "Second directory from file: " << opt.first_dir_init_line << std::endl;
-         out << "Second directory to final file" << std::endl;
-      } else if (opt.first_dir_init_line >= 0) {
-         out << "Second directory for file: " << opt.first_dir_init_line << std::endl;
-      }
+      // Helper lambda to print range info
+      auto printRange = [&out](std::string_view prefix, const detail::LineRange& range) {
+         constexpr auto ALL = lz::utils::LZ_Args::ALL_LINES;
+         if (range.init >= 0 && range.end >= 0) {
+            out << prefix << " from: " << range.init << '\n';
+            out << prefix << " to: " << range.end << '\n';
+         } else if (range.init >= 0 && range.end == ALL) {
+            out << prefix << " from: " << range.init << '\n';
+            out << prefix << " to final\n";
+         } else if (range.init >= 0) {
+            out << prefix << " at: " << range.init << '\n';
+         }
+      };
+
+      out << "Data used for the distance calculation:\n";
+      printRange("First file line", opt.first_range);
+      printRange("First directory file", opt.first_dir_range);
+      printRange("Second file line", opt.second_range);
+      printRange("Second directory file", opt.second_dir_range);
 
       return out;
    }
@@ -378,69 +385,56 @@ inline auto process_args(cxxopts::parse_result& result) -> lz_options {
    return options;
 }
 
-inline auto generateOptions() -> cxxopts::options {
+[[nodiscard]] inline cxxopts::options generateOptions() {
+   using detail::getOptValue;
+   using detail::getOptDesc;
+   
    cxxopts::options options("LempelZiv-76 Information Distance engine. Suited for "
                             "information distance analysis of time series. Send bug reports to estevez@fisica.uh.cu or "
                             "efrenaragon96@gmail.com.\n");
 
-   // clang-format off
    options.custom_help("[OPTIONS] <first source> [<second source>]")
           .set_width(120)
           .set_tab_expansion(true);
    options.allow_unrecognised_options();
-   // clang-format on
-   auto opt_group = options.add_options("OPTIONS: ");
-   opt_group(opt_list["adn"].option_value, opt_list["adn"].description, cxxopts::value<bool>()->default_value("false"));
-   opt_group(
-      opt_list["binary"].option_value, opt_list["binary"].description, cxxopts::value<bool>()->default_value("false"));
-   opt_group(
-      opt_list["default"].option_value, opt_list["default"].description, cxxopts::value<bool>()->default_value("true"));
-   opt_group(
-      opt_list["factors"].option_value, opt_list["factors"].description, cxxopts::value<std::string>(), "file_name");
-   opt_group(opt_list["help"].option_value, opt_list["help"].description);
-   opt_group(opt_list["first"].option_value,
-             opt_list["first"].description,
-             cxxopts::value<std::vector<std::string>>()->delimiter(':'),
-             "#:#");
-   opt_group(opt_list["first_format"].option_value,
-             opt_list["first_format"].description,
-             cxxopts::value<std::string>()->default_value("AUTO"),
-             "value");
-   opt_group(opt_list["jobs"].option_value,
-             opt_list["jobs"].description,
-             cxxopts::value<lz::lz_uint>()->default_value(std::to_string(std::thread::hardware_concurrency())),
-             "value");
-   opt_group(
-      opt_list["log_base"].option_value, opt_list["log_base"].description, cxxopts::value<std::string>(), "value");
-   opt_group(opt_list["verbose"].option_value,
-             opt_list["verbose"].description,
-             cxxopts::value<bool>()->default_value("false"));
-   // opt_group(opt_list["multi_line"].option_value, opt_list["multi_line"].description);
-   opt_group(
-      opt_list["output"].option_value, opt_list["output"].description, cxxopts::value<std::string>(), "file_name");
-   opt_group(opt_list["partitions"].option_value,
-             opt_list["partitions"].description,
-             cxxopts::value<lz::lz_int>()->default_value("2"),
-             "value");
-   opt_group(opt_list["reverse"].option_value,
-             opt_list["reverse"].description,
-             cxxopts::value<bool>()->default_value("false"));
-   opt_group(opt_list["second"].option_value,
-             opt_list["second"].description,
-             cxxopts::value<std::vector<std::string>>()->delimiter(':'),
-             "#:#");
-   opt_group(opt_list["second_format"].option_value,
-             opt_list["second_format"].description,
-             cxxopts::value<std::string>()->default_value("AUTO"),
-             "value");
-   opt_group(
-      opt_list["text"].option_value, opt_list["text"].description, cxxopts::value<bool>()->default_value("false"));
-   opt_group(opt_list["version"].option_value,
-             opt_list["version"].description,
-             cxxopts::value<bool>()->default_value("false"));
-   opt_group(opt_list["trajectory"].option_value,
-             opt_list["trajectory"].description,
-             cxxopts::value<bool>()->default_value("false"));
+   
+   auto g = options.add_options("OPTIONS: ");
+   
+   // Boolean flags with defaults
+   g(getOptValue("adn"), getOptDesc("adn"), cxxopts::value<bool>()->default_value("false"));
+   g(getOptValue("binary"), getOptDesc("binary"), cxxopts::value<bool>()->default_value("false"));
+   g(getOptValue("default"), getOptDesc("default"), cxxopts::value<bool>()->default_value("true"));
+   g(getOptValue("reverse"), getOptDesc("reverse"), cxxopts::value<bool>()->default_value("false"));
+   g(getOptValue("text"), getOptDesc("text"), cxxopts::value<bool>()->default_value("false"));
+   g(getOptValue("trajectory"), getOptDesc("trajectory"), cxxopts::value<bool>()->default_value("false"));
+   g(getOptValue("version"), getOptDesc("version"), cxxopts::value<bool>()->default_value("false"));
+   g(getOptValue("verbose"), getOptDesc("verbose"), cxxopts::value<bool>()->default_value("false"));
+   
+   // String options
+   g(getOptValue("factors"), getOptDesc("factors"), cxxopts::value<std::string>(), "file_name");
+   g(getOptValue("output"), getOptDesc("output"), cxxopts::value<std::string>(), "file_name");
+   g(getOptValue("log_base"), getOptDesc("log_base"), cxxopts::value<std::string>(), "value");
+   
+   // Format options
+   g(getOptValue("first_format"), getOptDesc("first_format"), 
+     cxxopts::value<std::string>()->default_value("AUTO"), "value");
+   g(getOptValue("second_format"), getOptDesc("second_format"), 
+     cxxopts::value<std::string>()->default_value("AUTO"), "value");
+   
+   // Range options
+   g(getOptValue("first"), getOptDesc("first"), 
+     cxxopts::value<std::vector<std::string>>()->delimiter(':'), "#:#");
+   g(getOptValue("second"), getOptDesc("second"), 
+     cxxopts::value<std::vector<std::string>>()->delimiter(':'), "#:#");
+   
+   // Numeric options
+   g(getOptValue("jobs"), getOptDesc("jobs"), 
+     cxxopts::value<lz::lz_uint>()->default_value(std::to_string(std::thread::hardware_concurrency())), "value");
+   g(getOptValue("partitions"), getOptDesc("partitions"), 
+     cxxopts::value<lz::lz_int>()->default_value("2"), "value");
+   
+   // Help
+   g(getOptValue("help"), getOptDesc("help"));
 
    return options;
 }

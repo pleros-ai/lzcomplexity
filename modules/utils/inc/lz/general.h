@@ -51,11 +51,4 @@ namespace lz {
    template<typename _Ret, typename... _Args>
    class lz_fun : public std::function<_Ret(_Args...)> {};
 
-   const lz_str RED_COLOR     = "\033[1;31m";
-   const lz_str GREEN_COLOR   = "\033[1;32m";
-   const lz_str YELLOW_COLOR  = "\033[1;33m";
-   const lz_str BLUE_COLOR    = "\033[1;34m";
-   const lz_str MAGENTA_COLOR = "\033[1;35m";
-   const lz_str END_COLOR     = "\033[0m";
-
 }  // namespace lz

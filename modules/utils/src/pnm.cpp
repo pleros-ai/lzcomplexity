@@ -27,9 +27,9 @@
  ***************************************************************************/
 
 #include <lz/pnm.h>
+#include <lz/utils.h>
 
 #include <cstdint>
-#include <fstream>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -37,22 +37,19 @@
 
 namespace lz {
    namespace internal {
-      // .............................................................................
-      // Name: InsertComment
-      //
-      // Synopsis: outputs to a stream a comment string inserting the comment token at each new line
-      //
-      // Parameters:
-      //			std::ostream & os        ----> the output sream
-      //          const std::string & str  ----> the comment string
-      //          char commenttoken='#'    ----> the commnet token
-      //
-      // Returns:
-      //         std::ostream & os        ----> the output sream
-      //
-      // Exceptions:
-      //            None
-      //..............................................................................
+      /**
+       * @name InsertComment
+       *
+       * @brief outputs to a stream a comment string inserting the comment token at each new line
+       *
+       * @param os        the output stream
+       * @param str       the comment string
+       * @param commenttoken    the comment token
+       *
+       * @return std::ostream & os        the output stream
+       *
+       * @throws None
+       */
       inline std::ostream& InsertComment(std::ostream& os, const std::string& str, char commenttoken = '#') {
          os << commenttoken << " ";
          for (char c: str) {
@@ -65,22 +62,18 @@ namespace lz {
          return os;
       }
 
-      // .............................................................................
-      // Name: ToChar
-      //
-      // Synopsis: Converts a two byte int to two char
-      //
-      // Parameters:
-      //			std::uint16_t val           ----> to be converted
-      //          std::uint8_t c[2]           ----> converted char
-      //
-      // Returns:
-      //         None
-      //
-      // Exceptions:
-      //            None
-      //..............................................................................
-
+      /**
+       * @name ToChar
+       *
+       * @brief Converts a two byte int to two char
+       *
+       * @param val           to be converted
+       * @param c             converted char
+       *
+       * @return None
+       *
+       * @throws None
+       */
       inline void ToChar(std::uint16_t val, std::uint8_t c[2]) {
          c[0] = static_cast<unsigned char>((val & 0xff00) >> 8);
          c[1] = static_cast<unsigned char>((val & 0x00ff));
@@ -88,23 +81,20 @@ namespace lz {
    }  // namespace internal
 
    namespace utils {
-      // .............................................................................
-      // Name: ReadBin
-      //
-      // Synopsis: serialization input operator. Binary input is expected
-      //
-      // Parameters:
-      //			std::istream& is          -----> input stream
-      //       const binsequence & obj   -----> upon returning the read input sequence
-      //       std::vector<bool>::size_type size=0  ----> Number of bits to read. If zero, reads until eof.
-      //
-      // Returns:
-      //         the last read line
-      //
-      // Exceptions:
-      //            BinarySequenceBadAlloc      --------> Memory allocation failed.
-      //            BinarySequenceError         --------> Generic error.
-      //..............................................................................
+      /**
+       * @name ReadBin
+       *
+       * @brief serialization input operator. Binary input is expected
+       *
+       * @param is          input stream
+       * @param obj         upon returning the read input sequence
+       * @param size        Number of bits to read. If zero, reads until eof.
+       *
+       * @return the last read line
+       *
+       * @throws BinarySequenceBadAlloc      Memory allocation failed.
+       * @throws BinarySequenceError         Generic error.
+       */
       std::istream& ReadBin(std::istream& is, sequence& obj, lz_size size) {
          lz_size       i    = 0;  // the current bit index
          unsigned char c    = 0;  // the current byte
@@ -147,25 +137,21 @@ namespace lz {
          return is;
       }
 
-      // .............................................................................
-      // Name: WriteBin
-      //
-      // Synopsis: serialization output operator
-      //
-      // Notes:
-      //      It dumps the binsequence to the output stream as a binary stream of the sequence values.
-      //      No special formatting is done, just the binary dumping.
-      //
-      // Parameters:
-      //			std::ostream& os          -----> output stream
-      //          const binsequence & obj   -----> object to be serialized
-      //
-      // Returns:
-      //         the output stream
-      //
-      // Exceptions:
-      //            None
-      //..............................................................................
+      /**
+       * @name WriteBin
+       *
+       * @brief serialization output operator
+       *
+       * @note It dumps the binsequence to the output stream as a binary stream of the sequence values.
+       *       No special formatting is done, just the binary dumping.
+       *
+       * @param os          output stream
+       * @param obj         object to be serialized
+       *
+       * @return the output stream
+       *
+       * @throws None
+       */
       std::ostream& WriteBin(std::ostream& os, const sequence& obj) {
          lz_size       i    = 0;  // the current bit index
          unsigned char c    = 0;  // the current byte
@@ -197,28 +183,23 @@ namespace lz {
          return os;
       }
 
-      // .............................................................................
-      // Name: WriteNonBin
-      //
-      // Synopsis: serialization output operator
-      //
-      // Notes:
-      //      It dumps the binsequence to the output stream as a text stream of the sequence values.
-      //      A new line character is written everytime the linesizebound is reached.
-      //
-      // Parameters:
-      //			std::ostream& os            -----> output stream
-      //          const binsequence & obj     -----> object to be serialized
-      //          unsigned int linepos        -----> current position in output line
-      //          unsigned int linesizebound  -----> maximum line size ( if linepos > linesizebound a new line is
-      //          forced)
-      //
-      // Returns:
-      //         the line position at the end of the output operation
-      //
-      // Exceptions:
-      //            None
-      //..............................................................................
+      /**
+       * @name WriteNonBin
+       *
+       * @brief serialization output operator
+       *
+       * @note It dumps the binsequence to the output stream as a text stream of the sequence values.
+       *       A new line character is written everytime the linesizebound is reached.
+       *
+       * @param os            output stream
+       * @param obj           object to be serialized
+       * @param linepos       current position in output line
+       * @param linesizebound maximum line size (if linepos > linesizebound a new line is forced)
+       *
+       * @return the line position at the end of the output operation
+       *
+       * @throws None
+       */
       unsigned int
          WriteNonBin(std::ostream& os, const sequence& obj, unsigned int linepos, unsigned int linesizebound) {
          static unsigned int linechar = linepos;
@@ -236,23 +217,20 @@ namespace lz {
          return linechar;
       }
 
-      // .............................................................................
-      // Name: FileTypeQ
-      //
-      // Synopsis: asks for the type of fyle
-      //
-      // Parameters:
-      //			std::istream & is -----> input string
-      //
-      // Returns:
-      //         The fyle type as a MagickNumber
-      // Notes:
-      //       1) If the file is RAW (non PNM) and the three first
-      //          character are alphanumeric, it is assumed to be a text file, binary otherwise
-      //
-      // Exceptions:
-      //            None
-      //..............................................................................
+      /**
+       * @name FileTypeQ
+       *
+       * @brief asks for the type of file
+       *
+       * @param is    input stream
+       *
+       * @return The file type as a MagickNumber
+       *
+       * @note If the file is RAW (non PNM) and the three first
+       *       character are alphanumeric, it is assumed to be a text file, binary otherwise
+       *
+       * @throws None
+       */
       MagickNumber pnm::FileTypeQ(std::istream& is) {
          char c[5];
 
@@ -285,25 +263,21 @@ namespace lz {
          return magick_number;
       }
 
-      // .............................................................................
-      // Name: ReadPBM
-      //
-      // Synopsis: Read a PBM file
-      //
-      // Parameters:
-      //			std::istream& is                -----> input stream
-      //          binsequence & s                 -----> the input as a binsequence.
-      //          std::vector<binsequence> & sv   -----> The input as a vector of binsequence, each member a line of the
-      //          image.
-      //
-      // Returns:
-      //         the input stream
-      //
-      // Exceptions:
-      //            BinarySequenceBadAlloc      --------> Memory allocation failed.
-      //            PNMUnknownError             --------> Generic error.
-      //            PNMBadFileFormat            --------> The file was not a valid PNM file
-      //..............................................................................
+      /**
+       * @name ReadPBM
+       *
+       * @brief Read a PBM file
+       *
+       * @param is                input stream
+       * @param s                 the input as a binsequence.
+       * @param bin               binary mode flag
+       *
+       * @return the input stream
+       *
+       * @throws BinarySequenceBadAlloc      Memory allocation failed.
+       * @throws PNMUnknownError             Generic error.
+       * @throws PNMBadFileFormat            The file was not a valid PNM file
+       */
       std::istream& pnm::ReadPBM(std::istream& is, sequence& s, bool bin) {
          std::string       line;
          char              c[10];
@@ -583,25 +557,21 @@ namespace lz {
          return is;
       }
 
-      // .............................................................................
-      // Name: SavePBM
-      //
-      // Synopsis: Save a PBM file
-      //
-      // Parameters:
-      //			std::ostream& os                 -----> output stream
-      //          std::vector<binsequence> & s     -----> the output sequence vector
-      //          bool binary                      -----> true: P4, false P1
-      //          int newfile                      -----> 0: The output is a new line in an existing PBM output
-      //                                                  >0: New PBM file. newfile is the number of lines (height) in
-      //                                                  the output.
-      //
-      // Returns:
-      //         the output stream
-      //
-      // Exceptions:
-      //           None
-      //..............................................................................
+      /**
+       * @name SavePBM
+       *
+       * @brief Save a PBM file
+       *
+       * @param os                 output stream
+       * @param s                  the output sequence vector
+       * @param binary             true: P4, false P1
+       * @param newfile            0: The output is a new line in an existing PBM output
+       *                           >0: New PBM file. newfile is the number of lines (height) in the output.
+       *
+       * @return the output stream
+       *
+       * @throws None
+       */
       std::ostream& pnm::SavePBM(std::ostream& os, const sequence& s, bool binary, int newfile) {
          static unsigned int linepos = 0;
 
@@ -646,26 +616,22 @@ namespace lz {
          return os;
       }
 
-      // .............................................................................
-      // Name: ReadPGM
-      //
-      // Synopsis: Read a PGM file
-      //
-      // Parameters:
-      //			std::istream& is                -----> input stream
-      //          sequence & s                    -----> the input as a binsequence.
-      //          std::vector<binsequence> & sv   -----> The input as a vector of binsequence, each member a line of the
-      //          image.
-      //
-      // Returns:
-      //         the input stream
-      //
-      // Exceptions:
-      //            BinarySequenceBadAlloc      --------> Memory allocation failed.
-      //            PNMDepth                    --------> The image depth is not valid
-      //            PNMUnknownError             --------> Generic error.
-      //            PNMBadFileFormat            --------> The file was not a valid PNM file
-      //..............................................................................
+      /**
+       * @name ReadPGM
+       *
+       * @brief Read a PGM file
+       *
+       * @param is                input stream
+       * @param s                 the input as a binsequence.
+       * @param bin               binary mode flag
+       *
+       * @return the input stream
+       *
+       * @throws BinarySequenceBadAlloc      Memory allocation failed.
+       * @throws PNMDepth                    The image depth is not valid
+       * @throws PNMUnknownError             Generic error.
+       * @throws PNMBadFileFormat            The file was not a valid PNM file
+       */
       std::istream& pnm::ReadPGM(std::istream& is, sequence& s, bool bin) {
          std::string line;
          char        c[10];
@@ -1016,31 +982,26 @@ namespace lz {
          return is;
       }
 
-      // .............................................................................
-      // Name: SavePGM
-      //
-      // Synopsis: Save a PGM file
-      //
-      // Parameters:
-      //			std::ostream& os                 -----> output stream
-      //          std::vector<sequence> & s        -----> the output sequence vector
-      //          sequence & s                     -----> the output sequence
-      //          bool binary                      -----> true: P5, false P2
-      //          int newfile                      -----> 0: The output is a new line in an existing PGM output
-      // 												    >0: New PGM
-      // file. newfile is the number of lines (height) in the output.
-      //
-      // Returns:
-      //         the output stream
-      //
-      // Exceptions:
-      //           None
-      //
-      // Notes:
-      //       1) if for some value of s.size() (with newfile==0) the length of the sequence is not
-      //          equal to the original width (s.size()!= width), binary file option should not be used.
-      //          Some PGM visualizers do not know how to handle it.
-      //..............................................................................
+      /**
+       * @name SavePGM
+       *
+       * @brief Save a PGM file
+       *
+       * @param os                 output stream
+       * @param s                  the output sequence
+       * @param binary             true: P5, false P2
+       * @param newfile            0: The output is a new line in an existing PGM output
+       *                           >0: New PGM file. newfile is the number of lines (height) in the output.
+       * @param maxv               maximum value
+       *
+       * @return the output stream
+       *
+       * @throws None
+       *
+       * @note if for some value of s.size() (with newfile==0) the length of the sequence is not
+       *       equal to the original width (s.size()!= width), binary file option should not be used.
+       *       Some PGM visualizers do not know how to handle it.
+       */
       std::ostream& pnm::SavePGM(std::ostream& os, const sequence& s, bool binary, int newfile, char maxv) {
          static unsigned int linepos = 0;
          unsigned char       max     = 0;
@@ -1212,31 +1173,27 @@ namespace lz {
          return os;
       }
 
-      // .............................................................................
-      // Name: SavePPM
-      //
-      // Synopsis: Save a PPM file
-      //
-      // Parameters:
-      //			std::ostream& os                 -----> output stream
-      //          std::vector<sequence> & s        -----> the output sequence vector
-      //          sequence & s                     -----> the output sequence
-      //          bool binary                      -----> true: P5, false P2
-      //          int newfile                      -----> 0: The output is a new line in an existing PGM output
-      // 												    >0: New PGM
-      // file. newfile is the number of lines (height) in the output.
-      //
-      // Returns:
-      //         the output stream
-      //
-      // Exceptions:
-      //           PNMInsuficientData  ---> The data has not enough values according to the image width
-      //
-      // Notes:
-      //       1) if for some value of s.size() (with newfile==0) the length of the sequence is not
-      //          equal to the original width (s.size()!= width), binary file option should not be used.
-      //          Some PGM visualizers do not know how to handle it.
-      //..............................................................................
+      /**
+       * @name SavePPM
+       *
+       * @brief Save a PPM file
+       *
+       * @param os                 output stream
+       * @param start              the output sequence vector start iterator
+       * @param end                the output sequence vector end iterator
+       * @param binary             true: P6, false P3
+       * @param newfile            0: The output is a new line in an existing PGM output
+       *                           >0: New PGM file. newfile is the number of lines (height) in the output.
+       * @param maxv               maximum value
+       *
+       * @return the output stream
+       *
+       * @throws PNMInsuficientData  The data has not enough values according to the image width
+       *
+       * @note if for some value of s.size() (with newfile==0) the length of the sequence is not
+       *       equal to the original width (s.size()!= width), binary file option should not be used.
+       *       Some PGM visualizers do not know how to handle it.
+       */
       std::ostream& pnm::SavePPM(std::ostream&                             os,
                                  const std::vector<unsigned int>::iterator start,
                                  const std::vector<unsigned int>::iterator end,
@@ -1369,30 +1326,25 @@ namespace lz {
          return os;
       }
 
-      // .............................................................................
-      // Name: ReadRaw
-      //
-      // Synopsis: Read a Raw file
-      //
-      // Parameters:
-      //			std::istream& is                  -----> input stream
-      //          sequence & s                      -----> the input as a sequence.
-      //          std::vector<sequence> & sv        -----> The input as a vector of sequence, each member a line of the
-      //          image.
-      //
-      // Returns:
-      //         the input stream
-      //
-      // Note:
-      //      1) If the three first character are alphanumeric, it is
-      //         assumed to be a text file, binary otherwise
-      //      2) If input is binary, then sequence is read as a binary stream.
-      //      3) If input is a text file, then each character is ofsset by '0'.
-      //
-      // Exceptions:
-      //            BinarySequenceBadAlloc      --------> Memory allocation failed.
-      //            PNMUnknownError             --------> Generic error.
-      //..............................................................................
+      /**
+       * @name ReadRaw
+       *
+       * @brief Read a Raw file
+       *
+       * @param is                 input stream
+       * @param s                  the input as a sequence.
+       * @param bin                binary mode flag
+       *
+       * @return the input stream
+       *
+       * @note 1) If the three first character are alphanumeric, it is
+       *          assumed to be a text file, binary otherwise
+       *       2) If input is binary, then sequence is read as a binary stream.
+       *       3) If input is a text file, then each character is offset by '0'.
+       *
+       * @throws BinarySequenceBadAlloc      Memory allocation failed.
+       * @throws PNMUnknownError             Generic error.
+       */
       std::istream& pnm::ReadRAW(std::istream& is, sequence& s, bool bin) {
          std::string line;
 
@@ -1502,28 +1454,22 @@ namespace lz {
          return is;
       }
 
-      // .............................................................................
-      // Name: ReadPNM
-      //
-      // Synopsis: Read a file of type PBM, PGM or RAW
-      //
-      // Parameters:
-      //			 std::istream& is              -----> input stream
-      //          sequence & s                 -----> the input as a sequence.
-      //          std::vector<sequence> & sv   -----> The input as a vector of sequence, each member a line of the
-      //          image.
-      //
-      // Returns:
-      //         the input stream
-      //
-      // Note:
-      //      1) The funtion determines the file type
-      //
-      // Exceptions:
-      //            BinarySequenceBadAlloc      --------> Memory allocation failed.
-      //            PNMBadFileFormat            --------> Unknown file format or file corrupted.
-      //            PNMUnknownError             --------> Generic error.
-      //..............................................................................
+      /**
+       * @name ReadPNM
+       *
+       * @brief Read a file of type PBM, PGM or RAW
+       *
+       * @param is              input stream
+       * @param s               the input as a sequence.
+       *
+       * @return the input stream
+       *
+       * @note The function determines the file type
+       *
+       * @throws BinarySequenceBadAlloc      Memory allocation failed.
+       * @throws PNMBadFileFormat            Unknown file format or file corrupted.
+       * @throws PNMUnknownError             Generic error.
+       */
       std::istream& pnm::ReadPNM(std::istream& is, sequence& s) {
          sequence seq;
 

@@ -43,15 +43,15 @@ namespace lz {
             maxConcurrency > 0 ? std::min(maxConcurrency, tbbDefaultNumberThreads) : tbbDefaultNumberThreads;
          const unsigned bcCpus = internal::CPU_Bandwidth();
          if (maxConcurrency > bcCpus) {
-            std::cout << YELLOW_COLOR << "CPU Bandwith Control Active. Proceeding with " << bcCpus
-                      << " threads accordingly" << END_COLOR << std::endl;
+            std::cout << "\033[1;33m" << "CPU Bandwith Control Active. Proceeding with " << bcCpus
+                      << " threads accordingly" << "\033[0m" << std::endl;
             maxConcurrency = bcCpus;
          }
          if (maxConcurrency > tbb::global_control::active_value(tbb::global_control::max_allowed_parallelism)) {
-            std::cout << YELLOW_COLOR
+            std::cout << "\033[1;33m"
                       << "tbb::global_control is active, limiting the number of parallel workers from this task arena "
                          "available for execution."
-                      << END_COLOR << std::endl;
+                      << "\033[0m" << std::endl;
          }
          fTBBArena->initialize(maxConcurrency);
          fNWorkers = maxConcurrency;
@@ -78,8 +78,8 @@ namespace lz {
          const std::lock_guard<std::mutex> lock{m};
          if (auto sp = weak_GTAWrapper.lock()) {
             if (maxConcurrency && (sp->TaskArenaSize() != maxConcurrency)) {
-               std::cout << YELLOW_COLOR << "There's already an active task arena. Proceeding with the current "
-                         << sp->TaskArenaSize() << " threads" << END_COLOR << std::endl;
+               std::cout << "\033[1;33m" << "There's already an active task arena. Proceeding with the current "
+                         << sp->TaskArenaSize() << " threads" << "\033[0m" << std::endl;
             }
             return sp;
          }

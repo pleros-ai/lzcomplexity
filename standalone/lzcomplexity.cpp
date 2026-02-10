@@ -1,5 +1,3 @@
-#include "inc/lzcomplexity.h"
-
 #include <lz/lz.h>
 
 #include <filesystem>
@@ -8,14 +6,14 @@
 #include <ostream>
 #include <string>
 
-#include "inc/config.h"
-#include "inc/messages.h"
+#include "inc/lzcomplexity.hpp"
+#include "inc/config_complexity.hpp"
 #include "json.hpp"
 #include "lz/exceptions.h"
 #include "lz/general.h"
 #include "lz/utils.h"
 
-#define VERSION "v0.9.6"
+#define VERSION "v0.9.7"
 
 using MSG = lz::utils::MSG_TYPE;
 
@@ -149,7 +147,7 @@ lz::lz_int process(lz_options& opt) {
    }
 
    if (!opt.warn_out && ignore_parallel) {
-      std::cout << print_msg(MSG::WARRING, warn_data_size) << std::endl << std::endl;
+      std::cout << print_msg(MSG::WARRING, detail::WarnDataSize) << std::endl << std::endl;
    }
 
    //? Input flags
@@ -162,7 +160,7 @@ lz::lz_int process(lz_options& opt) {
    if (ignore_parallel) {
       in_flags.sa_args.chunks = 1;
       notify_warm             = true;
-      out_log << warn_data_size << std::endl;
+      out_log << detail::WarnDataSize << std::endl;
    }
 
    lz::utils::EnabledMT(opt.n_jobs);
@@ -395,62 +393,7 @@ lz::lz_int process(lz_options& opt) {
 }
 
 auto main(int argc, char const* argv[]) -> int {
-   cxxopts::options options("lzcomplexity", header);
-
-   // clang-format off
-   options.custom_help("[OPTIONS] <file>")
-          .set_width(120)
-          .set_tab_expansion(true);
-   options.allow_unrecognised_options();
-   // clang-format on
-   auto opt_group = options.add_options("OPTIONS: ");
-   opt_group(
-      opt_list["alphabet"].option_value, opt_list["alphabet"].description, cxxopts::value<std::string>(), "value");
-   opt_group(opt_list["distance"].option_value, opt_list["distance"].description);
-   opt_group(opt_list["excess_opt"].option_value,
-             opt_list["excess_opt"].description,
-             cxxopts::value<std::vector<std::string>>()->delimiter(':')->implicit_value("a"),
-             "[v1]:[f]:[v2]:[v3]");
-   opt_group(
-      opt_list["factors"].option_value, opt_list["factors"].description, cxxopts::value<std::string>(), "file_name");
-   opt_group(opt_list["format"].option_value,
-             opt_list["format"].description,
-             cxxopts::value<std::string>()->default_value("AUTO"),
-             "value");
-   opt_group(opt_list["help"].option_value, opt_list["help"].description);
-#ifdef PLEROS_INTERNAL
-   opt_group(
-      opt_list["mixed"].option_value, opt_list["mixed"].description, cxxopts::value<bool>()->default_value("false"));
-#endif
-   opt_group(opt_list["jobs"].option_value,
-             opt_list["jobs"].description,
-             cxxopts::value<lz::lz_uint>()->default_value(std::to_string(std::thread::hardware_concurrency())),
-             "value");
-   opt_group("J,json",
-             "Input parameters as json format (ignore all other flags)",
-             cxxopts::value<std::string>()->default_value("")->hide(),
-             "value");
-   opt_group(
-      opt_list["log_base"].option_value, opt_list["log_base"].description, cxxopts::value<std::string>(), "value");
-   opt_group(opt_list["multi_line"].option_value, opt_list["multi_line"].description);
-   opt_group(opt_list["entropy"].option_value, opt_list["entropy"].description);
-   opt_group(
-      opt_list["output"].option_value, opt_list["output"].description, cxxopts::value<std::string>(), "file_name");
-   opt_group(opt_list["partitions"].option_value,
-             opt_list["partitions"].description,
-             cxxopts::value<lz::lz_int>()->default_value("0"),
-             "value");
-   opt_group(opt_list["verbose"].option_value,
-             opt_list["verbose"].description,
-             cxxopts::value<bool>()->default_value("false"));
-   opt_group(opt_list["version"].option_value,
-             opt_list["version"].description,
-             cxxopts::value<bool>()->default_value("false"));
-   opt_group(
-      opt_list["warn"].option_value, opt_list["warn"].description, cxxopts::value<bool>()->default_value("false"));
-#ifdef PLEROS_INTERNAL
-   opt_group(opt_list["shuffle"].option_value, opt_list["shuffle"].description);
-#endif
+   auto options = generateOptions();
 
    try {
       auto result = options.parse(argc, argv);

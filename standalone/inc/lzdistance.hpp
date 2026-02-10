@@ -1,299 +1,46 @@
-#include <csv.h>
+#pragma once
+/**
+ * @file lzdistance.hpp
+ * @brief Header for lzdistance standalone application
+ */
 
-#ifdef __cpp_lib_format
-#include <format>
-#endif
+#include "config_utils.hpp"
 #include <lz/parallel_utils.h>
-#include <lz/pnm.h>
 
-typedef std::chrono::high_resolution_clock::time_point time_point_t;
-constexpr inline auto                                  now      = std::chrono::high_resolution_clock::now;
-constexpr inline auto                                  duration = [](const std::chrono::nanoseconds& d) {
-   return std::chrono::duration_cast<std::chrono::duration<double>>(d).count();
+// Re-export common utilities for backward compatibility
+using lz::standalone::time_point_t;
+using lz::standalone::now;
+using lz::standalone::duration_sec;
+using lz::standalone::getColor;
+using lz::standalone::print_msg;
+using lz::standalone::read_input;
+using lz::standalone::FileInfo;
+using lz::standalone::DirectoryReader;
+
+// Backward compatibility alias for duration
+constexpr inline auto duration = [](const std::chrono::nanoseconds& d) {
+   return lz::standalone::duration_sec(d);
 };
 
-namespace lz {
-   namespace utils {
-      namespace fs = std::filesystem;
-
-      struct FileInfo {
-         double      size;
-         std::string name;
-         fs::path    path;
-
-         bool operator==(const FileInfo& other) const { return name == other.name && size == other.size; }
-         bool operator!=(const FileInfo& other) const { return !operator==(other); }
-      };
-
-      class DirectoryReader {
-     private:
-         std::string           dirPath;
-         std::vector<FileInfo> files;
-
-         const std::array<std::string, 2> avoid_extensions{".json", ".log"};
-
-     public:
-         DirectoryReader(const std::string& path)
-           : dirPath(path) {
-            if (!fs::exists(dirPath) || !fs::is_directory(dirPath)) {
-               throw FileNameError("Directory does not exist");
-            }
-
-            for (const auto& entry: fs::directory_iterator(dirPath)) {
-               if (entry.is_regular_file() &&
-                   !std::any_of(avoid_extensions.begin(), avoid_extensions.end(), [&entry](const auto& ext) {
-                      return entry.path().extension() == ext;
-                   })) {
-                  files.emplace_back(FileInfo{
-                     static_cast<double>(fs::file_size(entry.path())),
-                     entry.path().filename().string(),
-                     entry.path()
-                  });
-               }
-            }
-         }
-         DirectoryReader(const fs::path& path)
-           : DirectoryReader(path.string()) {}
-         DirectoryReader(const DirectoryReader& other)
-           : dirPath(other.dirPath), files(other.files){};
-         DirectoryReader(DirectoryReader&& other)
-           : dirPath(std::move(other.dirPath)), files(std::move(other.files)){};
-
-         auto setDirectory(std::string path) -> void {
-            dirPath = path;
-
-            for (const auto& entry: fs::directory_iterator(dirPath)) {
-               if (entry.is_regular_file()) {
-                  files.emplace_back(FileInfo{
-                     static_cast<double>(entry.file_size()),
-                     entry.path().filename().string(),
-                     entry.path()
-                  });
-               }
-            }
-         }
-
-         auto getDirectory() const -> std::string { return dirPath; }
-
-         auto getFiles() const -> std::vector<FileInfo> { return files; }
-
-         bool isEmpty() const { return files.empty(); }
-
-         DirectoryReader& operator=(const DirectoryReader& other) {
-            if (this != &other) {
-               this->~DirectoryReader();
-               new (this) DirectoryReader(other);
-            }
-            return *this;
-         };
-         DirectoryReader& operator=(DirectoryReader&& other) {
-            if (this != &other) {
-               this->~DirectoryReader();
-               new (this) DirectoryReader(std::move(other));
-            }
-            return *this;
-         };
-
-         bool operator==(const DirectoryReader& other) { return dirPath == other.dirPath && files == other.files; }
-         bool operator!=(const DirectoryReader& other) { return !operator==(other); }
-
-         void displayFiles() const {
-            std::cout << "Number of files: " << files.size() << std::endl;
-            for (const auto& file: files) {
-               std::cout << file.name << " size: " << file.size << std::endl;
-            }
-         }
-      };
-   }  // namespace utils
-}  // namespace lz
-
-inline auto getColor(lz::utils::MSG_TYPE type) {
-   switch (type) {
-      case lz::utils::MSG_TYPE::ERROR: return lz::RED_COLOR;
-      case lz::utils::MSG_TYPE::WARRING: return lz::YELLOW_COLOR;
-      case lz::utils::MSG_TYPE::INFO: return lz::GREEN_COLOR;
-   }
-   return lz::BLUE_COLOR;
-}
-
-inline std::vector<std::string> split(const std::string& s, char delim) {
-   std::vector<std::string> tokens;
-   std::string              token;
-   std::istringstream       tokenStream(s);
-   while (std::getline(tokenStream, token, delim)) {
-      tokens.emplace_back(token);
-   }
-   return tokens;
-}
-
-inline std::string print_msg(lz::utils::MSG_TYPE type, std::string msg) {
-   auto                     color = getColor(type);
-   std::vector<std::string> allLines;
-   std::string::size_type   maxLen = 0;
-
-   std::string final_msg = "";
-   std::string delimiter = "\n";
-
-   allLines = split(msg, '\n');
-   for (auto tmp: allLines) {
-      maxLen = tmp.length() > maxLen ? tmp.length() : maxLen;
-   }
-
-   std::string header = type == lz::utils::MSG_TYPE::ERROR  ? " [ Error ] "
-                        : type == lz::utils::MSG_TYPE::INFO ? " [ Info ] "
-                                                            : " [ Warning ] ";
-
-   for (auto i = 0ul; i < allLines.size(); i++) {
-      auto str    = allLines[i];
-      auto offset = final_msg.size() > 0 ? std::string(header.size(), ' ') : "";
-      final_msg += offset + str + (i != allLines.size() - 1 ? "\n" : "");
-   }
-
-   return color + header + lz::END_COLOR + final_msg;
-}
-
-inline void read_multi_line(std::ifstream& in, std::vector<lz::sequence>& seq_vec, MagickNumber format) {
-   lz::utils::pnm parser;
-
-   try {
-      switch (format) {
-         case PNM_P1: parser.ReadPBM(in, seq_vec, false); break;
-         case PNM_P4: parser.ReadPBM(in, seq_vec, true); break;
-         case PNM_P2: parser.ReadPGM(in, seq_vec, false); break;
-         case PNM_P5: parser.ReadPGM(in, seq_vec, true); break;
-         case PNM_RAWTXT: parser.ReadRAW(in, seq_vec, false); break;
-         case PNM_RAWBIN: parser.ReadRAW(in, seq_vec, true); break;
-         default: parser.ReadPNM(in, seq_vec);
-      }
-   } catch (BadAlloc& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (lz::utils::PNMBadFileFormat& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (lz::utils::PNMUnknownError& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (Errors& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   }
-}
-
-inline void read_one_line(std::ifstream& in, lz::sequence& seq, MagickNumber format) {
-   lz::utils::pnm parser;
-
-   try {
-      switch (format) {
-         case PNM_P1: parser.ReadPBM(in, seq, false); break;
-         case PNM_P4: parser.ReadPBM(in, seq, true); break;
-         case PNM_P2: parser.ReadPGM(in, seq, false); break;
-         case PNM_P5: parser.ReadPGM(in, seq, true); break;
-         case PNM_RAWTXT: parser.ReadRAW(in, seq, false); break;
-         case PNM_RAWBIN: parser.ReadRAW(in, seq, true); break;
-         default: parser.ReadPNM(in, seq);
-      }
-   } catch (BadAlloc& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (lz::utils::PNMBadFileFormat& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (lz::utils::PNMUnknownError& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   } catch (Errors& err) {
-      std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Bad allow while reading file ...\n" + std::string(err.msg))
-                << std::endl;
-   }
-}
-
-// Read a csv file with multiple columns (date per column)
-inline void read_csv(const std::string& ip_path, std::vector<lz::sequence>& text_col) {
-   namespace fs = std::filesystem;
-   std::error_code ec;
-   fs::file_size(ip_path, ec);
-
-   if (ec) {
-      std::cerr << lz::RED_COLOR << ip_path << " : " << ec.message() << "\n" << lz::END_COLOR;
-      std::exit(EXIT_FAILURE);
-   }
-
-   io::LineReader input(ip_path);
-
-   auto        line = input.next_line();
-   std::string str(line);
-   auto        rows = split(str, ',');
-   text_col.reserve(rows.size());
-
-   for (auto row: rows) {
-      text_col.emplace_back(row);
-   }
-
-   // std::vector<std::vector<std::string>> data_frame(rows.size());
-
-   while (auto line = input.next_line()) {
-      std::string str(line);
-      auto        rows = split(str, ',');
-      for (size_t i = 0; i < rows.size(); i++) {
-         text_col[i] += rows[i];
-      }
-   }
-   // std::cout.setf(std::ios::left, std::ios::adjustfield);
-   // std::cout << text_col[0];
-}
-
-// Read a plain text file with one line
-inline std::vector<lz::sequence>
-   read_input(const std::string& ip_path, bool multiline = false, MagickNumber format = MagickNumber::PNM_RAWTXT) {
-   namespace fs = std::filesystem;
-   std::error_code ec;
-   fs::is_regular_file(ip_path, ec);
-   fs::is_character_file(ip_path, ec);
-
-   if (ec) {
-      // std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, ip_path + " : " + ec.message()) << lz::END_COLOR;
-      throw FileFormatError(ip_path + " : " + ec.message());
-   }
-
-   std::ifstream input(ip_path);
-
-   lz::utils::pnm            parser;
-   lz::sequence              oneLine;
-   std::vector<lz::sequence> data{};
-
-   if (format == CSV) {
-      read_csv(ip_path, data);
-   } else if (multiline)
-      read_multi_line(input, data, format);
-   else {
-      read_one_line(input, oneLine, format);
-      data.emplace_back(oneLine);
-   }
-
-   input.close();
-   return data;
-}
-
-inline std::vector<lz::sequence> read_dir(const std::string& ip_path, MagickNumber format = MagickNumber::PNM_RAWTXT) {
-   namespace fs = std::filesystem;
-
-   fs::path path(ip_path);
-
-   // Check if the provided path is a directory
-   if (!fs::is_directory(path)) {
+/**
+ * @brief Read all files from a directory in parallel
+ */
+inline std::vector<lz::sequence> read_dir(const std::filesystem::path& path, 
+                                          MagickNumber format = MagickNumber::PNM_RAWTXT) {
+   if (!std::filesystem::is_directory(path)) {
       std::cerr << print_msg(lz::utils::MSG_TYPE::ERROR, "Provided path is not a directory.") << std::endl;
       throw FileFormatError("Provided path is not a directory.");
    }
 
-   lz::utils::DirectoryReader reader(path);
-
-   const auto&               files = reader.getFiles();
+   DirectoryReader reader(path);
+   const auto& files = reader.files();
    std::vector<lz::sequence> data(files.size());
 
-   lz::utils::parallel_for(0, files.size(), [&](lz::lz_size idx) {
-      auto seq  = read_input(files[idx].path, false, format);
-      data[idx] = seq[0];
+   lz::utils::parallel_for(0ul, files.size(), [&](lz::lz_size idx) {
+      auto seq = read_input(files[idx].path, false, format);
+      if (!seq.empty()) {
+         data[idx] = std::move(seq[0]);
+      }
    });
 
    return data;

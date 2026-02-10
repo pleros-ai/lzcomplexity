@@ -79,11 +79,11 @@ lz::lz_int process(lz_options& opt) {
    lz::utils::par_do(load_first_data, load_second_data);
 
    lz::dist::LZ_Flags flags(first_data, second_data, opt.args);
-   flags.first_dist_init = opt.is_second_directory ? opt.first_dir_init_line : opt.first_init_line;
-   flags.first_dist_end  = opt.is_second_directory ? opt.first_dir_end_line : opt.first_end_line;
+   flags.first_dist_init = opt.is_second_directory ? opt.first_dir_init_line() : opt.first_init_line();
+   flags.first_dist_end  = opt.is_second_directory ? opt.first_dir_end_line() : opt.first_end_line();
 
-   flags.second_dist_init = opt.is_second_directory ? opt.second_dir_init_line : opt.second_init_line;
-   flags.second_dist_end  = opt.is_second_directory ? opt.second_dir_end_line : opt.second_end_line;
+   flags.second_dist_init = opt.is_second_directory ? opt.second_dir_init_line() : opt.second_init_line();
+   flags.second_dist_end  = opt.is_second_directory ? opt.second_dir_end_line() : opt.second_end_line();
 
    flags.revert_     = opt.revert_;
    flags.text_       = opt.text_;
