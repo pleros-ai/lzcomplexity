@@ -112,7 +112,11 @@ namespace lz {
 
       transformed_sequence.seq.resize(seq.size());
 
+#ifdef __cpp_lib_ranges
+      std::ranges::transform(seq, transformed_sequence.seq.begin(), fn);
+#else
       std::transform(seq.begin(), seq.end(), transformed_sequence.seq.begin(), fn);
+#endif
 
       transformed_sequence.alphabet_size = alphabet_size;
 
@@ -124,7 +128,11 @@ namespace lz {
 
       transformed_sequence.seq.resize(seq.size());
 
+#ifdef __cpp_lib_ranges
+      std::ranges::transform(seq, transformed_sequence.seq.begin(), fn);
+#else
       std::transform(seq.begin(), seq.end(), transformed_sequence.seq.begin(), fn);
+#endif
 
       transformed_sequence.alphabet_size = alphabet_size;
 
@@ -136,7 +144,11 @@ namespace lz {
 
       transformed_sequence.seq.resize(s.seq.size());
 
+#ifdef __cpp_lib_ranges
+      std::ranges::transform(s.seq, transformed_sequence.seq.begin(), fn);
+#else
       std::transform(s.seq.begin(), s.seq.end(), transformed_sequence.seq.begin(), fn);
+#endif
 
       transformed_sequence.alphabet_size = s.alphabet_size;
 
@@ -148,7 +160,11 @@ namespace lz {
 
       transformed_sequence.seq.resize(s.seq.size());
 
+#ifdef __cpp_lib_ranges
+      std::ranges::transform(s.seq, transformed_sequence.seq.begin(), fn);
+#else
       std::transform(s.seq.begin(), s.seq.end(), transformed_sequence.seq.begin(), fn);
+#endif
 
       transformed_sequence.alphabet_size = s.alphabet_size;
 

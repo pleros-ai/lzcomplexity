@@ -2,7 +2,7 @@
   <img src="./Pleros_AI.webp" alt="drawing" align="center" height="200"/>
 
   <h2 align="center">
-    lzcomplexity: the LempelZiv analysis library
+    lzcomplexity: an entropy measures library
   </h2>
 
 [![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) 
@@ -12,7 +12,7 @@
 
 # lzcomplexity
 
-**lzcomplexity** is a high-performance C++ library for computing entropy and complexity measures of symbolic sequences, based on the Lempel-Ziv 76 (LZ76) factorization algorithm [1]. The library provides efficient implementations for analyzing time series data, with applications in information theory, signal processing, neuroscience, and complex systems analysis.
+**lzcomplexity** is a high-performance C++ library developed for complexity analysis using entropic metrics such as entropy density, effective measure complexity, and informational distance. The algorithms used to estimate the metrics employing Lempel-Ziv factorization (LZ76) [1]. The library provides efficient implementations for analyzing time series data, with applications in information theory, signal processing, and neuroscience.
 
 ## Overview
 
@@ -22,8 +22,7 @@ The Lempel-Ziv complexity is a non-parametric measure of algorithmic complexity 
 
 - **LZ76 Factorization**: Efficient computation of Lempel-Ziv complexity using the CaPS (Cache-friendly Parallel Suffix array) algorithm [3]
 - **Entropy Density**: Normalized entropy rate estimation based on LZ factorization
-- **Effective Complexity**: Excess entropy measures quantifying statistical dependencies between sequence halves
-- **Shuffle-based Entropy**: Monte Carlo estimation of entropy excess through random permutations
+- **Effective Complexity**: Effective measure complexity measures quantifying statistical dependencies between sequence halves
 - **Information Distance**: Normalized compression-based distance metrics for sequence comparison
 - **Parallel Processing**: Multi-threaded computation with support for multiple backends (OpenMP, Intel TBB, Cilk, or sequential fallback)
 

@@ -491,8 +491,8 @@ namespace lz {
       std::pair<std::vector<lz_int>, lz_size> random_run;
       lz_uint                                 complexity;
 
-      auto s1_c = lz76Factorization(s1, args);
-      auto s2_c = lz76Factorization(s2, args);
+      // auto s1_c = lz76Factorization(s1, args);
+      // auto s2_c = lz76Factorization(s2, args);
 
       // args.alphabet = seq.getAlphabetSize();
       // args.log_base = seq.getAlphabetSize();
@@ -521,7 +521,7 @@ namespace lz {
       L.Factorize(seq, args);
 
       const auto log_base = args.log_base == NO_ALPHABET ? seq.getAlphabetSize() : args.log_base;
-      const auto alphabet = args.alphabet == NO_ALPHABET ? seq.getAlphabetSize() : args.alphabet;
+      // const auto alphabet = args.alphabet == NO_ALPHABET ? seq.getAlphabetSize() : args.alphabet;
 
       auto entropy = L.getFactorization() * utils::log(seq.size(), log_base) / static_cast<double>(seq.size());
 
