@@ -156,7 +156,7 @@ jobs:
         env:
           LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
           LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
-          VERSION: 0.9.7
+          VERSION: 0.9.8
           DISTRO: $(lsb_release -cs)
         run: |
           # Extract the built package

@@ -13,7 +13,7 @@
 #include "lz/general.h"
 #include "lz/utils.h"
 
-#define VERSION "v0.9.7"
+#define VERSION "v0.9.8"
 
 using MSG = lz::utils::MSG_TYPE;
 
