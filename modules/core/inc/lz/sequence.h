@@ -34,7 +34,8 @@
 #include <lz/exceptions.h>
 #include <lz/general.h>
 
-#include <set>
+#include <algorithm>
+#include <unordered_set>
 
 /**
  * @file sequence.h
@@ -91,7 +92,7 @@ namespace lz {
        */
       sequence(const std::vector<char> vec, lz_uint aph)
         : seq(vec), alphabet_size(aph) {
-         DetermineAlphabet();
+         // DetermineAlphabet();
       };
 
       /**
@@ -101,7 +102,7 @@ namespace lz {
        */
       sequence(const std::string str, lz_uint aph)
         : seq(str.begin(), str.end()), alphabet_size(aph) {
-         DetermineAlphabet();
+         // DetermineAlphabet();
       };
 
       /**
@@ -623,24 +624,15 @@ namespace lz {
    inline std::map<char, lz_double> sequence::charDensity(void) const {
       std::map<char, lz_double> res;
 
-      for (auto& ch: seq) {
-         if (res.contains(ch)) {
-            res[ch] += 1;
-         } else {
-            res[ch] = 1;
-         }
+      for (const auto& ch : seq) {
+         ++res[ch];
       }
 
       return res;
    }
 
    inline lz_uint sequence::NoZeroes(void) const {
-      lz_uint acum = 0;
-
-      for (auto s: seq)
-         acum += (s == 0) ? 1 : 0;
-
-      return acum;
+      return static_cast<lz_uint>(std::count(seq.begin(), seq.end(), '\0'));
    }
 
    inline std::string sequence::toString(void) const {
@@ -657,8 +649,9 @@ namespace lz {
 
    inline sequence& sequence::operator=(const sequence& s) {
       if (this != &s) {
-         this->~sequence();
-         new (this) sequence(s);
+         seq           = s.seq;
+         alphabet      = s.alphabet;
+         alphabet_size = s.alphabet_size;
       }
 
       return *this;
@@ -704,17 +697,12 @@ namespace lz {
    }
 
    inline sequence& sequence::operator^=(const sequence& s) {
-      std::vector<char>::const_iterator iterseq = s.seq.begin();
-
       if (s.seq.size() != seq.size())
          throw SequenceNoMatchSize();
 
-      for (auto c: seq) {
-         if (c == *iterseq)
-            c = 0;
-         else
-            c = 1;
-         iterseq++;
+      const lz_size n = seq.size();
+      for (lz_size i = 0; i < n; ++i) {
+         seq[i] = (seq[i] == s.seq[i]) ? 0 : 1;
       }
 
       return *this;
@@ -733,19 +721,17 @@ namespace lz {
    }
 
    inline std::vector<char> sequence::DetermineAlphabet(void) {
-      std::vector<char> al = seq;
+      std::unordered_set<char> unique_chars(seq.begin(), seq.end());
+      std::vector<char> al(unique_chars.begin(), unique_chars.end());
 
+      // FIXME: Save the alphabet vector without order
 #ifdef __cpp_lib_ranges
       std::ranges::sort(al, std::ranges::greater());
-      const auto [first, last] = std::ranges::unique(al);
-      al.erase(first, last);
 #else
       std::sort(al.begin(), al.end(), std::greater<char>());
-      std::vector<char>::iterator last = std::unique(al.begin(), al.end());
-      al.resize(last - al.begin());
 #endif
 
-      alphabet_size   = al.size();
+      alphabet_size = al.size();
       return alphabet = al;
    }
 
@@ -888,11 +874,8 @@ namespace lz {
    }
 
    inline sequence sequence::Take(lz_size l) const {
-      std::vector<char> temp = seq;
-
-      temp.resize(l);
-
-      return sequence(temp, alphabet_size);
+      const lz_size take_size = std::min(l, seq.size());
+      return sequence(std::vector<char>(seq.begin(), seq.begin() + take_size), alphabet_size);
    }
 
    // .......................................................
@@ -933,11 +916,8 @@ namespace lz {
       std::getline(is, line);
 
       try {
-         obj.seq.reserve(line.size());
-
-         for (auto c: line)
-            obj.seq.push_back(c);
-      } catch (std::bad_alloc& ba) {
+         obj.seq.assign(line.begin(), line.end());
+      } catch (std::bad_alloc&) {
          throw SequenceBadAlloc();
       } catch (...) {
          throw SequenceError();

@@ -72,19 +72,10 @@ namespace lz {
    }
 
    sequence sequence::Drop(lz_size l) const {
-      std::vector<char> temp;
-
-      if (l < seq.size()) {
-         std::vector<char>::const_iterator iterseq = seq.cbegin() + l;
-         char                              c       = 0;
-
-         while (iterseq != seq.cend()) {
-            c = *iterseq++;
-            temp.push_back(c);
-         }
+      if (l >= seq.size()) {
+         return sequence(std::vector<char>(), alphabet_size);
       }
-
-      return sequence(temp, alphabet_size);
+      return sequence(std::vector<char>(seq.begin() + l, seq.end()), alphabet_size);
    }
 
    std::pair<sequence, sequence> sequence::Split(lz_size l) const {
@@ -97,10 +88,10 @@ namespace lz {
    }
 
    sequence sequence::Granularity(lz_uint gr) const {
-      char              temp = 0;
+      char temp = 0;
       std::vector<char> ns;
-      std::set<char>    alphabet;
-      lz_uint           count = 0;
+      std::unordered_set<char> alphabet;
+      lz_uint count = 0;
 
       for (auto c: seq) {
          if (count == gr - 1) {
@@ -121,11 +112,7 @@ namespace lz {
 
       transformed_sequence.seq.resize(seq.size());
 
-#ifdef __cpp_lib_ranges
-      std::ranges::copy(std::views::transform(seq, fn), std::back_inserter(transformed_sequence.seq));
-#else
       std::transform(seq.begin(), seq.end(), transformed_sequence.seq.begin(), fn);
-#endif
 
       transformed_sequence.alphabet_size = alphabet_size;
 
@@ -137,11 +124,7 @@ namespace lz {
 
       transformed_sequence.seq.resize(seq.size());
 
-#ifdef __cpp_lib_ranges
-      std::ranges::copy(std::views::transform(seq, fn), std::back_inserter(transformed_sequence.seq));
-#else
       std::transform(seq.begin(), seq.end(), transformed_sequence.seq.begin(), fn);
-#endif
 
       transformed_sequence.alphabet_size = alphabet_size;
 
@@ -153,11 +136,7 @@ namespace lz {
 
       transformed_sequence.seq.resize(s.seq.size());
 
-#ifdef __cpp_lib_ranges
-      std::ranges::copy(std::views::transform(s.seq, fn), std::back_inserter(transformed_sequence.seq));
-#else
       std::transform(s.seq.begin(), s.seq.end(), transformed_sequence.seq.begin(), fn);
-#endif
 
       transformed_sequence.alphabet_size = s.alphabet_size;
 
@@ -169,11 +148,7 @@ namespace lz {
 
       transformed_sequence.seq.resize(s.seq.size());
 
-#ifdef __cpp_lib_ranges
-      std::ranges::copy(std::views::transform(s.seq, fn), std::back_inserter(transformed_sequence.seq));
-#else
       std::transform(s.seq.begin(), s.seq.end(), transformed_sequence.seq.begin(), fn);
-#endif
 
       transformed_sequence.alphabet_size = s.alphabet_size;
 
