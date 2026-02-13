@@ -24,7 +24,7 @@ void PyLempelZiv(py::module_&);
 void PySpectral(py::module_&);
 
 NB_MODULE(lzcomplexity, m) {
-   m.doc() = R"pbdoc(
+  m.doc() = R"pbdoc(
 lzcomplexity - Lempel-Ziv Complexity Analysis Library
 ======================================================
 
@@ -75,21 +75,21 @@ Contact: efrenaragon96@gmail.com, estevez@fisica.uh.cu
 License: MIT
 )pbdoc";
 
-   // Utils bindings
-   PyUtils(m);
-   PySaStructure(m);
-   PyStructures(m);
-   PySequence(m);
-   // Algorithms bindings
-   PyCaps(m);
-   // PySais(m);
-   // Lempel-ziv 76 functions
-   PyLempelZiv(m);
-   PySpectral(m);
+  // Utils bindings
+  PyUtils(m);
+  PySaStructure(m);
+  PyStructures(m);
+  PySequence(m);
+  // Algorithms bindings
+  PyCaps(m);
+  // PySais(m);
+  // Lempel-ziv 76 functions
+  PyLempelZiv(m);
+  PySpectral(m);
 
 #ifdef VERSION_INFO
-   m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
+  m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 #else
-   m.attr("__version__") = "dev";
+  m.attr("__version__") = "dev";
 #endif
 }

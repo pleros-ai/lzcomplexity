@@ -137,6 +137,15 @@
    "args": ["/Users/efren_aragon/Documents/Work/Investigacion/Data/gen Human/GRCh38.p14_genomic.fna.gz",
             "-v", "-F", "dna"],
    "cwd": "${fileDirname}",
+},
+{
+   "name": "lzdistance debug",
+   "type": "lldb",
+   "request": "launch",
+   "program": "${workspaceFolder}/build/lzdistance",
+   "args": ["${workspaceFolder}/test_data/dir1", "${workspaceFolder}/test_data/dir2",
+            "--logs", "--get-direction"],
+   "cwd": "${fileDirname}",
 }
    ]
 }

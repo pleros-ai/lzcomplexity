@@ -34,938 +34,891 @@
 #include <lz/exceptions.h>
 #include <lz/general.h>
 
-#include <algorithm>
-#include <unordered_set>
-
 /**
  * @file sequence.h
  * @brief This file contains the declaration of the `sequence` class and related functions.
  */
 namespace lz {
-   // The error condition exceptions
-   class SequenceError : public Errors {};
-   class SequenceBadAlloc : public SequenceError {};
-   class SequenceNoMatchSize : public SequenceError {};
-   class SequenceOutOfBounds : public SequenceError {};
-
-   //.....................................................
-   // The structure that stores the actual sequence data
-   //.....................................................
-   /// \brief structure that stores the actual sequence data
-   class sequence {
-  protected:
-      std::vector<char> seq;  //!< the sequence
-      std::vector<char> alphabet;
-      lz_uint           alphabet_size;
-
-  public:
-      /**
-       * @brief Default constructor.
-       */
-      sequence(void)
-        : alphabet_size(ALPHABET_SIZE){};
-
-      /**
-       * @brief Constructor that sets the alphabet size.
-       * @param alphsize The size of the alphabet.
-       */
-      sequence(lz_int alphsize)
-        : alphabet_size(alphsize){};
-
-      /**
-       * @brief Constructor that initializes the sequence with a vector of characters.
-       * @param vec The vector of characters.
-       */
-      sequence(const std::vector<char> vec);
-
-      /**
-       * @brief Constructor that initializes the sequence with a string.
-       * @param str The string.
-       */
-      sequence(const std::string str);
-      sequence(const std::string_view str);
-
-      /**
-       * @brief Constructor that initializes the sequence with a vector of characters and a specified alphabet size.
-       * @param vec The vector of characters.
-       * @param aph The alphabet size.
-       */
-      sequence(const std::vector<char> vec, lz_uint aph)
-        : seq(vec), alphabet_size(aph) {
-         // DetermineAlphabet();
-      };
-
-      /**
-       * @brief Constructor that initializes the sequence with a string and a specified alphabet size.
-       * @param str The string.
-       * @param aph The alphabet size.
-       */
-      sequence(const std::string str, lz_uint aph)
-        : seq(str.begin(), str.end()), alphabet_size(aph) {
-         // DetermineAlphabet();
-      };
-
-      /**
-       * @brief Copy constructor.
-       * @param s The sequence to be copied.
-       */
-      sequence(const sequence& s)
-        : seq(s.seq), alphabet(s.alphabet), alphabet_size(s.alphabet_size){};
-
-      /**
-       * @brief Move constructor.
-       * @param s The sequence to be moved.
-       */
-      sequence(sequence&& s)
-        : seq(std::move(s.seq)), alphabet(std::move(s.alphabet)), alphabet_size(std::exchange(s.alphabet_size, 0x01)){};
-
-      /**
-       * @brief Destructor.
-       */
-      ~sequence() {
-         alphabet_size = ALPHABET_SIZE;
-         seq.clear();
-         alphabet.clear();
-      };
-
-      /**
-       * @brief Returns the current alphabet size.
-       * @return The number of distinct symbols in the alphabet.
-       */
-      constexpr lz_uint getAlphabetSize(void) const { return alphabet_size; };
-
-      /**
-       * @brief Computes and sets the alphabet size based on the current sequence content.
-       * @return The computed alphabet size.
-       */
-      lz_uint setAlphabetSize(void);
-
-      /**
-       * @brief Manually sets the alphabet size to a specified value.
-       * @param _alphabet_size The new alphabet size.
-       */
-      void setAlphabetSize(lz_uint);
-
-      /**
-       * @brief Returns a copy of the current alphabet.
-       * @return A vector containing the distinct characters in the alphabet.
-       */
-      std::vector<char> getAlphabet(void) const { return alphabet; };
-
-      /**
-       * @brief Computes and sets the alphabet from the current sequence content.
-       * @return A vector containing the computed alphabet.
-       */
-      std::vector<char> setAlphabet(void);
-
-      /**
-       * @brief Manually sets the alphabet to a specified vector of characters.
-       * @param alph The new alphabet.
-       */
-      void setAlphabet(std::vector<char>);
-
-      /**
-       * @brief Counts the number of zero-valued characters in the sequence.
-       * @return The count of characters equal to '\0' (null character).
-       */
-      lz_uint NoZeroes(void) const;
-
-      /**
-       * @brief Converts the sequence to a standard string.
-       * @return A string representation of the sequence.
-       */
-      std::string toString(void) const;
-
-      /**
-       * @brief Computes the frequency of each character in the sequence.
-       * @return A map where keys are characters and values are their counts.
-       */
-      std::map<char, lz_double> charDensity(void) const;
-
-      /**
-       * @brief Accesses the character at the specified index (bounds-checked).
-       * @param index The position of the character to access.
-       * @return A reference to the character at the given index.
-       * @throws SequenceOutOfBounds If the index is out of range.
-       */
-      char& operator[](lz_size);
-
-      /**
-       * @brief Accesses the character at the specified index (bounds-checked, const version).
-       * @param index The position of the character to access.
-       * @return A const reference to the character at the given index.
-       * @throws SequenceOutOfBounds If the index is out of range.
-       */
-      const char& operator[](lz_size) const;
-
-      /**
-       * @brief Returns a reference to the first character in the sequence.
-       * @return A reference to the first character.
-       * @note Behavior is undefined if the sequence is empty.
-       */
-      char& first(void);
-
-      /**
-       * @brief Returns a const reference to the first character in the sequence.
-       * @return A const reference to the first character.
-       * @note Behavior is undefined if the sequence is empty.
-       */
-      const char& first(void) const;
-
-      /**
-       * @brief Returns a reference to the last character in the sequence.
-       * @return A reference to the last character.
-       * @note Behavior is undefined if the sequence is empty.
-       */
-      char& last(void);
-
-      /**
-       * @brief Returns a const reference to the last character in the sequence.
-       * @return A const reference to the last character.
-       * @note Behavior is undefined if the sequence is empty.
-       */
-      const char& last(void) const;
-
-      /**
-       * @brief Accesses the character at the specified index using std::vector::at().
-       * @param index The position of the character to access.
-       * @return A reference to the character at the given index.
-       * @throws std::out_of_range If the index is out of range.
-       */
-      char& at(lz_size);
-
-      /**
-       * @brief Accesses the character at the specified index using std::vector::at() (const version).
-       * @param index The position of the character to access.
-       * @return A const reference to the character at the given index.
-       * @throws std::out_of_range If the index is out of range.
-       */
-      const char& at(lz_size index) const;
-
-      /**
-       * @brief Finds the minimum character value in the entire sequence.
-       * @return The smallest character in the sequence.
-       */
-      char Min(void) const;
-
-      /**
-       * @brief Finds the minimum character value within a specified range.
-       * @param start The starting index (inclusive).
-       * @param final The ending index (exclusive).
-       * @return The smallest character in the range [start, final).
-       */
-      char Min(lz_size start, lz_size final) const;
-
-      /**
-       * @brief Finds the maximum character value in the entire sequence.
-       * @return The largest character in the sequence.
-       */
-      char Max(void) const;
-
-      /**
-       * @brief Finds the maximum character value within a specified range.
-       * @param start The starting index (inclusive).
-       * @param final The ending index (exclusive).
-       * @return The largest character in the range [start, final).
-       */
-      char Max(lz_size start, lz_size final) const;
-
-      /**
-       * @brief Appends a character to the end of the sequence.
-       * @param c The character to append.
-       * @return The new size of the sequence after insertion.
-       * @throws SequenceBadAlloc If memory allocation fails.
-       */
-      lz_size push(char);
-
-      /**
-       * @brief Removes the last character from the sequence.
-       * @return The new size of the sequence after removal.
-       * @note Behavior is undefined if the sequence is empty.
-       */
-      lz_size pop(void);
-
-      /**
-       * @brief Returns a copy of the last character in the sequence.
-       * @return The last character.
-       * @note Behavior is undefined if the sequence is empty.
-       */
-      char back(void) const;
-
-      /**
-       * @brief Returns the number of characters in the sequence.
-       * @return The size of the sequence.
-       */
-      lz_size size(void) const;
-
-      /**
-       * @brief Returns the number of characters in the sequence (alias for size()).
-       * @return The length of the sequence.
-       */
-      lz_size length(void) const;
-
-      /**
-       * @brief Returns a copy of the internal character vector.
-       * @return A vector containing all characters in the sequence.
-       */
-      std::vector<char> SequenceVector(void) const;
-
-      /**
-       * @brief Creates a new sequence containing the first l characters.
-       * @param l The number of characters to take from the beginning.
-       * @return A new sequence with the first l characters.
-       * @note If l exceeds the sequence size, the result is padded or truncated.
-       */
-      sequence Take(lz_size l) const;
-
-      /**
-       * @brief Creates a new sequence with the first l characters removed.
-       * @param l The number of characters to drop from the beginning.
-       * @return A new sequence without the first l characters.
-       */
-      sequence Drop(lz_size l) const;
-
-      /**
-       * @brief Splits the sequence at position l into two sequences.
-       * @param l The position at which to split.
-       * @return A pair where first contains [0, l) and second contains [l, end).
-       */
-      std::pair<sequence, sequence> Split(lz_size l) const;
-
-      /**
-       * @brief Creates a coarse-grained version of the sequence.
-       * @param gr The granularity factor.
-       * @return A new sequence with reduced resolution.
-       * @todo [REVIEW] Clarify the exact transformation applied by this method.
-       */
-      sequence Granularity(lz_uint gr) const;
-
-      /**
-       * @brief Removes the last character from the sequence and returns a reference to this sequence.
-       * @return A reference to the modified sequence.
-       * @note This is equivalent to pop() but returns *this for chaining.
-       */
-      sequence& pi(void);
-
-      // sequence& negate(void);
-
-      /**
-       * @brief Reverses the sequence in place.
-       * @return A reference to the reversed sequence.
-       */
-      sequence& reverse(void);
-
-      /**
-       * @brief Creates a reversed copy of the sequence.
-       * @return A new sequence with characters in reverse order.
-       */
-      sequence reverseCopy(void);
-
-      /**
-       * @brief Creates a reversed copy of the sequence (const version).
-       * @return A new sequence with characters in reverse order.
-       */
-      const sequence reverseCopy(void) const;
-
-      /**
-       * @brief Shifts all characters to the right by a specified amount. The operation is circular shift.
-       * @param ls The number of positions to shift (default: 1).
-       * @return A reference to the modified sequence.
-       */
-      sequence& rightShift(lz_uint ls = 1);
-
-      /**
-       * @brief Shifts all characters to the left by a specified amount. The operation is circular shift.
-       * @param ls The number of positions to shift (default: 1).
-       * @return A reference to the modified sequence.
-       */
-      sequence& leftShift(lz_uint ls = 1);
-
-      /**
-       * @brief Copy assignment operator (swap-based).
-       * @param s The sequence to copy from.
-       * @return A reference to this sequence.
-       */
-      sequence& operator=(sequence&);
-
-      /**
-       * @brief Copy assignment operator (const version).
-       * @param s The sequence to copy from.
-       * @return A reference to this sequence.
-       */
-      sequence& operator=(const sequence&);
-
-      /**
-       * @brief Move assignment operator.
-       * @param s The sequence to move from.
-       * @return A reference to this sequence.
-       */
-      sequence& operator=(sequence&&);
-
-      /**
-       * @brief Assignment operator from a character vector.
-       * @param s The vector to assign from.
-       * @return A reference to this sequence.
-       * @throws SequenceBadAlloc If memory allocation fails.
-       */
-      sequence& operator=(const std::vector<char>&);
-
-      /**
-       * @brief Appends a character vector to the end of this sequence.
-       * @param s The vector to append.
-       * @return A reference to this sequence.
-       * @throws SequenceBadAlloc If memory allocation fails.
-       */
-      sequence& operator+=(const std::vector<char>& s);
-
-      /**
-       * @brief Appends another sequence to the end of this sequence.
-       * @param s The sequence to append.
-       * @return A reference to this sequence.
-       * @throws SequenceBadAlloc If memory allocation fails.
-       */
-      sequence& operator+=(const sequence& s);
-
-      /**
-       * @brief Element-wise XOR comparison with another sequence.
-       *
-       * Sets each position to 0 if characters match, 1 otherwise.
-       *
-       * @param s The sequence to compare against.
-       * @return A reference to this sequence.
-       * @throws SequenceNoMatchSize If the sequences have different sizes.
-       * @note The result is a binary sequence (0s and 1s).
-       */
-      sequence& operator^=(const sequence& s);
-
-      /**
-       * @brief Analyzes the sequence and determines the unique alphabet.
-       *
-       * Scans all characters, removes duplicates, sorts in descending order,
-       * and updates both the alphabet and alphabet_size members.
-       *
-       * @return A vector containing the unique characters (sorted descending).
-       */
-      std::vector<char> DetermineAlphabet(void);
-
-      /**
-       * @brief Clears the sequence and resets the alphabet size to default.
-       */
-      void clear();
-
-      /**
-       * @brief Outputs the sequence to an output stream.
-       *
-       * Prints the alphabet, alphabet size, and the sequence content.
-       *
-       * @param os The output stream.
-       * @param obj The sequence to output.
-       * @return A reference to the output stream.
-       */
-      friend std::ostream& operator<<(std::ostream&, const sequence&);
-
-      /**
-       * @brief Reads a sequence from an input stream.
-       *
-       * Reads a single line and stores each character in the sequence.
-       *
-       * @param is The input stream.
-       * @param obj The sequence to populate.
-       * @return A reference to the input stream.
-       * @throws SequenceBadAlloc If memory allocation fails.
-       */
-      friend std::istream& operator>>(std::istream&, sequence&);
-
-      /**
-       * @brief Swaps the contents of two sequences.
-       * @param first The first sequence.
-       * @param second The second sequence.
-       */
-      friend void swap(sequence&, sequence&);
-
-      /**
-       * @brief Swaps two ranges within a single sequence.
-       * @param s The sequence to modify.
-       * @param start1 The starting index of the first range.
-       * @param start2 The starting index of the second range.
-       * @param length The length of each range to swap.
-       */
-      friend void swap(sequence&, lz_size start1, lz_size start2, lz_size length);
-
-      /**
-       * @brief Concatenates two sequences.
-       * @param lhs The left-hand sequence.
-       * @param rhs The right-hand sequence.
-       * @return A new sequence containing lhs followed by rhs.
-       */
-      friend sequence operator+(const sequence&, const sequence&);
-
-      /**
-       * @brief Compares two sequences for equality.
-       * @return true if the sequences contain identical characters.
-       */
-      friend bool operator==(const sequence&, const sequence&);
-
-      /**
-       * @brief Compares a sequence with a string for equality.
-       * @return true if the sequence matches the string content.
-       */
-      friend bool operator==(const sequence&, const std::string&);
-
-      /**
-       * @brief Compares two sequences for inequality.
-       * @return true if the sequences differ.
-       */
-      friend bool operator!=(const sequence&, const sequence&);
-
-      /**
-       * @brief Compares a sequence with a string for inequality.
-       * @return true if the sequence differs from the string.
-       */
-      friend bool operator!=(const sequence&, const std::string&);
-
-      /**
-       * @brief Lexicographically compares two sequences (greater than).
-       * @return true if lhs is lexicographically greater than rhs.
-       */
-      friend bool operator>(const sequence&, const sequence&);
-
-      /**
-       * @brief Lexicographically compares a sequence with a string (greater than).
-       * @return true if the sequence is lexicographically greater than the string.
-       */
-      friend bool operator>(const sequence&, const std::string&);
-
-      /**
-       * @brief Lexicographically compares two sequences (greater than or equal).
-       * @return true if lhs is lexicographically greater than or equal to rhs.
-       */
-      friend bool operator>=(const sequence&, const sequence&);
-
-      /**
-       * @brief Lexicographically compares a sequence with a string (greater than or equal).
-       * @return true if the sequence is lexicographically greater than or equal to the string.
-       */
-      friend bool operator>=(const sequence&, const std::string&);
-
-      /**
-       * @brief Lexicographically compares two sequences (less than).
-       * @return true if lhs is lexicographically less than rhs.
-       */
-      friend bool operator<(const sequence&, const sequence&);
-
-      /**
-       * @brief Lexicographically compares a sequence with a string (less than).
-       * @return true if the sequence is lexicographically less than the string.
-       */
-      friend bool operator<(const sequence&, const std::string&);
-
-      /**
-       * @brief Lexicographically compares two sequences (less than or equal).
-       * @return true if lhs is lexicographically less than or equal to rhs.
-       */
-      friend bool operator<=(const sequence&, const sequence&);
-
-      /**
-       * @brief Lexicographically compares a sequence with a string (less than or equal).
-       * @return true if the sequence is lexicographically less than or equal to the string.
-       */
-      friend bool operator<=(const sequence&, const std::string&);
-
-      /**
-       * @brief Applies a transformation function to each character in the sequence.
-       * @param fn A function that takes a char and returns a char.
-       * @return A new sequence with the transformed characters.
-       */
-      sequence map(std::function<char(char)> fn);
-
-      /**
-       * @brief Applies a transformation function to each character (const version).
-       * @param fn A function that takes a char and returns a char.
-       * @return A new sequence with the transformed characters.
-       */
-      const sequence map(std::function<char(char)> fn) const;
-
-      /**
-       * @brief Applies a transformation function to a sequence (friend version).
-       * @param fn A function that takes a char and returns a char.
-       * @param s The sequence to transform.
-       * @return A new sequence with the transformed characters.
-       */
-      friend sequence map(std::function<char(char)> fn, const sequence& s);
-
-      /**
-       * @brief Applies a transformation function to a sequence (friend version, alternate order).
-       * @param s The sequence to transform.
-       * @param fn A function that takes a char and returns a char.
-       * @return A new sequence with the transformed characters.
-       */
-      friend sequence map(const sequence& s, std::function<char(char)> fn);
-   };
-
-   /**
-    * @brief Shuffles the sequence in place using block-based permutation.
-    * @param s The sequence to shuffle.
-    * @param block_size The size of blocks to permute.
-    */
-   void Shuffle(sequence& s, lz_uint block_size);
-
-   /**
-    * @brief Creates a shuffled copy of the sequence.
-    * @param s The sequence to shuffle.
-    * @param block_size The size of blocks to permute.
-    * @param times The number of shuffle iterations to perform.
-    * @return A new shuffled sequence.
-    */
-   sequence Shuffle(const sequence& s, lz_uint block_size, lz_uint times);
-
-   //.............................................................................................................
-
-   inline std::map<char, lz_double> sequence::charDensity(void) const {
-      std::map<char, lz_double> res;
-
-      for (const auto& ch : seq) {
-         ++res[ch];
-      }
-
-      return res;
-   }
-
-   inline lz_uint sequence::NoZeroes(void) const {
-      return static_cast<lz_uint>(std::count(seq.begin(), seq.end(), '\0'));
-   }
-
-   inline std::string sequence::toString(void) const {
-      return {seq.begin(), seq.end()};
-   }
-
-   inline sequence& sequence::operator=(sequence& s) {
-      if (this != &s) {
-         swap(*this, s);
-      }
-
-      return *this;
-   }
-
-   inline sequence& sequence::operator=(const sequence& s) {
-      if (this != &s) {
-         seq           = s.seq;
-         alphabet      = s.alphabet;
-         alphabet_size = s.alphabet_size;
-      }
-
-      return *this;
-   }
-
-   inline sequence& sequence::operator=(sequence&& s) {
-      seq           = std::move(s.seq);
-      alphabet      = std::move(s.alphabet);
-      alphabet_size = std::exchange(s.alphabet_size, std::numeric_limits<lz_uint>::max());
-
-      return *this;
-   }
-
-   inline sequence& sequence::operator=(const std::vector<char>& s) {
-      try {
-         seq = s;
-      } catch (std::bad_alloc& ba) {
-         throw SequenceBadAlloc();
-      } catch (...) {
-         throw SequenceError();
-      }
-
-      return *this;
-   }
-
-   inline sequence operator+(const sequence& lhs, const sequence& rhs) {
-      sequence result = lhs;
-      result += rhs.SequenceVector();
-
+  // The error condition exceptions
+  class SequenceError : public Errors {};
+  class SequenceBadAlloc : public SequenceError {};
+  class SequenceNoMatchSize : public SequenceError {};
+  class SequenceOutOfBounds : public SequenceError {};
+
+  //.....................................................
+  // The structure that stores the actual sequence data
+  //.....................................................
+  /// \brief structure that stores the actual sequence data
+  class sequence {
+protected:
+    std::vector<char> seq;  //!< the sequence
+    std::vector<char> alphabet;
+    lz_uint           alphabet_size;
+
+public:
+    /**
+     * @brief Default constructor.
+     */
+    sequence()
+      : alphabet_size(details::ALPHABET_SIZE) {};
+
+    /**
+     * @brief Constructor that sets the alphabet size.
+     * @param alphsize The size of the alphabet.
+     */
+    explicit sequence(lz_int alphsize)
+      : alphabet_size(alphsize) {};
+
+    /**
+     * @brief Constructor that initializes the sequence with a vector of characters.
+     * @param vec The vector of characters.
+     */
+    sequence(const std::vector<char>& vec);
+
+    /**
+     * @brief Constructor that initializes the sequence with a string.
+     * @param str The string.
+     */
+    sequence(const std::string& str);
+    sequence(std::string_view str);
+
+    /**
+     * @brief Constructor that initializes the sequence with a vector of characters and a specified alphabet
+     * size.
+     * @param vec The vector of characters.
+     * @param aph The alphabet size.
+     */
+    sequence(const std::vector<char>& vec, lz_uint aph)
+      : seq(vec), alphabet_size(aph) {
+      DetermineAlphabet();
+    };
+
+    /**
+     * @brief Constructor that initializes the sequence with a string and a specified alphabet size.
+     * @param str The string.
+     * @param aph The alphabet size.
+     */
+    sequence(const std::string& str, lz_uint aph)
+      : seq(str.begin(), str.end()), alphabet_size(aph) {
+      DetermineAlphabet();
+    };
+
+    /**
+     * @brief Copy constructor.
+     * @param s The sequence to be copied.
+     */
+    sequence(const sequence& s)
+      : seq(s.seq), alphabet(s.alphabet), alphabet_size(s.alphabet_size) {};
+
+    /**
+     * @brief Move constructor.
+     * @param s The sequence to be moved.
+     */
+    sequence(sequence&& s) noexcept
+      : seq(std::move(s.seq))
+      , alphabet(std::move(s.alphabet))
+      , alphabet_size(std::exchange(s.alphabet_size, details::ALPHABET_SIZE)) {};
+
+    /**
+     * @brief Destructor. Defaulted — RAII handles vector cleanup.
+     */
+    ~sequence() = default;
+
+    /**
+     * @brief Returns the current alphabet size.
+     * @return The number of distinct symbols in the alphabet.
+     */
+    constexpr lz_uint getAlphabetSize() const noexcept { return alphabet_size; };
+
+    /**
+     * @brief Computes and sets the alphabet size based on the current sequence content.
+     * @return The computed alphabet size.
+     */
+    lz_uint setAlphabetSize(void);
+
+    /**
+     * @brief Manually sets the alphabet size to a specified value.
+     * @param _alphabet_size The new alphabet size.
+     */
+    void setAlphabetSize(lz_uint);
+
+    /**
+     * @brief Returns a copy of the current alphabet.
+     * @return A vector containing the distinct characters in the alphabet.
+     */
+    const std::vector<char>& getAlphabet() const noexcept { return alphabet; };
+
+    /**
+     * @brief Computes and sets the alphabet from the current sequence content.
+     * @return A vector containing the computed alphabet.
+     */
+    std::vector<char> setAlphabet(void);
+
+    /**
+     * @brief Manually sets the alphabet to a specified vector of characters.
+     * @param alph The new alphabet.
+     */
+    void setAlphabet(std::vector<char>);
+
+    /**
+     * @brief Counts the number of zero-valued characters in the sequence.
+     * @return The count of characters equal to '\0' (null character).
+     */
+    lz_uint NoZeroes() const;
+
+    /**
+     * @brief Converts the sequence to a standard string.
+     * @return A string representation of the sequence.
+     */
+    std::string toString() const;
+
+    /**
+     * @brief Computes the frequency of each character in the sequence.
+     * @return A map where keys are characters and values are their counts.
+     */
+    std::map<char, lz_double> charDensity() const;
+
+    /**
+     * @brief Accesses the character at the specified index (bounds-checked).
+     * @param index The position of the character to access.
+     * @return A reference to the character at the given index.
+     * @throws SequenceOutOfBounds If the index is out of range.
+     */
+    char& operator[](lz_size);
+
+    /**
+     * @brief Accesses the character at the specified index (bounds-checked, const version).
+     * @param index The position of the character to access.
+     * @return A const reference to the character at the given index.
+     * @throws SequenceOutOfBounds If the index is out of range.
+     */
+    const char& operator[](lz_size) const;
+
+    /**
+     * @brief Returns a reference to the first character in the sequence.
+     * @return A reference to the first character.
+     * @note Behavior is undefined if the sequence is empty.
+     */
+    char& first() noexcept;
+
+    /**
+     * @brief Returns a const reference to the first character in the sequence.
+     * @return A const reference to the first character.
+     * @note Behavior is undefined if the sequence is empty.
+     */
+    const char& first() const noexcept;
+
+    /**
+     * @brief Returns a reference to the last character in the sequence.
+     * @return A reference to the last character.
+     * @note Behavior is undefined if the sequence is empty.
+     */
+    char& last() noexcept;
+
+    /**
+     * @brief Returns a const reference to the last character in the sequence.
+     * @return A const reference to the last character.
+     * @note Behavior is undefined if the sequence is empty.
+     */
+    const char& last() const noexcept;
+
+    /**
+     * @brief Accesses the character at the specified index using std::vector::at().
+     * @param index The position of the character to access.
+     * @return A reference to the character at the given index.
+     * @throws std::out_of_range If the index is out of range.
+     */
+    char& at(lz_size);
+
+    /**
+     * @brief Accesses the character at the specified index using std::vector::at() (const version).
+     * @param index The position of the character to access.
+     * @return A const reference to the character at the given index.
+     * @throws std::out_of_range If the index is out of range.
+     */
+    const char& at(lz_size index) const;
+
+    /**
+     * @brief Finds the minimum character value in the entire sequence.
+     * @return The smallest character in the sequence.
+     */
+    char Min() const;
+
+    /**
+     * @brief Finds the minimum character value within a specified range.
+     * @param start The starting index (inclusive).
+     * @param final The ending index (exclusive).
+     * @return The smallest character in the range [start, final).
+     */
+    char Min(lz_size start, lz_size final) const;
+
+    /**
+     * @brief Finds the maximum character value in the entire sequence.
+     * @return The largest character in the sequence.
+     */
+    char Max() const;
+
+    /**
+     * @brief Finds the maximum character value within a specified range.
+     * @param start The starting index (inclusive).
+     * @param final The ending index (exclusive).
+     * @return The largest character in the range [start, final).
+     */
+    char Max(lz_size start, lz_size final) const;
+
+    /**
+     * @brief Appends a character to the end of the sequence.
+     * @param c The character to append.
+     * @return The new size of the sequence after insertion.
+     * @throws SequenceBadAlloc If memory allocation fails.
+     */
+    lz_size push(char);
+
+    /**
+     * @brief Removes the last character from the sequence.
+     * @return The new size of the sequence after removal.
+     * @note Behavior is undefined if the sequence is empty.
+     */
+    lz_size pop(void);
+
+    /**
+     * @brief Returns a copy of the last character in the sequence.
+     * @return The last character.
+     * @note Behavior is undefined if the sequence is empty.
+     */
+    char back() const noexcept;
+
+    /**
+     * @brief Returns the number of characters in the sequence.
+     * @return The size of the sequence.
+     */
+    lz_size size() const noexcept;
+
+    /**
+     * @brief Returns the number of characters in the sequence (alias for size()).
+     * @return The length of the sequence.
+     */
+    lz_size length() const noexcept;
+
+    /**
+     * @brief Returns a const reference to the internal character vector.
+     * @return A const reference to the vector containing all characters.
+     */
+    const std::vector<char>& SequenceVector() const noexcept;
+
+    /**
+     * @brief Creates a new sequence containing the first l characters.
+     * @param l The number of characters to take from the beginning.
+     * @return A new sequence with the first l characters.
+     * @note If l exceeds the sequence size, the result is padded or truncated.
+     */
+    sequence Take(lz_size l) const;
+
+    /**
+     * @brief Creates a new sequence with the first l characters removed.
+     * @param l The number of characters to drop from the beginning.
+     * @return A new sequence without the first l characters.
+     */
+    sequence Drop(lz_size l) const;
+
+    /**
+     * @brief Splits the sequence at position l into two sequences.
+     * @param l The position at which to split.
+     * @return A pair where first contains [0, l) and second contains [l, end).
+     */
+    std::pair<sequence, sequence> Split(lz_size l) const;
+
+    /**
+     * @brief Creates a coarse-grained version of the sequence.
+     * @param gr The granularity factor.
+     * @return A new sequence with reduced resolution.
+     * @todo [REVIEW] Clarify the exact transformation applied by this method.
+     */
+    sequence Granularity(lz_uint gr) const;
+
+    /**
+     * @brief Removes the last character from the sequence and returns a reference to this sequence.
+     * @return A reference to the modified sequence.
+     * @note This is equivalent to pop() but returns *this for chaining.
+     */
+    sequence& pi();
+
+    // sequence& negate(void);
+
+    /**
+     * @brief Reverses the sequence in place.
+     * @return A reference to the reversed sequence.
+     */
+    sequence& reverse();
+
+    /**
+     * @brief Creates a reversed copy of the sequence.
+     * @return A new sequence with characters in reverse order.
+     */
+    sequence reverseCopy();
+
+    /**
+     * @brief Creates a reversed copy of the sequence (const version).
+     * @return A new sequence with characters in reverse order.
+     */
+    sequence reverseCopy() const;
+
+    /**
+     * @brief Shifts all characters to the right by a specified amount. The operation is circular shift.
+     * @param ls The number of positions to shift (default: 1).
+     * @return A reference to the modified sequence.
+     */
+    sequence& rightShift(lz_uint ls = 1);
+
+    /**
+     * @brief Shifts all characters to the left by a specified amount. The operation is circular shift.
+     * @param ls The number of positions to shift (default: 1).
+     * @return A reference to the modified sequence.
+     */
+    sequence& leftShift(lz_uint ls = 1);
+
+    /**
+     * @brief Copy assignment operator.
+     * @param s The sequence to copy from.
+     * @return A reference to this sequence.
+     */
+    sequence& operator=(const sequence&);
+
+    /**
+     * @brief Move assignment operator.
+     * @param s The sequence to move from.
+     * @return A reference to this sequence.
+     */
+    sequence& operator=(sequence&&) noexcept;
+
+    /**
+     * @brief Assignment operator from a character vector.
+     * @param s The vector to assign from.
+     * @return A reference to this sequence.
+     * @throws SequenceBadAlloc If memory allocation fails.
+     */
+    sequence& operator=(const std::vector<char>&);
+
+    /**
+     * @brief Appends a character vector to the end of this sequence.
+     * @param s The vector to append.
+     * @return A reference to this sequence.
+     * @throws SequenceBadAlloc If memory allocation fails.
+     */
+    sequence& operator+=(const std::vector<char>& s);
+
+    /**
+     * @brief Appends another sequence to the end of this sequence.
+     * @param s The sequence to append.
+     * @return A reference to this sequence.
+     * @throws SequenceBadAlloc If memory allocation fails.
+     */
+    sequence& operator+=(const sequence& s);
+
+    /**
+     * @brief Element-wise XOR comparison with another sequence.
+     *
+     * Sets each position to 0 if characters match, 1 otherwise.
+     *
+     * @param s The sequence to compare against.
+     * @return A reference to this sequence.
+     * @throws SequenceNoMatchSize If the sequences have different sizes.
+     * @note The result is a binary sequence (0s and 1s).
+     */
+    sequence& operator^=(const sequence& s);
+
+    /**
+     * @brief Analyzes the sequence and determines the unique alphabet.
+     *
+     * Scans all characters, removes duplicates, sorts in descending order,
+     * and updates both the alphabet and alphabet_size members.
+     *
+     * @return A vector containing the unique characters (sorted descending).
+     */
+    std::vector<char> DetermineAlphabet();
+
+    /**
+     * @brief Clears the sequence and resets the alphabet size to default.
+     */
+    void clear();
+
+    /**
+     * @brief Outputs the sequence to an output stream.
+     *
+     * Prints the alphabet, alphabet size, and the sequence content.
+     *
+     * @param os The output stream.
+     * @param obj The sequence to output.
+     * @return A reference to the output stream.
+     */
+    friend std::ostream& operator<<(std::ostream&, const sequence&);
+
+    /**
+     * @brief Reads a sequence from an input stream.
+     *
+     * Reads a single line and stores each character in the sequence.
+     *
+     * @param is The input stream.
+     * @param obj The sequence to populate.
+     * @return A reference to the input stream.
+     * @throws SequenceBadAlloc If memory allocation fails.
+     */
+    friend std::istream& operator>>(std::istream&, sequence&);
+
+    /**
+     * @brief Swaps the contents of two sequences.
+     * @param first The first sequence.
+     * @param second The second sequence.
+     */
+    friend void swap(sequence&, sequence&) noexcept;
+
+    /**
+     * @brief Swaps two ranges within a single sequence.
+     * @param s The sequence to modify.
+     * @param start1 The starting index of the first range.
+     * @param start2 The starting index of the second range.
+     * @param length The length of each range to swap.
+     */
+    friend void swap(sequence&, lz_size start1, lz_size start2, lz_size length);
+
+    /**
+     * @brief Concatenates two sequences.
+     * @param lhs The left-hand sequence.
+     * @param rhs The right-hand sequence.
+     * @return A new sequence containing lhs followed by rhs.
+     */
+    friend sequence operator+(const sequence&, const sequence&);
+
+    /**
+     * @brief Compares two sequences for equality.
+     * @return true if the sequences contain identical characters.
+     */
+    friend bool operator==(const sequence&, const sequence&);
+
+    /**
+     * @brief Compares a sequence with a string for equality.
+     * @return true if the sequence matches the string content.
+     */
+    friend bool operator==(const sequence&, const std::string&);
+
+    /**
+     * @brief Compares two sequences for inequality.
+     * @return true if the sequences differ.
+     */
+    friend bool operator!=(const sequence&, const sequence&);
+
+    /**
+     * @brief Compares a sequence with a string for inequality.
+     * @return true if the sequence differs from the string.
+     */
+    friend bool operator!=(const sequence&, const std::string&);
+
+    /**
+     * @brief Lexicographically compares two sequences (greater than).
+     * @return true if lhs is lexicographically greater than rhs.
+     */
+    friend bool operator>(const sequence&, const sequence&);
+
+    /**
+     * @brief Lexicographically compares a sequence with a string (greater than).
+     * @return true if the sequence is lexicographically greater than the string.
+     */
+    friend bool operator>(const sequence&, const std::string&);
+
+    /**
+     * @brief Lexicographically compares two sequences (greater than or equal).
+     * @return true if lhs is lexicographically greater than or equal to rhs.
+     */
+    friend bool operator>=(const sequence&, const sequence&);
+
+    /**
+     * @brief Lexicographically compares a sequence with a string (greater than or equal).
+     * @return true if the sequence is lexicographically greater than or equal to the string.
+     */
+    friend bool operator>=(const sequence&, const std::string&);
+
+    /**
+     * @brief Lexicographically compares two sequences (less than).
+     * @return true if lhs is lexicographically less than rhs.
+     */
+    friend bool operator<(const sequence&, const sequence&);
+
+    /**
+     * @brief Lexicographically compares a sequence with a string (less than).
+     * @return true if the sequence is lexicographically less than the string.
+     */
+    friend bool operator<(const sequence&, const std::string&);
+
+    /**
+     * @brief Lexicographically compares two sequences (less than or equal).
+     * @return true if lhs is lexicographically less than or equal to rhs.
+     */
+    friend bool operator<=(const sequence&, const sequence&);
+
+    /**
+     * @brief Lexicographically compares a sequence with a string (less than or equal).
+     * @return true if the sequence is lexicographically less than or equal to the string.
+     */
+    friend bool operator<=(const sequence&, const std::string&);
+
+    /**
+     * @brief Applies a transformation function to each character in the sequence.
+     * @tparam Fn Callable type: char -> char. Avoids std::function overhead.
+     * @param fn A function that takes a char and returns a char.
+     * @return A new sequence with the transformed characters.
+     */
+    template<typename Fn>
+    sequence map(Fn&& fn) const {
+      sequence result;
+      result.seq.resize(seq.size());
+      std::transform(seq.begin(), seq.end(), result.seq.begin(), std::forward<Fn>(fn));
+      result.alphabet_size = alphabet_size;
       return result;
-   }
+    }
 
-   inline sequence& sequence::operator+=(const std::vector<char>& s) {
-      try {
-         seq.insert(seq.end(), s.begin(), s.end());
-      } catch (std::bad_alloc& ba) {
-         throw SequenceBadAlloc();
-      } catch (...) {
-         throw SequenceError();
+    /**
+     * @brief Applies a transformation function to a sequence (friend version).
+     * @tparam Fn Callable type: char -> char.
+     * @param fn A function that takes a char and returns a char.
+     * @param s The sequence to transform.
+     * @return A new sequence with the transformed characters.
+     */
+    template<typename Fn>
+    friend sequence map(Fn&& fn, const sequence& s) {
+      return s.map(std::forward<Fn>(fn));
+    }
+
+    /**
+     * @brief Applies a transformation function to a sequence (friend version, alternate order).
+     * @tparam Fn Callable type: char -> char.
+     * @param s The sequence to transform.
+     * @param fn A function that takes a char and returns a char.
+     * @return A new sequence with the transformed characters.
+     */
+    template<typename Fn>
+    friend sequence map(const sequence& s, Fn&& fn) {
+      return s.map(std::forward<Fn>(fn));
+    }
+  };
+
+  /**
+   * @brief Shuffles the sequence in place using block-based permutation.
+   * @param s The sequence to shuffle.
+   * @param block_size The size of blocks to permute.
+   */
+  void Shuffle(sequence& s, lz_uint block_size);
+
+  /**
+   * @brief Creates a shuffled copy of the sequence.
+   * @param s The sequence to shuffle.
+   * @param block_size The size of blocks to permute.
+   * @param times The number of shuffle iterations to perform.
+   * @return A new shuffled sequence.
+   */
+  sequence Shuffle(const sequence& s, lz_uint block_size, lz_uint times);
+
+  //.............................................................................................................
+
+  inline std::map<char, lz_double> sequence::charDensity(void) const {
+    std::map<char, lz_double> res;
+
+    for (const auto& ch: seq) {
+      ++res[ch];
+    }
+
+    return res;
+  }
+
+  inline lz_uint sequence::NoZeroes(void) const {
+    return static_cast<lz_uint>(std::count(seq.begin(), seq.end(), '\0'));
+  }
+
+  inline std::string sequence::toString(void) const { return {seq.begin(), seq.end()}; }
+
+  inline sequence& sequence::operator=(const sequence& s) {
+    if (this != &s) {
+      seq = s.seq;
+      alphabet = s.alphabet;
+      alphabet_size = s.alphabet_size;
+    }
+
+    return *this;
+  }
+
+  inline sequence& sequence::operator=(sequence&& s) noexcept {
+    if (this != &s) {
+      seq = std::move(s.seq);
+      alphabet = std::move(s.alphabet);
+      alphabet_size = std::exchange(s.alphabet_size, details::ALPHABET_SIZE);
+    }
+    return *this;
+  }
+
+  inline sequence& sequence::operator=(const std::vector<char>& s) {
+    try {
+      seq = s;
+    } catch (std::bad_alloc& ba) {
+      throw SequenceBadAlloc();
+    } catch (...) {
+      throw SequenceError();
+    }
+
+    return *this;
+  }
+
+  inline sequence operator+(const sequence& lhs, const sequence& rhs) {
+    sequence result;
+    result.seq.reserve(lhs.seq.size() + rhs.seq.size());
+    result.seq.insert(result.seq.end(), lhs.seq.begin(), lhs.seq.end());
+    result.seq.insert(result.seq.end(), rhs.seq.begin(), rhs.seq.end());
+    result.alphabet_size = std::max(lhs.alphabet_size, rhs.alphabet_size);
+    return result;
+  }
+
+  inline sequence& sequence::operator+=(const std::vector<char>& s) {
+    try {
+      seq.insert(seq.end(), s.begin(), s.end());
+    } catch (std::bad_alloc& ba) {
+      throw SequenceBadAlloc();
+    } catch (...) {
+      throw SequenceError();
+    }
+
+    return *this;
+  }
+
+  inline sequence& sequence::operator^=(const sequence& s) {
+    if (s.seq.size() != seq.size()) throw SequenceNoMatchSize();
+
+    const lz_size n = seq.size();
+    for (lz_size i = 0; i < n; ++i) {
+      seq[i] = (seq[i] == s.seq[i]) ? 0 : 1;
+    }
+
+    return *this;
+  }
+
+  inline sequence& sequence::operator+=(const sequence& s) {
+    try {
+      seq.insert(seq.end(), s.seq.begin(), s.seq.end());
+    } catch (std::bad_alloc& ba) {
+      throw SequenceBadAlloc();
+    } catch (...) {
+      throw SequenceError();
+    }
+
+    return *this;
+  }
+
+  inline std::vector<char> sequence::DetermineAlphabet() {
+    // O(n) scan + O(1) lookup using bool array indexed by char value
+    std::array<bool, 256> seen{};
+    for (const auto c: seq) {
+      seen[static_cast<unsigned char>(c)] = true;
+    }
+
+    std::vector<char> al;
+    al.reserve(256);  // Upper bound; will shrink on copy
+    // Iterate in descending order to produce sorted-descending result directly
+    for (int i = 255; i >= 0; --i) {
+      if (seen[i]) {
+        al.push_back(static_cast<char>(i));
       }
+    }
 
-      return *this;
-   }
+    alphabet_size = static_cast<lz_uint>(al.size());
+    return alphabet = al;
+  }
 
-   inline sequence& sequence::operator^=(const sequence& s) {
-      if (s.seq.size() != seq.size())
-         throw SequenceNoMatchSize();
+  inline lz_uint sequence::setAlphabetSize(void) {
+    DetermineAlphabet();
 
-      const lz_size n = seq.size();
-      for (lz_size i = 0; i < n; ++i) {
-         seq[i] = (seq[i] == s.seq[i]) ? 0 : 1;
-      }
+    if (alphabet.size() < alphabet_size) {
+      // See with what complete the alphabet
+    } else {
+      alphabet_size = alphabet.size();
+    }
 
-      return *this;
-   }
+    return alphabet_size;
+  }
 
-   inline sequence& sequence::operator+=(const sequence& s) {
-      try {
-         seq.insert(seq.end(), s.seq.begin(), s.seq.end());
-      } catch (std::bad_alloc& ba) {
-         throw SequenceBadAlloc();
-      } catch (...) {
-         throw SequenceError();
-      }
+  inline void sequence::setAlphabetSize(lz_uint _alphabet_size) { alphabet_size = _alphabet_size; }
 
-      return *this;
-   }
+  inline std::vector<char> sequence::setAlphabet(void) {
+    DetermineAlphabet();
 
-   inline std::vector<char> sequence::DetermineAlphabet(void) {
-      std::unordered_set<char> unique_chars(seq.begin(), seq.end());
-      std::vector<char> al(unique_chars.begin(), unique_chars.end());
+    return alphabet;
+  }
 
-      // FIXME: Save the alphabet vector without order
+  inline void sequence::setAlphabet(std::vector<char> alph) { alphabet = alph; }
+
+  inline const std::vector<char>& sequence::SequenceVector() const noexcept { return seq; }
+
+  inline char& sequence::operator[](lz_size index) {
+    if (index >= seq.size()) {
+      throw SequenceOutOfBounds();
+    }
+
+    return seq[index];
+  }
+
+  inline const char& sequence::operator[](lz_size index) const {
+    if (index >= seq.size()) {
+      throw SequenceOutOfBounds();
+    }
+    return seq[index];
+  }
+
+  inline char& sequence::at(lz_size index) { return seq.at(index); }
+
+  // .............................................................................
+  // Name: const_at
+  //
+  // Synopsis: indexing operator. No bounds check
+  //
+  // Parameters:
+  //			 std::vector<bool>::size_type index      -------> the
+  // index of the requested value
+  //
+  // Returns:
+  //         bool ------> the index value of the sequence
+  //
+  // Exceptions:
+  //            None
+  //..............................................................................
+  inline const char& sequence::at(lz_size index) const { return seq.at(index); }
+
+  inline char& sequence::first() noexcept { return seq.front(); }
+
+  inline const char& sequence::first() const noexcept { return seq.front(); }
+
+  inline char& sequence::last() noexcept { return seq.back(); }
+
+  inline const char& sequence::last() const noexcept { return seq.back(); }
+
+  inline char sequence::back() const noexcept { return last(); }
+
+  inline char sequence::Max(void) const { return *std::max_element(seq.begin(), seq.end()); }
+
+  inline char sequence::Min(lz_size start, lz_size final) const {
+    return *std::min_element(seq.begin() + start, seq.begin() + final);
+  }
+
+  inline char sequence::Max(lz_size start, lz_size final) const {
+    return *std::max_element(seq.begin() + start, seq.begin() + final);
+  }
+
+  inline char sequence::Min(void) const { return *std::min_element(seq.begin(), seq.end()); }
+
+  inline lz_size sequence::push(char c) {
+    try {
+      seq.push_back(c);
+    } catch (std::bad_alloc& ba) {
+      throw SequenceBadAlloc();
+    }
+
+    return seq.size();
+  }
+
+  inline lz_size sequence::pop(void) {
+    seq.pop_back();
+
+    return seq.size();
+  }
+
+  inline void sequence::clear(void) {
+    alphabet_size = details::ALPHABET_SIZE;
+    seq.clear();
+  }
+
+  inline sequence& sequence::pi(void) {
+    seq.pop_back();
+    return *this;
+  }
+
+  inline lz_size sequence::size() const noexcept { return seq.size(); }
+
+  inline lz_size sequence::length() const noexcept { return seq.size(); }
+
+  inline sequence sequence::Take(lz_size l) const {
+    const lz_size take_size = std::min(l, seq.size());
+    return sequence(std::vector<char>(seq.begin(), seq.begin() + take_size), alphabet_size);
+  }
+
+  // .......................................................
+  //                friend functions
+  //........................................................
+  inline void swap(sequence& first, sequence& second) noexcept {
+    using std::swap;
+    swap(first.seq, second.seq);
+    swap(first.alphabet, second.alphabet);
+    swap(first.alphabet_size, second.alphabet_size);
+  }
+
+  inline void swap(sequence& s, lz_size start1, lz_size start2, lz_size length) {
 #ifdef __cpp_lib_ranges
-      std::ranges::sort(al, std::ranges::greater());
+    std::ranges::swap_ranges(s.seq.begin() + start1,
+                             s.seq.begin() + start1 + length,
+                             s.seq.begin() + start2,
+                             s.seq.begin() + start2 + length);
 #else
-      std::sort(al.begin(), al.end(), std::greater<char>());
+    std::swap_ranges(s.seq.begin() + start1, s.seq.begin() + start1 + length, s.seq.begin() + start2);
 #endif
+  }
 
-      alphabet_size = al.size();
-      return alphabet = al;
-   }
+  inline std::ostream& operator<<(std::ostream& os, const sequence& obj) {
+    os << " Alphabet: [ ";
+    for (auto c: obj.alphabet) os << c << " ";
+    os << "] "
+       << " size: " << obj.alphabet_size << std::endl;
+    for (auto c: obj.seq) os << c;
 
-   inline lz_uint sequence::setAlphabetSize(void) {
-      DetermineAlphabet();
+    return os;
+  }
 
-      if (alphabet.size() < alphabet_size) {
-         // See with what complete the alphabet
-      } else {
-         alphabet_size = alphabet.size();
-      }
+  inline std::istream& operator>>(std::istream& is, sequence& obj) {
+    std::string line;
+    obj.clear();
 
-      return alphabet_size;
-   }
+    std::getline(is, line);
 
-   inline void sequence::setAlphabetSize(lz_uint _alphabet_size) {
-      alphabet_size = _alphabet_size;
-   }
+    try {
+      obj.seq.assign(line.begin(), line.end());
+    } catch (std::bad_alloc&) {
+      throw SequenceBadAlloc();
+    } catch (...) {
+      throw SequenceError();
+    }
 
-   inline std::vector<char> sequence::setAlphabet(void) {
-      DetermineAlphabet();
+    return is;
+  }
 
-      return alphabet;
-   }
+  inline bool operator==(const sequence& lhs, const sequence& rhs) { return lhs.seq == rhs.seq; }
+  inline bool operator==(const sequence& lhs, const std::string& rhs) {
+    return std::equal(lhs.seq.begin(), lhs.seq.end(), rhs.begin(), rhs.end());
+  }
 
-   inline void sequence::setAlphabet(std::vector<char> alph) {
-      alphabet = alph;
-   }
+  inline bool operator!=(const sequence& lhs, const sequence& rhs) { return !(lhs == rhs); }
+  inline bool operator!=(const sequence& lhs, const std::string& rhs) { return !(lhs == rhs); }
 
-   inline std::vector<char> sequence::SequenceVector(void) const {
-      return seq;
-   }
+  inline bool operator<(const sequence& lhs, const sequence& rhs) { return lhs.seq < rhs.seq; }
+  inline bool operator<(const sequence& lhs, const std::string& rhs) {
+    return std::lexicographical_compare(lhs.seq.begin(), lhs.seq.end(), rhs.begin(), rhs.end());
+  }
 
-   inline char& sequence::operator[](lz_size index) {
-      if (index >= seq.size()) {
-         throw SequenceOutOfBounds();
-      }
+  inline bool operator<=(const sequence& lhs, const sequence& rhs) { return !(rhs < lhs); }
+  inline bool operator<=(const sequence& lhs, const std::string& rhs) {
+    return !std::lexicographical_compare(rhs.begin(), rhs.end(), lhs.seq.begin(), lhs.seq.end());
+  }
 
-      return seq[index];
-   }
+  inline bool operator>(const sequence& lhs, const sequence& rhs) { return rhs < lhs; }
+  inline bool operator>(const sequence& lhs, const std::string& rhs) {
+    return std::lexicographical_compare(rhs.begin(), rhs.end(), lhs.seq.begin(), lhs.seq.end());
+  }
 
-   inline const char& sequence::operator[](lz_size index) const {
-      if (index >= seq.size()) {
-         throw SequenceOutOfBounds();
-      }
-      return seq[index];
-   }
-
-   inline char& sequence::at(lz_size index) {
-      return seq.at(index);
-   }
-
-   // .............................................................................
-   // Name: const_at
-   //
-   // Synopsis: indexing operator. No bounds check
-   //
-   // Parameters:
-   //			 std::vector<bool>::size_type index      -------> the
-   // index of the requested value
-   //
-   // Returns:
-   //         bool ------> the index value of the sequence
-   //
-   // Exceptions:
-   //            None
-   //..............................................................................
-   inline const char& sequence::at(lz_size index) const {
-      return seq.at(index);
-   }
-
-   inline char& sequence::first(void) {
-      return seq.front();
-   }
-
-   inline const char& sequence::first(void) const {
-      return seq.front();
-   }
-
-   inline char& sequence::last(void) {
-      return seq.back();
-   }
-
-   inline const char& sequence::last() const {
-      return seq.back();
-   }
-
-   inline char sequence::back(void) const {
-      return last();
-   }
-
-   inline char sequence::Max(void) const {
-      return *std::max_element(seq.begin(), seq.end());
-   }
-
-   inline char sequence::Min(lz_size start, lz_size final) const {
-      return *std::min_element(seq.begin() + start, seq.begin() + final);
-   }
-
-   inline char sequence::Max(lz_size start, lz_size final) const {
-      return *std::max_element(seq.begin() + start, seq.begin() + final);
-   }
-
-   inline char sequence::Min(void) const {
-      return *std::min_element(seq.begin(), seq.end());
-   }
-
-   inline lz_size sequence::push(char c) {
-      try {
-         seq.push_back(c);
-      } catch (std::bad_alloc& ba) {
-         throw SequenceBadAlloc();
-      }
-
-      return seq.size();
-   }
-
-   inline lz_size sequence::pop(void) {
-      seq.pop_back();
-
-      return seq.size();
-   }
-
-   inline void sequence::clear(void) {
-      alphabet_size = ALPHABET_SIZE;
-      seq.clear();
-   }
-
-   inline sequence& sequence::pi(void) {
-      seq.pop_back();
-      return *this;
-   }
-
-   inline lz_size sequence::size(void) const {
-      return seq.size();
-   }
-
-   inline lz_size sequence::length(void) const {
-      return seq.size();
-   }
-
-   inline sequence sequence::Take(lz_size l) const {
-      const lz_size take_size = std::min(l, seq.size());
-      return sequence(std::vector<char>(seq.begin(), seq.begin() + take_size), alphabet_size);
-   }
-
-   // .......................................................
-   //                friend functions
-   //........................................................
-   inline void swap(sequence& first, sequence& second) {
-      std::swap(first.alphabet_size, second.alphabet_size);
-      std::swap(first.seq, second.seq);
-   }
-
-   inline void swap(sequence& s, lz_size start1, lz_size start2, lz_size length) {
-#ifdef __cpp_lib_ranges
-      std::ranges::swap_ranges(s.seq.begin() + start1,
-                               s.seq.begin() + start1 + length,
-                               s.seq.begin() + start2,
-                               s.seq.begin() + start2 + length);
-#else
-      std::swap_ranges(s.seq.begin() + start1, s.seq.begin() + start1 + length, s.seq.begin() + start2);
-#endif
-   }
-
-   inline std::ostream& operator<<(std::ostream& os, const sequence& obj) {
-      os << " Alphabet: [ ";
-      for (auto c: obj.alphabet)
-         os << c << " ";
-      os << "] "
-         << " size: " << obj.alphabet_size << std::endl;
-      for (auto c: obj.seq)
-         os << c;
-
-      return os;
-   }
-
-   inline std::istream& operator>>(std::istream& is, sequence& obj) {
-      std::string line;
-      obj.clear();
-
-      std::getline(is, line);
-
-      try {
-         obj.seq.assign(line.begin(), line.end());
-      } catch (std::bad_alloc&) {
-         throw SequenceBadAlloc();
-      } catch (...) {
-         throw SequenceError();
-      }
-
-      return is;
-   }
-
-   inline bool operator==(const sequence& lhs, const sequence& rhs) {
-      return lhs.seq == rhs.seq;
-   }
-   inline bool operator==(const sequence& lhs, const std::string& rhs) {
-      return lhs == sequence(rhs);
-   }
-
-   inline bool operator!=(const sequence& lhs, const sequence& rhs) {
-      return !operator==(lhs, rhs);
-   }
-   inline bool operator!=(const sequence& lhs, const std::string& rhs) {
-      return lhs.seq != sequence(rhs).seq;
-   }
-
-   inline bool operator<(const sequence& lhs, const sequence& rhs) {
-      return lhs.seq < rhs.seq;
-   }
-   inline bool operator<(const sequence& lhs, const std::string& rhs) {
-      return lhs < sequence(rhs);
-   }
-
-   inline bool operator<=(const sequence& lhs, const sequence& rhs) {
-      return !operator>(lhs, rhs);
-   }
-   inline bool operator<=(const sequence& lhs, const std::string& rhs) {
-      return !operator>(lhs, sequence(rhs));
-   }
-
-   inline bool operator>(const sequence& lhs, const sequence& rhs) {
-      return operator<(rhs, lhs);
-   }
-   inline bool operator>(const sequence& lhs, const std::string& rhs) {
-      return operator<(sequence(rhs), lhs);
-   }
-
-   inline bool operator>=(const sequence& lhs, const sequence& rhs) {
-      return !operator<(lhs, rhs);
-   }
-   inline bool operator>=(const sequence& lhs, const std::string& rhs) {
-      return !operator<(lhs, sequence(rhs));
-   }
+  inline bool operator>=(const sequence& lhs, const sequence& rhs) { return !(lhs < rhs); }
+  inline bool operator>=(const sequence& lhs, const std::string& rhs) {
+    return !std::lexicographical_compare(lhs.seq.begin(), lhs.seq.end(), rhs.begin(), rhs.end());
+  }
 
 }  // namespace lz

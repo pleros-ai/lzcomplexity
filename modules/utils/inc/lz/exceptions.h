@@ -111,265 +111,265 @@ inline const emap error_msg{{ERROR_OK, "Abstract error."},
                             {NOT_EQUAL_SIZE, "Nor equal size."}};
 
 class Errors {
-   public:
-   int         type;
-   std::string id;
-   std::string msg;
+  public:
+  int         type;
+  std::string id;
+  std::string msg;
 
-   Errors(void) {
-      type = ERROR_OK;
-      id   = "Error";
-      msg  = error_msg.at(ERROR_OK);
-   };
-   Errors(std::string _msg)
-     : msg(_msg) {
-      type = ERROR_OK;
-      id   = "Error";
-   };
-   Errors(std::string _id, std::string _msg)
-     : id(_id), msg(_msg) {
-      type = ERROR_OK;
-   };
+  Errors(void) {
+    type = ERROR_OK;
+    id = "Error";
+    msg = error_msg.at(ERROR_OK);
+  };
+  Errors(std::string _msg)
+    : msg(_msg) {
+    type = ERROR_OK;
+    id = "Error";
+  };
+  Errors(std::string _id, std::string _msg)
+    : id(_id), msg(_msg) {
+    type = ERROR_OK;
+  };
 };
 
 class OutOfBounds : public Errors {
-   public:
-   OutOfBounds(void)
-     : Errors(error_msg.at(OUT_OF_BOUNDS)) {
-      type = OUT_OF_BOUNDS;
-   };
+  public:
+  OutOfBounds(void)
+    : Errors(error_msg.at(OUT_OF_BOUNDS)) {
+    type = OUT_OF_BOUNDS;
+  };
 };
 class BadInitialization : public Errors {
-   public:
-   BadInitialization(void)
-     : Errors(error_msg.at(BAD_INITIALIZATION)) {
-      type = BAD_INITIALIZATION;
-   };
-   BadInitialization(std::string msg)
-     : Errors(msg) {
-      type = BAD_INITIALIZATION;
-   };
+  public:
+  BadInitialization(void)
+    : Errors(error_msg.at(BAD_INITIALIZATION)) {
+    type = BAD_INITIALIZATION;
+  };
+  BadInitialization(std::string msg)
+    : Errors(msg) {
+    type = BAD_INITIALIZATION;
+  };
 };
 class NullPointer : public Errors {
-   public:
-   NullPointer(void)
-     : Errors(error_msg.at(NULL_POINTER)) {
-      type = NULL_POINTER;
-   };
+  public:
+  NullPointer(void)
+    : Errors(error_msg.at(NULL_POINTER)) {
+    type = NULL_POINTER;
+  };
 };
 class BadAssignment : public Errors {
-   public:
-   BadAssignment(void)
-     : Errors(error_msg.at(BAD_ASSIGNMENT)) {
-      type = BAD_ASSIGNMENT;
-   };
+  public:
+  BadAssignment(void)
+    : Errors(error_msg.at(BAD_ASSIGNMENT)) {
+    type = BAD_ASSIGNMENT;
+  };
 };
 class BadOperation : public Errors {
-   public:
-   BadOperation(void)
-     : Errors(error_msg.at(BAD_OPERATION)) {
-      type = BAD_OPERATION;
-   };
+  public:
+  BadOperation(void)
+    : Errors(error_msg.at(BAD_OPERATION)) {
+    type = BAD_OPERATION;
+  };
 };
 class BadInternalCondition : public Errors {
-   public:
-   BadInternalCondition(void)
-     : Errors(error_msg.at(BAD_INTERNAL_CONDITION)) {
-      type = BAD_INTERNAL_CONDITION;
-   };
+  public:
+  BadInternalCondition(void)
+    : Errors(error_msg.at(BAD_INTERNAL_CONDITION)) {
+    type = BAD_INTERNAL_CONDITION;
+  };
 };
 class BadSize : public Errors {
-   public:
-   BadSize(void)
-     : Errors(error_msg.at(BAD_SIZE)) {
-      type = BAD_SIZE;
-   };
+  public:
+  BadSize(void)
+    : Errors(error_msg.at(BAD_SIZE)) {
+    type = BAD_SIZE;
+  };
 };
 class NotEqualSize : public Errors {
-   public:
-   NotEqualSize(void)
-     : Errors(error_msg.at(NOT_EQUAL_SIZE)) {
-      type = NOT_EQUAL_SIZE;
-   };
+  public:
+  NotEqualSize(void)
+    : Errors(error_msg.at(NOT_EQUAL_SIZE)) {
+    type = NOT_EQUAL_SIZE;
+  };
 };
 class OutOfChoices : public Errors {
-   public:
-   OutOfChoices(void)
-     : Errors(error_msg.at(OUT_OF_CHOICES)) {
-      type = OUT_OF_CHOICES;
-   };
+  public:
+  OutOfChoices(void)
+    : Errors(error_msg.at(OUT_OF_CHOICES)) {
+    type = OUT_OF_CHOICES;
+  };
 };
 class BadAlloc : public Errors {
-   public:
-   BadAlloc(void)
-     : Errors(error_msg.at(BAD_ALLOC)) {
-      type = BAD_ALLOC;
-   };
+  public:
+  BadAlloc(void)
+    : Errors(error_msg.at(BAD_ALLOC)) {
+    type = BAD_ALLOC;
+  };
 };
 class BadMemoryLimits : public Errors {
-   public:
-   BadMemoryLimits(void)
-     : Errors(error_msg.at(MEMORY_MAX_LIMIT)) {
-      type = MEMORY_MAX_LIMIT;
-   };
+  public:
+  BadMemoryLimits(void)
+    : Errors(error_msg.at(MEMORY_MAX_LIMIT)) {
+    type = MEMORY_MAX_LIMIT;
+  };
 };
 class BadString : public Errors {
-   public:
-   BadString(void)
-     : Errors(error_msg.at(BAD_STRING)) {
-      type = BAD_STRING;
-   };
+  public:
+  BadString(void)
+    : Errors(error_msg.at(BAD_STRING)) {
+    type = BAD_STRING;
+  };
 };
 class Singular : public Errors {
-   public:
-   Singular(void)
-     : Errors(error_msg.at(SINGULAR)) {
-      type = SINGULAR;
-   };
+  public:
+  Singular(void)
+    : Errors(error_msg.at(SINGULAR)) {
+    type = SINGULAR;
+  };
 };
 class OverUnderFlow : public Errors {
-   public:
-   OverUnderFlow(void)
-     : Errors(error_msg.at(OVER_UNDER_FLOW)) {
-      type = OVER_UNDER_FLOW;
-   };
+  public:
+  OverUnderFlow(void)
+    : Errors(error_msg.at(OVER_UNDER_FLOW)) {
+    type = OVER_UNDER_FLOW;
+  };
 };
 class OverFlow : public Errors {
-   public:
-   OverFlow(void)
-     : Errors(error_msg.at(OVER_FLOW)) {
-      type = OVER_FLOW;
-   };
+  public:
+  OverFlow(void)
+    : Errors(error_msg.at(OVER_FLOW)) {
+    type = OVER_FLOW;
+  };
 };
 class UnderFlow : public Errors {
-   public:
-   UnderFlow(void)
-     : Errors(error_msg.at(UNDER_FLOW)) {
-      type = UNDER_FLOW;
-   };
+  public:
+  UnderFlow(void)
+    : Errors(error_msg.at(UNDER_FLOW)) {
+    type = UNDER_FLOW;
+  };
 };
 class OutOfDegree : public Errors {
-   public:
-   OutOfDegree(void)
-     : Errors(error_msg.at(OUT_OF_DEGREE)) {
-      type = OUT_OF_DEGREE;
-   };
+  public:
+  OutOfDegree(void)
+    : Errors(error_msg.at(OUT_OF_DEGREE)) {
+    type = OUT_OF_DEGREE;
+  };
 };
 class LossOfData : public Errors {
-   public:
-   LossOfData(void)
-     : Errors(error_msg.at(LOSS_OF_DATA)) {
-      type = LOSS_OF_DATA;
-   };
+  public:
+  LossOfData(void)
+    : Errors(error_msg.at(LOSS_OF_DATA)) {
+    type = LOSS_OF_DATA;
+  };
 };
 class ConfigFileError : public Errors {
-   public:
-   ConfigFileError(void)
-     : Errors("Config file error") {
-      type = CONFIG_FILE_ERROR;
-   };
+  public:
+  ConfigFileError(void)
+    : Errors("Config file error") {
+    type = CONFIG_FILE_ERROR;
+  };
 };
 class NormFileError : public Errors {
-   public:
-   NormFileError(void)
-     : Errors("Norm file error") {
-      type = NORM_FILE_ERROR;
-   };
+  public:
+  NormFileError(void)
+    : Errors("Norm file error") {
+    type = NORM_FILE_ERROR;
+  };
 };
 class FileNameError : public Errors {
-   public:
-   FileNameError(void)
-     : Errors(error_msg.at(FILE_NAME_ERROR)) {
-      type = FILE_NAME_ERROR;
-   };
-   FileNameError(std::string _msg)
-     : Errors(_msg) {
-      type = FILE_NAME_ERROR;
-   };
+  public:
+  FileNameError(void)
+    : Errors(error_msg.at(FILE_NAME_ERROR)) {
+    type = FILE_NAME_ERROR;
+  };
+  FileNameError(std::string _msg)
+    : Errors(_msg) {
+    type = FILE_NAME_ERROR;
+  };
 };
 class BadCmdOptions : public Errors {
-   public:
-   BadCmdOptions(void)
-     : Errors() {
-      type = BAD_OPERATION;
-   };
-   BadCmdOptions(std::string _msg)
-     : Errors(_msg) {
-      type = BAD_OPERATION;
-   };
+  public:
+  BadCmdOptions(void)
+    : Errors() {
+    type = BAD_OPERATION;
+  };
+  BadCmdOptions(std::string _msg)
+    : Errors(_msg) {
+    type = BAD_OPERATION;
+  };
 };
 class FileFormatError : public Errors {
-   public:
-   FileFormatError(void)
-     : Errors(error_msg.at(FILE_FORMAT_ERROR)) {
-      type = FILE_FORMAT_ERROR;
-   };
-   FileFormatError(std::string _msg)
-     : Errors(_msg) {
-      type = FILE_FORMAT_ERROR;
-   };
+  public:
+  FileFormatError(void)
+    : Errors(error_msg.at(FILE_FORMAT_ERROR)) {
+    type = FILE_FORMAT_ERROR;
+  };
+  FileFormatError(std::string _msg)
+    : Errors(_msg) {
+    type = FILE_FORMAT_ERROR;
+  };
 };
 class IntervalWithoutPoints : public Errors {
-   public:
-   IntervalWithoutPoints(void)
-     : Errors(error_msg.at(INTERVAL_WITHOUT_POINTS)) {
-      type = INTERVAL_WITHOUT_POINTS;
-   };
+  public:
+  IntervalWithoutPoints(void)
+    : Errors(error_msg.at(INTERVAL_WITHOUT_POINTS)) {
+    type = INTERVAL_WITHOUT_POINTS;
+  };
 };
 class UnknownError : public Errors {
-   public:
-   UnknownError(void)
-     : Errors(error_msg.at(UNKNOWN_ERROR)) {
-      type = UNKNOWN_ERROR;
-   };
+  public:
+  UnknownError(void)
+    : Errors(error_msg.at(UNKNOWN_ERROR)) {
+    type = UNKNOWN_ERROR;
+  };
 };
 
 namespace lz {
-   class LZError : public Errors {
-  public:
-      int lztype;
-      LZError(void)
-        : Errors() {
-         lztype = LZ_ERROR;
-      };
-      LZError(std::string msg)
-        : Errors(msg) {
-         lztype = LZ_ERROR;
-      }
-   };
-   class LZBadAlloc : public BadAlloc, public LZError {
-  public:
-      LZBadAlloc(void)
-        : BadAlloc(), LZError() {
-         lztype = LZ_BAD_ALLOC;
-      };
-   };
-   class LZNoMatchSize : public NotEqualSize, public LZError {
-  public:
-      LZNoMatchSize(void)
-        : NotEqualSize(), LZError() {
-         lztype = LZ_NO_MATCH_SIZE;
-      };
-   };
-   class LZOutOfBounds : public OutOfBounds, public LZError {
-  public:
-      LZOutOfBounds(void)
-        : OutOfBounds(), LZError() {
-         lztype = LZ_OUT_OF_BOUNDS;
-      };
-   };
-   class LZSuffixArrayError : public LZError {
-  public:
-      LZSuffixArrayError(void)
-        : LZError(error_msg.at(LZ_SUFFIX_ARRAY_ERROR)) {
-         lztype = LZ_SUFFIX_ARRAY_ERROR;
-      };
-   };
-   class LZAnsatzFitError : public LZError {
-  public:
-      LZAnsatzFitError(void)
-        : LZError() {
-         lztype = LZ_ANSATZ_FIT_ERROR;
-      };
-   };
+  class LZError : public Errors {
+public:
+    int lztype;
+    LZError(void)
+      : Errors() {
+      lztype = LZ_ERROR;
+    };
+    LZError(std::string msg)
+      : Errors(msg) {
+      lztype = LZ_ERROR;
+    }
+  };
+  class LZBadAlloc : public BadAlloc, public LZError {
+public:
+    LZBadAlloc(void)
+      : BadAlloc(), LZError() {
+      lztype = LZ_BAD_ALLOC;
+    };
+  };
+  class LZNoMatchSize : public NotEqualSize, public LZError {
+public:
+    LZNoMatchSize(void)
+      : NotEqualSize(), LZError() {
+      lztype = LZ_NO_MATCH_SIZE;
+    };
+  };
+  class LZOutOfBounds : public OutOfBounds, public LZError {
+public:
+    LZOutOfBounds(void)
+      : OutOfBounds(), LZError() {
+      lztype = LZ_OUT_OF_BOUNDS;
+    };
+  };
+  class LZSuffixArrayError : public LZError {
+public:
+    LZSuffixArrayError(void)
+      : LZError(error_msg.at(LZ_SUFFIX_ARRAY_ERROR)) {
+      lztype = LZ_SUFFIX_ARRAY_ERROR;
+    };
+  };
+  class LZAnsatzFitError : public LZError {
+public:
+    LZAnsatzFitError(void)
+      : LZError() {
+      lztype = LZ_ANSATZ_FIT_ERROR;
+    };
+  };
 }  // namespace lz

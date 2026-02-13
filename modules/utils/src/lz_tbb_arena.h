@@ -11,9 +11,9 @@
 #include <tbb/task_arena.h>
 
 namespace lz {
-   namespace internal {
+  namespace internal {
 
-      class LZ_Arena : public tbb::task_arena {};
+    class LZ_Arena : public tbb::task_arena {};
 
-   }  // namespace internal
+  }  // namespace internal
 }  // namespace lz

@@ -1,205 +1,167 @@
+/**
+ * @file sequence.cpp
+ * @brief Implementation of non-inline sequence methods.
+ */
+
 #include <lz/parallel_utils.h>
 #include <lz/sequence.h>
 
 namespace lz {
-   sequence::sequence(const std::string str) {
-      seq = std::vector<char>(str.begin(), str.end());
-      setAlphabetSize();
-   }
 
-   sequence::sequence(const std::string_view str) {
-      seq = std::vector<char>(str.begin(), str.end());
-      setAlphabetSize();
-   }
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // Constructors
+  // ═══════════════════════════════════════════════════════════════════════════════
 
-   sequence::sequence(const std::vector<char> vec) {
-      seq = vec;
-      setAlphabetSize();
-   }
+  sequence::sequence(const std::string& str)
+    : seq(str.begin(), str.end()), alphabet_size(details::ALPHABET_SIZE) {
+    setAlphabetSize();
+  }
 
-   sequence& sequence::reverse(void) {
+  sequence::sequence(std::string_view str)
+    : seq(str.begin(), str.end()), alphabet_size(details::ALPHABET_SIZE) {
+    setAlphabetSize();
+  }
+
+  sequence::sequence(const std::vector<char>& vec)
+    : seq(vec), alphabet_size(details::ALPHABET_SIZE) {
+    setAlphabetSize();
+  }
+
+  sequence& sequence::reverse(void) {
 #ifdef __cpp_lib_ranges
-      std::ranges::reverse(seq);
+    std::ranges::reverse(seq);
 #else
-      std::reverse(seq.begin(), seq.end());
+    std::reverse(seq.begin(), seq.end());
 #endif
 
-      return *this;
-   }
+    return *this;
+  }
 
-   sequence sequence::reverseCopy(void) {
-      auto res = seq;
+  sequence sequence::reverseCopy() {
+    // Construct directly from reverse iterators (avoids copy + reverse)
+    sequence result;
+    result.seq.assign(seq.rbegin(), seq.rend());
+    result.alphabet_size = alphabet_size;
+    return result;
+  }
 
+  sequence sequence::reverseCopy() const {
+    sequence result;
+    result.seq.assign(seq.rbegin(), seq.rend());
+    result.alphabet_size = alphabet_size;
+    return result;
+  }
+
+  sequence& sequence::rightShift(lz_uint ls) {
+    if (seq.empty()) return *this;
+    const auto shift = ls % seq.size();
+    if (shift == 0) return *this;
 #ifdef __cpp_lib_ranges
-      std::ranges::reverse(res);
+    std::ranges::rotate(seq.begin(), seq.begin() + static_cast<std::ptrdiff_t>(shift), seq.end());
 #else
-      std::reverse(res.begin(), res.end());
+    std::rotate(seq.begin(), seq.begin() + static_cast<std::ptrdiff_t>(shift), seq.end());
 #endif
+    return *this;
+  }
 
-      return sequence(res, alphabet_size);
-   }
-
-   const sequence sequence::reverseCopy(void) const {
-      auto res = seq;
-
+  sequence& sequence::leftShift(lz_uint ls) {
+    if (seq.empty()) return *this;
+    const auto shift = seq.size() - (ls % seq.size());
+    if (shift == seq.size()) return *this;
 #ifdef __cpp_lib_ranges
-      std::ranges::reverse(res);
+    std::ranges::rotate(seq.begin(), seq.begin() + static_cast<std::ptrdiff_t>(shift), seq.end());
 #else
-      std::reverse(res.begin(), res.end());
+    std::rotate(seq.begin(), seq.begin() + static_cast<std::ptrdiff_t>(shift), seq.end());
 #endif
+    return *this;
+  }
 
-      return sequence(res, alphabet_size);
-   }
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // Subsequence Operations
+  // ═══════════════════════════════════════════════════════════════════════════════
 
-   sequence& sequence::rightShift(lz_uint ls) {
-#ifdef __cpp_lib_ranges
-      std::ranges::rotate(seq.begin(), seq.begin() + (ls % seq.size()), seq.end());
-#else
-      std::rotate(seq.begin(), seq.begin() + (ls % seq.size()), seq.end());
-#endif
+  sequence sequence::Drop(lz_size l) const {
+    if (l >= seq.size()) [[unlikely]] {
+      return sequence(std::vector<char>(), alphabet_size);
+    }
+    return sequence(std::vector<char>(seq.begin() + static_cast<std::ptrdiff_t>(l), seq.end()),
+                    alphabet_size);
+  }
 
-      return *this;
-   }
+  std::pair<sequence, sequence> sequence::Split(lz_size l) const {
+    const auto split_pos = seq.begin() + static_cast<std::ptrdiff_t>(std::min(l, seq.size()));
+    return {sequence(std::vector<char>(seq.begin(), split_pos), alphabet_size),
+            sequence(std::vector<char>(split_pos, seq.end()), alphabet_size)};
+  }
 
-   sequence& sequence::leftShift(lz_uint ls) {
-#ifdef __cpp_lib_ranges
-      std::ranges::rotate(seq.begin(), seq.begin() + seq.size() - (ls % seq.size()), seq.end());
-#else
-      std::rotate(seq.begin(), seq.begin() + seq.size() - (ls % seq.size()), seq.end());
-#endif
+  sequence sequence::Granularity(lz_uint gr) const {
+    if (gr == 0) return sequence();
 
-      return *this;
-   }
+    std::vector<char> ns;
+    ns.reserve(seq.size() / gr);
+    std::array<bool, 256> seen{};
+    char                  temp = 0;
+    lz_uint               count = 0;
 
-   sequence sequence::Drop(lz_size l) const {
-      if (l >= seq.size()) {
-         return sequence(std::vector<char>(), alphabet_size);
+    for (const auto c: seq) {
+      temp += c;
+      if (++count == gr) {
+        ns.push_back(temp);
+        seen[static_cast<unsigned char>(temp)] = true;
+        temp = 0;
+        count = 0;
       }
-      return sequence(std::vector<char>(seq.begin() + l, seq.end()), alphabet_size);
-   }
+    }
 
-   std::pair<sequence, sequence> sequence::Split(lz_size l) const {
-      std::vector<char> lhs{seq.begin(), seq.begin() + l};
-      std::vector<char> rhs{seq.begin() + l, seq.end()};
+    // Count unique values
+    lz_uint unique_count = 0;
+    for (const auto s: seen) {
+      unique_count += s;
+    }
 
-      // std::ranges::split(seq, l);
+    return sequence(ns, unique_count);
+  }
 
-      return std::make_pair(lhs, rhs);
-   }
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // Shuffle Operations
+  // ═══════════════════════════════════════════════════════════════════════════════
 
-   sequence sequence::Granularity(lz_uint gr) const {
-      char temp = 0;
-      std::vector<char> ns;
-      std::unordered_set<char> alphabet;
-      lz_uint count = 0;
+  void Shuffle(sequence& s, lz_uint block_size) {
+    static std::random_device rd_seed;
+    static std::mt19937       random_engine(rd_seed());
 
-      for (auto c: seq) {
-         if (count == gr - 1) {
-            ns.push_back(temp);
-            alphabet.insert(temp);
-            temp  = 0;
-            count = 0;
-         }
-         temp += c;
-         count++;
-      }
+    const auto seq_size = s.size();
+    if (seq_size <= block_size + 1) return;  // Guard against underflow
 
-      return sequence(ns, alphabet.size());
-   }
+    const auto                             max_block_idx = (seq_size - block_size - 1) / block_size;
+    std::uniform_int_distribution<lz_uint> dis(0, max_block_idx);
 
-   sequence sequence::map(std::function<lz_char(lz_char)> fn) {
-      sequence transformed_sequence;
+    // Find first valid block index
+    lz_uint op1 = block_size * dis(random_engine);
+    while (op1 > seq_size - block_size - 1) {
+      op1 = block_size * dis(random_engine);
+    }
 
-      transformed_sequence.seq.resize(seq.size());
+    // Find second non-overlapping block index
+    if (seq_size <= 10) return;  // Too small for meaningful shuffle
 
-#ifdef __cpp_lib_ranges
-      std::ranges::transform(seq, transformed_sequence.seq.begin(), fn);
-#else
-      std::transform(seq.begin(), seq.end(), transformed_sequence.seq.begin(), fn);
-#endif
-
-      transformed_sequence.alphabet_size = alphabet_size;
-
-      return transformed_sequence;
-   }
-
-   const sequence sequence::map(std::function<lz_char(lz_char)> fn) const {
-      sequence transformed_sequence;
-
-      transformed_sequence.seq.resize(seq.size());
-
-#ifdef __cpp_lib_ranges
-      std::ranges::transform(seq, transformed_sequence.seq.begin(), fn);
-#else
-      std::transform(seq.begin(), seq.end(), transformed_sequence.seq.begin(), fn);
-#endif
-
-      transformed_sequence.alphabet_size = alphabet_size;
-
-      return transformed_sequence;
-   }
-
-   sequence map(std::function<lz_char(lz_char)> fn, const sequence& s) {
-      sequence transformed_sequence;
-
-      transformed_sequence.seq.resize(s.seq.size());
-
-#ifdef __cpp_lib_ranges
-      std::ranges::transform(s.seq, transformed_sequence.seq.begin(), fn);
-#else
-      std::transform(s.seq.begin(), s.seq.end(), transformed_sequence.seq.begin(), fn);
-#endif
-
-      transformed_sequence.alphabet_size = s.alphabet_size;
-
-      return transformed_sequence;
-   }
-
-   sequence map(const sequence& s, std::function<lz_char(lz_char)> fn) {
-      sequence transformed_sequence;
-
-      transformed_sequence.seq.resize(s.seq.size());
-
-#ifdef __cpp_lib_ranges
-      std::ranges::transform(s.seq, transformed_sequence.seq.begin(), fn);
-#else
-      std::transform(s.seq.begin(), s.seq.end(), transformed_sequence.seq.begin(), fn);
-#endif
-
-      transformed_sequence.alphabet_size = s.alphabet_size;
-
-      return transformed_sequence;
-   }
-
-   void Shuffle(sequence& s, lz_uint block_size) {
-      static std::random_device rd_seed;
-      static std::mt19937       random_engine(rd_seed());
-
-      std::uniform_int_distribution<> dis(0, (s.size() - block_size - 0x01) / block_size);
-      lz_uint                         op1 = s.size() + 0x03, op2 = s.size() + 0x03;
-
-      while (op1 > s.size() - block_size - 0x01)  // this goes on until we get a valid index
-         op1 = block_size * dis(random_engine);   // the index for the first block
-
+    lz_uint op2 = block_size * dis(random_engine);
+    while (true) {
       op2 = block_size * dis(random_engine);
-      while (true && s.size() > 10) {            // this goes on until we get a valid index
-         op2 = block_size * dis(random_engine);  // the index for the second block
-         if ((op2 < op1 || op2 > op1 + block_size) &&
-             op2 < s.size() - block_size - 0x01)  // it does not overlap with the previous block and
-                                                  // is not to large the block size can not be feed
-            break;
-      }
+      const bool no_overlap = (op2 < op1 || op2 > op1 + block_size);
+      const bool in_bounds = (op2 < seq_size - block_size - 1);
+      if (no_overlap && in_bounds) break;
+    }
 
-      swap(s, op1, op2, block_size);
-   }
+    swap(s, op1, op2, block_size);
+  }
 
-   sequence Shuffle(const sequence& s, lz_uint block_size, lz_uint times) {
-      sequence seq(s);
-
-      for (lz_uint i = 0; i < times; i++)
-         Shuffle(seq, block_size);
-
-      return seq;
-   }
+  sequence Shuffle(const sequence& s, lz_uint block_size, lz_uint times) {
+    sequence result(s);
+    for (lz_uint i = 0; i < times; ++i) {
+      Shuffle(result, block_size);
+    }
+    return result;
+  }
 
 }  // namespace lz

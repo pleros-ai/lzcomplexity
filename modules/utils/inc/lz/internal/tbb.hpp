@@ -8,41 +8,41 @@
 
 namespace lz {
 
-   namespace internal {
+  namespace internal {
 
-      // -------------------------------------------------------------------------
-      // TBB-specific parallel implementations (defined in tbb.cpp)
-      // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // TBB-specific parallel implementations (defined in tbb.cpp)
+    // -------------------------------------------------------------------------
 
-      void parallel_for_impl(lz_size                                   start,
-                             lz_size                                   end,
-                             const std::function<void(lz_size)>&       fun,
-                             long                                      granularity = 0);
+    void parallel_for_impl(lz_size                             start,
+                           lz_size                             end,
+                           const std::function<void(lz_size)>& fun,
+                           long                                granularity = 0);
 
-      void parallel_do_impl(const std::vector<std::function<void()>>& funcs);
+    void parallel_do_impl(const std::vector<std::function<void()>>& funcs);
 
-      template<typename ReturnType>
-      ReturnType parallel_reduce_impl(
-         lz_size                                                                    init,
-         lz_size                                                                    end,
-         ReturnType                                                                 init_value,
-         const std::function<ReturnType(internal::LZ_BlockedRange<lz_size>, ReturnType)>& fun,
-         const std::function<ReturnType(ReturnType, ReturnType)>&                   reduce_fun);
+    template<typename ReturnType>
+    ReturnType parallel_reduce_impl(
+      lz_size                                                                          init,
+      lz_size                                                                          end,
+      ReturnType                                                                       init_value,
+      const std::function<ReturnType(internal::LZ_BlockedRange<lz_size>, ReturnType)>& fun,
+      const std::function<ReturnType(ReturnType, ReturnType)>&                         reduce_fun);
 
-   }  // namespace internal
+  }  // namespace internal
 
-   namespace utils {
+  namespace utils {
 
-      // -------------------------------------------------------------------------
-      // TBB-specific utility functions (defined in tbb.cpp)
-      // -------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // TBB-specific utility functions (defined in tbb.cpp)
+    // -------------------------------------------------------------------------
 
-      void EnabledMT(lz_uint numthreads);
-      void DisabledMT();
+    void EnabledMT(lz_uint numthreads);
+    void DisabledMT();
 
-      lz_size num_workers();
-      lz_size worker_id();
+    lz_size num_workers();
+    lz_size worker_id();
 
-   }  // namespace utils
+  }  // namespace utils
 
 }  // namespace lz

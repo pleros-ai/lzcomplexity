@@ -22,15 +22,15 @@ auto py_spectral_entropy = [](std::vector<double> signal,
                               int                 step,
                               bool                use_window,
                               std::string         win) {
-   lz::Signal sig;
-   sig.signal      = signal;
-   sig.sample_rate = sample_frequency;
-   sig.useComplex  = use_complex;
-   sig.useWindow   = use_window;
-   sig.cut         = cut;
-   sig.window      = win;
+  lz::Signal sig;
+  sig.signal = signal;
+  sig.sample_rate = sample_frequency;
+  sig.useComplex = use_complex;
+  sig.useWindow = use_window;
+  sig.cut = cut;
+  sig.window = win;
 
-   return lz::spectral_entropy(sig, step);
+  return lz::spectral_entropy(sig, step);
 };
 
 auto py_process_signal = [](std::vector<double> signal,
@@ -40,15 +40,15 @@ auto py_process_signal = [](std::vector<double> signal,
                             int                 step,
                             bool                use_window,
                             std::string         win) {
-   lz::Signal sig;
-   sig.signal      = signal;
-   sig.sample_rate = sample_rate;
-   sig.useComplex  = use_complex;
-   sig.useWindow   = use_window;
-   sig.cut         = cut;
-   sig.window      = win;
+  lz::Signal sig;
+  sig.signal = signal;
+  sig.sample_rate = sample_rate;
+  sig.useComplex = use_complex;
+  sig.useWindow = use_window;
+  sig.cut = cut;
+  sig.window = win;
 
-   return lz::process_signal(sig, step);
+  return lz::process_signal(sig, step);
 };
 
 auto py_effective_spectral_complexity = [](std::vector<double> signal,
@@ -60,30 +60,30 @@ auto py_effective_spectral_complexity = [](std::vector<double> signal,
                                            int                 step,
                                            bool                use_window,
                                            std::string         win) {
-   lz::Signal sig;
-   sig.signal      = signal;
-   sig.sample_rate = sample_rate;
-   sig.useComplex  = use_complex;
-   sig.useWindow   = use_window;
-   sig.cut         = cut;
-   sig.window      = win;
+  lz::Signal sig;
+  sig.signal = signal;
+  sig.sample_rate = sample_rate;
+  sig.useComplex = use_complex;
+  sig.useWindow = use_window;
+  sig.cut = cut;
+  sig.window = win;
 
-   return lz::effective_spectral_complexity(sig, block_size, step, change_shuffle);
+  return lz::effective_spectral_complexity(sig, block_size, step, change_shuffle);
 };
 
 void PySpectral(py::module_& m) {
-   using namespace nanobind::literals;
+  using namespace nanobind::literals;
 
-   m.def("PowerSpectralDensity",
-         py_process_signal,
-         "signal"_a,
-         "sample_frequency"_a,
-         "use_complex"_a  = true,
-         "cut"_a          = false,
-         "step"_a         = 10,
-         "apply_window"_a = false,
-         "win"_a          = "hann",
-         R"pbdoc(
+  m.def("PowerSpectralDensity",
+        py_process_signal,
+        "signal"_a,
+        "sample_frequency"_a,
+        "use_complex"_a = true,
+        "cut"_a = false,
+        "step"_a = 10,
+        "apply_window"_a = false,
+        "win"_a = "hann",
+        R"pbdoc(
     Computes the Power Spectral Density (PSD) of a signal using Fast Fourier Transform (FFT).
     
     The PSD represents how the power of a signal is distributed across different frequencies.
@@ -127,16 +127,16 @@ void PySpectral(py::module_& m) {
     - When `cut=True`, the function computes the average PSD across all segments
     - The frequency resolution is determined by sample_frequency/signal_length
     )pbdoc");
-   m.def("SpectralEntropy",
-         py_spectral_entropy,
-         "signal"_a,
-         "sample_frequency"_a,
-         "use_complex"_a  = true,
-         "cut"_a          = false,
-         "step"_a         = 10,
-         "apply_window"_a = false,
-         "win"_a          = "hann",
-         R"pbdoc(
+  m.def("SpectralEntropy",
+        py_spectral_entropy,
+        "signal"_a,
+        "sample_frequency"_a,
+        "use_complex"_a = true,
+        "cut"_a = false,
+        "step"_a = 10,
+        "apply_window"_a = false,
+        "win"_a = "hann",
+        R"pbdoc(
       Calculates the spectral entropy of a signal.
     
     Spectral entropy quantifies the complexity or irregularity of a signal in the frequency domain.
@@ -183,18 +183,18 @@ void PySpectral(py::module_& m) {
     - Values typically range from 0 (pure sine wave) to log2(N/2) (white noise),
       where N is the length of the signal
          )pbdoc");
-   m.def("EffectiveSpectralComplexity",
-         py_effective_spectral_complexity,
-         "signal"_a,
-         "sample_frequency"_a,
-         "block_size"_a     = 0,
-         "use_complex"_a    = true,
-         "cut"_a            = false,
-         "change_shuffle"_a = false,
-         "step"_a           = 10,
-         "apply_window"_a   = false,
-         "win"_a            = "hann"
-                              R"pbdoc(
+  m.def("EffectiveSpectralComplexity",
+        py_effective_spectral_complexity,
+        "signal"_a,
+        "sample_frequency"_a,
+        "block_size"_a = 0,
+        "use_complex"_a = true,
+        "cut"_a = false,
+        "change_shuffle"_a = false,
+        "step"_a = 10,
+        "apply_window"_a = false,
+        "win"_a = "hann"
+                  R"pbdoc(
       Calculates the effective spectral complexity of a signal by comparing its spectral entropy
     to the spectral entropy of randomly shuffled versions of the same signal.
     

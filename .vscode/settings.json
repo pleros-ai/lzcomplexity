@@ -101,4 +101,7 @@
   "clang-format.style": "file",
   "clang-format.fallbackStyle": "Google",
   "C_Cpp.errorSquiggles": "enabled",
+  "editor.formatOnSave": true,
+  "editor.indentSize": "tabSize",
+  "editor.tabSize": 2
 }

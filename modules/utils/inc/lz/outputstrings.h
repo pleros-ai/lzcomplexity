@@ -8,7 +8,7 @@
 
 /***************************************************************************
  *   Copyright (C) 2013-2018 by Ernesto Estevez Rams   						   *
- *   estevez@fisica.uh.cu   											   *
+ *   estevez@fisica.uh.cu 	   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *

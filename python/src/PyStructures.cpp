@@ -8,16 +8,16 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 
-namespace py  = nanobind;
+namespace py = nanobind;
 namespace utl = lz::utils;
 
 void PyStructures(py::module_& m) {
-   using namespace py::literals;
+  using namespace py::literals;
 
-   // =========================================================================
-   // LZ_Shuffle class - Results from shuffle-based complexity analysis
-   // =========================================================================
-   py::class_<utl::LZ_Shuffle> LZ_Shuffle(m, "LZ_Shuffle", R"pbdoc(
+  // =========================================================================
+  // LZ_Shuffle class - Results from shuffle-based complexity analysis
+  // =========================================================================
+  py::class_<utl::LZ_Shuffle> LZ_Shuffle(m, "LZ_Shuffle", R"pbdoc(
 Results container for shuffle-based complexity analysis.
 
 This class stores the results from random shuffle or paired shuffle complexity
@@ -48,13 +48,13 @@ Examples
 >>> print(f"Multi-information: {result.multi_information}")
 )pbdoc");
 
-   LZ_Shuffle.def(py::init(), "Create an empty LZ_Shuffle object.")
-      .def(py::init<lz::lz_int, lz::lz_double, lz::lz_double, std::vector<lz::lz_double>>(),
-           "max_block_size_"_a,
-           "excess_value_"_a,
-           "multi_information_"_a,
-           "summands_"_a = std::vector<lz::lz_double>(),
-           R"pbdoc(
+  LZ_Shuffle.def(py::init(), "Create an empty LZ_Shuffle object.")
+    .def(py::init<lz::lz_int, lz::lz_double, lz::lz_double, std::vector<lz::lz_double>>(),
+         "max_block_size_"_a,
+         "excess_value_"_a,
+         "multi_information_"_a,
+         "summands_"_a = std::vector<lz::lz_double>(),
+         R"pbdoc(
 Create an LZ_Shuffle object with specified values.
 
 Parameters
@@ -68,40 +68,41 @@ multi_information_ : float
 summands_ : List[float], optional
     Individual complexity contributions at each level.
 )pbdoc")
-      .def("__str__",
-           [](const utl::LZ_Shuffle& self) {
-              return "LZ_Shuffle(excess_value=" + std::to_string(self.excess_value) +
-                     ", max_block_size=" + std::to_string(self.max_block_size) +
-                     ", multi_information=" + std::to_string(self.multi_information) + ")";
-           })
-      .def("__repr__",
-           [](const utl::LZ_Shuffle& self) {
-              return "LZ_Shuffle(excess_value=" + std::to_string(self.excess_value) +
-                     ", max_block_size=" + std::to_string(self.max_block_size) + ")";
-           })
-      .def("__copy__", [](const utl::LZ_Shuffle& self) { return utl::LZ_Shuffle(self); })
-      .def(
-         "__deepcopy__", [](const utl::LZ_Shuffle& self, py::dict) { return utl::LZ_Shuffle(self); }, "memo"_a);
+    .def("__str__",
+         [](const utl::LZ_Shuffle& self) {
+           return "LZ_Shuffle(excess_value=" + std::to_string(self.excess_value)
+             + ", max_block_size=" + std::to_string(self.max_block_size)
+             + ", multi_information=" + std::to_string(self.multi_information) + ")";
+         })
+    .def("__repr__",
+         [](const utl::LZ_Shuffle& self) {
+           return "LZ_Shuffle(excess_value=" + std::to_string(self.excess_value)
+             + ", max_block_size=" + std::to_string(self.max_block_size) + ")";
+         })
+    .def("__copy__", [](const utl::LZ_Shuffle& self) { return utl::LZ_Shuffle(self); })
+    .def(
+      "__deepcopy__", [](const utl::LZ_Shuffle& self, py::dict) { return utl::LZ_Shuffle(self); }, "memo"_a);
 
-   // Define attributes with detailed docstrings
-   LZ_Shuffle
-      .def_rw("max_block_size",
-              &utl::LZ_Shuffle::max_block_size,
-              "int: Maximum block size used for shuffling. Larger values preserve more local structure.")
-      .def_rw("excess_value",
-              &utl::LZ_Shuffle::excess_value,
-              "float: Shuffle entropy deficit (effective complexity). Measures non-random information content.")
-      .def_rw("multi_information",
-              &utl::LZ_Shuffle::multi_information,
-              "float: Multi-information value computed with block_size=1. Measures total statistical dependence.")
-      .def_rw("summands",
-              &utl::LZ_Shuffle::summands,
-              "List[float]: Individual complexity contributions at each block size level.");
+  // Define attributes with detailed docstrings
+  LZ_Shuffle
+    .def_rw("max_block_size",
+            &utl::LZ_Shuffle::max_block_size,
+            "int: Maximum block size used for shuffling. Larger values preserve more local structure.")
+    .def_rw("excess_value",
+            &utl::LZ_Shuffle::excess_value,
+            "float: Shuffle entropy deficit (effective complexity). Measures non-random information content.")
+    .def_rw(
+      "multi_information",
+      &utl::LZ_Shuffle::multi_information,
+      "float: Multi-information value computed with block_size=1. Measures total statistical dependence.")
+    .def_rw("summands",
+            &utl::LZ_Shuffle::summands,
+            "List[float]: Individual complexity contributions at each block size level.");
 
-   // =========================================================================
-   // LZ_Args class - Configuration parameters for LZ76 algorithms
-   // =========================================================================
-   py::class_<utl::LZ_Args> LZ_Args(m, "LZ_Args", R"pbdoc(
+  // =========================================================================
+  // LZ_Args class - Configuration parameters for LZ76 algorithms
+  // =========================================================================
+  py::class_<utl::LZ_Args> LZ_Args(m, "LZ_Args", R"pbdoc(
 Configuration parameters for LZ76 complexity algorithms.
 
 This class encapsulates all configuration options for controlling the behavior
@@ -138,53 +139,49 @@ Examples
 >>> result = lz.lz76("ACGTACGTACGT", args)
 )pbdoc");
 
-   LZ_Args.def(py::init(), "Create LZ_Args with default values.")
-      .def(py::init<lz::lz_int>(),
-           "_chunks"_a,
-           "Create LZ_Args with specified number of parallel partitions.")
-      .def(py::init<lz::lz_int, lz::lz_int>(),
-           "_chunks"_a,
-           "_block_size"_a,
-           "Create LZ_Args with partitions and block size.")
-      .def(py::init<lz::lz_int, lz::lz_int, lz::lz_uint>(),
-           "_chunks"_a,
-           "_block_size"_a,
-           "alphabet_"_a,
-           "Create LZ_Args with partitions, block size, and alphabet.")
-      .def(py::init<lz::lz_int, lz::lz_int, lz::lz_uint, lz::lz_uint>(),
-           "_chunks"_a,
-           "_block_size"_a,
-           "alphabet_"_a,
-           "log_base"_a,
-           "Create LZ_Args with all parameters specified.")
-      .def(py::self == py::self, "Check equality between two LZ_Args objects.")
-      .def(py::self != py::self, "Check inequality between two LZ_Args objects.")
-      .def("__copy__", [](const utl::LZ_Args& self) { return utl::LZ_Args(self); })
-      .def("__repr__",
-           [](const utl::LZ_Args& self) {
-              return "LZ_Args(chunks=" + std::to_string(self.chunks) +
-                     ", alphabet=" + std::to_string(self.alphabet) +
-                     ", log_base=" + std::to_string(self.log_base) +
-                     ", block_size=" + std::to_string(self.block_size) + ")";
-           })
-      .def(
-         "__deepcopy__", [](const utl::LZ_Args& self, py::dict) { return utl::LZ_Args(self); }, "memo"_a);
+  LZ_Args.def(py::init(), "Create LZ_Args with default values.")
+    .def(py::init<lz::lz_int>(), "_chunks"_a, "Create LZ_Args with specified number of parallel partitions.")
+    .def(py::init<lz::lz_int, lz::lz_int>(),
+         "_chunks"_a,
+         "_block_size"_a,
+         "Create LZ_Args with partitions and block size.")
+    .def(py::init<lz::lz_int, lz::lz_int, lz::lz_uint>(),
+         "_chunks"_a,
+         "_block_size"_a,
+         "alphabet_"_a,
+         "Create LZ_Args with partitions, block size, and alphabet.")
+    .def(py::init<lz::lz_int, lz::lz_int, lz::lz_uint, lz::lz_uint>(),
+         "_chunks"_a,
+         "_block_size"_a,
+         "alphabet_"_a,
+         "log_base"_a,
+         "Create LZ_Args with all parameters specified.")
+    .def(py::self == py::self, "Check equality between two LZ_Args objects.")
+    .def(py::self != py::self, "Check inequality between two LZ_Args objects.")
+    .def("__copy__", [](const utl::LZ_Args& self) { return utl::LZ_Args(self); })
+    .def("__repr__",
+         [](const utl::LZ_Args& self) {
+           return "LZ_Args(chunks=" + std::to_string(self.chunks)
+             + ", alphabet=" + std::to_string(self.alphabet) + ", log_base=" + std::to_string(self.log_base)
+             + ", block_size=" + std::to_string(self.block_size) + ")";
+         })
+    .def("__deepcopy__", [](const utl::LZ_Args& self, py::dict) { return utl::LZ_Args(self); }, "memo"_a);
 
-   // Define attributes with detailed docstrings
-   LZ_Args
-      .def_rw("chunks",
-              &utl::LZ_Args::chunks,
-              "int: Number of partitions for parallel suffix array construction. 0 = automatic.")
-      .def_rw("get_shuffle_terms",
-              &utl::LZ_Args::get_shuffle_terms,
-              "bool: If True, compute individual summand terms for shuffle complexity.")
-      .def_rw("alphabet",
-              &utl::LZ_Args::alphabet,
-              "int: Size of the symbol alphabet (e.g., 2 for binary, 4 for DNA, 256 for ASCII).")
-      .def_rw("log_base",
-              &utl::LZ_Args::log_base,
-              "int: Base for logarithm in entropy calculations. Usually equals alphabet size.")
-      .def_rw("block_size",
-              &utl::LZ_Args::block_size,
-              "int: Maximum block size for shuffle complexity. -1 = automatic selection.");
+  // Define attributes with detailed docstrings
+  LZ_Args
+    .def_rw("chunks",
+            &utl::LZ_Args::chunks,
+            "int: Number of partitions for parallel suffix array construction. 0 = automatic.")
+    .def_rw("get_shuffle_terms",
+            &utl::LZ_Args::get_shuffle_terms,
+            "bool: If True, compute individual summand terms for shuffle complexity.")
+    .def_rw("alphabet",
+            &utl::LZ_Args::alphabet,
+            "int: Size of the symbol alphabet (e.g., 2 for binary, 4 for DNA, 256 for ASCII).")
+    .def_rw("log_base",
+            &utl::LZ_Args::log_base,
+            "int: Base for logarithm in entropy calculations. Usually equals alphabet size.")
+    .def_rw("block_size",
+            &utl::LZ_Args::block_size,
+            "int: Maximum block size for shuffle complexity. -1 = automatic selection.");
 }

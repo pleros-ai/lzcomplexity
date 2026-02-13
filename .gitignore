@@ -51,6 +51,7 @@
 /lib/**
 /share/**
 .env
+.windsurf/**
 
 /python/build/**
 /python/dist/**
