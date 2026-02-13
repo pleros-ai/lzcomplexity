@@ -86,6 +86,35 @@ namespace lz {
       return LZ_Result{factorization, epsilon, lzf};
     }
 
+    /**
+     * Original algorithm proposed by Lempel-Ziv
+     *
+       i := 0
+       C := 1
+       u := 1
+       v := 1
+       vmax := v
+       while u + v <= n do
+          if S[i + v] = S[u + v] then
+             v := v + 1
+          else
+             vmax := max(v, vmax)
+             i := i + 1
+             if i = u then
+                C := C + 1
+                u := u + vmax
+                v := 1
+                i := 0
+                vmax := v
+             else
+                v := 1
+             end if
+          end if
+       end while
+       if v != 1 then
+          C := C + 1
+       end if
+     */
     LZ_Result LempelZiv76::Factorize(const char* s, int N) {
       int i = 0, k = 1, l = 1;
       int k_max = 1;
