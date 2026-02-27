@@ -61,8 +61,8 @@ Functions
 - lz76Factorization(): Compute LZ76 complexity (number of factors)
 - lz76Factors(): Get factorization boundary positions
 - lz76EntropyDensity(): Compute normalized entropy density
-- lz76RandomShuffleComplexity(): Effective complexity via random shuffling
-- lz76PairedShuffleComplexity(): Effective complexity via paired shuffling
+- lz76RandomShuffleComplexity(): Effective measure complexity via random shuffling
+- lz76PairedShuffleComplexity(): Effective measure complexity via paired shuffling
 - lz76InformationDistance(): Compression-based distance between sequences
 - lz76RandomShuffleDistance(): Shuffle-based information distance
 - SpectralEntropy(): Spectral entropy of time-domain signals

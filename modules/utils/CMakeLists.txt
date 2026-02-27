@@ -12,22 +12,18 @@ set(UTILS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 # -----------------------------------------------------------------------------
 if(LZ_PARALLEL_BACKEND_USED STREQUAL "OPENMP")
   set(PARALLEL_IMPL ${UTILS_SOURCE_DIR}/openmp.cpp)
-  set(PARALLEL_HEADER ${UTILS_INCLUDE_DIR}/lz/internal/openmp.hpp)
   message(STATUS "[Utils] Using OpenMP parallel backend")
 elseif(LZ_PARALLEL_BACKEND_USED STREQUAL "TBB")
   set(PARALLEL_IMPL ${UTILS_SOURCE_DIR}/tbb.cpp)
-  set(PARALLEL_HEADER ${UTILS_INCLUDE_DIR}/lz/internal/tbb.hpp)
   # TBB also needs the arena source
   set(LZ_ARENA ${UTILS_SOURCE_DIR}/lz_arena.cpp)
   message(STATUS "[Utils] Using TBB parallel backend")
 elseif(LZ_PARALLEL_BACKEND_USED STREQUAL "CILK")
   set(PARALLEL_IMPL ${UTILS_SOURCE_DIR}/cilk.cpp)
-  set(PARALLEL_HEADER ${UTILS_INCLUDE_DIR}/lz/internal/cilk.hpp)
   message(STATUS "[Utils] Using Cilk parallel backend")
 else()
   # Default to generic (sequential) backend
   set(PARALLEL_IMPL ${UTILS_SOURCE_DIR}/generic.cpp)
-  set(PARALLEL_HEADER ${UTILS_INCLUDE_DIR}/lz/internal/generic.hpp)
   message(STATUS "[Utils] Using generic (sequential) parallel backend")
 endif()
 
@@ -61,6 +57,9 @@ set(public_headers
   ${UTILS_INCLUDE_DIR}/lz/lz_arena.h
   ${UTILS_INCLUDE_DIR}/lz/exceptions.h
   ${UTILS_INCLUDE_DIR}/lz/internal/parallel_common.h
-  ${PARALLEL_HEADER}
+  ${UTILS_INCLUDE_DIR}/lz/internal/openmp.hpp
+  ${UTILS_INCLUDE_DIR}/lz/internal/tbb.hpp
+  ${UTILS_INCLUDE_DIR}/lz/internal/cilk.hpp
+  ${UTILS_INCLUDE_DIR}/lz/internal/generic.hpp
   PARENT_SCOPE
 )

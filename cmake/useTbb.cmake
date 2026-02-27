@@ -125,6 +125,7 @@ if(NOT LZ_TBB_FOUND AND BUILTIN_TBB)
         message(STATUS "[TBB] Local TBB not found, checking connectivity...")
         lz_check_internet_connection(_has_internet)
         
+        option(TBB_TEST OFF)
         if(_has_internet)
             message(STATUS "[TBB] Fetching oneTBB ${LZ_TBB_VERSION}...")
             include(FetchContent)

@@ -15,30 +15,33 @@ function(LZ_INSTALL_HEADERS)
          if(DEFINED ARG_DESTINATION)
             set(headers_destination ${ARG_DESTINATION})
          else()
-            # if(NOT IS_ABSOLUTE ${header})
-               # find_file(header_file ${header} 
-               #          HINTS ${CMAKE_CURRENT_SOURCE_DIR}
-               #          PATH_SUFFIXES ${CMAKE_CURRENT_SOURCE_DIR}
-               #          NO_CACHE
-               #          NO_DEFAULT_PATH
-               #          NO_SYSTEM_ENVIRONMENT_PATH
-               #          NO_CMAKE_FIND_ROOT_PATH)
-            #    file(GLOB_RECURSE header_file ${CMAKE_CURRENT_SOURCE_DIR}*/${header})
-            # else()
             set(header_file ${header})
-            # endif()
             file(RELATIVE_PATH header_file_path "${CMAKE_CURRENT_SOURCE_DIR}" "${header_file}")
-            get_filename_component(header_directory_path "${header_file_path}" DIRECTORY)
-            get_filename_component(directory_name "${header_directory_path}" NAME)
+
+            cmake_path(GET header_file_path PARENT_PATH parent_path)
+            cmake_path(GET parent_path FILENAME directory_name)
+            
+            # get_filename_component(header_directory_path "${header_file_path}" DIRECTORY) 
+            # get_filename_component(directory_name "${header_directory_path}" NAME)
             set(headers_destination ${directory_name})
+
+            while (NOT ${directory_name} STREQUAL "lz" AND NOT ${directory_name} STREQUAL "lzDistance")
+               cmake_path(GET parent_path PARENT_PATH parent_path)
+               cmake_path(GET parent_path FILENAME directory_name)
+               # set(headers_destination ${directory_name}/${headers_destination})
+               cmake_path(APPEND directory_name ${headers_destination} OUTPUT_VARIABLE headers_destination)
+            endwhile()
+
             unset(header_file CACHE)
          endif()
          # message(STATUS "Installing header ${header} to ${headers_destination} and relative ${header_file_path}")
+         
          install(
             FILES ${header}
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${headers_destination}"
             COMPONENT ${component}
          )
+
          unset(headers_destination CACHE)
          unset(directory_name CACHE)
       endforeach()

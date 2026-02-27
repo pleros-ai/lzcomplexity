@@ -12,7 +12,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 include(lzMacros)
-LZ_INSTALL_HEADERS( HEADERS ${public_headers} )
+LZ_INSTALL_HEADERS( 
+    HEADERS ${public_headers} 
+    # DESTINATION "lz" 
+)
 
 # install the target and create export-set
 install(

@@ -239,8 +239,7 @@ namespace lz {
         const auto X_i = SA_.data() + i * subarr_size;  // The i'th subarray.
         const auto P_i = P + i * (p_ + 1);              // Pivot locations in `X_i` are to be placed in `P_i`.
         P_i[0] = 0, P_i[p_] = subarr_size + (i < p_ - 1 ? 0 : n_ % p_);  // The two flanking pivot indices.
-        for (lz_int j = 0; j < p_ - 1;
-             ++j)  // TODO: try parallelizing this loop too; observe performance diff.
+        for (lz_int j = 0; j < p_ - 1; ++j)  // TODO: try parallelizing this loop; observe performance diff.
           P_i[j + 1] = upper_bound(X_i, P_i[p_], &T_[pivot_[j]], n_ - pivot_[j]);
       };
 
@@ -354,9 +353,6 @@ namespace lz {
 
             const auto sub_subarr_size
               = P_i[j + 1] - P_i[j];  // Size of the `j`'th sub-subarray of subarray `i`.
-            // if (debug) std::cout << "CollectVal: " << P_i[j + 1] << " " << P_i[j] << std::endl;
-            // if (debug) std::cout << "Collect: " << std::to_string(sub_subarr_size) + "< j: " +
-            // std::to_string(j) + "<pre " << std::endl;
             sub_subarr_idx[i] = curr_idx;
             std::memcpy(Y_j + sub_subarr_idx[i], X_i + P_i[j], sub_subarr_size * sizeof(lz_int));
             std::memcpy(LCP_Y_j + sub_subarr_idx[i], LCP_X_i + P_i[j], sub_subarr_size * sizeof(lz_int));
