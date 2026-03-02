@@ -66,3 +66,63 @@ function(BUILTIN_TBB_INSTALL)
 
    # execute_process(make ${_tbb_compiler} cpp0x=1 "CXXFLAGS=${_tbb_cxxflags}" CPLUS=${CMAKE_CXX_COMPILER} CONLY=${CMAKE_C_COMPILER} "LDFLAGS=${_tbb_ldflags}")
 endfunction(BUILTIN_TBB_INSTALL)
+
+# Function to detect platform and OS version dynamically
+function(get_platform_info PLATFORM_VAR VERSION_VAR)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        # Try to get Linux distribution info
+        if(EXISTS "/etc/os-release")
+            file(STRINGS "/etc/os-release" OS_RELEASE)
+            
+            # Extract ID (ubuntu, debian, etc.)
+            foreach(LINE ${OS_RELEASE})
+                if(LINE MATCHES "^ID=\"?([a-zA-Z]+)\"?")
+                    set(DISTRO_ID "${CMAKE_MATCH_1}")
+                    break()
+                endif()
+            endforeach()
+            
+            # Extract version ID (22.04, 24.04, etc.)
+            foreach(LINE ${OS_RELEASE})
+                if(LINE MATCHES "^VERSION_ID=\"?([0-9.]+)\"?")
+                    set(DISTRO_VERSION "${CMAKE_MATCH_1}")
+                    break()
+                endif()
+            endforeach()
+            
+            set(${PLATFORM_VAR} "${DISTRO_ID}" PARENT_SCOPE)
+            set(${VERSION_VAR} "${DISTRO_VERSION}" PARENT_SCOPE)
+            
+        elseif(EXISTS "/etc/debian_version")
+            # Fallback for Debian
+            file(READ "/etc/debian_version" DEBIAN_VERSION)
+            string(STRIP "${DEBIAN_VERSION}" DEBIAN_VERSION)
+            set(${PLATFORM_VAR} "debian" PARENT_SCOPE)
+            set(${VERSION_VAR} "${DEBIAN_VERSION}" PARENT_SCOPE)
+        endif()
+        
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        # macOS detection
+        execute_process(
+            COMMAND sw_vers -productVersion
+            OUTPUT_VARIABLE MACOS_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        set(${PLATFORM_VAR} "macos" PARENT_SCOPE)
+        set(${VERSION_VAR} "${MACOS_VERSION}" PARENT_SCOPE)
+        
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        # Windows detection
+        set(${PLATFORM_VAR} "windows" PARENT_SCOPE)
+        set(${VERSION_VAR} "${CMAKE_SYSTEM_VERSION}" PARENT_SCOPE)
+        
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+        execute_process(
+            COMMAND freebsd-version
+            OUTPUT_VARIABLE FREEBSD_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        set(${PLATFORM_VAR} "freebsd" PARENT_SCOPE)
+        set(${VERSION_VAR} "${FREEBSD_VERSION}" PARENT_SCOPE)
+    endif()
+endfunction()

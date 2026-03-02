@@ -11,7 +11,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     SOVERSION ${PROJECT_VERSION_MAJOR}
 )
 
-include(lzMacros)
 LZ_INSTALL_HEADERS( 
     HEADERS ${public_headers} 
     # DESTINATION "lz" 

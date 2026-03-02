@@ -14,13 +14,7 @@ set(LZ_ARCHITECTURE macosx)
 # -----------------------------------------------------------------------------
 # macOS Version Detection
 # -----------------------------------------------------------------------------
-execute_process(
-    COMMAND sw_vers -productVersion
-    OUTPUT_VARIABLE MACOSX_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-# Extract major.minor
-string(REGEX MATCH "^[0-9]+\\.[0-9]+" MACOSX_VERSION "${MACOSX_VERSION}")
+get_platform_info(PLATFORM_ID MACOSX_VERSION)
 
 message(STATUS "[macOS] Detected version: ${MACOSX_VERSION}")
 

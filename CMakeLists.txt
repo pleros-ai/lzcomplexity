@@ -92,8 +92,10 @@ file(MAKE_DIRECTORY ${EXTERNAL_INCLUDE_DIR})
 # -----------------------------------------------------------------------------
 include(GNUInstallDirs)
 include(CheckIPOSupported)
-include(ConfigInstallDirs)
+
+include(lzMacros)
 include(CheckCompiler)
+include(ConfigInstallDirs)
 
 find_package(Threads REQUIRED)
 find_package(ZLIB REQUIRED)

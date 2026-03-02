@@ -1,6 +1,9 @@
 # these are cache variables, so they could be overwritten with -D,
 message(STATUS "PROJECT_NAME Package: ${PROJECT_NAME}")
 
+# Get platform information
+get_platform_info(PLATFORM_ID PLATFORM_VERSION)
+
 if(LZ_APP AND LZ_DISTANCE)
   set(CPACK_COMPONENTS_ALL runtime devel)
   set(CPACK_PACKAGE_NAME "lztools"
@@ -79,7 +82,7 @@ if (UNIX)
         set(CPACK_PACKAGE_DESCRIPTION ${LZ_DESCRIPTION})
         # package name for deb. If set, then instead of some-application-0.9.3-Linux.deb
         # you'll get some-application_0.9.3_amd64.deb (note the underscores too)
-        set(CPACK_DEBIAN_FILE_NAME "${CPACK_PACKAGE_NAME}_${PROJECT_VERSION}_${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR}") # DEB_DEFAULT
+        set(CPACK_DEBIAN_FILE_NAME "${CPACK_PACKAGE_NAME}_${PROJECT_VERSION}_${PLATFORM_ID}_${PLATFORM_VERSION}_${CMAKE_SYSTEM_PROCESSOR}") # DEB_DEFAULT
         # that is if you want every group to have its own package,
         # although the same will happen if this is not set (so it defaults to ONE_PER_GROUP)
         # and CPACK_DEB_COMPONENT_INSTALL is set to YES
