@@ -1,14 +1,24 @@
 # these are cache variables, so they could be overwritten with -D,
 message(STATUS "PROJECT_NAME Package: ${PROJECT_NAME}")
 
-set(CPACK_PACKAGE_NAME ${PROJECT_NAME}
-    CACHE STRING "lz_library"
-)
+if(LZ_APP AND LZ_DISTANCE)
+  set(CPACK_COMPONENTS_ALL runtime devel)
+  set(CPACK_PACKAGE_NAME "lztools"
+    CACHE STRING "lztools"
+  )
+else()
+  set(CPACK_PACKAGE_NAME ${PROJECT_NAME}
+      CACHE STRING "lztools"
+  )
+  set(CPACK_COMPONENTS_ALL runtime)
+  set(CPACK_ARCHIVE_COMPONENT_INSTALL ON) # Enabled it for archive generator respect the components selection
+endif()
+
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 
-string(TOLOWER ${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}_${CMAKE_BUILD_TYPE} CPACK_PACKAGE_FILE_NAME)
+string(TOLOWER ${CPACK_PACKAGE_NAME}_${PROJECT_VERSION}_${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE} CPACK_PACKAGE_FILE_NAME)
 # set(CPACK_GENERATOR ZIP)
 
 set(CPACK_PACKAGE_CONTACT "efrenaragon96@gmail.com")
@@ -69,7 +79,7 @@ if (UNIX)
         set(CPACK_PACKAGE_DESCRIPTION ${LZ_DESCRIPTION})
         # package name for deb. If set, then instead of some-application-0.9.3-Linux.deb
         # you'll get some-application_0.9.3_amd64.deb (note the underscores too)
-        set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+        set(CPACK_DEBIAN_FILE_NAME "${CPACK_PACKAGE_NAME}_${PROJECT_VERSION}_${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR}") # DEB_DEFAULT
         # that is if you want every group to have its own package,
         # although the same will happen if this is not set (so it defaults to ONE_PER_GROUP)
         # and CPACK_DEB_COMPONENT_INSTALL is set to YES
@@ -203,17 +213,6 @@ set(CPACK_SOURCE_IGNORE_FILES
     "\\\\\\\\.#"
     "/#"
 )
-
-if(LZ_APP AND LZ_DISTANCE)
-  set(CPACK_COMPONENTS_ALL runtime devel)
-  set(CPACK_PACKAGE_NAME "lztools"
-    CACHE STRING "lztools"
-  )
-  set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
-else()
-  set(CPACK_ARCHIVE_COMPONENT_INSTALL ON) # Enabled it for archive generator respect the components selection
-  set(CPACK_COMPONENTS_ALL runtime)
-endif()
 
 include(CPack)
 
