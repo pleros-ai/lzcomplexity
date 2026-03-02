@@ -122,21 +122,21 @@ jobs:
       # Set up GPG key for signing
       - name: Set up GPG key
         run: |
-          echo "${{ secrets.GPG_KEY_LANUCHPAD }}" | base64 --decode | gpg --import --batch
+          echo "${{ secrets.GPG_KEY_LANUCHPAD }}" | gpg --import --batch
           echo "${{ secrets.GPG_KEY_PASSPHRASE }}" | gpg --passphrase-fd 0 --export-secret-key -a > /dev/null 2>&1 || true
           # Verify the key is imported
           gpg --list-secret-keys
 
       # Configure SSH
-      - name: Setup SSH for Launchpad
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.LAUNCHPAD_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          # echo "${{ secrets.LAUNCHPAD_SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ppa.launchpad.net >> ~/.ssh/known_hosts
-          # Test SSH connection
-          ssh -T git@git.launchpad.net || true  # This will fail but shows key works
+      # - name: Setup SSH for Launchpad
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     echo "${{ secrets.LAUNCHPAD_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+      #     # echo "${{ secrets.LAUNCHPAD_SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_ed25519
+      #     chmod 600 ~/.ssh/id_ed25519
+      #     ssh-keyscan -H ppa.launchpad.net >> ~/.ssh/known_hosts
+      #     # Test SSH connection
+      #     ssh -T git@git.launchpad.net || true  # This will fail but shows key works
 
       # Configure dput config file
       - name: Configure dput for PPA upload
@@ -183,7 +183,7 @@ jobs:
           
           # Update changelog
           cd ~/packaging/${{ github.event.repository.name }}-${VERSION}
-          dch -v ${VERSION}-0ppa1~ubuntu20.04.1 -D focal -m "New upstream release" --force-distribution
+          dch -v ${VERSION}-0ppa1~focal1 -D focal -m "New upstream release" --force-distribution
           
           # Sign the package
           debuild -S -sa -k${GPG_KEY_ID}

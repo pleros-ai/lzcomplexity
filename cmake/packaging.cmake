@@ -87,9 +87,9 @@ if (UNIX)
         # that is if you want every group to have its own package,
         # although the same will happen if this is not set (so it defaults to ONE_PER_GROUP)
         # and CPACK_DEB_COMPONENT_INSTALL is set to YES
-        set(CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)#ONE_PER_GROUP)
+        set(CPACK_COMPONENTS_GROUPING ONE_PER_GROUP)#ALL_COMPONENTS_IN_ONE)
         # without this you won't be able to pack only specified component
-        set(CPACK_DEB_COMPONENT_INSTALL YES)
+        set(CPACK_DEB_COMPONENT_INSTALL ON)
 
         set(CPACK_DEBIAN_PACKAGE_SECTION "science")
         
