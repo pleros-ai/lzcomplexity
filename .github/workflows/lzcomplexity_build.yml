@@ -218,7 +218,6 @@ jobs:
           # echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i ~/.ssh/id_ed25519" > ~/.dput.cf
 
           # Uncompress .deb package
-          ls -al ${{ github.workspace }}/_packages/
           unzip ~/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
 
           # Upload package
