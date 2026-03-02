@@ -117,10 +117,10 @@ jobs:
 
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package
-          path: ~/
+          path: ~/downloaded/
 
       - name: Install tools fof upload to PPA
         run: sudo apt-get install -y ssh gnupg dput devscripts debhelper
@@ -211,17 +211,18 @@ jobs:
           DISTRO: $(lsb_release -cs)
         run: |
           # Extract the built package
-          mkdir -p ~/packaging
-          cd ~/packaging
+          # mkdir -p ~/packaging
+          # cd ~/packaging
 
           # Set up dput configuration
           # echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i ~/.ssh/id_ed25519" > ~/.dput.cf
 
           # Uncompress .deb package
-          unzip ~/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
+          ls -al ~/downloaded/
+          # unzip ~/downloaded/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
 
           # Upload package
-          dput ppa:${LAUNCHPAD_PPA} ~/packaging/lzcomplexity_${VERSION}_${{ matrix.platform }}_x86_64.deb
+          dput ppa:${LAUNCHPAD_PPA} ~/downloaded/lzcomplexity_${VERSION}_${{ matrix.platform }}_x86_64.deb
 
 
   build-mac:
