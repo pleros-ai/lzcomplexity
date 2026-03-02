@@ -139,83 +139,83 @@ jobs:
       #     ssh -T git@git.launchpad.net || true  # This will fail but shows key works
 
       # Configure dput config file
-      - name: Configure dput for PPA upload
-        run: |
-          cat > ~/.dput.cf << EOF
-          [your-ppa]
-          fqdn = ppa.launchpad.net
-          method = sftp
-          login = ${{ secrets.LAUNCHPAD_USERNAME }}
-          incoming = ~${{ secrets.LAUNCHPAD_USERNAME }}/ubuntu/${{ secrets.LAUNCHPAD_PPA }}/
-          EOF
+      # - name: Configure dput for PPA upload
+      #   run: |
+      #     cat > ~/.dput.cf << EOF
+      #     [your-ppa]
+      #     fqdn = ppa.launchpad.net
+      #     method = sftp
+      #     login = ${{ secrets.LAUNCHPAD_USERNAME }}
+      #     incoming = ~${{ secrets.LAUNCHPAD_USERNAME }}/ubuntu/${{ secrets.LAUNCHPAD_PPA }}/
+      #     EOF
 
-      - name: Configure git for Launchpad
-        run: |
-          git config --global user.name "Efren Aragon"
-          git config --global user.email "${{ secrets.LAUNCHPAD_EMAIL }}"
-          git config --global user.signingkey "${{ secrets.GPG_KEY_ID }}"
-          git config --global commit.gpgsign true
+      # - name: Configure git for Launchpad
+      #   run: |
+      #     git config --global user.name "Efren Aragon"
+      #     git config --global user.email "${{ secrets.LAUNCHPAD_EMAIL }}"
+      #     git config --global user.signingkey "${{ secrets.GPG_KEY_ID }}"
+      #     git config --global commit.gpgsign true
 
-      - name: Prepare Debian source package
-        env:
-          LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
-          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
-          VERSION: 0.9.8
-        run: |
-          # Create directory structure for Debian source package
-          mkdir -p ~/packaging/${{ github.event.repository.name }}-${VERSION}
+      # - name: Prepare Debian source package
+      #   env:
+      #     LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
+      #     GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+      #     VERSION: 0.9.8
+      #   run: |
+      #     # Create directory structure for Debian source package
+      #     mkdir -p ~/packaging/${{ github.event.repository.name }}-${VERSION}
           
-          # Extract tarball
-          TARBALL_NAME=$(basename ${{ github.workspace }}/_packages/*.tar.gz)
-          echo "tar file: ${TARBALL_NAME}"
-          tar -xzf ${TARBALL_NAME} -C ~/packaging/
+      #     # Extract tarball
+      #     TARBALL_NAME=$(basename ${{ github.workspace }}/_packages/*.tar.gz)
+      #     echo "tar file: ${TARBALL_NAME}"
+      #     tar -xzf ${TARBALL_NAME} -C ~/packaging/
           
-          # If your project already has a debian directory, copy it
-          if [ -d "debian" ]; then
-            cp -r debian ~/packaging/${{ github.event.repository.name }}-${VERSION}/
-          else
-            # Create basic debian directory if it doesn't exist
-            cd ~/packaging/${{ github.event.repository.name }}-${VERSION}
-            dh_make -y --single --createorig -p ${{ github.event.repository.name }}_${VERSION} -e ${LAUNCHPAD_EMAIL}
-            # Clean up unnecessary files
-            rm -f debian/*.ex debian/*.EX debian/README.*
-          fi
+      #     # If your project already has a debian directory, copy it
+      #     if [ -d "debian" ]; then
+      #       cp -r debian ~/packaging/${{ github.event.repository.name }}-${VERSION}/
+      #     else
+      #       # Create basic debian directory if it doesn't exist
+      #       cd ~/packaging/${{ github.event.repository.name }}-${VERSION}
+      #       dh_make -y --single --createorig -p ${{ github.event.repository.name }}_${VERSION} -e ${LAUNCHPAD_EMAIL}
+      #       # Clean up unnecessary files
+      #       rm -f debian/*.ex debian/*.EX debian/README.*
+      #     fi
           
-          # Update changelog
-          cd ~/packaging/${{ github.event.repository.name }}-${VERSION}
-          dch -v ${VERSION}-0ppa1~focal1 -D focal -m "New upstream release" --force-distribution
+      #     # Update changelog
+      #     cd ~/packaging/${{ github.event.repository.name }}-${VERSION}
+      #     dch -v ${VERSION}-0ppa1~focal1 -D focal -m "New upstream release" --force-distribution
           
-          # Sign the package
-          debuild -S -sa -k${GPG_KEY_ID}
+      #     # Sign the package
+      #     debuild -S -sa -k${GPG_KEY_ID}
           
-          # Find the .changes file
-          CHANGES_FILE=$(ls ~/packaging/*_source.changes | head -1)
-          echo "CHANGES_FILE=${CHANGES_FILE}"
-          echo "CHANGES_FILE=${CHANGES_FILE}" >> $GITHUB_ENV
+      #     # Find the .changes file
+      #     CHANGES_FILE=$(ls ~/packaging/*_source.changes | head -1)
+      #     echo "CHANGES_FILE=${CHANGES_FILE}"
+      #     echo "CHANGES_FILE=${CHANGES_FILE}" >> $GITHUB_ENV
 
       # Upload .deb package to Launchpad
-      # - name: Upload to Launchpad
-      #   if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-      #   env:
-      #     LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
-      #     LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
-      #     LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
-      #     LAUNCHPAD_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
-      #     VERSION: 0.9.8
-      #     DISTRO: $(lsb_release -cs)
-      #   run: |
-      #     # Extract the built package
-      #     # mkdir -p ~/lzcomplexity_src
-      #     # cd ~/lzcomplexity_src
+      - name: Upload to Launchpad
+        # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
+          LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
+          LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
+          LAUNCHPAD_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
+          VERSION: 0.9.8
+          DISTRO: $(lsb_release -cs)
+        run: |
+          # Extract the built package
+          mkdir -p ~/packaging
+          cd ~/packaging
 
-      #     # Set up dput configuration
-      #     echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i ~/.ssh/id_ed25519" > ~/.dput.cf
+          # Set up dput configuration
+          # echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i ~/.ssh/id_ed25519" > ~/.dput.cf
 
-      #     # Uncompress .deb package
-      #     unzip ${{ github.workspace }}/_packages/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
+          # Uncompress .deb package
+          unzip ${{ github.workspace }}/_packages/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
 
-      #     # Upload package
-      #     dput ppa:${LAUNCHPAD_PPA} ${{ github.workspace }}/_packages/lzcomplexity_${VERSION}_${{ matrix.platform }}_x86_64.deb
+          # Upload package
+          dput ppa:${LAUNCHPAD_PPA} ~/packaging/lzcomplexity_${VERSION}_${{ matrix.platform }}_x86_64.deb
 
 
   build-mac:
