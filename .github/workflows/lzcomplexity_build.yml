@@ -116,6 +116,12 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
 
     steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package
+          path: ~/
+
       - name: Install tools fof upload to PPA
         run: sudo apt-get install -y ssh gnupg dput devscripts debhelper
 
@@ -139,22 +145,22 @@ jobs:
       #     ssh -T git@git.launchpad.net || true  # This will fail but shows key works
 
       # Configure dput config file
-      # - name: Configure dput for PPA upload
-      #   run: |
-      #     cat > ~/.dput.cf << EOF
-      #     [your-ppa]
-      #     fqdn = ppa.launchpad.net
-      #     method = sftp
-      #     login = ${{ secrets.LAUNCHPAD_USERNAME }}
-      #     incoming = ~${{ secrets.LAUNCHPAD_USERNAME }}/ubuntu/${{ secrets.LAUNCHPAD_PPA }}/
-      #     EOF
+      - name: Configure dput for PPA upload
+        run: |
+          cat > ~/.dput.cf << EOF
+          [your-ppa]
+          fqdn = ppa.launchpad.net
+          method = sftp
+          login = ${{ secrets.LAUNCHPAD_USERNAME }}
+          incoming = ~${{ secrets.LAUNCHPAD_USERNAME }}/ubuntu/${{ secrets.LAUNCHPAD_PPA }}/
+          EOF
 
-      # - name: Configure git for Launchpad
-      #   run: |
-      #     git config --global user.name "Efren Aragon"
-      #     git config --global user.email "${{ secrets.LAUNCHPAD_EMAIL }}"
-      #     git config --global user.signingkey "${{ secrets.GPG_KEY_ID }}"
-      #     git config --global commit.gpgsign true
+      - name: Configure git for Launchpad
+        run: |
+          git config --global user.name "Efren Aragon"
+          git config --global user.email "${{ secrets.LAUNCHPAD_EMAIL }}"
+          git config --global user.signingkey "${{ secrets.GPG_KEY_ID }}"
+          git config --global commit.gpgsign true
 
       # - name: Prepare Debian source package
       #   env:
@@ -212,7 +218,8 @@ jobs:
           # echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i ~/.ssh/id_ed25519" > ~/.dput.cf
 
           # Uncompress .deb package
-          unzip ${{ github.workspace }}/_packages/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
+          ls -al ${{ github.workspace }}/_packages/
+          unzip ~/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
 
           # Upload package
           dput ppa:${LAUNCHPAD_PPA} ~/packaging/lzcomplexity_${VERSION}_${{ matrix.platform }}_x86_64.deb
