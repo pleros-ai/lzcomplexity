@@ -27,7 +27,7 @@ namespace lz {
         std::exit(EXIT_FAILURE);
       }
 
-      c = p_ == 1 ? 1 : p_ - 1;
+      // c = p_ == 1 ? 1 : p_ - 1;
       debug = false;
     }
 
@@ -44,7 +44,7 @@ namespace lz {
       , pivot_per_part_(p_ == 1 ? 1 : p_ - 1)
       , part_size_scan_(nullptr)
       , part_ruler_() {
-      c = p_ == 1 ? 1 : p_ - 1;
+      // c = p_ == 1 ? 1 : p_ - 1;
       debug = false;
     }
 
@@ -61,7 +61,7 @@ namespace lz {
       , pivot_per_part_(p_ == 1 ? 1 : p_ - 1)
       , part_size_scan_(nullptr)
       , part_ruler_() {
-      c = p_ == 1 ? 1 : p_ - 1;
+      // c = p_ == 1 ? 1 : p_ - 1;
       debug = false;
     }
 
@@ -97,7 +97,7 @@ namespace lz {
       while (i < len_x && j < len_y) {
         l_x = LCP_x[i];
 
-        if (l_x > m) Z[k] = X[i], LCP_z[k] = l_x, m = m;
+        if (l_x > m) Z[k] = X[i], LCP_z[k] = l_x;
         else if (l_x < m) Z[k] = Y[j], LCP_z[k] = m, m = l_x;
         else  // Compute LCP of X_i and Y_j through linear scan.
         {
@@ -206,14 +206,16 @@ namespace lz {
       const auto t_s = now();
 
       // lz_int pivot_per_part_ = 32 * std::log(n_);        // c \ln n
-      const auto    sample_count = p_ * c;  // Total number of samples to select pivots from.
+      const auto    sample_count = p_ * pivot_per_part_;  // Total number of samples to select pivots from.
       lz_int* const pivot_w = utils::allocate<lz_int>(sample_count);  // Working space to sample pivots.
       const auto    subarr_size = n_ / p_;                            // Size of each sorted subarray.
 
       if (debug) std::cout << "Initalizate pivotes var: " << subarr_size << std::endl;
       for (lz_int i = 0; i < p_; ++i)
-        sample_pivots(
-          SA_.data() + i * subarr_size, subarr_size + (i < p_ - 1 ? 0 : n_ % p_), c, pivot_ + i * c);
+        sample_pivots(SA_.data() + i * subarr_size,
+                      subarr_size + (i < p_ - 1 ? 0 : n_ % p_),
+                      pivot_per_part_,
+                      pivot_ + i * pivot_per_part_);
 
       auto const temp_1 = utils::allocate<lz_int>(sample_count),
                  temp_2 = utils::allocate<lz_int>(sample_count);
@@ -514,7 +516,8 @@ namespace lz {
         : n_ < 1e6 ? utils::num_workers()
         : n_ < 1e7 ? 100
                    : default_subproblem_count;
-      c = p_ == 1 ? 1 : p_ - 1;
+      pivot_per_part_ = p_ == 1 ? 1 : p_ - 1;
+      // c = p_ == 1 ? 1 : p_ - 1;
 
       refresh();
       return construct();
@@ -530,7 +533,8 @@ namespace lz {
         : n_ < 1e6 ? utils::num_workers()
         : n_ < 1e7 ? 100
                    : default_subproblem_count;
-      c = p_ == 1 ? 1 : p_ - 1;
+      pivot_per_part_ = p_ == 1 ? 1 : p_ - 1;
+      // c = p_ == 1 ? 1 : p_ - 1;
 
       refresh();
       return construct();

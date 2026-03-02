@@ -101,7 +101,7 @@ namespace lz {
       lz_int*              part_size_scan_;  ///< Prefix sum of partition sizes.
       std::vector<lz_int>  part_ruler_;      ///< Indices of sub-subarrays in each partition.
       std::atomic_uint64_t solved_;          ///< Progress counter for solved subproblems.
-      lz_int               c;                ///< Constant for pivot count selection.
+      // lz_int               c;                ///< Constant for pivot count selection.
 
       static constexpr lz_int default_subproblem_count = 8192;  ///< Default number of subproblems.
       static constexpr lz_int nested_par_grain_size = 100;  ///< Granularity threshold for nested parallelism.
@@ -324,7 +324,7 @@ namespace lz {
           SA_ = std::move(rhs.SA_);
           LCP_ = std::move(rhs.LCP_);
           p_ = std::exchange(rhs.p_, std::numeric_limits<lz_int>::max());
-          c = std::exchange(rhs.c, std::numeric_limits<lz_int>::max());
+          // c = std::exchange(rhs.c, std::numeric_limits<lz_int>::max());
           max_context = std::exchange(rhs.max_context, std::numeric_limits<lz_int>::max());
           pivot_per_part_ = std::exchange(rhs.pivot_per_part_, std::numeric_limits<lz_int>::max());
         }
