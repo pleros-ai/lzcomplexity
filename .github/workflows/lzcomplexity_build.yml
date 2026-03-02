@@ -19,11 +19,13 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-24.04
+            platform: ubuntu_24.04
             build_type: "Release"
             cxx: g++
             cc: gcc
             builtinTbb: ON
           - runs-on: ubuntu-22.04
+            platform: ubuntu_22.04
             build_type: "Release"
             cxx: g++
             cc: gcc
@@ -89,6 +91,31 @@ jobs:
           path: ./_packages
           retention-days: 1
 
+  deploy-launchpad:
+    defaults:
+      run:
+        shell: bash
+    needs: build-linux
+    strategy:
+      matrix:
+        include:
+          - runs-on: ubuntu-24.04
+            platform: ubuntu_24.04
+            build_type: "Release"
+            cxx: g++
+            cc: gcc
+            builtinTbb: ON
+          - runs-on: ubuntu-22.04
+            platform: ubuntu_22.04
+            build_type: "Release"
+            cxx: g++
+            cc: gcc
+            builtinTbb: ON
+
+    name: • Deploy PPA • ${{ matrix.runs-on }} •
+    runs-on: ${{ matrix.runs-on }}
+
+    steps:
       - name: Install tools fof upload to PPA
         run: sudo apt-get install -y ssh gnupg dput devscripts debhelper
 
@@ -104,36 +131,53 @@ jobs:
       - name: Configure SSH
         run: |
           ssh-keyscan launchpad.net >> ~/.ssh/known_hosts
-          ssh -o "StrictHostKeyChecking=no" -i ~/.ssh/id_ed25519 launchpad.net true
+          ssh -o "StrictHostKeyChecking=no" -i ~/.ssh/id_ed25519 launchpad.net || true
+          # Test SSH connection
+          # ssh -T git@git.launchpad.net || true  # This will fail but shows key works
 
       # Set up GPG key for signing
-      # - name: Set up GPG key
-      #   run: |
-      #     echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 --decode | gpg --import --batch
-      #     echo "DEBFULLNAME=${{ secrets.DEBFULLNAME }}" >> $GITHUB_ENV
-      #     echo "DEBEMAIL=${{ secrets.DEBEMAIL }}" >> $GITHUB_ENV
+      - name: Set up GPG key
+        run: |
+          echo "${{ secrets.GPG_KEY_LANUCHPAD }}" | base64 --decode | gpg --import --batch
+          echo "${{ secrets.GPG_KEY_PASSPHRASE }}" | gpg --passphrase-fd 0 --export-secret-key -a > /dev/null 2>&1 || true
+          # Verify the key is imported
+          gpg --list-secret-keys
+
+      # Configure dput config file
+      - name: Configure dput for PPA upload
+        run: |
+          cat > ~/.dput.cf << EOF
+          [your-ppa]
+          fqdn = ppa.launchpad.net
+          method = sftp
+          login = ${{ secrets.LAUNCHPAD_USERNAME }}
+          incoming = ~${{ secrets.LAUNCHPAD_USERNAME }}/ubuntu/${{ secrets.LAUNCHPAD_PPA }}/
+          EOF
 
       # Upload .deb package to Launchpad
-      - name: Upload to Launchpad
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        env:
-          LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
-          LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
-          VERSION: 0.9.8
-          DISTRO: $(lsb_release -cs)
-        run: |
-          # Extract the built package
-          # mkdir -p ~/lzcomplexity_src
-          # cd ~/lzcomplexity_src
+      # - name: Upload to Launchpad
+      #   if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+      #   env:
+      #     LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
+      #     LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
+      #     LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
+      #     LAUNCHPAD_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
+      #     VERSION: 0.9.8
+      #     DISTRO: $(lsb_release -cs)
+      #   run: |
+      #     # Extract the built package
+      #     # mkdir -p ~/lzcomplexity_src
+      #     # cd ~/lzcomplexity_src
 
-          # Set up dput configuration
-          echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i ~/.ssh/id_ed25519" > ~/.dput.cf
+      #     # Set up dput configuration
+      #     echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i ~/.ssh/id_ed25519" > ~/.dput.cf
 
-          # Uncompress .deb package
-          unzip ${{ github.workspace }}/_packages/lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package.zip
+      #     # Uncompress .deb package
+      #     unzip ${{ github.workspace }}/_packages/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
 
-          # Upload package
-          dput ppa:${LAUNCHPAD_PPA} ${{ github.workspace }}/_packages/lzcomplexity_${VERSION}_amd64.deb
+      #     # Upload package
+      #     dput ppa:${LAUNCHPAD_PPA} ${{ github.workspace }}/_packages/lzcomplexity_${VERSION}_${{ matrix.platform }}_x86_64.deb
+
 
   build-mac:
     defaults:

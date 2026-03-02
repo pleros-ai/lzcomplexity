@@ -75,7 +75,7 @@ if (UNIX)
     if (DEBIAN_FOUND)
         set (CMAKE_OS_NAME "Debian" CACHE STRING "Operating system name" FORCE)
         # Generator for .deb
-        set(CPACK_GENERATOR "DEB")
+        set(CPACK_GENERATOR "DEB;TGZ")
         set(CPACK_DEBIAN_PACKAGE_MAINTAINER "earagon") #required
         set(CPACK_DEBIAN_PACKAGE_VERSION ${VERSION})
         set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Efren Aragon")
