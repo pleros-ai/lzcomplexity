@@ -131,9 +131,9 @@ jobs:
       - name: Configure SSH
         run: |
           ssh-keyscan launchpad.net >> ~/.ssh/known_hosts
-          ssh -o "StrictHostKeyChecking=no" -i ~/.ssh/id_ed25519 launchpad.net || true
+          # ssh -o "StrictHostKeyChecking=no" -i ~/.ssh/id_ed25519 launchpad.net || true
           # Test SSH connection
-          # ssh -T git@git.launchpad.net || true  # This will fail but shows key works
+          ssh -T git@git.launchpad.net || true  # This will fail but shows key works
 
       # Set up GPG key for signing
       - name: Set up GPG key
@@ -153,6 +153,42 @@ jobs:
           login = ${{ secrets.LAUNCHPAD_USERNAME }}
           incoming = ~${{ secrets.LAUNCHPAD_USERNAME }}/ubuntu/${{ secrets.LAUNCHPAD_PPA }}/
           EOF
+
+      - name: Prepare Debian source package
+        env:
+          LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+          VERSION: 0.9.8
+        run: |
+          # Create directory structure for Debian source package
+          mkdir -p ~/packaging/${{ github.event.repository.name }}-${VERSION}
+          
+          # Extract tarball
+          TARBALL_NAME=$(basename ${{ github.workspace }}/_packages/*.tar.gz)
+          tar -xzf ${TARBALL_NAME} -C ~/packaging/
+          
+          # If your project already has a debian directory, copy it
+          if [ -d "debian" ]; then
+            cp -r debian ~/packaging/${{ github.event.repository.name }}-${VERSION}/
+          else
+            # Create basic debian directory if it doesn't exist
+            cd ~/packaging/${{ github.event.repository.name }}-${VERSION}
+            dh_make -y --single --createorig -p ${{ github.event.repository.name }}_${VERSION} -e ${LAUNCHPAD_EMAIL}
+            # Clean up unnecessary files
+            rm -f debian/*.ex debian/*.EX debian/README.*
+          fi
+          
+          # Update changelog
+          cd ~/packaging/${{ github.event.repository.name }}-${VERSION}
+          dch -v ${VERSION}-0ppa1~ubuntu20.04.1 -D focal -m "New upstream release" --force-distribution
+          
+          # Sign the package
+          debuild -S -sa -k${GPG_KEY_ID}
+          
+          # Find the .changes file
+          CHANGES_FILE=$(ls ~/packaging/*_source.changes | head -1)
+          echo "CHANGES_FILE=${CHANGES_FILE}"
+          echo "CHANGES_FILE=${CHANGES_FILE}" >> $GITHUB_ENV
 
       # Upload .deb package to Launchpad
       # - name: Upload to Launchpad
