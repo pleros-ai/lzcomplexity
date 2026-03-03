@@ -78,18 +78,29 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j$(nproc)
       
       - name: Packaging
         run: |
           cd build
           cpack
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package
           path: ./_packages
           retention-days: 1
+      
+      - name: Install package into staging dir
+        run: |
+          cmake --install build --prefix $PWD/stage
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-build
+          path: stage/
 
   deploy-launchpad:
     defaults:
@@ -100,13 +111,15 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-24.04
-            platform: ubuntu_24.04
+            platform: ubuntu-24.04
+            distro: noble
             build_type: "Release"
             cxx: g++
             cc: gcc
             builtinTbb: ON
           - runs-on: ubuntu-22.04
-            platform: ubuntu_22.04
+            platform: ubuntu-22.04
+            distro: jammy
             build_type: "Release"
             cxx: g++
             cc: gcc
@@ -116,44 +129,47 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
 
     steps:
-      - name: Download artifact
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Download build artifacts
         uses: actions/download-artifact@v8
         with:
-          name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package
-          path: ~/downloaded/
+          name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-build
+          path: ./build
 
       - name: Install tools fof upload to PPA
-        run: sudo apt-get install -y ssh gnupg dput devscripts debhelper
+        run: sudo apt-get install -y build-essential gnupg dput devscripts debhelper dh-make
 
       # Set up GPG key for signing
       - name: Set up GPG key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
         run: |
-          echo "${{ secrets.GPG_KEY_LANUCHPAD }}" | gpg --import --batch
-          echo "${{ secrets.GPG_KEY_PASSPHRASE }}" | gpg --passphrase-fd 0 --export-secret-key -a > /dev/null 2>&1 || true
+          echo "$GPG_PRIVATE_KEY" | gpg --import --batch
+          # echo "$GPG_KEY_PASSPHRASE" | gpg --passphrase-fd 0 --export-secret-key -a > /dev/null 2>&1 || true
+          
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+
+          gpgconf --kill gpg-agent
+          gpgconf --launch gpg-agent
+
           # Verify the key is imported
           gpg --list-secret-keys
 
-      # Configure SSH
-      # - name: Setup SSH for Launchpad
-      #   run: |
-      #     mkdir -p ~/.ssh
-      #     echo "${{ secrets.LAUNCHPAD_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-      #     # echo "${{ secrets.LAUNCHPAD_SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_ed25519
-      #     chmod 600 ~/.ssh/id_ed25519
-      #     ssh-keyscan -H ppa.launchpad.net >> ~/.ssh/known_hosts
-      #     # Test SSH connection
-      #     ssh -T git@git.launchpad.net || true  # This will fail but shows key works
-
       # Configure dput config file
-      - name: Configure dput for PPA upload
-        run: |
-          cat > ~/.dput.cf << EOF
-          [your-ppa]
-          fqdn = ppa.launchpad.net
-          method = sftp
-          login = ${{ secrets.LAUNCHPAD_USERNAME }}
-          incoming = ~${{ secrets.LAUNCHPAD_USERNAME }}/ubuntu/${{ secrets.LAUNCHPAD_PPA }}/
-          EOF
+      # - name: Configure dput for PPA upload
+      #   run: |
+      #     cat > ~/.dput.cf << EOF
+      #     [your-ppa]
+      #     fqdn = ppa.launchpad.net
+      #     method = sftp
+      #     login = ${{ secrets.LAUNCHPAD_USERNAME }}
+      #     incoming = ~${{ secrets.LAUNCHPAD_USERNAME }}/ubuntu/${{ secrets.LAUNCHPAD_PPA }}/
+      #     EOF
 
       - name: Configure git for Launchpad
         run: |
@@ -162,67 +178,89 @@ jobs:
           git config --global user.signingkey "${{ secrets.GPG_KEY_ID }}"
           git config --global commit.gpgsign true
 
-      # - name: Prepare Debian source package
+      - name: Build Debian source package
+        env:
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
+          VERSION: 0.9.8
+          DEBFULLNAME: Efren Aragon
+          DEBEMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
+        run: |
+          # If your project already has a debian directory, copy it
+          if [ -d "debian" ]; then
+            cp -r debian ./build
+          else
+            # Create basic debian directory if it doesn't exist
+            cd build/
+            dh_make -y --single --createorig -p lzcomplexity_${VERSION} -e ${DEBEMAIL}
+            # Clean up unnecessary files
+            rm -f debian/*.ex debian/*.EX debian/README.*
+          fi
+
+          # dch --create \  
+          #     --package lzcomplexity \
+          #     --newversion ${VERSION}-1~${{ matrix.distro }} \
+          #     --distribution ${{ matrix.distro }} \
+          #     "Automatic release for ${{ matrix.distro }}."
+          
+          debuild -S -sa \
+            -p"gpg --batch --yes --pinentry-mode loopback --passphrase $GPG_KEY_PASSPHRASE" \
+            -k${GPG_KEY_ID}
+
+          # Validate source changes
+          # cd ${{ github.workspace }}
+          # gpg --verify *_source.changes
+
+          ls -al ./
+          ls -al ../
+
+      # - name: Upload to PPA
       #   env:
+      #     LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
       #     LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
-      #     GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+      #     LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
+      #     LAUNCHPAD_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
       #     VERSION: 0.9.8
+      #     DISTRO: $(lsb_release -cs)
       #   run: |
-      #     # Create directory structure for Debian source package
-      #     mkdir -p ~/packaging/${{ github.event.repository.name }}-${VERSION}
-          
-      #     # Extract tarball
-      #     TARBALL_NAME=$(basename ${{ github.workspace }}/_packages/*.tar.gz)
-      #     echo "tar file: ${TARBALL_NAME}"
-      #     tar -xzf ${TARBALL_NAME} -C ~/packaging/
-          
-      #     # If your project already has a debian directory, copy it
-      #     if [ -d "debian" ]; then
-      #       cp -r debian ~/packaging/${{ github.event.repository.name }}-${VERSION}/
-      #     else
-      #       # Create basic debian directory if it doesn't exist
-      #       cd ~/packaging/${{ github.event.repository.name }}-${VERSION}
-      #       dh_make -y --single --createorig -p ${{ github.event.repository.name }}_${VERSION} -e ${LAUNCHPAD_EMAIL}
-      #       # Clean up unnecessary files
-      #       rm -f debian/*.ex debian/*.EX debian/README.*
-      #     fi
-          
-      #     # Update changelog
-      #     cd ~/packaging/${{ github.event.repository.name }}-${VERSION}
-      #     dch -v ${VERSION}-0ppa1~focal1 -D focal -m "New upstream release" --force-distribution
-          
-      #     # Sign the package
-      #     debuild -S -sa -k${GPG_KEY_ID}
-          
-      #     # Find the .changes file
-      #     CHANGES_FILE=$(ls ~/packaging/*_source.changes | head -1)
-      #     echo "CHANGES_FILE=${CHANGES_FILE}"
-      #     echo "CHANGES_FILE=${CHANGES_FILE}" >> $GITHUB_ENV
+      #     dput ppa:${LAUNCHPAD_PPA} *.changes
+
+      - name: Publish to PPA
+        uses: yuezk/publish-ppa-package@v2
+        with:
+          repository: ${{ secrets.LAUNCHPAD_PPA }}
+          gpg_private_key: ${{ secrets.GPG_KEY_LANUCHPAD }}
+          gpg_passphrase: ${{ secrets.GPG_KEY_PASSPHRASE }}
+          tarball: "*.orig.tar.xz"
+          deb_email: ${{ secrets.LAUNCHPAD_EMAIL }}
+          deb_fullname: "Efren Aragon"
+          debian_dir: "debian"
+          series: ${{ matrix.distro }}
 
       # Upload .deb package to Launchpad
-      - name: Upload to Launchpad
-        # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-        env:
-          LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
-          LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
-          LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
-          LAUNCHPAD_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
-          VERSION: 0.9.8
-          DISTRO: $(lsb_release -cs)
-        run: |
-          # Extract the built package
-          # mkdir -p ~/packaging
-          # cd ~/packaging
+      # - name: Upload to Launchpad
+      #   if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+      #   env:
+      #     LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
+      #     LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
+      #     LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
+      #     LAUNCHPAD_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
+      #     VERSION: 0.9.8
+      #     DISTRO: $(lsb_release -cs)
+      #   run: |
+      #     # Extract the built package
+      #     # mkdir -p ~/packaging
+      #     # cd ~/packaging
 
-          # Set up dput configuration
-          # echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i ~/.ssh/id_ed25519" > ~/.dput.cf
+      #     # Set up dput configuration
+      #     # echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i ~/.ssh/id_ed25519" > ~/.dput.cf
 
-          # Uncompress .deb package
-          ls -al ~/downloaded/
-          # unzip ~/downloaded/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
+      #     # Uncompress .deb package
+      #     ls -al ~/downloaded/
+      #     # unzip ~/downloaded/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
 
-          # Upload package
-          dput ppa:${LAUNCHPAD_PPA} ~/downloaded/lzcomplexity_${VERSION}_${{ matrix.platform }}_x86_64.deb
+      #     # Upload package
+      #     dput ppa:${LAUNCHPAD_PPA} ~/downloaded/lzcomplexity_${VERSION}_${{ matrix.platform }}_x86_64.deb
 
 
   build-mac:
@@ -283,7 +321,7 @@ jobs:
       - name: Build
         run: |
           cd build
-          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j$(nproc)
       
       - name: Packaging
         run: |
@@ -343,7 +381,7 @@ jobs:
   
       - name: Build
         run: |
-          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+          cmake --build ${{ steps.build_path.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j$(nproc)
 
       - name: Generate RPM package using CPack
         run: |
