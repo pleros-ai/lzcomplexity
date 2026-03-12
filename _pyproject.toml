@@ -41,7 +41,7 @@ where = ["python/src"]
 cmake.version = ">=3.5"
 cmake.verbose = true
 cmake.build-type = "Release"
-cmake.args = ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-GUnix Makefiles"]
+cmake.args = ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-GUnix Makefiles", "-DFIXED_VERSION=3.12", "-DFIXED_PYTHON=ON", "-DCMAKE_VERBOSE_MAKEFILE=ON"]
 logging.level = "INFO"
 wheel.expand-macos-universal-tags = true
 # wheel.py-api = ["cp39", "cp310", "cp311", "cp312"]

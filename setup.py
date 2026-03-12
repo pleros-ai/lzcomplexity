@@ -176,6 +176,7 @@ class CMakeBuild(build_ext):
             build_temp.mkdir(parents=True)
 
         cmake_args += ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-DLZ_APP=OFF", "-DLZ_DISTANCE=OFF"]
+        cmake_args += ["-DBUILTIN_TBB=ON", "-DFIXED_VERSION=3.12", "-DFIXED_PYTHON=ON"]
 
         subprocess.run(
             ["cmake", ext.sourcedir, *cmake_args], cwd=build_temp, check=True
