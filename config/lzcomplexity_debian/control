@@ -1,0 +1,37 @@
+Source: lzcomplexity
+Section: science
+Priority: optional
+Maintainer: Efren Aragon <efrenaragon@pleros.ai>
+Build-Depends:
+ debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/pleros-ai/lzcomplexity
+Rules-Requires-Root: no
+
+Package: liblzcomplexity1
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Lempel-Ziv 76 complexity engine (runtime library)
+ High-performance C++ library for entropy and complexity
+ analysis of time series based on LZ76 factorization.
+
+Package: liblzcomplexity-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends:
+ liblzcomplexity1 (= ${binary:Version}),
+ ${misc:Depends}
+Description: Development files for liblzcomplexity
+ Headers, CMake config files and static libraries for
+ developing applications using liblzcomplexity.
+
+Package: lzcomplexity-tools
+Architecture: any
+Depends:
+ liblzcomplexity1 (= ${binary:Version}),
+ ${misc:Depends}
+Description: Command-line tools for LZ complexity analysis
+ Standalone utilities for entropy and LZ76-based
+ complexity computation.

@@ -14,12 +14,12 @@ The program computes the LZ76 complexity, entropy density, excess entropy by ran
 .SH OPTIONS
 .TP
 .BR \-a ", " \-\-alphabet =\fIvalue\fR
-Alphabet cardinality. If not specified, the program attempts to automatically determine the alphabet size from the input data.
+Alphabet cardinality. If auto, it guesses the alphabet size. (default auto).
 .TP
 .BR \-d ", " \-\-dlz
 Calculate the LZ distance between consecutive lines. Only valid when used with the \fB\-m\fR option for multiline files.
 .TP
-.BR \-e ", " \-\-excess\-options =\fI[v1]:[f]:[v2]:[v3]\fR
+.BR \-e ", " \-\-rsemc\-opt =\fI[v1]:[f]:[v2]:[v3]\fR
 Random shuffle complexity calculation options:
 .RS
 .IP \fIv1\fR
@@ -27,9 +27,9 @@ Maximum value for block shuffling.
 .IP \fIf\fR
 Enable summand factors output.
 .IP \fIv2\fR
-Starting line for summand factors.
+Starting line for RSEMC.
 .IP \fIv3\fR
-Ending line for summand factors.
+Ending line for RSEMC.
 .PP
 All values are optional.
 .RE
@@ -43,9 +43,9 @@ Input file format. Supported formats:
 .IP \fBTXT\fR
 Raw text format (default).
 .IP \fBCSV\fR
-Comma-separated values with ',' as delimiter.
-.IP \fBTCSV\fR
-Tab/space-separated values with ' ' as delimiter.
+Comma-separated values.
+.IP \fBTSV\fR
+Tab/space-separated values.
 .IP \fBPBM\fR
 Portable Bitmap format.
 .IP \fBPGM\fR

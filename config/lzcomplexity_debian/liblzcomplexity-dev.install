@@ -1,0 +1,4 @@
+usr/include/*
+usr/lib/*/liblzappcore.so
+usr/lib/*/liblzapp.so
+usr/*/cmake/*

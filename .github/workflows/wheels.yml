@@ -37,7 +37,7 @@ jobs:
     runs-on: ${{ matrix.buildplat[0] }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
 
@@ -98,7 +98,7 @@ jobs:
       #     CMAKE_ARGS: "-DLZ_ONLY_CORE=ON -DBUILD_PYTHON=ON -DFIXED_PYTHON=ON -DFIXED_VERSION=${{ matrix.python[1] }}"
       #     CIBW_CMAKE_OPTIONS: "-DLZ_ONLY_CORE=ON -DBUILD_PYTHON=ON -DFIXED_PYTHON=ON -DFIXED_VERSION=${{ matrix.python[1] }}"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: ${{ env.name }}
           path: ./wheelhouse/*.whl
@@ -116,7 +116,7 @@ jobs:
   #     name: Build source distribution
   #     runs-on: ubuntu-latest
   #     steps:
-  #       - uses: actions/checkout@v4
+  #       - uses: actions/checkout@v5
   #         with:
   #           submodules: recursive
 
@@ -141,7 +141,7 @@ jobs:
   #           python -m pip install --no-binary :all: ./dist/*.tar.gz
   #           python -c "import lzcomplexity; print(lzcomplexity.__version__)"
 
-  #       - uses: actions/upload-artifact@v4
+  #       - uses: actions/upload-artifact@v6
   #         with:
   #           name: 'dist'
   #           path: ./dist/*

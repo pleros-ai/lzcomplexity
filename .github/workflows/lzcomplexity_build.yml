@@ -35,7 +35,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -86,7 +86,7 @@ jobs:
           cpack
 
       - name: Upload package artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package
           path: ./_packages
@@ -97,7 +97,7 @@ jobs:
           cmake --install build --prefix $PWD/stage
       
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-build
           path: stage/
@@ -129,7 +129,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -140,25 +140,40 @@ jobs:
           path: ./build
 
       - name: Install tools fof upload to PPA
-        run: sudo apt-get install -y build-essential gnupg dput devscripts debhelper dh-make
+        run: sudo apt-get install -y build-essential gnupg dput devscripts debhelper dh-make cmake
 
       # Set up GPG key for signing
       - name: Set up GPG key
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
           GPG_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
         run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --import --batch
+          # Import GPG key with proper formatting
+          # Save key to a file to preserve formatting
+          echo "$GPG_PRIVATE_KEY" > private.key
+          
+          # Import both public and private parts
+          gpg --import --batch --no-tty private.key
+          rm -f private.key
+
           # echo "$GPG_KEY_PASSPHRASE" | gpg --passphrase-fd 0 --export-secret-key -a > /dev/null 2>&1 || true
           
+          # Configure GPG for automated signing
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
 
+          # Restart GPG agent
           gpgconf --kill gpg-agent
           gpgconf --launch gpg-agent
+          sleep 2
 
           # Verify the key is imported
           gpg --list-secret-keys
+
+          echo "test" | gpg --clearsign --batch --yes --pinentry-mode loopback \
+            --passphrase "$GPG_KEY_PASSPHRASE" -u "$GPG_KEY_ID" -o /dev/null
+          echo "✅ Signing test passed"
 
       # Configure dput config file
       # - name: Configure dput for PPA upload
@@ -186,9 +201,17 @@ jobs:
           DEBFULLNAME: Efren Aragon
           DEBEMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
         run: |
+          # Create .orig/tar.gz with sources files
+          if [ ! -f lzcomplexity_0.9.8.orig.tar.gz ]; then
+            tar -czf lzcomplexity_0.9.8.orig.tar.gz ./build
+          fi
+
           # If your project already has a debian directory, copy it
-          if [ -d "debian" ]; then
-            cp -r debian ./build
+          if [ -d ${{ github.workspace }}/config/lzcomplexity_debian ]; then
+            mkdir -p build/debian
+            cp -r ${{ github.workspace }}/config/lzcomplexity_debian/* build/debian/
+            cp -r build/* ./
+            cd build/
           else
             # Create basic debian directory if it doesn't exist
             cd build/
@@ -201,41 +224,43 @@ jobs:
           #     --package lzcomplexity \
           #     --newversion ${VERSION}-1~${{ matrix.distro }} \
           #     --distribution ${{ matrix.distro }} \
+          #     --no-editor \
           #     "Automatic release for ${{ matrix.distro }}."
           
-          debuild -S -sa \
-            -p"gpg --batch --yes --pinentry-mode loopback --passphrase $GPG_KEY_PASSPHRASE" \
-            -k${GPG_KEY_ID}
+          echo "$GPG_KEY_PASSPHRASE" | debuild -S -sa \
+            -p"gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0" \
+            -k"$GPG_KEY_ID"
 
-          # Validate source changes
-          # cd ${{ github.workspace }}
-          # gpg --verify *_source.changes
+          # dpkg-buildpackage -S -sa -uc -us   # build without signing
+          # debsign -p"gpg --batch --yes --pinentry-mode loopback \
+          #  --passphrase-file <(echo "$GPG_KEY_PASSPHRASE")" -k"$GPG_KEY_ID" ../*.changes
 
           ls -al ./
           ls -al ../
 
-      # - name: Upload to PPA
-      #   env:
-      #     LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
-      #     LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
-      #     LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
-      #     LAUNCHPAD_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
-      #     VERSION: 0.9.8
-      #     DISTRO: $(lsb_release -cs)
-      #   run: |
-      #     dput ppa:${LAUNCHPAD_PPA} *.changes
+          # Validate source changes
+          # cd ${{ github.workspace }}
+          # gpg --verify lzcomplexity_${VERSION}-1_source.changes
 
-      - name: Publish to PPA
-        uses: yuezk/publish-ppa-package@v2
-        with:
-          repository: ${{ secrets.LAUNCHPAD_PPA }}
-          gpg_private_key: ${{ secrets.GPG_KEY_LANUCHPAD }}
-          gpg_passphrase: ${{ secrets.GPG_KEY_PASSPHRASE }}
-          tarball: "*.orig.tar.xz"
-          deb_email: ${{ secrets.LAUNCHPAD_EMAIL }}
-          deb_fullname: "Efren Aragon"
-          debian_dir: "debian"
-          series: ${{ matrix.distro }}
+      - name: Upload to PPA
+        env:
+          LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
+          VERSION: 0.9.8
+          DISTRO: $(lsb_release -cs)
+        run: |
+          dput ppa:${LAUNCHPAD_PPA} lzcomplexity_*_source.changes
+
+      # - name: Publish to PPA
+      #   uses: yuezk/publish-ppa-package@v2
+      #   with:
+      #     repository: ${{ secrets.LAUNCHPAD_PPA }}
+      #     gpg_private_key: ${{ secrets.GPG_KEY_LANUCHPAD }}
+      #     gpg_passphrase: ${{ secrets.GPG_KEY_PASSPHRASE }}
+      #     tarball: "*.orig.tar.xz"
+      #     deb_email: ${{ secrets.LAUNCHPAD_EMAIL }}
+      #     deb_fullname: "Efren Aragon"
+      #     debian_dir: "debian"
+      #     series: ${{ matrix.distro }}
 
       # Upload .deb package to Launchpad
       # - name: Upload to Launchpad
@@ -291,7 +316,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -328,7 +353,7 @@ jobs:
           cd build
           cpack
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package
           path: ${{ github.workspace }}/_packages
@@ -358,7 +383,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
@@ -388,7 +413,7 @@ jobs:
           cd build
           cpack -G RPM
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: lzcomplexity-redhat-${{matrix.cxx}}-package
           path: ${{ github.workspace }}/_packages
@@ -421,7 +446,7 @@ jobs:
   #           generator: "Visual Studio 17 2022"
 
   #   steps:
-  #     - uses: actions/checkout@v4
+  #     - uses: actions/checkout@v5
   #       with:
   #         submodules: true
 
