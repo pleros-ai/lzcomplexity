@@ -2,8 +2,7 @@ Source: lzcomplexity
 Section: science
 Priority: optional
 Maintainer: Efren Aragon <efrenaragon96@gmail.com>
-Build-Depends:
- debhelper-compat (= 13)
+Build-Depends: debhelper-compat (= 13), cmake, g++
 Standards-Version: 4.6.2
 Homepage: https://github.com/pleros-ai/lzcomplexity
 Rules-Requires-Root: no

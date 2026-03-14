@@ -114,14 +114,14 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-24.04
-            platform: ubuntu-24.04
+            platform: ubuntu24.04
             distro: noble
             build_type: "Release"
             cxx: g++
             cc: gcc
             builtinTbb: ON
           - runs-on: ubuntu-22.04
-            platform: ubuntu-22.04
+            platform: ubuntu22.04
             distro: jammy
             build_type: "Release"
             cxx: g++
@@ -223,7 +223,8 @@ jobs:
           cp -r ${{ github.workspace }}/config/lzcomplexity_debian ./debian
 
           # 🔁 FIX: Change UNRELEASED to your target release (e.g., jammy)
-          sed -i '1s/UNRELEASED/${{ matrix.distro }}/' debian/changelog
+          # sed -i '1s/UNRELEASED/${{matrix.distro}}/' debian/changelog
+          dch -b -v "${VERSION}-1~${{matrix.platform}}.1" --distribution "${{matrix.distro}}" "Build for ${{matrix.distro}}"
 
           # 3. Build unsigned source package (dpkg-buildpackage outputs files to parent dir)
           dpkg-buildpackage -S -sa -us -uc -d
@@ -243,16 +244,16 @@ jobs:
           debsign --re-sign \
             -p"gpg --batch --yes --pinentry-mode loopback --passphrase-file /tmp/passphrase.txt" \
             -k"$GPG_KEY_ID" \
-            lzcomplexity_${VERSION}-1_source.changes
+            lzcomplexity_${VERSION}-1~${{matrix.platform}}.1_source.changes
 
           # Clean up
           rm -f /tmp/passphrase.txt
 
           # Verify signatures
           echo "Verifying .changes signature:"
-          gpg --verify lzcomplexity_${VERSION}-1_source.changes
+          gpg --verify lzcomplexity_${VERSION}-1~${{matrix.platform}}.1_source.changes
           echo "Verifying .dsc signature:"
-          gpg --verify lzcomplexity_${VERSION}-1.dsc
+          gpg --verify lzcomplexity_${VERSION}-1~${{matrix.platform}}.1.dsc
 
       # - name: Build Debian source package
       #   env:
@@ -301,14 +302,14 @@ jobs:
 
       #     # Validate source changes
       #     # cd ${{ github.workspace }}
-      #     # gpg --verify lzcomplexity_${VERSION}-1_source.changes
+      #     # gpg --verify lzcomplexity_${VERSION}-1~${{matrix.platform}}.1_source.changes
 
       - name: Upload to PPA
         env:
           LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
           DISTRO: $(lsb_release -cs)
         run: |
-          dput ppa:${LAUNCHPAD_PPA} lzcomplexity_${VERSION}-1_source.changes
+          dput ppa:${LAUNCHPAD_PPA} lzcomplexity_${VERSION}-1~${{matrix.platform}}.1_source.changes
 
       # - name: Publish to PPA
       #   uses: yuezk/publish-ppa-package@v2
