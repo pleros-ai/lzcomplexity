@@ -4,4 +4,4 @@ lzcomplexity (0.9.8-1) UNRELEASED; urgency=medium
   * Professional Debian packaging.
   * Split runtime, -dev and tools packages.
 
- -- Efren Aragon <efrenaragon@pleros.ai>  Mon, 02 Mar 2026 20:00:00 +0000
+ -- Efren Aragon <efrenaragon96@gmail.com>  Mon, 02 Mar 2026 20:00:00 +0000
