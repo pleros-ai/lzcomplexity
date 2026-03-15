@@ -1,12 +1,16 @@
 #!/usr/bin/make -f
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-export DEB_CMAKE_EXTRA_FLAGS = -DCMAKE_BUILD_TYPE=Release
+# export DEB_CMAKE_EXTRA_FLAGS = -DCMAKE_BUILD_TYPE=Release
+export DEB_CMAKE_EXTRA_FLAGS = -DCMAKE_BUILD_TYPE=Release -Dasan=OFF -DBUILD_PYTHON=OFF -DLZ_DISTANCE=OFF -DLZ_PARALLEL_BACKEND=TBB -DBUILTIN_TBB=OFF
 
 %:
 	dh $@ --buildsystem=cmake --parallel
 
 override_dh_auto_configure:
+	ls -la /usr/include/zlib.h || true
+	ls -la /usr/lib/x86_64-linux-gnu/libz.so || true
+	
 	dh_auto_configure -- $(DEB_CMAKE_EXTRA_FLAGS)
 
 override_dh_auto_test:

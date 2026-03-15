@@ -9,11 +9,8 @@
 #include <string>
 
 #include "inc/config_complexity.hpp"
-#include "lz/exceptions.h"
-#include "lz/general.h"
-#include "lz/utils.h"
 
-#define VERSION "v0.9.8"
+#define VERSION "v0.9.9"
 
 using MSG = lz::utils::MSG_TYPE;
 
@@ -345,16 +342,17 @@ lz::lz_int process(lz_options& opt) {
 
     lz::lz76InformationDistance(in_flags, lz);
     // lz::lz76InformationDistanceZ(in_flags, lz);
-    lz::lz76RandomShuffleDistance(in_flags, lz);
+    // Disable Information Distanve by Mutual Information
+    // lz::lz76RandomShuffleDistance(in_flags, lz);
 
     if (opt.verbose) {
       const auto end_time = now();
       std::cout << print_msg(MSG::INFO, "Info distance: ");
       for (auto x: lz.info_distance) std::cout << x << " ";
       std::cout << std::endl;
-      std::cout << print_msg(MSG::INFO, "Random info distance: ");
-      for (auto x: lz.random_shuffle_distance) std::cout << x << " ";
-      std::cout << std::endl;
+      // std::cout << print_msg(MSG::INFO, "Random info distance: ");
+      // for (auto x: lz.random_shuffle_distance) std::cout << x << " ";
+      // std::cout << std::endl;
       std::cout << print_msg(MSG::INFO,
                              "Finished in: " + std::to_string(duration(end_time - init_time)) + " s")
                 << std::endl
@@ -420,12 +418,15 @@ auto main(int argc, char const* argv[]) -> int {
   } catch (Errors er) {
     std::cerr << std::endl << print_msg(MSG::ERROR, std::string(er.msg)) << std::endl;
     return EXIT_FAILURE;
+  } catch (std::runtime_error& err) {
+    std::string msg(err.what());
+    std::cerr << std::endl << print_msg(MSG::ERROR, msg) << std::endl;
+    return EXIT_FAILURE;
   } catch (std::exception err) {
     std::string msg(err.what());
     std::cerr << std::endl << print_msg(MSG::ERROR, "Fatal error BOOM!!! " + msg) << std::endl;
     return EXIT_FAILURE;
   } catch (...) {
-    // std::string msg{ err.what() };
     std::cerr << std::endl << print_msg(MSG::ERROR, "Fatal error BOOM!!!") << std::endl;
     return EXIT_FAILURE;
   }

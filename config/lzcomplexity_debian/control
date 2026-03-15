@@ -2,7 +2,13 @@ Source: lzcomplexity
 Section: science
 Priority: optional
 Maintainer: Efren Aragon <efrenaragon96@gmail.com>
-Build-Depends: debhelper-compat (= 13), cmake, g++
+XSBC-Original-Maintainer: Efren Aragon <efrenaragon@pleros.ai>
+Build-Depends: 
+  debhelper-compat (= 13), 
+  cmake, 
+  g++,
+  libtbb-dev,
+  zlib1g-dev
 Standards-Version: 4.6.2
 Homepage: https://github.com/pleros-ai/lzcomplexity
 Rules-Requires-Root: no
