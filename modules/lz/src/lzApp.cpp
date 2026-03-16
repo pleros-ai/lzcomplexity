@@ -111,8 +111,9 @@ namespace lz {
     return EXIT_SUCCESS;
   };
 
-  template<typename Fun> static lz_int ShuffleCalc(utils::LZ_Flags& flags, utils::LZ_Output& lz, Fun&& fun) {
-    utils::LZ_Shuffle excess_entropy;
+  template<typename Fun>
+  static lz_int ShuffleCalc(utils::LZ_Flags& flags, utils::LZ_Output& lz, Fun&& fun) {
+    utils::LZ_Shuffle emc_entropy;
     auto              init_line = flags.shuffle_init_line;
     auto              end_line = flags.shuffle_end_line;
 
@@ -132,15 +133,15 @@ namespace lz {
           mm += str.size() > 50 ? 10 : 0;
         }
 
-        excess_entropy = ShuffleEntropyCalculation(str, flags.sa_args, lz.data[i].getComplexity(), mm);
+        emc_entropy = ShuffleEntropyCalculation(str, flags.sa_args, lz.data[i].getComplexity(), mm);
       } else {
-        excess_entropy = fun(str, flags.sa_args);
+        emc_entropy = fun(str, flags.sa_args);
       }
 
       // lz.whole_random_shuffle_complexity.push_back(
-      //    {excess_entropy.max_block_size, excess_entropy.excess_value, terms});
-      // lz.multi_information.push_back(excess_entropy.multi_information);
-      lz.setRandomShuffleComplexity(i, excess_entropy);
+      //    {emc_entropy.max_block_size, emc_entropy.emc_value, terms});
+      // lz.multi_information.push_back(emc_entropy.multi_information);
+      lz.setRandomShuffleComplexity(i, emc_entropy);
     }
 
     return EXIT_SUCCESS;
@@ -152,7 +153,7 @@ namespace lz {
   }
 
   lz_int lz76PairedShuffleComplexity(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
-    utils::LZ_Shuffle excess_entropy;
+    utils::LZ_Shuffle emc_entropy;
     auto              init_line = flags.shuffle_init_line;
     auto              end_line = flags.shuffle_end_line;
 
@@ -163,18 +164,18 @@ namespace lz {
       if (!internal::canProcessTheLine(i, init_line, end_line)) {
         continue;
       } else {
-        terms = {i + 1, excess_entropy.summands};
+        terms = {i + 1, emc_entropy.summands};
       }
 
       auto new_args = flags.sa_args;
       if (str.size() < 1e4) new_args.chunks = 1;
 
-      excess_entropy = lz76PairedShuffleComplexity(str, new_args);
+      emc_entropy = lz76PairedShuffleComplexity(str, new_args);
 
-      // lz.random_shuffle_complexity.push_back({excess_entropy.max_block_size, excess_entropy.excess_value,
-      // terms}); lz.multi_information.push_back(excess_entropy.multi_information);
+      // lz.random_shuffle_complexity.push_back({emc_entropy.max_block_size, emc_entropy.emc_value,
+      // terms}); lz.multi_information.push_back(emc_entropy.multi_information);
 
-      lz.setPairedShuffleComplexity(i, excess_entropy);
+      lz.setPairedShuffleComplexity(i, emc_entropy);
     }
 
     return EXIT_SUCCESS;
@@ -187,9 +188,9 @@ namespace lz {
   }
 
   lz_int lz76ExcessEntropyDistance(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
-    // std::vector<lz_int> excess_entropy_dist;
-    lz.excess_entropy_dist.clear();
-    lz.excess_entropy_dist.reserve(flags.input.size());
+    // std::vector<lz_int> emc_entropy_dist;
+    lz.emc_entropy_dist.clear();
+    lz.emc_entropy_dist.reserve(flags.input.size());
     lz_double res = 0;
 
     for (lz_size i = 0; i < flags.input.size(); i++) {
@@ -214,16 +215,16 @@ namespace lz {
         res = lz76ExcessEntropyDistance(str, flags.sa_args);
       }
 
-      lz.excess_entropy_dist.emplace_back(res);
+      lz.emc_entropy_dist.emplace_back(res);
     }
 
     return EXIT_SUCCESS;
   }
 
   lz_int lz76ExtraMeasures(utils::LZ_Flags& flags, utils::LZ_Output& lz) {
-    // std::vector<lz_int> excess_entropy_dist;
-    lz.excess_entropy_dist.clear();
-    lz.excess_entropy_dist.reserve(flags.input.size());
+    // std::vector<lz_int> emc_entropy_dist;
+    lz.emc_entropy_dist.clear();
+    lz.emc_entropy_dist.reserve(flags.input.size());
 
     for (lz_size i = 0; i < flags.input.size(); i++) {
       auto str = flags.input[i];
@@ -406,7 +407,7 @@ namespace lz {
 
       //    auto shuffle = ShuffleEntropyCalculation(str, complexity, H_rand, mm, false);
 
-      //    res = 1.0 - shuffle.excess_value / std::fmax(t1_cpx, t2_cpx);
+      //    res = 1.0 - shuffle.emc_value / std::fmax(t1_cpx, t2_cpx);
       // } else {
       res = MutualInformation(sequences.first, sequences.second, flags.sa_args);
       // }

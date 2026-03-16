@@ -152,7 +152,7 @@ namespace lz {
           }
         }
       }
-      return LZ_Result{factorization = lzc, epsilon = 0, lzf = factors};
+      return LZ_Result{factorization = lzc - 1, epsilon = 0, lzf = factors};
     }
 
     LZ_Result LempelZiv76::Factorize(const sequence& seq) {

@@ -27,6 +27,7 @@
 
 #include <lz/lempelziv.h>
 
+#include "lz/general.h"
 #include "lz/sequence.h"
 
 #ifdef _LIBCPP_HAS_PARALLEL_ALGORITHMS
@@ -89,8 +90,8 @@ namespace lz {
     };
 
     sequence MergeSequences(const sequence& s1, const sequence& s2) {
-      const auto        max_iter = std::min(s1.size(), s2.size());
-      std::vector<char> seq;
+      const auto  max_iter = std::min(s1.size(), s2.size());
+      std::string seq;
       seq.reserve(max_iter);
 
       // Use 16-bit packed keys: high byte = s1[i], low byte = s2[i]
@@ -111,8 +112,8 @@ namespace lz {
       return sequence{std::move(seq), s1.getAlphabetSize() * s2.getAlphabetSize()};
     }
 
-    std::map<char, lz_double> CheckCharDensity(const sequence& seq) {
-      std::map<char, lz_double> res = seq.charDensity();
+    std::map<char, lz_uint> CheckCharDensity(const sequence& seq) {
+      std::map<char, lz_uint> res = seq.charDensity();
 
       return res;
     };
@@ -250,7 +251,7 @@ namespace lz {
     const auto alphabet = args.alphabet == details::NO_ALPHABET ? str.getAlphabetSize() : args.alphabet;
     utils::LZ_Shuffle result;
     result.max_block_size = mm;
-    lz_double  excess_entropy = 0;
+    lz_double  emc_entropy = 0;
     const auto complex = lz76Factorization(str, args);
 
     if (args.get_shuffle_terms) [[unlikely]] {
@@ -265,13 +266,13 @@ namespace lz {
         * std::fabs(static_cast<lz_double>(rand_complexity) - static_cast<lz_double>(complex))
         / (str.size() * utils::log(alphabet, log_base));
 
-      excess_entropy += ee_term;
+      emc_entropy += ee_term;
 
       if (args.get_shuffle_terms) result.summands.push_back(ee_term);
       if (m == 1) result.multi_information = ee_term;
     }
 
-    result.excess_value = excess_entropy;
+    result.emc_value = emc_entropy;
     return result;
   }
 
@@ -328,8 +329,8 @@ namespace lz {
     };
     auto reduce = [](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
 
-    // result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, body, reduce);
-    result.excess_value = utils::parallel_reduce(1, mm + 1, 0.0, body, reduce);
+    // result.emc_value = tbb::parallel_reduce(tbb_range, 0.0, body, reduce);
+    result.emc_value = utils::parallel_reduce(1, mm + 1, 0.0, body, reduce);
     return result;
   }
 
@@ -366,8 +367,8 @@ namespace lz {
     };
     auto reduce = [](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
 
-    // result.excess_value = tbb::parallel_reduce(tbb_range, 0.0, body, reduce);
-    result.excess_value = utils::parallel_reduce(1, mm + 1, 0.0, body, reduce);
+    // result.emc_value = tbb::parallel_reduce(tbb_range, 0.0, body, reduce);
+    result.emc_value = utils::parallel_reduce(1, mm + 1, 0.0, body, reduce);
     return result;
   }
 

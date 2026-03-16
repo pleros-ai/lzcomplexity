@@ -61,7 +61,7 @@ typedef enum {
   PNM_RAWTXT,
   PNM_RAWBIN,
   CSV,
-  TCSV,
+  TSV,
   DNA,
   RNA,
   FASTA,
@@ -70,7 +70,7 @@ typedef enum {
 
 inline std::unordered_map<MagickNumber, std::string> MagicValues{
   {MagickNumber::CSV, "CSV"},
-  {MagickNumber::TCSV, "CSV"},
+  {MagickNumber::TSV, "CSV"},
   {MagickNumber::AUTO, "AUTO"},
   {MagickNumber::PNM_P1, "PNM_P1"},
   {MagickNumber::PNM_P2, "PNM_P2"},

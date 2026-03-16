@@ -17,13 +17,29 @@ namespace lz {
     setAlphabetSize();
   }
 
-  sequence::sequence(std::string_view str)
+  sequence::sequence(std::string_view& str)
     : seq(str.begin(), str.end()), alphabet_size(details::ALPHABET_SIZE) {
     setAlphabetSize();
   }
 
   sequence::sequence(const std::vector<char>& vec)
     : seq(vec), alphabet_size(details::ALPHABET_SIZE) {
+    setAlphabetSize();
+  }
+
+  sequence::sequence(const std::initializer_list<char>& vec)
+    : seq(vec), alphabet_size(details::ALPHABET_SIZE) {
+    setAlphabetSize();
+  }
+
+  sequence::sequence(const char* vec) {
+    int idx = 0;
+    while (vec[idx] != '\0') seq.push_back(vec[idx++]);
+    setAlphabetSize();
+  }
+
+  sequence::sequence(const std::span<char>& vec)
+    : seq({vec.begin(), vec.end()}), alphabet_size(details::ALPHABET_SIZE) {
     setAlphabetSize();
   }
 
@@ -82,22 +98,22 @@ namespace lz {
 
   sequence sequence::Drop(lz_size l) const {
     if (l >= seq.size()) [[unlikely]] {
-      return sequence(std::vector<char>(), alphabet_size);
+      return sequence("", alphabet_size);
     }
-    return sequence(std::vector<char>(seq.begin() + static_cast<std::ptrdiff_t>(l), seq.end()),
+    return sequence(std::vector<char>{seq.begin() + static_cast<std::ptrdiff_t>(l), seq.end()},
                     alphabet_size);
   }
 
   std::pair<sequence, sequence> sequence::Split(lz_size l) const {
     const auto split_pos = seq.begin() + static_cast<std::ptrdiff_t>(std::min(l, seq.size()));
-    return {sequence(std::vector<char>(seq.begin(), split_pos), alphabet_size),
-            sequence(std::vector<char>(split_pos, seq.end()), alphabet_size)};
+    return {sequence(std::vector<char>{seq.begin(), split_pos}, alphabet_size),
+            sequence(std::vector<char>{split_pos, seq.end()}, alphabet_size)};
   }
 
   sequence sequence::Granularity(lz_uint gr) const {
     if (gr == 0) return sequence();
 
-    std::vector<char> ns;
+    std::string ns;
     ns.reserve(seq.size() / gr);
     std::array<bool, 256> seen{};
     char                  temp = 0;

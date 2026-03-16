@@ -19,7 +19,7 @@ namespace lz {
      */
     struct LZ_Shuffle {
       lz_int    max_block_size = -1;    ///< Maximum block size used for shuffling (-1 if not computed).
-      lz_double excess_value = 0;       ///< The computed excess entropy value.
+      lz_double emc_value = 0;          ///< The computed excess entropy value.
       lz_double multi_information = 0;  ///< The multi-information (total correlation) value.
       std::vector<lz_double> summands;  ///< Per-term excess entropy values for detailed analysis.
     };

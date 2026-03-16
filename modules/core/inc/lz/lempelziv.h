@@ -94,7 +94,7 @@ namespace lz {
      * @param seq The input sequence.
      * @return Map of characters to their frequencies.
      */
-    auto CheckCharDensity(const sequence&) -> std::map<char, lz_double>;
+    auto CheckCharDensity(const sequence&) -> std::map<char, lz_uint>;
 
   }  // namespace internal
 
@@ -109,6 +109,19 @@ namespace lz {
    * @return LempelZiv structure with all computed measures.
    */
   auto lz76(const sequence&, utils::LZ_Args) -> utils::LempelZiv;
+
+  /**
+   * @brief Computes complete LZ76 analysis of a sequence.
+   *
+   * Performs full Lempel-Ziv 76 analysis including factorization,
+   * entropy density, shuffle complexity, and error estimates.
+   *
+   * @param seq The input sequence.
+   * @return LempelZiv structure with all computed measures.
+   */
+  inline auto lz76(const sequence& seq) -> utils::LempelZiv {
+    return lz76(seq, internal::getDefaultArgs(seq));
+  };
 
   //*************************************************************************
   //                    LZ76 Factorization

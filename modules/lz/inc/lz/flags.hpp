@@ -41,9 +41,9 @@ namespace lz {
       std::vector<lz_uint> half_complexity;  ///< LZ76 complexity of the first half of each sequence.
       std::vector<lz_double>
         lz_effective_complexity;  ///< Effective complexity (excess entropy via mutual information).
-      std::vector<lz_double> excess_entropy_dist;  ///< Excess entropy estimated via distance method.
-      std::vector<lz_double> mutual_information;   ///< Mutual information between sequence halves.
-      std::vector<lz_double> info_distance;        ///< Information distance between consecutive sequences.
+      std::vector<lz_double> emc_entropy_dist;    ///< Excess entropy estimated via distance method.
+      std::vector<lz_double> mutual_information;  ///< Mutual information between sequence halves.
+      std::vector<lz_double> info_distance;       ///< Information distance between consecutive sequences.
 
       std::vector<lz_double>
         random_shuffle_distance;  ///< Shuffle-based information distance between consecutive sequences.
@@ -166,7 +166,7 @@ namespace lz {
        */
       LZ_Output& operator=(LZ_Output rhs) {
         std::swap(this->lz_effective_complexity, rhs.lz_effective_complexity);
-        std::swap(this->excess_entropy_dist, rhs.excess_entropy_dist);
+        std::swap(this->emc_entropy_dist, rhs.emc_entropy_dist);
         std::swap(this->info_distance, rhs.info_distance);
         std::swap(this->sequence_info_distance, rhs.sequence_info_distance);
         std::swap(this->data, rhs.data);
@@ -218,7 +218,7 @@ namespace lz {
        * @param text Input string to convert to a sequence.
        * @param _sa_args Algorithm configuration parameters.
        */
-      LZ_Flags(std::string text, LZ_Args _sa_args)
+      LZ_Flags(std::string_view text, LZ_Args _sa_args)
         : sa_args(_sa_args), input({text}) {};
 
       /**
@@ -260,13 +260,13 @@ namespace lz {
        * @brief Appends a single string as a new sequence to the input collection.
        * @param data String to add as a sequence.
        */
-      auto addData(std::string data) -> void { input.emplace_back(data); };
+      auto addData(std::string_view data) -> void { input.emplace_back(data); };
 
       /**
        * @brief Appends multiple strings as new sequences to the input collection.
        * @param data Vector of strings to add as sequences.
        */
-      auto addData(std::vector<std::string> data) -> void {
+      auto addData(std::vector<std::string_view> data) -> void {
 #ifdef __cpp_lib_ranges
         std::ranges::for_each(data, [&](auto&& elem) { input.emplace_back(elem); });
 #else

@@ -31,7 +31,9 @@ namespace detail {
 
   // Compile-time constant array
   inline constexpr std::array<CmdOpt, 17> OptList{
-    {{"alphabet", "a,alphabet", "Alphabet cardinality. If auto it tries to guess the alphabet size."},
+    {{"alphabet",
+      "a,alphabet",
+      "Alphabet cardinality: If auto, it guesses the alphabet size. (default auto)"},
      {"distance",
       "d,dlz",
       "The LZ distance is calculated between consecutive lines. Only valid "
@@ -43,32 +45,28 @@ namespace detail {
       "halves of original "
       "sequence."},
      {"excess_opt",
-      "e,excess-options",
-      "Random shuffle complexity options for calculation. v1: maximum value "
+      "e,rsemc-opt",
+      "Options for random shuffle complexity. v1: maximum value "
       "for block shuffling, "
       "f: summand factors, "
-      "v2: starting line for summand factors, v3: ending line for summand "
-      "factors. All values "
+      "v2: starting line for RSEMC, v3: ending line for RSEMC. All values "
       "are optionals"},
      {"factors", "f,factors", "Saves the factorization."},
      {"format",
       "F,format",
       "Input file format. TXT for raw text format. CSV the input file is a "
-      "csv array with ',' as "
-      "delimiter. TCSV the "
-      "input file is a csv array with ' ' as delimiter. PBM, PGM and PNM is "
-      "for the family of "
-      "the graphic formats. "
+      "csv. TSV the "
+      "input file is a tsv. PBM, PGM and PNM "
+      "for the corresponding graphic formats. "
       "DNA, RNA and FASTA "
-      "are for the files with the biological sequences that use .fasta or "
-      ".fna extensions."},
+      "for the corresponding genetic code format. Default: try to guess the file format"},
      {"help", "h,help", "Show this message."},
      {"mixed",
       "i,mixed-entropy",
       "The mixed entropy density of consecutive lines. Only valid for "
       "multiline files (-m "
       "option)."},
-     {"jobs", "j,jobs", "Number of threads."},
+     {"jobs", "j,jobs", "Number of threads. Default: depends on computer hardware"},
      {"log_base", "l,log-base", "The log base value. The default is the alphabet cardinality."},
      {"multi_line", "m,multi-line", "Treat each line in the input stream as a different sequence."},
      {"entropy", "n,entropy-density", "Computes only the entropy density."},
@@ -132,7 +130,7 @@ namespace detail {
       case utl::hash("txt"):
       case utl::hash("rawtxt"): return MagickNumber::PNM_RAWTXT;
       case utl::hash("csv"): return MagickNumber::CSV;
-      case utl::hash("tcsv"): return MagickNumber::TCSV;
+      case utl::hash("tcsv"): return MagickNumber::TSV;
       case utl::hash("dna"): return MagickNumber::DNA;
       case utl::hash("rna"): return MagickNumber::RNA;
       case utl::hash("fasta"): return MagickNumber::FASTA;
@@ -153,7 +151,7 @@ namespace detail {
       case MagickNumber::PNM_RAWTXT:
       case MagickNumber::PNM_RAWBIN: return "TXT";
       case MagickNumber::CSV:
-      case MagickNumber::TCSV: return "CSV";
+      case MagickNumber::TSV: return "CSV";
       case MagickNumber::DNA: return "DNA";
       case MagickNumber::RNA: return "RNA";
       case MagickNumber::FASTA: return "FASTA";
@@ -216,10 +214,16 @@ struct lz_options {
       factors_output = result["factors"].as<std::string>();
     }
 
+    if (result.count("jobs")) {
+      n_jobs = result["jobs"].as<lz::lz_uint>() ? result["jobs"].as<lz::lz_uint>()
+                                                : std::thread::hardware_concurrency();
+    } else {
+      n_jobs = std::thread::hardware_concurrency();
+    }
+
     // Boolean flags
-    multiLine = result["multi-line"].as<bool>();
+    multiLine = result["multi-line"].as<bool>() || result["dlz"].as<bool>();
     find_distance = result["dlz"].as<bool>();
-    n_jobs = result["jobs"].as<lz::lz_uint>();
     verbose = result["verbose"].as<bool>();
     warn_out = result["warn-out"].as<bool>();
     entropy_density = result["entropy-density"].as<bool>();
@@ -240,6 +244,8 @@ struct lz_options {
         input_format = MagickNumber::FASTA;
       } else if (input_extension == ".csv") {
         input_format = MagickNumber::CSV;
+      } else if (input_extension == ".tsv") {
+        input_format = MagickNumber::TSV;
       }
     }
 
@@ -256,15 +262,13 @@ struct lz_options {
     }
 
     // Parse excess options
-    if (result.count("excess-options")) {
-      parseExcessOptions(result["excess-options"].as<std::vector<std::string>>());
+    if (result.count("rsemc-opt")) {
+      parseExcessOptions(result["rsemc-opt"].as<std::vector<std::string>>());
     }
   }
 
   private:
   void parseExcessOptions(const std::vector<std::string>& excess_args) {
-    args.get_shuffle_terms = true;
-
     if (excess_args.empty() || excess_args[0].empty()) return;
 
     const auto& first = excess_args[0];
@@ -278,8 +282,9 @@ struct lz_options {
     // Parse factor lines
     size_t factor_idx = (first == "f") ? 0 : 1;
 
-    if (excess_args.size() > factor_idx && excess_args[factor_idx] == "f") {
-      size_t line_start_idx = factor_idx + 1;
+    if (excess_args.size() > factor_idx) {
+      args.get_shuffle_terms = excess_args[factor_idx] == "f";
+      size_t line_start_idx = excess_args[factor_idx] == "f" ? factor_idx + 1 : factor_idx;
 
       if (excess_args.size() <= line_start_idx) {
         excess_init_line = lz::details::ALL_LINES;
@@ -301,7 +306,8 @@ struct lz_options {
     out << "Output: " << opt.output << '\n';
     out << "Process multiline: " << (opt.multiLine ? "ON" : "OFF") << '\n';
     out << "Number of jobs: " << opt.n_jobs << '\n';
-    out << "Partitions use in parallel suffix array: " << opt.args.chunks << '\n';
+    auto ch = opt.args.chunks ? std::to_string(opt.args.chunks) : "default";
+    out << "Partitions use in parallel suffix array: " << ch << '\n';
 
     if (!opt.factors_output.empty()) {
       out << "Save factors in: " << opt.factors_output << '\n';
@@ -405,10 +411,10 @@ inline lz_options process_args(cxxopts::parse_result& result) {
     iss << " - lz76 factorization\n";
     iss << " - Entropy density\n";
     iss << " - Random shuffle complexity\n";
-    if (options.args.block_size >= 0) iss << " - Paired Shuffle Complexity\n";
+    // if (options.args.block_size >= 0) iss << " - Paired Shuffle Complexity\n";
     if (options.find_distance) {
       iss << " - Information distance between consecutive sequences\n";
-      iss << " - Random shuffle distance between consecutive sequences\n";
+      // iss << " - Random shuffle distance between consecutive sequences\n";
     }
 
     std::cout << print_msg(msg::INFO, iss.str()) << std::endl;
@@ -443,10 +449,7 @@ inline cxxopts::options generateOptions() {
   g(getOptValue("output"), getOptDesc("output"), cxxopts::value<std::string>(), "file_name");
 
   // Numeric options
-  g(getOptValue("jobs"),
-    getOptDesc("jobs"),
-    cxxopts::value<lz::lz_uint>()->default_value(std::to_string(std::thread::hardware_concurrency())),
-    "value");
+  g(getOptValue("jobs"), getOptDesc("jobs"), cxxopts::value<lz::lz_uint>(), "value");
   g(getOptValue("partitions"),
     getOptDesc("partitions"),
     cxxopts::value<lz::lz_int>()->default_value("0"),

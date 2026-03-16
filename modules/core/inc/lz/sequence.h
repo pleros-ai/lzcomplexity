@@ -70,17 +70,21 @@ public:
       : alphabet_size(alphsize) {};
 
     /**
-     * @brief Constructor that initializes the sequence with a vector of characters.
-     * @param vec The vector of characters.
-     */
-    sequence(const std::vector<char>& vec);
-
-    /**
      * @brief Constructor that initializes the sequence with a string.
      * @param str The string.
      */
+    sequence(std::string_view& str);
     sequence(const std::string& str);
-    sequence(std::string_view str);
+    /**
+     * @brief Constructor that initializes the sequence with a vector of characters.
+     * @param vec The vector of characters.
+     */
+    sequence(const std::span<lz_char>& vec);
+    sequence(const lz_char* vec);
+    sequence(const std::vector<lz_char>& vec);
+    sequence(const std::initializer_list<lz_char>& vec);
+    template<std::size_t N>
+    sequence(const std::array<lz_char, N>& vec);
 
     /**
      * @brief Constructor that initializes the sequence with a vector of characters and a specified alphabet
@@ -88,8 +92,19 @@ public:
      * @param vec The vector of characters.
      * @param aph The alphabet size.
      */
-    sequence(const std::vector<char>& vec, lz_uint aph)
+    sequence(const std::vector<lz_char>& vec, lz_uint aph)
       : seq(vec), alphabet_size(aph) {
+      DetermineAlphabet();
+    };
+    /** ------------------------------------------------------------- */
+    sequence(const std::initializer_list<lz_char>& vec, lz_uint aph)
+      : seq(vec), alphabet_size(aph) {
+      DetermineAlphabet();
+    };
+    /** ------------------------------------------------------------- */
+    template<std::size_t N>
+    sequence(const std::array<lz_char, N>& vec, lz_uint aph)
+      : seq({vec.begin(), vec.end()}), alphabet_size(aph) {
       DetermineAlphabet();
     };
 
@@ -98,7 +113,7 @@ public:
      * @param str The string.
      * @param aph The alphabet size.
      */
-    sequence(const std::string& str, lz_uint aph)
+    sequence(const std::string_view& str, lz_uint aph)
       : seq(str.begin(), str.end()), alphabet_size(aph) {
       DetermineAlphabet();
     };
@@ -176,7 +191,7 @@ public:
      * @brief Computes the frequency of each character in the sequence.
      * @return A map where keys are characters and values are their counts.
      */
-    std::map<char, lz_double> charDensity() const;
+    std::map<char, lz_uint> charDensity() const;
 
     /**
      * @brief Accesses the character at the specified index (bounds-checked).
@@ -383,6 +398,7 @@ public:
      * @return A reference to this sequence.
      */
     sequence& operator=(const sequence&);
+    sequence& operator=(const std::string&);
 
     /**
      * @brief Move assignment operator.
@@ -398,6 +414,13 @@ public:
      * @throws SequenceBadAlloc If memory allocation fails.
      */
     sequence& operator=(const std::vector<char>&);
+    /**
+     * @brief Assignment operator from a character pointer.
+     *        The end of the char pointer list must be EOF char '\0'.
+     * @param s The char pointer.
+     * @return A reference to this sequence.
+     */
+    sequence& operator=(const char*);
 
     /**
      * @brief Appends a character vector to the end of this sequence.
@@ -406,6 +429,8 @@ public:
      * @throws SequenceBadAlloc If memory allocation fails.
      */
     sequence& operator+=(const std::vector<char>& s);
+    sequence& operator+=(std::string_view& s);
+    sequence& operator+=(const std::string& s);
 
     /**
      * @brief Appends another sequence to the end of this sequence.
@@ -496,34 +521,15 @@ public:
     friend bool operator==(const sequence&, const sequence&);
 
     /**
-     * @brief Compares a sequence with a string for equality.
-     * @return true if the sequence matches the string content.
-     */
-    friend bool operator==(const sequence&, const std::string&);
-
-    /**
      * @brief Compares two sequences for inequality.
      * @return true if the sequences differ.
      */
     friend bool operator!=(const sequence&, const sequence&);
-
-    /**
-     * @brief Compares a sequence with a string for inequality.
-     * @return true if the sequence differs from the string.
-     */
-    friend bool operator!=(const sequence&, const std::string&);
-
     /**
      * @brief Lexicographically compares two sequences (greater than).
      * @return true if lhs is lexicographically greater than rhs.
      */
     friend bool operator>(const sequence&, const sequence&);
-
-    /**
-     * @brief Lexicographically compares a sequence with a string (greater than).
-     * @return true if the sequence is lexicographically greater than the string.
-     */
-    friend bool operator>(const sequence&, const std::string&);
 
     /**
      * @brief Lexicographically compares two sequences (greater than or equal).
@@ -535,7 +541,7 @@ public:
      * @brief Lexicographically compares a sequence with a string (greater than or equal).
      * @return true if the sequence is lexicographically greater than or equal to the string.
      */
-    friend bool operator>=(const sequence&, const std::string&);
+    // friend bool operator>=(const sequence&, const std::string&);
 
     /**
      * @brief Lexicographically compares two sequences (less than).
@@ -544,22 +550,10 @@ public:
     friend bool operator<(const sequence&, const sequence&);
 
     /**
-     * @brief Lexicographically compares a sequence with a string (less than).
-     * @return true if the sequence is lexicographically less than the string.
-     */
-    friend bool operator<(const sequence&, const std::string&);
-
-    /**
      * @brief Lexicographically compares two sequences (less than or equal).
      * @return true if lhs is lexicographically less than or equal to rhs.
      */
     friend bool operator<=(const sequence&, const sequence&);
-
-    /**
-     * @brief Lexicographically compares a sequence with a string (less than or equal).
-     * @return true if the sequence is lexicographically less than or equal to the string.
-     */
-    friend bool operator<=(const sequence&, const std::string&);
 
     /**
      * @brief Applies a transformation function to each character in the sequence.
@@ -619,8 +613,14 @@ public:
 
   //.............................................................................................................
 
-  inline std::map<char, lz_double> sequence::charDensity(void) const {
-    std::map<char, lz_double> res;
+  template<std::size_t N>
+  sequence::sequence(const std::array<char, N>& vec)
+    : seq(vec.begin(), vec.end()), alphabet_size(details::ALPHABET_SIZE) {
+    setAlphabetSize();
+  }
+
+  inline std::map<char, lz_uint> sequence::charDensity(void) const {
+    std::map<char, lz_uint> res;
 
     for (const auto& ch: seq) {
       ++res[ch];
@@ -645,6 +645,16 @@ public:
     return *this;
   }
 
+  inline sequence& sequence::operator=(const char* s) {
+    int idx = 0;
+
+    while (s[idx] != '\0') {
+      seq.push_back(s[idx++]);
+    }
+
+    return *this;
+  };
+
   inline sequence& sequence::operator=(sequence&& s) noexcept {
     if (this != &s) {
       seq = std::move(s.seq);
@@ -656,7 +666,7 @@ public:
 
   inline sequence& sequence::operator=(const std::vector<char>& s) {
     try {
-      seq = s;
+      seq.assign(s.begin(), s.end());
     } catch (std::bad_alloc& ba) {
       throw SequenceBadAlloc();
     } catch (...) {
@@ -676,6 +686,30 @@ public:
   }
 
   inline sequence& sequence::operator+=(const std::vector<char>& s) {
+    try {
+      seq.insert(seq.end(), s.begin(), s.end());
+    } catch (std::bad_alloc& ba) {
+      throw SequenceBadAlloc();
+    } catch (...) {
+      throw SequenceError();
+    }
+
+    return *this;
+  }
+
+  inline sequence& sequence::operator+=(const std::string& s) {
+    try {
+      seq.insert(seq.end(), s.begin(), s.end());
+    } catch (std::bad_alloc& ba) {
+      throw SequenceBadAlloc();
+    } catch (...) {
+      throw SequenceError();
+    }
+
+    return *this;
+  }
+
+  inline sequence& sequence::operator+=(std::string_view& s) {
     try {
       seq.insert(seq.end(), s.begin(), s.end());
     } catch (std::bad_alloc& ba) {
@@ -726,7 +760,10 @@ public:
       }
     }
 
-    alphabet_size = static_cast<lz_uint>(al.size());
+    if (al.size() != alphabet_size) {
+      alphabet_size = al.size() < 2 ? 2 : static_cast<lz_uint>(al.size());
+    }
+
     return alphabet = al;
   }
 
@@ -821,7 +858,7 @@ public:
   }
 
   inline lz_size sequence::pop(void) {
-    seq.pop_back();
+    if (seq.size() > 0) seq.pop_back();
 
     return seq.size();
   }
@@ -842,7 +879,7 @@ public:
 
   inline sequence sequence::Take(lz_size l) const {
     const lz_size take_size = std::min(l, seq.size());
-    return sequence(std::vector<char>(seq.begin(), seq.begin() + take_size), alphabet_size);
+    return sequence(std::vector<char>{seq.begin(), seq.begin() + take_size}, alphabet_size);
   }
 
   // .......................................................
@@ -867,11 +904,11 @@ public:
   }
 
   inline std::ostream& operator<<(std::ostream& os, const sequence& obj) {
-    os << " Alphabet: [ ";
-    for (auto c: obj.alphabet) os << c << " ";
-    os << "] "
-       << " size: " << obj.alphabet_size << std::endl;
+    os << "{ ";
     for (auto c: obj.seq) os << c;
+    os << ", [ ";
+    for (auto c: obj.alphabet) os << c << " ";
+    os << "], " << obj.alphabet_size << " }" << std::endl;
 
     return os;
   }
@@ -894,31 +931,10 @@ public:
   }
 
   inline bool operator==(const sequence& lhs, const sequence& rhs) { return lhs.seq == rhs.seq; }
-  inline bool operator==(const sequence& lhs, const std::string& rhs) {
-    return std::equal(lhs.seq.begin(), lhs.seq.end(), rhs.begin(), rhs.end());
-  }
-
   inline bool operator!=(const sequence& lhs, const sequence& rhs) { return !(lhs == rhs); }
-  inline bool operator!=(const sequence& lhs, const std::string& rhs) { return !(lhs == rhs); }
-
   inline bool operator<(const sequence& lhs, const sequence& rhs) { return lhs.seq < rhs.seq; }
-  inline bool operator<(const sequence& lhs, const std::string& rhs) {
-    return std::lexicographical_compare(lhs.seq.begin(), lhs.seq.end(), rhs.begin(), rhs.end());
-  }
-
   inline bool operator<=(const sequence& lhs, const sequence& rhs) { return !(rhs < lhs); }
-  inline bool operator<=(const sequence& lhs, const std::string& rhs) {
-    return !std::lexicographical_compare(rhs.begin(), rhs.end(), lhs.seq.begin(), lhs.seq.end());
-  }
-
   inline bool operator>(const sequence& lhs, const sequence& rhs) { return rhs < lhs; }
-  inline bool operator>(const sequence& lhs, const std::string& rhs) {
-    return std::lexicographical_compare(rhs.begin(), rhs.end(), lhs.seq.begin(), lhs.seq.end());
-  }
-
   inline bool operator>=(const sequence& lhs, const sequence& rhs) { return !(lhs < rhs); }
-  inline bool operator>=(const sequence& lhs, const std::string& rhs) {
-    return !std::lexicographical_compare(lhs.seq.begin(), lhs.seq.end(), rhs.begin(), rhs.end());
-  }
 
 }  // namespace lz

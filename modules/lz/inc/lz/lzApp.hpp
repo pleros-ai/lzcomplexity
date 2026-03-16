@@ -175,7 +175,7 @@ namespace lz {
    * first half (X) and second half (Y) of each sequence.
    *
    * @param flags Input configuration containing sequences and algorithm parameters.
-   * @param output Output container where excess entropy will be stored in `excess_entropy_dist`.
+   * @param output Output container where excess entropy will be stored in `emc_entropy_dist`.
    * @return 0 on success, non-zero error code on failure.
    */
   auto lz76ExcessEntropyDistance(utils::LZ_Flags& flags, utils::LZ_Output& output) -> lz_int;

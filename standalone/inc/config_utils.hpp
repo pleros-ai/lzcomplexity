@@ -412,7 +412,7 @@ namespace lz {
               break;
             }
           case CSV: read_csv(path, seqs, multiline, ','); break;
-          case TCSV: read_csv(path, seqs, multiline, ' '); break;
+          case TSV: read_csv(path, seqs, multiline, ' '); break;
           case DNA:
           case RNA:
           case FASTA: read_dna(path, seqs, multiline); break;
@@ -561,8 +561,8 @@ namespace lz {
 
           const auto ext = entry.path().extension().string();
           bool       excluded = std::any_of(exclude_extensions_.begin(),
-                                      exclude_extensions_.end(),
-                                      [&ext](const auto& e) { return ext == e; });
+                                            exclude_extensions_.end(),
+                                            [&ext](const auto& e) { return ext == e; });
 
           if (!excluded) {
             files_.push_back({static_cast<double>(fs::file_size(entry.path())),

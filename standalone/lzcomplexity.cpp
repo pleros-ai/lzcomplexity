@@ -35,7 +35,7 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
 
     auto w_rsc = lz_result.getRandomShuffleComplexity();
 
-    out_data["sequences"][i]["lz76RandomShuffleComplexity"]["value"] = w_rsc.excess_value;
+    out_data["sequences"][i]["lz76RandomShuffleComplexity"]["value"] = w_rsc.emc_value;
     out_data["sequences"][i]["lz76RandomShuffleComplexity"]["max_block_size"] = w_rsc.max_block_size;
     out_data["sequences"][i]["lz76RandomShuffleComplexity"]["multi_information"] = w_rsc.multi_information;
     if (w_rsc.summands.size() > 0) {
@@ -45,7 +45,7 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
     if (!opt.entropy_density && opt.get_paired_shuffle) {
       auto rsc = lz_result.getPairedShuffleComplexity();
 
-      out_data["sequences"][i]["lz76PairedShuffleComplexity"]["value"] = rsc.excess_value;
+      out_data["sequences"][i]["lz76PairedShuffleComplexity"]["value"] = rsc.emc_value;
       out_data["sequences"][i]["lz76PairedShuffleComplexity"]["max_block_size"] = rsc.max_block_size;
       out_data["sequences"][i]["lz76PairedShuffleComplexity"]["multi_information"] = rsc.multi_information;
       if (rsc.summands.size() > 0) {
@@ -58,7 +58,7 @@ void save_data(lz::utils::LZ_Flags& flags, lz::utils::LZ_Output& results, lz_opt
   }
 
   if (opt.find_distance) {
-    out_data["lz76Distance"]["RandomShuffleDistance"] = results.random_shuffle_distance;
+    // out_data["lz76Distance"]["RandomShuffleDistance"] = results.random_shuffle_distance;
     out_data["lz76Distance"]["InformationDistance"] = results.info_distance;
   }
 
@@ -252,7 +252,7 @@ lz::lz_int process(lz_options& opt) {
     if (opt.verbose) {
       const auto end_time = now();
       std::cout << print_msg(MSG::INFO, "Random shuffle complexity: ");
-      for (auto x: lz.data) std::cout << x.getRandomShuffleComplexity().excess_value << " ";
+      for (auto x: lz.data) std::cout << x.getRandomShuffleComplexity().emc_value << " ";
       std::cout << std::endl;
       for (auto i = 0ul; i < lz.data.size(); i++) {
         auto x = lz.data[i];
@@ -285,7 +285,7 @@ lz::lz_int process(lz_options& opt) {
     if (opt.verbose) {
       const auto end_time = now();
       std::cout << print_msg(MSG::INFO, "Paired shuffle complexity: ");
-      for (auto x: lz.data) std::cout << x.getPairedShuffleComplexity().excess_value << " ";
+      for (auto x: lz.data) std::cout << x.getPairedShuffleComplexity().emc_value << " ";
       std::cout << std::endl;
       for (auto i = 0ul; i < lz.data.size(); i++) {
         auto x = lz.data[i];

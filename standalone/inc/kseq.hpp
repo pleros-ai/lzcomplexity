@@ -196,7 +196,8 @@ public:
    * @tparam ReadFunc The read function type
    * @tparam BufSize Buffer size (default 4KB)
    */
-  template<typename FileType, typename ReadFunc, std::size_t BufSize = DEFAULT_BUFSIZE> class kstream_t {
+  template<typename FileType, typename ReadFunc, std::size_t BufSize = DEFAULT_BUFSIZE>
+  class kstream_t {
 public:
     using file_type = FileType;
     static constexpr std::size_t buffer_size = BufSize;
@@ -312,7 +313,8 @@ public:
    * @tparam ReadFunc The read function type
    * @tparam BufSize Buffer size
    */
-  template<typename FileType, typename ReadFunc, std::size_t BufSize = DEFAULT_BUFSIZE> class kseq_t {
+  template<typename FileType, typename ReadFunc, std::size_t BufSize = DEFAULT_BUFSIZE>
+  class kseq_t {
 public:
     using stream_type = kstream_t<FileType, ReadFunc, BufSize>;
 
@@ -528,13 +530,15 @@ public:
    * @brief Generic lambda/functor reader wrapper
    * @tparam Func Callable type with signature: ssize_t(FileType, char*, size_t)
    */
-  template<typename Func> struct FuncReader {
+  template<typename Func>
+  struct FuncReader {
     Func func;
 
     explicit FuncReader(Func f)
       : func(std::move(f)) {}
 
-    template<typename FileType> auto operator()(FileType fd, char* buf, std::size_t len) const noexcept {
+    template<typename FileType>
+    auto operator()(FileType fd, char* buf, std::size_t len) const noexcept {
       return func(fd, buf, len);
     }
   };
@@ -578,7 +582,8 @@ public:
    *
    * @return Unique pointer to kseq reader
    */
-  template<typename FileType, typename ReadFunc> inline auto kseq_open(FileType fd, ReadFunc read_func) {
+  template<typename FileType, typename ReadFunc>
+  inline auto kseq_open(FileType fd, ReadFunc read_func) {
     return std::make_unique<kseq_t<FileType, ReadFunc>>(fd, std::move(read_func));
   }
 

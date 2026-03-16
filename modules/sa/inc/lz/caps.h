@@ -395,7 +395,7 @@ namespace lz {
        * @param n Length of the text.
        * @return LZ_SuffixArray containing the computed arrays.
        */
-      utils::LZ_SuffixArray construct(std::vector<char>, lz_int);
+      utils::LZ_SuffixArray construct(std::vector<char>);
 
       /**
        * @brief Dumps SA and LCP to a binary output stream.

@@ -13,7 +13,8 @@ namespace lz {
       , p_(subproblem_count > 0 ? subproblem_count
              : n < 100          ? 1
              : n < 1e6          ? utils::num_workers()
-             : n < 1e7          ? 100
+             : n_ < 1e7         ? 256
+             : n_ < 1e8         ? 1024
                                 : default_subproblem_count)
       , max_context(max_context ? max_context : n_)
       , pivot_(nullptr)
@@ -507,14 +508,15 @@ namespace lz {
       LCP_.resize(n_);
     }
 
-    utils::LZ_SuffixArray CaPS_SA::construct(std::vector<char> T, lz_int n) {
+    utils::LZ_SuffixArray CaPS_SA::construct(std::vector<char> T) {
       T_ = std::move(T);
-      n_ = n;
+      n_ = T.size();
 
       p_ = p_ > 0  ? p_
         : n_ < 100 ? 1
         : n_ < 1e6 ? utils::num_workers()
-        : n_ < 1e7 ? 100
+        : n_ < 1e7 ? 256
+        : n_ < 1e8 ? 1024
                    : default_subproblem_count;
       pivot_per_part_ = p_ == 1 ? 1 : p_ - 1;
       // c = p_ == 1 ? 1 : p_ - 1;
@@ -531,7 +533,8 @@ namespace lz {
       p_ = p_ > 0  ? p_
         : n_ < 100 ? 1
         : n_ < 1e6 ? utils::num_workers()
-        : n_ < 1e7 ? 100
+        : n_ < 1e7 ? 256
+        : n_ < 1e8 ? 1024
                    : default_subproblem_count;
       pivot_per_part_ = p_ == 1 ? 1 : p_ - 1;
       // c = p_ == 1 ? 1 : p_ - 1;

@@ -110,7 +110,7 @@ namespace detail {
       case utl::hash("txt"):
       case utl::hash("rawtxt"): return MagickNumber::PNM_RAWTXT;
       case utl::hash("csv"): return MagickNumber::CSV;
-      case utl::hash("tcsv"): return MagickNumber::TCSV;
+      case utl::hash("tcsv"): return MagickNumber::TSV;
       case utl::hash("dna"): return MagickNumber::DNA;
       case utl::hash("rna"): return MagickNumber::RNA;
       case utl::hash("fasta"): return MagickNumber::FASTA;
@@ -163,7 +163,7 @@ namespace detail {
       case MagickNumber::PNM_RAWTXT:
       case MagickNumber::PNM_RAWBIN: return "TXT";
       case MagickNumber::CSV:
-      case MagickNumber::TCSV: return "CSV";
+      case MagickNumber::TSV: return "CSV";
       case MagickNumber::DNA: return "DNA";
       case MagickNumber::RNA: return "RNA";
       case MagickNumber::FASTA: return "FASTA";
