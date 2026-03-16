@@ -34,9 +34,9 @@ try:
             if version_match:
                 __version__ = version_match.group(1)
             else:
-                __version__ = "0.9.9"  # Fallback version
+                __version__ = "0.9.11"  # Fallback version
 except (FileNotFoundError, KeyError, ImportError):
-    __version__ = "0.9.9"  # Fallback version
+    __version__ = "0.9.11"  # Fallback version
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {

@@ -6,11 +6,10 @@
 #include <fstream>
 #include <lz/lzApp.hpp>
 #include <ostream>
-#include <string>
 
 #include "inc/config_complexity.hpp"
 
-#define VERSION "v0.9.9"
+#define VERSION "v0.9.11"
 
 using MSG = lz::utils::MSG_TYPE;
 

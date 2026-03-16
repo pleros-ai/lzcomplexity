@@ -1,6 +1,6 @@
 .\" Man page for lzcomplexity
 .\" Contact estevez@fisica.uh.cu or efrenaragon96@gmail.com for corrections.
-.TH LZCOMPLEXITY 1 "December 2024" "lzcomplexity 0.9.9" "User Commands"
+.TH LZCOMPLEXITY 1 "December 2024" "lzcomplexity 0.9.11" "User Commands"
 .SH NAME
 lzcomplexity \- compute Lempel-Ziv 76 complexity and entropy measures for symbolic sequences
 .SH SYNOPSIS
@@ -10,7 +10,7 @@ lzcomplexity \- compute Lempel-Ziv 76 complexity and entropy measures for symbol
 .B lzcomplexity
 is a high-performance tool for computing entropy and complexity measures of symbolic sequences based on the Lempel-Ziv 76 (LZ76) factorization algorithm.
 .PP
-The program computes the LZ76 complexity, entropy density, excess entropy by random shuffling, and information distance between sequences. Results are output in JSON format.
+The program computes the LZ76 complexity, entropy density, effective measure complexity by random shuffling, and information distance between sequences. Results are output in JSON format.
 .SH OPTIONS
 .TP
 .BR \-a ", " \-\-alphabet =\fIvalue\fR
@@ -92,7 +92,7 @@ Results are saved in JSON format containing:
 .IP \(bu 2
 \fBlz76EntropyDensity\fR: Normalized entropy density estimate.
 .IP \(bu 2
-\fBlz76RandomShuffleComplexity\fR: Excess entropy estimated by random shuffling.
+\fBlz76RandomShuffleComplexity\fR: Effective measure complexity estimated by random shuffling.
 .IP \(bu 2
 \fBlz76Distance\fR: Information distance metrics (when \fB\-d\fR is used).
 .SH THEORETICAL BACKGROUND
@@ -152,11 +152,11 @@ Lempel, A., & Ziv, J. (1976). On the complexity of finite sequences. \fIIEEE Tra
 Kontoyiannis, I., et al. (1998). Nonparametric entropy estimation for stationary processes and random fields. \fIIEEE Transactions on Information Theory\fR, 44(3), 1319-1327.
 .IP 3. 4
 Khan, J., et al. (2023). Fast, Parallel, and Cache-Friendly Suffix Array Construction. \fIarXiv:2305.07024\fR.
-.SH BUGS
-Report bugs to estevez@fisica.uh.cu or efrenaragon96@gmail.com.
+.SH SUPPORT
+Report to support@pleros.ai.
 .SH AUTHORS
-Efren Aragon Perez <efrenaragon96@gmail.com>
+Efren Aragon Perez
 .br
-Ernesto Estevez Rams <estevez@fisica.uh.cu>
+Ernesto Estevez Rams
 .SH COPYRIGHT
-Copyright \(co 2024 Efren Aragon Perez. License: MIT.
+Copyright \(co 2026 Pleros group. License: MIT.
