@@ -1,5 +1,6 @@
 lzcomplexity (0.9.9-1) UNRELEASED; urgency=medium
 
-  * temporal: use -sd for not include the .tar.gz file
+  * fix: change findTBB.cmake for remove the dependency on `FIND_PACKAGE_HANDLE_STANDARD_ARGS` function.
+  * chore: clean unused steps in lzcomplexity workflow build.
 
  -- Efren Aragon <efrenaragon96@gmail.com>  Mon, 02 Mar 2026 20:00:00 +0000

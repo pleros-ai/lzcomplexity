@@ -10,10 +10,9 @@ on:
   workflow_dispatch:
 
 env:
-  OLD_VERSION: 0.9.9
-  VERSION: 0.9.9
+  VERSION: 0.9.10
   OLD_REVISION: 1
-  REVISION: 2
+  REVISION: 1
   TAR_DISTRO: ubuntu22.04.1
 
 jobs:
@@ -115,11 +114,19 @@ jobs:
         shell: bash
     needs: build-linux
     strategy:
+      max-parallel: 1
       matrix:
         include:
           - runs-on: ubuntu-22.04
             platform: ubuntu22.04
             distro: jammy
+            build_type: "Release"
+            cxx: g++
+            cc: gcc
+            builtinTbb: ON
+          - runs-on: ubuntu-24.04
+            platform: ubuntu24.04
+            distro: noble
             build_type: "Release"
             cxx: g++
             cc: gcc
@@ -181,17 +188,6 @@ jobs:
             --passphrase "$GPG_KEY_PASSPHRASE" -u "$GPG_KEY_ID" -o /dev/null
           echo "✅ Signing test passed"
 
-      # Configure dput config file
-      # - name: Configure dput for PPA upload
-      #   run: |
-      #     cat > ~/.dput.cf << EOF
-      #     [your-ppa]
-      #     fqdn = ppa.launchpad.net
-      #     method = sftp
-      #     login = ${{ secrets.LAUNCHPAD_USERNAME }}
-      #     incoming = ~${{ secrets.LAUNCHPAD_USERNAME }}/ubuntu/${{ secrets.LAUNCHPAD_PPA }}/
-      #     EOF
-
       - name: Configure git for Launchpad
         run: |
           git config --global user.name "Efren Aragon"
@@ -199,48 +195,72 @@ jobs:
           git config --global user.signingkey "${{ secrets.GPG_KEY_ID }}"
           git config --global commit.gpgsign true
 
-      - name: Prepare clean source and build unsigned package
-        env:
-          DEBFULLNAME: Efren Aragon
-          DEBEMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
+      - name: Create the orig.tar.gz file
         run: |
-          URL="https://launchpad.net/~efrenaragon96/+archive/ubuntu/lzcomplexity/+sourcefiles/lzcomplexity/${OLD_VERSION}-${OLD_REVISION}~${TAR_DISTRO}/lzcomplexity_${OLD_VERSION}.orig.tar.gz"
+          URL="https://launchpad.net/~efrenaragon96/+archive/ubuntu/lzcomplexity/+sourcefiles/lzcomplexity/${VERSION}-${OLD_REVISION}~${TAR_DISTRO}/lzcomplexity_${VERSION}.orig.tar.gz"
           
           if curl --output /dev/null --silent --head --fail "$URL"; then
-            wget -q "$URL" -O ${{ github.workspace }}/lzcomplexity_0.9.9.orig.tar.gz
+            wget -q "$URL" -O ${{ github.workspace }}/lzcomplexity_${VERSION}.orig.tar.gz
             echo "Tarball descargado desde Launchpad."
-            SOURCE_FLAG="-sa"
+            echo "SOURCE_FLAG=-sd" >> $GITHUB_ENV
+            echo "PATCH_NEEDED=true" >> $GITHUB_ENV
           else
-            # 1. Create a clean orig.tar.gz (no debian/, no build artifacts)
             echo "Tarball no encontrado en Launchpad (primera subida). Generando localmente..."
             mkdir -p /tmp/lzcomplexity-${VERSION}
             rsync -av --exclude='build/' --exclude='config/' --exclude='.git/' \
                   --exclude='python/' --exclude='*.tar.gz' --exclude='test_data/' \
+                  --exclude='.github/' --exclude='.vscode/' --exclude='.windsurf/' \
                   --exclude='debian/' ${{ github.workspace }}/ /tmp/lzcomplexity-${VERSION}/
             tar --sort=name --mtime='2026-03-01 00:00Z' --owner=0 --group=0 --numeric-owner \
               -czf ${{ github.workspace }}/lzcomplexity_${VERSION}.orig.tar.gz -C /tmp/lzcomplexity-${VERSION} .
             rm -rf /tmp/lzcomplexity-${VERSION}
-            SOURCE_FLAG="-sd"
+            echo "SOURCE_FLAG=-sa" >> $GITHUB_ENV
+            echo "PATCH_NEEDED=false" >> $GITHUB_ENV
           fi
-
-          # 2. Prepare a clean source directory for dpkg-buildpackage
+      
+      - name: Prepare source tree
+        run: |
           mkdir -p build_source
           cd build_source
           # Copy source again, excluding the same patterns
-          rsync -av --exclude='build/' --exclude='config/' --exclude='python/' \
-                --exclude='.git/' --exclude='*.tar.gz' --exclude='test_data/' \
-                --exclude='debian/' ${{ github.workspace }}/ ./
+          rsync -av --exclude='build/' --exclude='config/' --exclude='.git/' \
+                  --exclude='python/' --exclude='*.tar.gz' --exclude='test_data/' \
+                  --exclude='.github/' --exclude='.vscode/' --exclude='.windsurf/' \
+                  --exclude='debian/' ${{ github.workspace }}/ ./
           # Copy the debian/ folder from your config
           cp -r ${{ github.workspace }}/config/lzcomplexity_debian ./debian
 
+      - name: Create parch file
+        if: env.PATCH_NEEDED == 'true'
+        run: |
+          mkdir -p /tmp/lzcomplexity-orig
+          echo "Decompress tar file in /tmp/lzcomplexity-orig"
+          tar xf ${{ github.workspace }}/lzcomplexity_${VERSION}.orig.tar.gz -C /tmp/lzcomplexity-orig --strip-components=1
+          
+          echo "Build parch with diff command"
+          diff -Nur /tmp/lzcomplexity-orig ${{ github.workspace }}/build_source --exclude=debian --exclude=.github > repo-parche.patch || true
+          
+          mkdir build_source/debian/patches
+          mv repo-parche.patch build_source/debian/patches/
+          echo "repo-parche.patch" >> build_source/debian/patches/series
+          
+          ls -al build_source/
+          ls -al build_source/debian/
+          ls -al build_source/debian/patches
+
+      - name: Update changelogs
+        env:
+          DEBFULLNAME: Efren Aragon
+          DEBEMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
+        run: |
+          cd build_source
           # 🔁 FIX: Change UNRELEASED to your target release (e.g., jammy)
-          # sed -i '1s/UNRELEASED/${{matrix.distro}}/' debian/changelog
           dch -b -v "${VERSION}-${REVISION}~${{matrix.platform}}.1" --distribution "${{matrix.distro}}" "Build for ${{matrix.distro}} for version ${VERSION}-${REVISION}"
 
-          # 3. Build unsigned source package (dpkg-buildpackage outputs files to parent dir)
+      - name: Build unsigned package
+        run: |
+          cd build_source
           dpkg-buildpackage -S ${SOURCE_FLAG} -us -uc -d
-          cd ..
-          ls -al ./
 
       - name: Sign files with GPG
         env:
@@ -265,55 +285,6 @@ jobs:
           gpg --verify lzcomplexity_${VERSION}-${REVISION}~${{matrix.platform}}.1_source.changes
           echo "Verifying .dsc signature:"
           gpg --verify lzcomplexity_${VERSION}-${REVISION}~${{matrix.platform}}.1.dsc
-
-      # - name: Build Debian source package
-      #   env:
-      #     GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
-      #     GPG_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
-      #     VERSION: ${{ env.VERSION }}
-      #     DEBFULLNAME: Efren Aragon
-      #     DEBEMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
-      #   run: |
-      #     # Create .orig/tar.gz with sources files
-      #     if [ ! -f lzcomplexity_${VERSION}.orig.tar.gz ]; then
-      #       tar -czf lzcomplexity_${VERSION}.orig.tar.gz ./build
-      #     fi
-
-      #     # If your project already has a debian directory, copy it
-      #     if [ -d ${{ github.workspace }}/config/lzcomplexity_debian ]; then
-      #       mkdir -p build/debian
-      #       cp -r ${{ github.workspace }}/config/lzcomplexity_debian/* build/debian/
-      #       cp -r build/* ./
-      #       cd build/
-      #     else
-      #       # Create basic debian directory if it doesn't exist
-      #       cd build/
-      #       dh_make -y --single --createorig -p lzcomplexity_${VERSION} -e ${DEBEMAIL}
-      #       # Clean up unnecessary files
-      #       rm -f debian/*.ex debian/*.EX debian/README.*
-      #     fi
-
-      #     # dch --create \  
-      #     #     --package lzcomplexity \
-      #     #     --newversion ${VERSION}-${REVISION}~${{ matrix.distro }} \
-      #     #     --distribution ${{ matrix.distro }} \
-      #     #     --no-editor \
-      #     #     "Automatic release for ${{ matrix.distro }}."
-          
-      #     echo "$GPG_KEY_PASSPHRASE" | debuild -S -sa \
-      #       -p"gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0" \
-      #       -k"$GPG_KEY_ID"
-
-      #     # dpkg-buildpackage -S -sa -uc -us   # build without signing
-      #     # debsign -p"gpg --batch --yes --pinentry-mode loopback \
-      #     #  --passphrase-file <(echo "$GPG_KEY_PASSPHRASE")" -k"$GPG_KEY_ID" ../*.changes
-
-      #     ls -al ./
-      #     ls -al ../
-
-      #     # Validate source changes
-      #     # cd ${{ github.workspace }}
-      #     # gpg --verify lzcomplexity_${VERSION}-${REVISION}~${{matrix.platform}}.1_source.changes
 
       - name: Upload to PPA
         env:
@@ -333,179 +304,6 @@ jobs:
       #     deb_fullname: "Efren Aragon"
       #     debian_dir: "debian"
       #     series: ${{ matrix.distro }}
-
-      # Upload .deb package to Launchpad
-      # - name: Upload to Launchpad
-      #   if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-      #   env:
-      #     LAUNCHPAD_USERNAME: ${{ secrets.LAUNCHPAD_USERNAME }}
-      #     LAUNCHPAD_EMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
-      #     LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
-      #     LAUNCHPAD_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
-      #     DISTRO: $(lsb_release -cs)
-      #   run: |
-      #     # Extract the built package
-      #     # mkdir -p ~/packaging
-      #     # cd ~/packaging
-
-      #     # Set up dput configuration
-      #     # echo "machine launchpad login ${LAUNCHPAD_USERNAME} ssh_options = -i ~/.ssh/id_ed25519" > ~/.dput.cf
-
-      #     # Uncompress .deb package
-      #     ls -al ~/downloaded/
-      #     # unzip ~/downloaded/lzcomplexity-${{ matrix.runs-on }}-${{ matrix.cxx }}-package.zip
-
-      #     # Upload package
-      #     dput ppa:${LAUNCHPAD_PPA} ~/downloaded/lzcomplexity_${VERSION}_${{ matrix.platform }}_x86_64.deb
-
-  deploy-launchpad-rest:
-    defaults:
-      run:
-        shell: bash
-    needs: deploy-launchpad
-    strategy:
-      matrix:
-        include:
-          - runs-on: ubuntu-24.04
-            platform: ubuntu24.04
-            distro: noble
-            build_type: "Release"
-            cxx: g++
-            cc: gcc
-            builtinTbb: ON
-
-    name: • Deploy rest packages to PPA • ${{ matrix.runs-on }} •
-    runs-on: ${{ matrix.runs-on }}
-
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          submodules: true
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-build
-          path: ./build
-
-      - name: Install basic dependeencies for upload to PPA
-        run: sudo apt-get install -y build-essential gnupg dput devscripts debhelper cmake libtbb-dev equivs
-
-      # Set up GPG key for signing
-      - name: Set up GPG key
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
-          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
-          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
-        run: |
-          # Import GPG key with proper formatting
-          # Save key to a file to preserve formatting
-          echo "$GPG_PRIVATE_KEY" > private.key
-          
-          # Import both public and private parts
-          gpg --import --batch --no-tty private.key
-          rm -f private.key
-
-          # echo "$GPG_KEY_PASSPHRASE" | gpg --passphrase-fd 0 --export-secret-key -a > /dev/null 2>&1 || true
-          
-          # Configure GPG for automated signing
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-
-          # Restart GPG agent
-          gpgconf --kill gpg-agent
-          gpgconf --launch gpg-agent
-          sleep 2
-
-          # Verify the key is imported
-          gpg --list-secret-keys
-
-          # Optional: if you need to trust the key
-          # echo -e "5\ny\n" | gpg --command-fd 0 --expert --edit-key "$(gpg --list-secret-keys --with-colons | grep '^sec' | cut -d: -f5)" trust
-
-          echo "test" | gpg --clearsign --batch --yes --pinentry-mode loopback \
-            --passphrase "$GPG_KEY_PASSPHRASE" -u "$GPG_KEY_ID" -o /dev/null
-          echo "✅ Signing test passed"
-
-      - name: Configure git for Launchpad
-        run: |
-          git config --global user.name "Efren Aragon"
-          git config --global user.email "${{ secrets.LAUNCHPAD_EMAIL }}"
-          git config --global user.signingkey "${{ secrets.GPG_KEY_ID }}"
-          git config --global commit.gpgsign true
-
-      - name: Prepare clean source and build unsigned package
-        env:
-          DEBFULLNAME: Efren Aragon
-          DEBEMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
-        run: |
-          URL="https://launchpad.net/~efrenaragon96/+archive/ubuntu/lzcomplexity/+sourcefiles/lzcomplexity/${OLD_VERSION}-${OLD_REVISION}~${TAR_DISTRO}/lzcomplexity_${OLD_VERSION}.orig.tar.gz"
-
-          if curl --output /dev/null --silent --head --fail "$URL"; then
-            wget -q "$URL" -O ${{ github.workspace }}/lzcomplexity_${VERSION}.orig.tar.gz
-            echo "Tarball descargado desde Launchpad."
-            SOURCE_FLAG="-sa"
-          else
-            # 1. Create a clean orig.tar.gz (no debian/, no build artifacts)
-            echo "Tarball no encontrado en Launchpad (primera subida). Generando localmente..."
-            mkdir -p /tmp/lzcomplexity-${VERSION}
-            rsync -av --exclude='build/' --exclude='config/' --exclude='.git/' \
-                  --exclude='python/' --exclude='*.tar.gz' --exclude='test_data/' \
-                  --exclude='debian/' ${{ github.workspace }}/ /tmp/lzcomplexity-${VERSION}/
-            tar --sort=name --mtime='2026-03-01 00:00Z' --owner=0 --group=0 --numeric-owner \
-              -czf ${{ github.workspace }}/lzcomplexity_${VERSION}.orig.tar.gz -C /tmp/lzcomplexity-${VERSION} .
-            rm -rf /tmp/lzcomplexity-${VERSION}
-            SOURCE_FLAG="-sd"
-          fi
-
-          # 2. Prepare a clean source directory for dpkg-buildpackage
-          mkdir -p build_source
-          cd build_source
-          # Copy source again, excluding the same patterns
-          rsync -av --exclude='build/' --exclude='config/' --exclude='python/' \
-                --exclude='.git/' --exclude='*.tar.gz' --exclude='test_data/' \
-                --exclude='debian/' ${{ github.workspace }}/ ./
-          
-          # Copy the debian/ folder from your config
-          cp -r ${{ github.workspace }}/config/lzcomplexity_debian ./debian
-
-          # 🔁 FIX: Change UNRELEASED to your target release (e.g., jammy)
-          # sed -i '1s/UNRELEASED/${{matrix.distro}}/' debian/changelog
-          dch -b -v "${VERSION}-${REVISION}~${{matrix.platform}}.1" --distribution "${{matrix.distro}}" "Build for ${{matrix.distro}} for version ${VERSION}-${REVISION}"
-
-          # 3. Build unsigned source package (dpkg-buildpackage outputs files to parent dir)
-          dpkg-buildpackage -S -sd -us -uc -d
-
-      - name: Sign files with GPG
-        env:
-          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
-          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
-        run: |
-          # Write passphrase to a secure temporary file
-          echo "$GPG_KEY_PASSPHRASE" > /tmp/passphrase.txt
-          chmod 600 /tmp/passphrase.txt
-
-          # Sign both files and update .changes checksums
-          debsign --re-sign \
-            -p"gpg --batch --yes --pinentry-mode loopback --passphrase-file /tmp/passphrase.txt" \
-            -k"$GPG_KEY_ID" \
-            lzcomplexity_${VERSION}-${REVISION}~${{matrix.platform}}.1_source.changes
-
-          # Clean up
-          rm -f /tmp/passphrase.txt
-
-          # Verify signatures
-          echo "Verifying .changes signature:"
-          gpg --verify lzcomplexity_${VERSION}-${REVISION}~${{matrix.platform}}.1_source.changes
-          echo "Verifying .dsc signature:"
-          gpg --verify lzcomplexity_${VERSION}-${REVISION}~${{matrix.platform}}.1.dsc
-
-      - name: Upload to PPA
-        env:
-          LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
-          DISTRO: $(lsb_release -cs)
-        run: |
-          dput ppa:${LAUNCHPAD_PPA} lzcomplexity_${VERSION}-${REVISION}~${{matrix.platform}}.1_source.changes
 
   build-mac:
     defaults:
