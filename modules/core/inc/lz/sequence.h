@@ -79,7 +79,9 @@ public:
      * @brief Constructor that initializes the sequence with a vector of characters.
      * @param vec The vector of characters.
      */
+#if __cplusplus >= 202002L || __has_include(<span>)  // C++20 or later
     sequence(const std::span<lz_char>& vec);
+#endif
     sequence(const lz_char* vec);
     sequence(const std::vector<lz_char>& vec);
     sequence(const std::initializer_list<lz_char>& vec);

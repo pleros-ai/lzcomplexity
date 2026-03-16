@@ -38,10 +38,12 @@ namespace lz {
     setAlphabetSize();
   }
 
+#if __cplusplus >= 202002L || __has_include(<span>)
   sequence::sequence(const std::span<char>& vec)
     : seq({vec.begin(), vec.end()}), alphabet_size(details::ALPHABET_SIZE) {
     setAlphabetSize();
   }
+#endif
 
   sequence& sequence::reverse(void) {
 #ifdef __cpp_lib_ranges

@@ -5,7 +5,10 @@ using constructor_param = std::variant<std::string,
                                        std::vector<lz::lz_int>,
                                        std::vector<lz::lz_char>,
                                        std::initializer_list<lz::lz_char>,
-                                       std::span<lz::lz_char>>;
+#if __cplusplus >= 202002L || __has_include(<span>)
+                                       std::span<lz::lz_char>
+#endif
+                                       >;
 
 inline auto generateSequenceConstructor() {
   return [](const constructor_param& seq) {
@@ -28,9 +31,11 @@ inline auto generateSequenceConstructorWithAlphabet() {
   return [](const constructor_param& seq, lz::lz_uint alphabet) {
     return std::visit(
       overload{[&](auto&& s) { return lz::sequence(s, alphabet); },
+#if __cplusplus >= 202002L || __has_include(<span>)
                [&](std::span<lz::lz_char> s) {
                  return lz::sequence(std::vector<lz::lz_char>{s.begin(), s.end()}, alphabet);
                },
+#endif
                [&](std::vector<lz::lz_int> s) {
                  auto string_view
                    = s | std::views::transform([](lz::lz_int num) { return std::to_string(num); });
