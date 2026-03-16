@@ -29,7 +29,7 @@ Attributes
 max_block_size : int
     Maximum block size used during the shuffling process. Larger blocks
     preserve more local structure during shuffling.
-excess_value : float
+emc_value : float
     The shuffle entropy deficit (effective complexity). This is the difference
     between the expected complexity of a random sequence and the actual
     complexity, representing the non-random information content.
@@ -38,20 +38,20 @@ multi_information : float
     total statistical dependence among all symbols in the sequence.
 summands : List[float]
     Individual complexity contributions at each block size level. These
-    values sum to give the total excess_value.
+    values sum to give the total emc_value.
 
 Examples
 --------
 >>> import lzcomplexity as lz
 >>> result = lz.lz76RandomShuffleComplexity("ABRACADABRA")
->>> print(f"Effective complexity: {result.excess_value}")
+>>> print(f"Effective complexity: {result.emc_value}")
 >>> print(f"Multi-information: {result.multi_information}")
 )pbdoc");
 
   LZ_Shuffle.def(py::init(), "Create an empty LZ_Shuffle object.")
     .def(py::init<lz::lz_int, lz::lz_double, lz::lz_double, std::vector<lz::lz_double>>(),
          "max_block_size_"_a,
-         "excess_value_"_a,
+         "emc_value_"_a,
          "multi_information_"_a,
          "summands_"_a = std::vector<lz::lz_double>(),
          R"pbdoc(
@@ -61,7 +61,7 @@ Parameters
 ----------
 max_block_size_ : int
     Maximum block size used for shuffling.
-excess_value_ : float
+emc_value_ : float
     The computed shuffle entropy deficit.
 multi_information_ : float
     Multi-information value (block_size=1).
@@ -70,13 +70,13 @@ summands_ : List[float], optional
 )pbdoc")
     .def("__str__",
          [](const utl::LZ_Shuffle& self) {
-           return "LZ_Shuffle(excess_value=" + std::to_string(self.excess_value)
+           return "LZ_Shuffle(emc_value=" + std::to_string(self.emc_value)
              + ", max_block_size=" + std::to_string(self.max_block_size)
              + ", multi_information=" + std::to_string(self.multi_information) + ")";
          })
     .def("__repr__",
          [](const utl::LZ_Shuffle& self) {
-           return "LZ_Shuffle(excess_value=" + std::to_string(self.excess_value)
+           return "LZ_Shuffle(emc_value=" + std::to_string(self.emc_value)
              + ", max_block_size=" + std::to_string(self.max_block_size) + ")";
          })
     .def("__copy__", [](const utl::LZ_Shuffle& self) { return utl::LZ_Shuffle(self); })
@@ -88,8 +88,8 @@ summands_ : List[float], optional
     .def_rw("max_block_size",
             &utl::LZ_Shuffle::max_block_size,
             "int: Maximum block size used for shuffling. Larger values preserve more local structure.")
-    .def_rw("excess_value",
-            &utl::LZ_Shuffle::excess_value,
+    .def_rw("emc_value",
+            &utl::LZ_Shuffle::emc_value,
             "float: Shuffle entropy deficit (effective complexity). Measures non-random information content.")
     .def_rw(
       "multi_information",
@@ -172,6 +172,9 @@ Examples
     .def_rw("chunks",
             &utl::LZ_Args::chunks,
             "int: Number of partitions for parallel suffix array construction. 0 = automatic.")
+    .def_rw("max_context",
+            &utl::LZ_Args::max_context,
+            "int: Maximum prefix length for suffix comparison. 0 = unlimited")
     .def_rw("get_shuffle_terms",
             &utl::LZ_Args::get_shuffle_terms,
             "bool: If True, compute individual summand terms for shuffle complexity.")

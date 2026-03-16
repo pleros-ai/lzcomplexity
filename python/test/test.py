@@ -15,7 +15,7 @@ args2 = copy.deepcopy(args)
 args2.block_size = 10
 
 assert(shuffle.max_block_size == 10)
-assert(shuffle.excess_value == 0.24)
+assert(shuffle.emc_value == 0.24)
 
 assert(args.chunks == 5)
 assert(args.block_size == 17)
@@ -99,7 +99,7 @@ res = lz.lz76(b, args)
 print("Result LZ:")
 print(res.complexity)
 print(res.entropy)
-print(res.random_shuffle_complexity.excess_value)
+print(res.random_shuffle_complexity.emc_value)
 print(res.factors)
 print(res.extras.redundancy)
 
@@ -114,7 +114,7 @@ print("factors: ", cpx.factorization)
 print("lzf: ", cpx.lzf)
 
 shuffle = lz.lz76RandomShuffleComplexity(str_example, args)
-print("excess_value: ", shuffle.excess_value)
+print("emc_value: ", shuffle.emc_value)
 print("summands: ", shuffle.summands)
 
 

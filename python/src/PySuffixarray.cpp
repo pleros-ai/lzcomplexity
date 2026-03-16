@@ -130,9 +130,8 @@ This method uses the text that was provided when the CaPS object was created.
 )pbdoc",
       py::rv_policy::copy)
     .def("construct",
-         py::overload_cast<std::vector<lz::lz_char>, lz::lz_int>(&suf::CaPS_SA::construct),
+         py::overload_cast<std::vector<lz::lz_char>>(&suf::CaPS_SA::construct),
          "T"_a,
-         "n"_a,
          R"pbdoc(
 Construct the suffix array from a character vector.
 
@@ -140,8 +139,6 @@ Parameters
 ----------
 T : List[char]
     The input text as a character vector.
-n : int
-    Length of the input text.
 
 Returns
 -------

@@ -7,6 +7,7 @@
 
 #include <nanobind/operators.h>
 #include <nanobind/stl/function.h>
+#include <nanobind/stl/map.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
@@ -44,6 +45,8 @@ lz::sequence map(lz::sequence& seq, std::function<char(char)> f) { return seq.ma
 
 std::vector<char> SequenceVector(lz::sequence& seq) { return seq.SequenceVector(); };
 std::vector<char> DetermineAlphabet(lz::sequence seq) { return seq.DetermineAlphabet(); };
+
+std::map<char, unsigned int> charDensity(lz::sequence& seq) { return seq.charDensity(); };
 
 std::string toString(const lz::sequence& seq) { return seq.toString(); }
 
@@ -109,8 +112,9 @@ Notes
 
   // Constructors
   sequence.def(py::init(), "Create an empty sequence.")
-    .def(
-      py::init<lz::lz_int>(), "alphabet_size"_a, "Create an empty sequence with a specified alphabet size.")
+    .def(py::new_([](lz::lz_int alphsize) { return lz::sequence(alphsize); }),
+         "alphabet_size"_a,
+         "Create an empty sequence with a specified alphabet size.")
     .def(py::new_(generateSequenceConstructor()),
          "str"_a,
          "Create a sequence from a string. Alphabet size is auto-determined.")
@@ -136,10 +140,35 @@ Notes
     .def(py::self < std::string(), "Lexicographic less-than comparison with string.")
     .def(py::self <= py::self, "Lexicographic less-than-or-equal comparison.")
     .def(py::self <= std::string(), "Lexicographic less-than-or-equal comparison with string.")
-    .def("__str__", &::toString, "Convert sequence to string representation.")
+    .def(py::self ^= py::self,
+         "Element-wise XOR comparison (0 if equal and 1 if different). Throws SequenceNoMatchSize when sizes "
+         "differ.")
+    .def(py::self ^= std::string(),
+         "Element-wise XOR comparison (0 if equal and 1 if different). Throws SequenceNoMatchSize when sizes "
+         "differ.")
+    .def(
+      "__str__",
+      [](const lz::sequence& self) {
+        std::string str = "{ " + self.toString() + ", [ ";
+        for (auto& ch: self.getAlphabet()) {
+          str.push_back(ch);
+          str += " ";
+        }
+        str += "], " + std::to_string(self.getAlphabetSize()) + " }";
+        return str;
+      },
+      "Convert sequence to string representation.")
     .def(
       "__repr__",
-      [](const lz::sequence& self) { return "sequence('" + self.toString() + "')"; },
+      [](const lz::sequence& self) {
+        std::string str = "sequence('" + self.toString() + "', [";
+        for (auto& ch: self.getAlphabet()) {
+          str.push_back(ch);
+          str += ", ";
+        }
+        str += "], " + std::to_string(self.getAlphabetSize()) + ")";
+        return str;
+      },
       "Return string representation for debugging.")
     .def("__len__", &::size, "Return the length of the sequence.")
     .def("__getitem__",
@@ -399,7 +428,15 @@ sequence
 )pbdoc")
     .def("DetermineAlphabet",
          &::DetermineAlphabet,
-         "Return a list of unique characters in the sequence (the alphabet).");
+         "Return a list of unique characters in the sequence (the alphabet).")
+    .def("charDensity", &::charDensity, R"pbdoc(
+Computes the frequency of each character in the sequence.
+
+Returns
+-------
+map<str, int>
+    A map where keys are characters and values are their counts.
+)pbdoc");
 
   // Copy support
   sequence.def("__copy__", [](const lz::sequence& self) { return lz::sequence(self); })

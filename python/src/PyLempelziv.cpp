@@ -178,7 +178,7 @@ Examples
 >>> result = lz.lz76("ABRACADABRA")
 >>> print(f"Complexity: {result.complexity}")
 >>> print(f"Entropy density: {result.entropy}")
->>> print(f"Effective complexity: {result.random_shuffle_complexity.excess_value}")
+>>> print(f"Effective complexity: {result.random_shuffle_complexity.emc_value}")
 
 Notes
 -----
@@ -503,7 +503,7 @@ like lz76Factorization(), lz76EntropyDensity(), etc.
     --------
     LZ_Shuffle
         Object containing:
-        - excess_value: The excess complexity measures estimation
+        - emc_value: The excess complexity measures estimation
         - multi_information: Multi-information using block size 1
         - summands: Individual complexity contributions
         - max_block_size: Block size used for analysis
@@ -523,7 +523,7 @@ like lz76Factorization(), lz76EntropyDensity(), etc.
     --------
     LZ_Shuffle
         Object containing:
-        - excess_value: The excess complexity measures estimation
+        - emc_value: The excess complexity measures estimation
         - multi_information: Multi-information using block size 1
         - summands: Individual complexity contributions
         - max_block_size: Block size used for analysis
@@ -557,7 +557,7 @@ like lz76Factorization(), lz76EntropyDensity(), etc.
     --------
     LZ_Shuffle
         Object containing:
-        - excess_value: The excess complexity measures estimation
+        - emc_value: The excess complexity measures estimation
         - multi_information: Multi-information using block size 1
         - summands: Individual complexity contributions
         - max_block_size: Block size used for analysis
@@ -574,7 +574,7 @@ like lz76Factorization(), lz76EntropyDensity(), etc.
     --------
     LZ_Shuffle
         Object containing:
-        - excess_value: The excess complexity measures estimation
+        - emc_value: The excess complexity measures estimation
         - multi_information: Multi-information using block size 1
         - summands: Individual complexity contributions
         - max_block_size: Block size used for analysis
@@ -593,7 +593,7 @@ like lz76Factorization(), lz76EntropyDensity(), etc.
     --------
     LZ_Shuffle
         Object containing:
-        - excess_value: The excess complexity measures estimation
+        - emc_value: The excess complexity measures estimation
         - multi_information: Multi-information using block size 1
         - summands: Individual complexity contributions
         - max_block_size: Block size used for analysis
@@ -630,7 +630,7 @@ like lz76Factorization(), lz76EntropyDensity(), etc.
      --------
      LZ_Shuffle
          Object containing:
-         - excess_value: The excess complexity measures estimation
+         - emc_value: The excess complexity measures estimation
          - multi_information: Multi-information using block size 1
          - summands: Individual complexity contributions
          - max_block_size: Block size used for analysis
