@@ -12,7 +12,7 @@ on:
 env:
   VERSION: 0.9.12
   OLD_REVISION: 1
-  REVISION: 1
+  REVISION: 2
   TAR_DISTRO: ubuntu22.04.1
 
 jobs:
