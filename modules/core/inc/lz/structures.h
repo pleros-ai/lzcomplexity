@@ -42,7 +42,7 @@ namespace lz {
       /**
        * @brief Default constructor.
        */
-      LZ_Args() = default;
+      LZ_Args() {};
 
       /**
        * @brief Constructs with specified chunk count for parallel processing.

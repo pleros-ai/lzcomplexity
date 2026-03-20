@@ -41,7 +41,7 @@ namespace detail {
       "(-m option)."},
      {"shuffle",
       "z,zseq-shuffle",
-      "Random shuffle complexity with Z sequence generated with the both "
+      "Random shuffle effective measure complexity with Z sequence generated with the both "
       "halves of original "
       "sequence."},
      {"excess_opt",
@@ -410,7 +410,7 @@ inline lz_options process_args(cxxopts::parse_result& result) {
     iss << "Summary of results:\n";
     iss << " - lz76 factorization\n";
     iss << " - Entropy density\n";
-    iss << " - Random shuffle complexity\n";
+    iss << " - Random shuffle effective measure complexity\n";
     // if (options.args.block_size >= 0) iss << " - Paired Shuffle Complexity\n";
     if (options.find_distance) {
       iss << " - Information distance between consecutive sequences\n";

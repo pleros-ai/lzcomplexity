@@ -8,6 +8,7 @@
 #include <ostream>
 
 #include "inc/config_complexity.hpp"
+#include "lz/structures.h"
 
 #define VERSION "v0.9.11"
 
@@ -242,7 +243,8 @@ lz::lz_int process(lz_options& opt) {
 
   if (!opt.entropy_density) {
     if (opt.verbose) {
-      std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << ". Calculating random shuffle complexity\n"
+      std::cout << lz::GREEN_COLOR << "2." << verbose_index++
+                << ". Calculating random shuffle effective measure complexity\n"
                 << lz::END_COLOR;
       init_time = now();
     }
@@ -250,7 +252,7 @@ lz::lz_int process(lz_options& opt) {
     lz::lz76RandomShuffleComplexity(in_flags, lz);
     if (opt.verbose) {
       const auto end_time = now();
-      std::cout << print_msg(MSG::INFO, "Random shuffle complexity: ");
+      std::cout << print_msg(MSG::INFO, "Random shuffle effective measure complexity: ");
       for (auto x: lz.data) std::cout << x.getRandomShuffleComplexity().emc_value << " ";
       std::cout << std::endl;
       for (auto i = 0ul; i < lz.data.size(); i++) {

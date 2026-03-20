@@ -1,5 +1,5 @@
 <div align="center" style="width: 100%;">
-  <img src="./Pleros_AI.webp" alt="drawing" align="center" height="200"/>
+  <!-- <img src="./Pleros_AI.webp" alt="drawing" align="center" height="200"/> -->
 
   <h2 align="center">
     lzcomplexity: an entropy measures library
@@ -38,7 +38,7 @@ For a random sequence over an alphabet of size *k*, the expected complexity grow
 h ≈ c(S) · log_k(n) / n
 ```
 
-which converges to the true entropy rate for ergodic sources as *n → ∞* [2].
+which converges to the true entropy rate for ergodic sources as $n → \infty$ [2].
 
 ## Prerequisites
 

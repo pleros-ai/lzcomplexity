@@ -1,4 +1,4 @@
-Source: lzcomplexity
+Source: lzdistance
 Section: science
 Priority: optional
 Maintainer: Efren Aragon <efrenaragon96@gmail.com>
@@ -13,7 +13,7 @@ Standards-Version: 4.6.2
 Homepage: https://github.com/pleros-ai/lzcomplexity
 Rules-Requires-Root: no
 
-Package: lzcomplexity
+Package: lzdistance
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -21,13 +21,13 @@ Description: Lempel-Ziv 76 complexity engine (runtime library)
  High-performance C++ library for entropy and complexity
  analysis of time series based on LZ76 factorization.
 
-Package: lzcomplexity-dev
+Package: lzdistance-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
 Depends:
- lzcomplexity (= ${binary:Version}),
+ lzdistance (= ${binary:Version}),
  ${misc:Depends}
-Description: Development files for lzcomplexity
+Description: Development files for lzdistance
  Headers, CMake config files and static libraries for
- developing applications using lzcomplexity.
+ developing applications using lzdistance.

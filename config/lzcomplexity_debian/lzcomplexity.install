@@ -1,4 +1,4 @@
 usr/lib/*/liblzappcore.so.*
 usr/lib/*/liblzapp.so.*
-usr/bin/*
+usr/bin/lzcomplexity
 usr/share/man/*/lzcomplexity.1

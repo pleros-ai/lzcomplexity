@@ -1,1 +1,1 @@
-dpkg-gensymbols -pliblzcomplexity1
+dpkg-gensymbols -plzcomplexity

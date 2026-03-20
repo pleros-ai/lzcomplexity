@@ -9,6 +9,11 @@ on:
       - 'v*'
   workflow_dispatch:
 
+env:
+  VERSION: 0.9.11
+  OLD_REVISION: 1
+  REVISION: 1
+  TAR_DISTRO: ubuntu22.04.1
 
 jobs:
   # codespell:
@@ -126,6 +131,203 @@ jobs:
           name: lzdistance-${{matrix.runs-on}}-${{matrix.cxx}}-package
           path: ./_packages
           retention-days: 1
+
+  deploy-launchpad:
+    defaults:
+      run:
+        shell: bash
+    needs: build-linux
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - runs-on: ubuntu-22.04
+            platform: ubuntu22.04
+            distro: jammy
+            build_type: "Release"
+            cxx: g++
+            cc: gcc
+            builtinTbb: ON
+          - runs-on: ubuntu-24.04
+            platform: ubuntu24.04
+            distro: noble
+            build_type: "Release"
+            cxx: g++
+            cc: gcc
+            builtinTbb: ON
+
+    name: • Deploy PPA • ${{ matrix.runs-on }} •
+    runs-on: ${{ matrix.runs-on }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: lzdistance-${{matrix.runs-on}}-${{matrix.cxx}}-build
+          path: ./build
+
+      - name: Install basic dependeencies for upload to PPA
+        run: sudo apt-get install -y build-essential gnupg dput devscripts debhelper cmake libtbb-dev equivs
+
+      # - name: Install Build-Depends
+      #   run: sudo mk-build-deps -i -r -t 'apt-get -y' debian/control
+
+      # Set up GPG key for signing
+      - name: Set up GPG key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_KEY_LANUCHPAD }}
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          # Import GPG key with proper formatting
+          # Save key to a file to preserve formatting
+          echo "$GPG_PRIVATE_KEY" > private.key
+          
+          # Import both public and private parts
+          gpg --import --batch --no-tty private.key
+          rm -f private.key
+
+          # echo "$GPG_KEY_PASSPHRASE" | gpg --passphrase-fd 0 --export-secret-key -a > /dev/null 2>&1 || true
+          
+          # Configure GPG for automated signing
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+
+          # Restart GPG agent
+          gpgconf --kill gpg-agent
+          gpgconf --launch gpg-agent
+          sleep 2
+
+          # Verify the key is imported
+          gpg --list-secret-keys
+
+          # Optional: if you need to trust the key
+          # echo -e "5\ny\n" | gpg --command-fd 0 --expert --edit-key "$(gpg --list-secret-keys --with-colons | grep '^sec' | cut -d: -f5)" trust
+
+          echo "test" | gpg --clearsign --batch --yes --pinentry-mode loopback \
+            --passphrase "$GPG_KEY_PASSPHRASE" -u "$GPG_KEY_ID" -o /dev/null
+          echo "✅ Signing test passed"
+
+      - name: Configure git for Launchpad
+        run: |
+          git config --global user.name "Efren Aragon"
+          git config --global user.email "${{ secrets.LAUNCHPAD_EMAIL }}"
+          git config --global user.signingkey "${{ secrets.GPG_KEY_ID }}"
+          git config --global commit.gpgsign true
+
+      - name: Create the orig.tar.gz file
+        run: |
+          URL="https://launchpad.net/~efrenaragon96/+archive/ubuntu/lzcomplexity/+sourcefiles/lzdistance/${VERSION}-${OLD_REVISION}~${TAR_DISTRO}/lzdistance_${VERSION}.orig.tar.gz"
+          
+          if curl --output /dev/null --silent --head --fail "$URL"; then
+            wget -q "$URL" -O ${{ github.workspace }}/lzdistance_${VERSION}.orig.tar.gz
+            echo "Tarball descargado desde Launchpad."
+            echo "SOURCE_FLAG=-sd" >> $GITHUB_ENV
+            echo "PATCH_NEEDED=true" >> $GITHUB_ENV
+          else
+            echo "Tarball no encontrado en Launchpad (primera subida). Generando localmente..."
+            mkdir -p /tmp/lzdistance-${VERSION}
+            rsync -av --exclude='build/' --exclude='config/' --exclude='.git/' \
+                  --exclude='python/' --exclude='*.tar.gz' --exclude='test_data/' \
+                  --exclude='.github/' --exclude='.vscode/' --exclude='.windsurf/' \
+                  --exclude='debian/' ${{ github.workspace }}/ /tmp/lzdistance-${VERSION}/
+            tar --sort=name --mtime='2026-03-01 00:00Z' --owner=0 --group=0 --numeric-owner \
+              -czf ${{ github.workspace }}/lzdistance_${VERSION}.orig.tar.gz -C /tmp/lzdistance-${VERSION} .
+            rm -rf /tmp/lzdistance-${VERSION}
+            echo "SOURCE_FLAG=-sa" >> $GITHUB_ENV
+            echo "PATCH_NEEDED=false" >> $GITHUB_ENV
+          fi
+      
+      - name: Prepare source tree
+        run: |
+          mkdir -p build_source
+          cd build_source
+          # Copy source again, excluding the same patterns
+          rsync -av --exclude='build/' --exclude='config/' --exclude='.git/' \
+                  --exclude='python/' --exclude='*.tar.gz' --exclude='test_data/' \
+                  --exclude='.github/' --exclude='.vscode/' --exclude='.windsurf/' \
+                  --exclude='debian/' ${{ github.workspace }}/ ./
+          # Copy the debian/ folder from your config
+          cp -r ${{ github.workspace }}/config/lzdistance_debian ./debian
+
+      - name: Create parch file
+        if: env.PATCH_NEEDED == 'true'
+        run: |
+          mkdir -p /tmp/lzdistance-orig
+          echo "Decompress tar file in /tmp/lzdistance-orig"
+          tar xf ${{ github.workspace }}/lzdistance_${VERSION}.orig.tar.gz -C /tmp/lzdistance-orig --strip-components=1
+          
+          echo "Build parch with diff command"
+          diff -Nur /tmp/lzdistance-orig ${{ github.workspace }}/build_source --exclude=debian --exclude=.github > repo-parche.patch || true
+          
+          mkdir build_source/debian/patches
+          mv repo-parche.patch build_source/debian/patches/
+          echo "repo-parche.patch" >> build_source/debian/patches/series
+          
+          ls -al build_source/
+          ls -al build_source/debian/
+          ls -al build_source/debian/patches
+
+      - name: Update changelogs
+        env:
+          DEBFULLNAME: Efren Aragon
+          DEBEMAIL: ${{ secrets.LAUNCHPAD_EMAIL }}
+        run: |
+          cd build_source
+          # 🔁 FIX: Change UNRELEASED to your target release (e.g., jammy)
+          dch -b -v "${VERSION}-${REVISION}~${{matrix.platform}}.1" --distribution "${{matrix.distro}}" "Build for ${{matrix.distro}} for version ${VERSION}-${REVISION}"
+
+      - name: Build unsigned package
+        run: |
+          cd build_source
+          dpkg-buildpackage -S ${SOURCE_FLAG} -us -uc -d
+
+      - name: Sign files with GPG
+        env:
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+          GPG_KEY_PASSPHRASE: ${{ secrets.GPG_KEY_PASSPHRASE }}
+        run: |
+          # Write passphrase to a secure temporary file
+          echo "$GPG_KEY_PASSPHRASE" > /tmp/passphrase.txt
+          chmod 600 /tmp/passphrase.txt
+
+          # Sign both files and update .changes checksums
+          debsign --re-sign \
+            -p"gpg --batch --yes --pinentry-mode loopback --passphrase-file /tmp/passphrase.txt" \
+            -k"$GPG_KEY_ID" \
+            lzdistance_${VERSION}-${REVISION}~${{matrix.platform}}.1_source.changes
+
+          # Clean up
+          rm -f /tmp/passphrase.txt
+
+          # Verify signatures
+          echo "Verifying .changes signature:"
+          gpg --verify lzdistance_${VERSION}-${REVISION}~${{matrix.platform}}.1_source.changes
+          echo "Verifying .dsc signature:"
+          gpg --verify lzdistance_${VERSION}-${REVISION}~${{matrix.platform}}.1.dsc
+
+      - name: Upload to PPA
+        env:
+          LAUNCHPAD_PPA: ${{ secrets.LAUNCHPAD_PPA }}
+          DISTRO: $(lsb_release -cs)
+        run: |
+          dput ppa:${LAUNCHPAD_PPA} lzdistance_${VERSION}-${REVISION}~${{matrix.platform}}.1_source.changes
+
+      # - name: Publish to PPA
+      #   uses: yuezk/publish-ppa-package@v2
+      #   with:
+      #     repository: ${{ secrets.LAUNCHPAD_PPA }}
+      #     gpg_private_key: ${{ secrets.GPG_KEY_LANUCHPAD }}
+      #     gpg_passphrase: ${{ secrets.GPG_KEY_PASSPHRASE }}
+      #     tarball: "*.orig.tar.xz"
+      #     deb_email: ${{ secrets.LAUNCHPAD_EMAIL }}
+      #     deb_fullname: "Efren Aragon"
+      #     debian_dir: "debian"
+      #     series: ${{ matrix.distro }}
 
   build-mac:
     defaults:
