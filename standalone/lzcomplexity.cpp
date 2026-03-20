@@ -10,7 +10,7 @@
 #include "inc/config_complexity.hpp"
 #include "lz/structures.h"
 
-#define VERSION "v0.9.11"
+#define VERSION "v0.9.12"
 
 using MSG = lz::utils::MSG_TYPE;
 

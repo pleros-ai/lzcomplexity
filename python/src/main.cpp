@@ -10,7 +10,7 @@
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
-#define VERSION_INFO 0.9.11
+#define VERSION_INFO 0.9.12
 
 namespace py = nanobind;
 
@@ -69,7 +69,7 @@ Functions
 - PowerSpectralDensity(): Power spectral density via FFT
 - EffectiveSpectralComplexity(): Non-random spectral structure measure
 
-Version: 0.9.11
+Version: 0.9.12
 Authors: Efren Aragon Perez, Ernesto Estevez Rams
 Contact: efrenaragon96@gmail.com, estevez@fisica.uh.cu
 License: MIT
