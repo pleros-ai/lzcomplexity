@@ -1,4 +1,6 @@
+usr/lib/*/liblzdistcore.so
 usr/lib/*/liblzdistcore.so.*
+usr/lib/*/liblzdist.so
 usr/lib/*/liblzdist.so.*
 usr/bin/lzdistance
 usr/share/man/*/lzdistance.1
