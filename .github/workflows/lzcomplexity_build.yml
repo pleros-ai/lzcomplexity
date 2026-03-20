@@ -197,7 +197,7 @@ jobs:
 
       - name: Create the orig.tar.gz file
         run: |
-          URL="https://launchpad.net/~efrenaragon96/+archive/ubuntu/lzcomplexity/+sourcefiles/lzcomplexity/${VERSION}-${OLD_REVISION}~${TAR_DISTRO}/lzcomplexity_${VERSION}.orig.tar.gz"
+          URL="https://launchpad.net/~pleros/+archive/ubuntu/lzcomplexity/+sourcefiles/lzcomplexity/${VERSION}-${OLD_REVISION}~${TAR_DISTRO}/lzcomplexity_${VERSION}.orig.tar.gz"
           
           if curl --output /dev/null --silent --head --fail "$URL"; then
             wget -q "$URL" -O ${{ github.workspace }}/lzcomplexity_${VERSION}.orig.tar.gz

@@ -35,6 +35,10 @@
 #include <variant>
 #endif
 
+#if __cplusplus >= 202002L || __has_include(<span>)
+#include <span>
+#endif
+
 namespace lz {
 
   using lz_char = char;
