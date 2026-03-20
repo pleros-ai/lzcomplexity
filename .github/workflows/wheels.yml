@@ -34,6 +34,8 @@ jobs:
           - ["cp310", "3.10"]
           - ["cp311", "3.11"]
           - ["cp312", "3.12"]
+          - ["cp313", "3.13"]
+          - ["cp314", "3.14"]
 
     env:
       name: lzcomplexity-${{ matrix.python[0] }}-${{ matrix.buildplat[0] }}-${{ matrix.buildplat[1] }}
