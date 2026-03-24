@@ -455,17 +455,19 @@ namespace lz {
   }
 
   lz_double lz76InformationDistance(const sequence& T1, const sequence& T2, utils::LZ_Args args) {
-    lz_int C_t1, C_t2, C_all = 0;
+    lz_int C_x, C_y, C_xy, C_yx = 0;
 
-    auto fh_fun = [&C_t1, &T1, &args]() { C_t1 = lz76Factorization(T1, args); };
+    auto fh_fun = [&C_x, &T1, &args]() { C_x = lz76Factorization(T1, args); };
 
-    auto lh_fun = [&C_t2, &T2, &args]() { C_t2 = lz76Factorization(T2, args); };
+    auto lh_fun = [&C_y, &T2, &args]() { C_y = lz76Factorization(T2, args); };
 
-    auto all_fun = [&C_all, &T1, &T2, &args]() { C_all = lz76Factorization(T1 + T2, args); };
+    auto xy_fun = [&C_xy, &T1, &T2, &args]() { C_xy = lz76Factorization(T1 + T2, args); };
 
-    utils::par_do(fh_fun, lh_fun, all_fun);
+    auto yx_fun = [&C_yx, &T1, &T2, &args]() { C_yx = lz76Factorization(T2 + T1, args); };
 
-    auto res = (C_all - std::fmin(C_t1, C_t2)) / std::fmax(C_t1, C_t2);
+    utils::par_do(fh_fun, lh_fun, xy_fun, yx_fun);
+
+    auto res = std::fmax(C_xy - C_x, C_yx - C_y) / std::fmax(C_x, C_y);
 
     return res;
   }

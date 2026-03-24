@@ -301,12 +301,19 @@ namespace lz {
     std::vector<sequence> text = flags.input;
     for (std::size_t i = 1; i < text.size(); i++) {
       if (lz.calculated_complexity[i] && lz.calculated_complexity[i - 1]) {
-        auto C_t1 = lz.data[i - 1].getComplexity();
-        auto C_t2 = lz.data[i].getComplexity();
+        auto C_x = lz.data[i - 1].getComplexity();
+        auto C_y = lz.data[i].getComplexity();
 
-        auto _C = lz76Factorization(text[i - 1] + text[i], flags.sa_args);
+        auto _Cxy = 0;
+        auto _Cyx = 0;
 
-        res = (_C - std::fmin(C_t1, C_t2)) * 1.0 / std::fmax(C_t1, C_t2);
+        auto xy_fun
+          = [&_Cxy, &text, &i, &flags]() { _Cxy = lz76Factorization(text[i - 1] + text[i], flags.sa_args); };
+        auto yx_fun
+          = [&_Cyx, &text, &i, &flags]() { _Cyx = lz76Factorization(text[i] + text[i - 1], flags.sa_args); };
+        utils::par_do(xy_fun, yx_fun);
+
+        res = std::fmax(_Cxy - C_x, _Cyx - C_y) / std::fmax(C_x, C_y);
       } else {
         res = lz76InformationDistance(text[i - 1], text[i], flags.sa_args);
       }
