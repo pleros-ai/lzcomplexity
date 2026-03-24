@@ -1,9 +1,8 @@
-lzcomplexity (0.9.12-1) UNRELEASED; urgency=medium
+lzcomplexity (0.9.13-1) UNRELEASED; urgency=medium
 
-  * Extend lz::sequence constructors/assignments (string_view/span/array/initializer_list/char*)
-  * Change charDensity to return integer counts
-  * Rename shuffle/excess fields to emc_value and excess_entropy_dist to emc_entropy_dist across core + CLI + Python
-  * Update CaPS_SA::construct signature to infer n from input vector and align Python bindings
-  * Update standalone CLI options (jobs default handling, TSV support, output formatting) and minor formatting fixes
+  feat: modify lz76InformationDistance formulation
+  
+  - from: (Clz(x,y) - min(Clz(x), Clz(y))) / max(Clz(x), Clz(y))
+  - to: max(Clz(x,y)-Clz(x), Clz(y,x)-Clz(y)) / max(Clz(x), Clz(y))
 
  -- Efren Aragon <efrenaragon96@gmail.com>  Mon, 02 Mar 2026 20:00:00 +0000

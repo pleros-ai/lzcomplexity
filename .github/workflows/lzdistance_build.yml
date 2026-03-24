@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  VERSION: 0.9.12
+  VERSION: 0.9.13
   OLD_REVISION: 1
   REVISION: 1
   TAR_DISTRO: ubuntu22.04.1
