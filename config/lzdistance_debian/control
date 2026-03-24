@@ -16,6 +16,8 @@ Rules-Requires-Root: no
 Package: lzdistance
 Architecture: any
 Multi-Arch: same
+Replaces: lzdistance (<< 0.9)
+Breaks: lzdistance (<< 0.9)
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Lempel-Ziv 76 complexity engine (runtime library)
  High-performance C++ library for entropy and complexity

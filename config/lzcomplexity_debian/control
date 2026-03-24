@@ -16,6 +16,8 @@ Rules-Requires-Root: no
 Package: lzcomplexity
 Architecture: any
 Multi-Arch: same
+Replaces: lzcomplexity (<< 0.9)
+Breaks: lzcomplexity (<< 0.9)
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Lempel-Ziv 76 complexity engine (runtime library)
  High-performance C++ library for entropy and complexity
