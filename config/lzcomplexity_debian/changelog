@@ -1,8 +1,6 @@
 lzcomplexity (0.9.14-1) UNRELEASED; urgency=medium
 
-  feat: modify lz76InformationDistance formulation
-  
-  - from: (Clz(x,y) - min(Clz(x), Clz(y))) / max(Clz(x), Clz(y))
-  - to: max(Clz(x,y)-Clz(x), Clz(y,x)-Clz(y)) / max(Clz(x), Clz(y))
+  - fix: remove the call to paired random shuffle and properly initilize the random shuffle variable in the lz76 function.
+  - chore: update contact email to support@pleros.ai
 
  -- Efren Aragon <efrenaragon96@gmail.com>  Mon, 02 Mar 2026 20:00:00 +0000
