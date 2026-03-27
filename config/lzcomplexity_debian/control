@@ -1,8 +1,8 @@
 Source: lzcomplexity
 Section: science
 Priority: optional
-Maintainer: Efren Aragon <efrenaragon96@gmail.com>
-XSBC-Original-Maintainer: Efren Aragon <efrenaragon@pleros.ai>
+Maintainer: Pleros Support <support@pleros.ai>
+XSBC-Original-Maintainer: Efren Aragon <earagon@pleros.ai>
 Build-Depends: 
   debhelper-compat (= 13), 
   cmake, 

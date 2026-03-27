@@ -201,8 +201,8 @@ setup(
     version=__version__,
     # url="https://github.com/ZentropyUH/LempelZiv",  # Update with your actual repository URL
     author="Efren Aragon",
-    author_email="efrenaragon96@gmail.com",
-    license="GNU General Public License",
+    author_email="support@pleros.ai",
+    license="MIT License",
     description="LempelZiv-76 complexity engine",
     long_description=long_description,
     long_description_content_type="text/markdown",

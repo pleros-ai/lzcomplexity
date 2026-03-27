@@ -229,7 +229,7 @@ If you use this library in your research, please cite:
 @software{lzcomplexity_2025, 
   title={lzcomplexity: an entropy measurement library},
   author={Efren Aragon-Perez},
-  url={https://github.com/efrenaragon96/LempelZiv}, 
+  url={https://github.com/pleros-ai/lzcomplexity}, 
   year={2025} 
 }
 ```

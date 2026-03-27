@@ -28,7 +28,7 @@ setup(
    #  url="https://github.com/pybind/python_example",
     author="Efren Aragon",
     author_email="efrenaragon96@gmail.com",
-    license="GNU General Public License",
+    license="MIT License",
     description="The Lempel-Ziv (lz76) complexity",
     long_description="The Lempel-Ziv (lz76) complexity",
     long_description_content_type="text/markdown",
