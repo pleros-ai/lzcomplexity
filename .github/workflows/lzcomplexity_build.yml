@@ -147,7 +147,9 @@ jobs:
           path: ./build
 
       - name: Install basic dependeencies for upload to PPA
-        run: sudo apt-get install -y build-essential gnupg dput devscripts debhelper cmake libtbb-dev equivs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gnupg dput devscripts debhelper cmake libtbb-dev equivs
 
       # - name: Install Build-Depends
       #   run: sudo mk-build-deps -i -r -t 'apt-get -y' debian/control
