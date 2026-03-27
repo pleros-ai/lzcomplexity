@@ -142,19 +142,19 @@ namespace lz {
     // entropy density
     auto entropy = factorization / div;
     // random shuffle complexity (rsc)
-    utils::LZ_Shuffle rsc;
-    auto              rsc_fun = [&rsc, &seq, &args]() { rsc = lz76RandomShuffleComplexity(seq, args); };
-    // whole sequence random shuffle complexity (w_rsc -- optional)
+    // utils::LZ_Shuffle p_rsc;
+    // auto              p_rsc_fun = [&p_rsc, &seq, &args]() { p_rsc = lz76PairedShuffleComplexity(seq, args);
+    // }; whole sequence random shuffle complexity (w_rsc -- optional)
     utils::LZ_Shuffle w_rsc;
-    auto              w_rsc_fun = [&seq, &args, &factorization]() {
+    auto              w_rsc_fun = [&seq, &args, &factorization, &w_rsc]() {
       auto [H_rand, mm] = ShuffleFactorization(seq, args);
-      utils::LZ_Shuffle w_rsc = ShuffleEntropyCalculation(seq, args, factorization, H_rand, mm);
+      w_rsc = ShuffleEntropyCalculation(seq, args, factorization, H_rand, mm);
     };
     // Extras
     utils::LZ_Extra extras;
     auto            extra_fun = [&]() { extras = lz76ExtraMeasures(seq, args); };
 
-    utils::par_do(rsc_fun, w_rsc_fun, extra_fun);
+    utils::par_do(w_rsc_fun, extra_fun);
 
     // Error for Normal distribution factors length
     div = std::sqrt(seq.size() / utils::log(seq.size(), log_base));
@@ -162,7 +162,7 @@ namespace lz {
     // Error for Poison distribution factors length
     auto poison_error = entropy / seq.size();
 
-    return {factorization, factors, entropy, w_rsc, rsc, normal_error, poison_error, epsilon, stddev, extras};
+    return {factorization, factors, entropy, w_rsc, {}, normal_error, poison_error, epsilon, stddev, extras};
   }
 
   //-------------------- Factorization functions ----------------------------//
