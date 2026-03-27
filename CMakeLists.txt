@@ -10,7 +10,7 @@ cmake_policy(VERSION 3.21...3.28)
 # -----------------------------------------------------------------------------
 set(PROJECT_NAME lztools)
 set(DESC "Stadnalone applications of lzcomplexity and lzdistance")
-set(VERSION 0.9.13)
+set(VERSION 0.9.14)
 
 project(
     ${PROJECT_NAME}
