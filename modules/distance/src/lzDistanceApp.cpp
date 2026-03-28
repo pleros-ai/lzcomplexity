@@ -425,7 +425,7 @@ namespace lz {
   namespace {
 
     /// Type alias for the distance function signature
-    using DistanceFn = lz_double (*)(const sequence&, const sequence&, utils::LZ_Args);
+    using DistanceFn = lz_double (*)(const sequence&, const sequence&, utils::LZ_Args&);
 
     /**
      * @brief Dispatches to the appropriate distance matrix strategy.
@@ -469,7 +469,7 @@ namespace lz {
     return dispatchDistanceMatrix(
       flags,
       lz_dist.info_distance,
-      overload_cast<const sequence&, const sequence&, utils::LZ_Args>(&lz::lz76InformationDistance));
+      overload_cast<const sequence&, const sequence&, utils::LZ_Args&>(&lz::lz76InformationDistance));
   }
 
   auto lz76ShuffleDistanceMatrix(dist::LZ_Flags& flags, dist::LZ_Output& lz_dist) noexcept -> lz_int {
@@ -481,7 +481,7 @@ namespace lz {
     return dispatchDistanceMatrix(
       flags,
       lz_dist.shuffle_distance,
-      overload_cast<const sequence&, const sequence&, utils::LZ_Args>(&lz::lz76RandomShuffleDistance));
+      overload_cast<const sequence&, const sequence&, utils::LZ_Args&>(&lz::lz76RandomShuffleDistance));
   }
 
   lz_int lz76DirectedMatrix(dist::LZ_Flags& flags, dist::LZ_Output& lz_dist) noexcept {

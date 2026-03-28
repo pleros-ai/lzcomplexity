@@ -108,7 +108,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return LempelZiv structure with all computed measures.
    */
-  auto lz76(const sequence&, utils::LZ_Args) -> utils::LempelZiv;
+  auto lz76(const sequence&, utils::LZ_Args&) -> utils::LempelZiv;
 
   /**
    * @brief Computes complete LZ76 analysis of a sequence.
@@ -120,7 +120,8 @@ namespace lz {
    * @return LempelZiv structure with all computed measures.
    */
   inline auto lz76(const sequence& seq) -> utils::LempelZiv {
-    return lz76(seq, internal::getDefaultArgs(seq));
+    auto arg = internal::getDefaultArgs(seq);
+    return lz76(seq, arg);
   };
 
   //*************************************************************************
@@ -133,7 +134,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The LZ76 complexity (number of factors).
    */
-  auto lz76Factorization(const sequence&, utils::LZ_Args) -> lz_uint;
+  auto lz76Factorization(const sequence&, utils::LZ_Args&) -> lz_uint;
 
   /**
    * @brief Computes the LZ76 complexity with default parameters.
@@ -141,7 +142,8 @@ namespace lz {
    * @return The LZ76 complexity (number of factors).
    */
   inline auto lz76Factorization(const sequence& text) -> lz_uint {
-    return lz76Factorization(text, internal::getDefaultArgs(text));
+    auto arg = internal::getDefaultArgs(text);
+    return lz76Factorization(text, arg);
   };
 
   /**
@@ -150,7 +152,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return LZ_Result containing complexity, epsilon, and factor boundaries.
    */
-  auto lz76Factors(const sequence&, utils::LZ_Args) -> internal::LZ_Result;
+  auto lz76Factors(const sequence&, utils::LZ_Args&) -> internal::LZ_Result;
 
   /**
    * @brief Computes LZ76 factors with default parameters.
@@ -158,7 +160,8 @@ namespace lz {
    * @return LZ_Result containing complexity, epsilon, and factor boundaries.
    */
   inline auto lz76Factors(const sequence& text) -> internal::LZ_Result {
-    return lz76Factors(text, internal::getDefaultArgs(text));
+    auto arg = internal::getDefaultArgs(text);
+    return lz76Factors(text, arg);
   };
 
   //*************************************************************************
@@ -175,7 +178,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The entropy density value.
    */
-  auto lz76EntropyDensity(const sequence&, utils::LZ_Args) -> lz_double;
+  auto lz76EntropyDensity(const sequence&, utils::LZ_Args&) -> lz_double;
 
   /**
    * @brief Computes entropy density with default parameters.
@@ -183,7 +186,8 @@ namespace lz {
    * @return The entropy density value.
    */
   inline auto lz76EntropyDensity(const sequence& text) -> lz_double {
-    return lz76EntropyDensity(text, internal::getDefaultArgs(text));
+    auto arg = internal::getDefaultArgs(text);
+    return lz76EntropyDensity(text, arg);
   };
 
   //*************************************************************************
@@ -200,7 +204,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The effective complexity value.
    */
-  auto lz76EffectiveComplexity(const sequence&, utils::LZ_Args) -> lz_int;
+  auto lz76EffectiveComplexity(const sequence&, utils::LZ_Args&) -> lz_int;
 
   /**
    * @brief Computes normalized effective complexity.
@@ -208,7 +212,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The normalized effective complexity value.
    */
-  auto lz76EffectiveComplexityNormalized(const sequence&, utils::LZ_Args) -> lz_double;
+  auto lz76EffectiveComplexityNormalized(const sequence&, utils::LZ_Args&) -> lz_double;
 
   /**
    * @brief Computes effective complexity with default parameters.
@@ -216,7 +220,8 @@ namespace lz {
    * @return The effective complexity value.
    */
   inline auto lz76EffectiveComplexity(const sequence& text) -> lz_int {
-    return lz76EffectiveComplexity(text, internal::getDefaultArgs(text));
+    auto arg = internal::getDefaultArgs(text);
+    return lz76EffectiveComplexity(text, arg);
   };
 
   /**
@@ -225,7 +230,8 @@ namespace lz {
    * @return The normalized effective complexity value.
    */
   inline auto lz76EffectiveComplexityNormalized(const sequence& text) -> lz_double {
-    return lz76EffectiveComplexityNormalized(text, internal::getDefaultArgs(text));
+    auto arg = internal::getDefaultArgs(text);
+    return lz76EffectiveComplexityNormalized(text, arg);
   };
 
   //*************************************************************************
@@ -242,7 +248,7 @@ namespace lz {
    * @param args Configuration parameters (including block size).
    * @return Pair of (vector of complexities, sequence length).
    */
-  auto ShuffleFactorization(const sequence&, utils::LZ_Args) -> std::pair<std::vector<lz_int>, lz_size>;
+  auto ShuffleFactorization(const sequence&, utils::LZ_Args&) -> std::pair<std::vector<lz_int>, lz_size>;
 
   /**
    * @brief Computes shuffle factorization with default parameters.
@@ -250,7 +256,8 @@ namespace lz {
    * @return Pair of (vector of complexities, sequence length).
    */
   inline auto ShuffleFactorization(const sequence& text) -> std::pair<std::vector<lz_int>, lz_size> {
-    return ShuffleFactorization(text, internal::getDefaultArgs(text));
+    auto arg = internal::getDefaultArgs(text);
+    return ShuffleFactorization(text, arg);
   };
 
   //*************************************************************************
@@ -267,7 +274,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return LZ_Shuffle structure with entropy excess results.
    */
-  auto lz76RandomShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
+  auto lz76RandomShuffleComplexity(const sequence&, utils::LZ_Args&) -> utils::LZ_Shuffle;
 
   /**
    * @brief Computes excess entropy by shuffling the paired (merged) sequence.
@@ -279,7 +286,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return LZ_Shuffle structure with entropy excess results.
    */
-  auto lz76PairedShuffleComplexity(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
+  auto lz76PairedShuffleComplexity(const sequence&, utils::LZ_Args&) -> utils::LZ_Shuffle;
 
   /**
    * @brief Sequential (non-parallel) version of random shuffle complexity.
@@ -287,7 +294,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return LZ_Shuffle structure with entropy excess results.
    */
-  auto lz76RandomShuffleComplexitySequential(const sequence&, utils::LZ_Args) -> utils::LZ_Shuffle;
+  auto lz76RandomShuffleComplexitySequential(const sequence&, utils::LZ_Args&) -> utils::LZ_Shuffle;
 
   /**
    * @brief Computes random shuffle complexity with default parameters.
@@ -295,7 +302,8 @@ namespace lz {
    * @return LZ_Shuffle structure with entropy excess results.
    */
   inline auto lz76RandomShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
-    return lz76RandomShuffleComplexity(str, internal::getDefaultArgs(str));
+    auto arg = internal::getDefaultArgs(str);
+    return lz76RandomShuffleComplexity(str, arg);
   };
 
   /**
@@ -304,7 +312,8 @@ namespace lz {
    * @return LZ_Shuffle structure with entropy excess results.
    */
   inline auto lz76PairedShuffleComplexity(const sequence& str) -> utils::LZ_Shuffle {
-    return lz76PairedShuffleComplexity(str, internal::getDefaultArgs(str));
+    auto arg = internal::getDefaultArgs(str);
+    return lz76PairedShuffleComplexity(str, arg);
   };
 
   /**
@@ -317,7 +326,7 @@ namespace lz {
    * @return LZ_Shuffle structure with computed entropy values.
    */
   auto ShuffleEntropyCalculation(const sequence&,
-                                 const utils::LZ_Args,
+                                 utils::LZ_Args&,
                                  const lz_int,
                                  const std::vector<lz_int>,
                                  lz_int) -> utils::LZ_Shuffle;
@@ -330,8 +339,7 @@ namespace lz {
    * @param block_size Block size used for shuffling.
    * @return LZ_Shuffle structure with computed entropy values.
    */
-  auto ShuffleEntropyCalculation(const sequence&, const utils::LZ_Args, const lz_int, lz_int)
-    -> utils::LZ_Shuffle;
+  auto ShuffleEntropyCalculation(const sequence&, utils::LZ_Args&, const lz_int, lz_int) -> utils::LZ_Shuffle;
 
   //*************************************************************************
   //                    Excess Entropy by Distance
@@ -347,7 +355,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The excess entropy value.
    */
-  auto lz76ExcessEntropyDistance(const sequence&, utils::LZ_Args) -> lz_double;
+  auto lz76ExcessEntropyDistance(const sequence&, utils::LZ_Args&) -> lz_double;
 
   /**
    * @brief Computes excess entropy by distance with default parameters.
@@ -355,7 +363,8 @@ namespace lz {
    * @return The excess entropy value.
    */
   inline auto lz76ExcessEntropyDistance(const sequence& str) -> lz_double {
-    return lz76ExcessEntropyDistance(str, internal::getDefaultArgs(str));
+    auto arg = internal::getDefaultArgs(str);
+    return lz76ExcessEntropyDistance(str, arg);
   };
 
   //*************************************************************************
@@ -385,7 +394,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The normalized information distance in [0, 1].
    */
-  auto lz76InformationDistance(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+  auto lz76InformationDistance(const sequence&, const sequence&, utils::LZ_Args&) -> lz_double;
 
   /**
    * @brief Computes information distance with default parameters.
@@ -394,7 +403,8 @@ namespace lz {
    * @return The normalized information distance in [0, 1].
    */
   inline auto lz76InformationDistance(const sequence& T1, const sequence& T2) -> lz_double {
-    return lz76InformationDistance(T1, T2, internal::getDefaultArgs(T1));
+    auto arg = internal::getDefaultArgs(T1);
+    return lz76InformationDistance(T1, T2, arg);
   };
 
   //*************************************************************************
@@ -411,7 +421,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The mutual information value.
    */
-  auto MutualInformation(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+  auto MutualInformation(const sequence&, const sequence&, utils::LZ_Args&) -> lz_double;
 
   /**
    * @brief Computes distance using random shuffling of concatenated sequences.
@@ -420,7 +430,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The shuffle-based distance value.
    */
-  auto lz76RandomShuffleDistance(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+  auto lz76RandomShuffleDistance(const sequence&, const sequence&, utils::LZ_Args&) -> lz_double;
 
   /**
    * @brief Computes random shuffle distance with default parameters.
@@ -429,7 +439,8 @@ namespace lz {
    * @return The shuffle-based distance value.
    */
   inline auto lz76RandomShuffleDistance(const sequence& T1, const sequence& T2) -> lz_double {
-    return lz76RandomShuffleDistance(T1, T2, internal::getDefaultArgs(T1));
+    auto arg = internal::getDefaultArgs(T1);
+    return lz76RandomShuffleDistance(T1, T2, arg);
   };
 
   //*************************************************************************
@@ -446,7 +457,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The mutual information value.
    */
-  auto MutualInformationZ(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+  auto MutualInformationZ(const sequence&, const sequence&, utils::LZ_Args&) -> lz_double;
 
   /**
    * @brief Computes distance using random shuffling of the merged (Z) sequence.
@@ -455,7 +466,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The shuffle-based distance value.
    */
-  auto lz76RandomShuffleDistanceZ(const sequence&, const sequence&, utils::LZ_Args) -> lz_double;
+  auto lz76RandomShuffleDistanceZ(const sequence&, const sequence&, utils::LZ_Args&) -> lz_double;
 
   /**
    * @brief Computes random shuffle distance Z with default parameters.
@@ -464,7 +475,8 @@ namespace lz {
    * @return The shuffle-based distance value.
    */
   inline auto lz76RandomShuffleDistanceZ(const sequence& T1, const sequence& T2) -> lz_double {
-    return lz76RandomShuffleDistanceZ(T1, T2, internal::getDefaultArgs(T1));
+    auto arg = internal::getDefaultArgs(T1);
+    return lz76RandomShuffleDistanceZ(T1, T2, arg);
   };
 
   //*************************************************************************
@@ -477,7 +489,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return LZ_Extra structure with additional computed values.
    */
-  auto lz76ExtraMeasures(const sequence&, utils::LZ_Args) -> utils::LZ_Extra;
+  auto lz76ExtraMeasures(const sequence&, utils::LZ_Args&) -> utils::LZ_Extra;
 
   /**
    * @brief Computes extra measures with default parameters.
@@ -485,7 +497,8 @@ namespace lz {
    * @return LZ_Extra structure with additional computed values.
    */
   inline auto lz76ExtraMeasures(const sequence& seq) -> utils::LZ_Extra {
-    return lz76ExtraMeasures(seq, internal::getDefaultArgs(seq));
+    auto arg = internal::getDefaultArgs(seq);
+    return lz76ExtraMeasures(seq, arg);
   };
 
   //*************************************************************************
@@ -498,7 +511,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The error estimate value.
    */
-  auto lz76NormalError(const sequence&, utils::LZ_Args) -> lz_double;
+  auto lz76NormalError(const sequence&, utils::LZ_Args&) -> lz_double;
 
   /**
    * @brief Computes normal error with default parameters.
@@ -506,7 +519,8 @@ namespace lz {
    * @return The error estimate value.
    */
   inline auto lz76NormalError(const sequence& seq) -> lz_double {
-    return lz76NormalError(seq, internal::getDefaultArgs(seq));
+    auto arg = internal::getDefaultArgs(seq);
+    return lz76NormalError(seq, arg);
   };
 
   /**
@@ -515,7 +529,7 @@ namespace lz {
    * @param args Configuration parameters.
    * @return The error estimate value.
    */
-  auto lz76PoisonError(const sequence&, utils::LZ_Args) -> lz_double;
+  auto lz76PoisonError(const sequence&, utils::LZ_Args&) -> lz_double;
 
   /**
    * @brief Computes Poisson error with default parameters.
@@ -523,7 +537,8 @@ namespace lz {
    * @return The error estimate value.
    */
   inline auto lz76PoisonError(const sequence& seq) -> lz_double {
-    return lz76PoisonError(seq, internal::getDefaultArgs(seq));
+    auto arg = internal::getDefaultArgs(seq);
+    return lz76PoisonError(seq, arg);
   };
 
 }  // namespace lz

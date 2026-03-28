@@ -13,7 +13,7 @@
 // Get function signature for the python wrapper
 auto factorization_sequence = py::overload_cast<const lz::sequence&>(&lz::lz76Factorization);
 auto factorization_sequence_args
-  = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76Factorization);
+  = py::overload_cast<const lz::sequence&, utl::LZ_Args&>(&lz::lz76Factorization);
 // Factorization using variant type for sequence, vector<int>, vector<char> and string
 auto lz76FactorizationWithoutArgs = generateFunctionWithoutArgs<lz::lz_uint>(factorization_sequence);
 auto lz76FactorizationWithArgs = generateFunctionWithArgs<lz::lz_uint>(factorization_sequence_args);
@@ -23,7 +23,7 @@ auto lz76Factorization = generateFunctionWithArgsAndFlags<lz::lz_uint>(factoriza
 // Factors
 // Get function signature for the python wrapper
 auto factors_sequence = py::overload_cast<const lz::sequence&>(&lz::lz76Factors);
-auto factors_sequence_args = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76Factors);
+auto factors_sequence_args = py::overload_cast<const lz::sequence&, utl::LZ_Args&>(&lz::lz76Factors);
 // Factors using variant type for sequence, vector<int>, vector<char> and string
 auto lz76FactorsWithoutArgs = generateFunctionWithoutArgs<lz::internal::LZ_Result>(factors_sequence);
 auto lz76FactorsWithArgs = generateFunctionWithArgs<lz::internal::LZ_Result>(factors_sequence_args);
@@ -34,7 +34,7 @@ auto lz76Factors = generateFunctionWithArgsAndFlags<lz::internal::LZ_Result>(fac
 // Get function signature for the python wrapper
 auto entropy_density_sequence = py::overload_cast<const lz::sequence&>(&lz::lz76EntropyDensity);
 auto entropy_density_sequence_args
-  = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76EntropyDensity);
+  = py::overload_cast<const lz::sequence&, utl::LZ_Args&>(&lz::lz76EntropyDensity);
 // Entropy density using variant type for sequence, vector<int>, vector<char> and string
 auto lz76EntropyDensityWithoutArgs = generateFunctionWithoutArgs<lz::lz_double>(entropy_density_sequence);
 auto lz76EntropyDensityWithArgs = generateFunctionWithArgs<lz::lz_double>(entropy_density_sequence_args);
@@ -47,7 +47,7 @@ auto lz76EntropyDensity = generateFunctionWithArgsAndFlags<lz::lz_double>(entrop
 // Get function signature for the python wrapper
 auto paired_shuffle_seq = py::overload_cast<const lz::sequence&>(&lz::lz76PairedShuffleComplexity);
 auto paired_shuffle_seq_args
-  = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76PairedShuffleComplexity);
+  = py::overload_cast<const lz::sequence&, utl::LZ_Args&>(&lz::lz76PairedShuffleComplexity);
 // Paired shuffle using variant type for sequence,vector<int>, vector<char> and string
 auto lz76PairedShuffleWithoutArgs = generateFunctionWithoutArgs<utl::LZ_Shuffle>(paired_shuffle_seq);
 auto lz76PairedShuffleWithArgs = generateFunctionWithArgs<utl::LZ_Shuffle>(paired_shuffle_seq_args);
@@ -58,7 +58,7 @@ auto lz76PairedShuffle = generateFunctionWithArgsAndFlagsForShuffle<utl::LZ_Shuf
 // Get function signature for the python wrapper
 auto random_shuffle_seq = py::overload_cast<const lz::sequence&>(&lz::lz76RandomShuffleComplexity);
 auto random_shuffle_seq_args
-  = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76RandomShuffleComplexity);
+  = py::overload_cast<const lz::sequence&, utl::LZ_Args&>(&lz::lz76RandomShuffleComplexity);
 // Random shuffle using variant type for sequence, vector<int>, vector<char> and string
 auto lz76RandomShuffleWithoutArgs = generateFunctionWithoutArgs<utl::LZ_Shuffle>(random_shuffle_seq);
 auto lz76RandomShuffleWithArgs = generateFunctionWithArgs<utl::LZ_Shuffle>(random_shuffle_seq_args);
@@ -69,7 +69,7 @@ auto lz76RandomShuffle = generateFunctionWithArgsAndFlagsForShuffle<utl::LZ_Shuf
 // Get function signature for the python wrapper
 auto distance_seq = py::overload_cast<const lz::sequence&, const lz::sequence&>(&lz::lz76InformationDistance);
 auto distance_seq_args
-  = py::overload_cast<const lz::sequence&, const lz::sequence&, utl::LZ_Args>(&lz::lz76InformationDistance);
+  = py::overload_cast<const lz::sequence&, const lz::sequence&, utl::LZ_Args&>(&lz::lz76InformationDistance);
 // Information distance using variant type for sequence, vector<int>, vector<char> and string
 auto lz76InformationDistanceWithoutArgs = generateFunctionWithoutArgsForDistance<lz::lz_double>(distance_seq);
 auto lz76InformationDistanceWithArgs = generateFunctionWithArgsForDistance<lz::lz_double>(distance_seq_args);
@@ -80,8 +80,8 @@ auto lz76InformationDistance = generateFunctionWithArgsAndFlagsForDistance<lz::l
 // Get function signature for the python wrapper
 auto shuffle_distance_seq
   = py::overload_cast<const lz::sequence&, const lz::sequence&>(&lz::lz76RandomShuffleDistance);
-auto shuffle_distance_seq_args
-  = py::overload_cast<const lz::sequence&, const lz::sequence&, utl::LZ_Args>(&lz::lz76RandomShuffleDistance);
+auto shuffle_distance_seq_args = py::overload_cast<const lz::sequence&, const lz::sequence&, utl::LZ_Args&>(
+  &lz::lz76RandomShuffleDistance);
 // Random shuffle distance using variant type for vector<int>, vector<char> and string
 auto lz76RandomShuffleDistanceWithoutArgs
   = generateFunctionWithoutArgsForDistance<lz::lz_double>(shuffle_distance_seq);
@@ -92,7 +92,7 @@ auto lz76RandomShuffleDistance
   = generateFunctionWithArgsAndFlagsForDistance<lz::lz_double>(shuffle_distance_seq_args);
 
 // Calculate all
-auto lz76_seq_args = py::overload_cast<const lz::sequence&, utl::LZ_Args>(&lz::lz76);
+auto lz76_seq_args = py::overload_cast<const lz::sequence&, utl::LZ_Args&>(&lz::lz76);
 // Compute all using variant type for sequence, vector<int>, vector<char> and string
 auto lz76WithArgs = generateFunctionWithArgs<utl::LempelZiv>(lz76_seq_args);
 // Compute all for python style function with flags
