@@ -1,6 +1,8 @@
-lzcomplexity (0.9.14-1) UNRELEASED; urgency=medium
+lzcomplexity (0.9.15-1) UNRELEASED; urgency=medium
 
-  - fix: remove the call to paired random shuffle and properly initilize the random shuffle variable in the lz76 function.
-  - chore: update contact email to support@pleros.ai
+  fix: improve function parameters
+
+  - extract default LZ_Args into a variable.
+  - define LZ_Args parameter as a reference in all functions.
 
  -- Efren Aragon <efrenaragon96@gmail.com>  Mon, 02 Mar 2026 20:00:00 +0000
