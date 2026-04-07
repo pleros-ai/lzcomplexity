@@ -8,12 +8,20 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'deploy binary'
+        type: boolean
+        default: false
 
 env:
   VERSION: 0.9.15
   OLD_REVISION: 1
   REVISION: 1
   TAR_DISTRO: ubuntu22.04.1
+
+permissions:
+  contents: write  # Allows GITHUB_TOKEN to create Releases
 
 jobs:
   build-linux:
@@ -107,9 +115,11 @@ jobs:
         with:
           name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-build
           path: stage/
+          retention-days: 1
 
   # Deploy debian package
   deploy-launchpad:
+    if: ${{ (github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v')) || inputs.deploy }}
     defaults:
       run:
         shell: bash
@@ -372,21 +382,104 @@ jobs:
         run: |
           cd build
           cpack
-          cd _packages
-          for file in *.tar.gz; do
-            mv "$file" "lzcomplexity-${VERSION}.tar.gz"
+
+          cd  ${{ github.workspace }}/_packages
+          STD_NAME="lzcomplexity-${VERSION}.pkg"
+          for file in *.pkg; do
+            mv "$file" "$STD_NAME"
+            echo "Renamed package to: $STD_NAME"
           done
 
       - uses: actions/upload-artifact@v6
         with:
-          name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package
-          path: ${{ github.workspace }}/_packages
+          # name: lzcomplexity-${{matrix.runs-on}}-${{matrix.cxx}}-package
+          name: lzcomplexity-package
+          path: ${{ github.workspace }}/_packages/*.pkg
           retention-days: 1
-      
-      - name: Deploy to brew
-        run: |
-          ls -al
 
+  deploy-homebrew:
+    needs: build-mac
+    # Only run on tags or manual dispatch
+    if: ${{ (github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v')) || inputs.deploy }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: lzcomplexity-package
+          path: ./dist
+
+      - name: Calculate SHA256
+        id: sha
+        run: |
+          cd ./dist
+          PKG_FILE=$(ls *.pkg | head -n 1)
+          SHA=$(shasum -a 256 "$PKG_FILE" | awk '{print $1}')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Calculated SHA256: $SHA"
+          echo "PKG_FILE=$PKG_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./dist/*.pkg
+          tag_name: ${VERSION}
+          name: Release ${VERSION}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Checkout Homebrew Tap
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ secrets.HOMEBREW_TAP_REPO }}
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: ./tap
+        
+      - name: Update Cask
+        run: |
+          cd ./tap
+          CASK_FILE="Casks/lzcomplexity.rb"
+          
+          # Check if Cask file exists
+          if [ ! -f "$CASK_FILE" ]; then
+            echo "Error: Casks/lzcomplexity.rb not found in tap repository!"
+            exit 1
+          fi
+          
+          # Update version
+          # Matches: version "0.0.0"
+          sed -i.bak "s/version \"[^\"]*\"/version \"$VERSION\"/" "$CASK_FILE"
+          
+          # Update URL
+          # Matches: url "https://.../v0.0.0/filename.pkg"
+          sed -i.bak "s|url \"[^\"]*\"|url \"https://github.com/${{ github.repository }}/releases/download/${VERSION}/lzcomplexity-${VERSION}.pkg\"|" "$CASK_FILE"
+          
+          # Update SHA256
+          # Matches: sha256 "0000..."
+          sed -i.bak "s/sha256 \"[^\"]*\"/sha256 \"${{ steps.sha.outputs.sha256 }}\"/" "$CASK_FILE"
+
+          # Update pkg stanza filename to match the new versioned filename
+          # Matches: pkg "lzcomplexity-v0.0.0.pkg"
+          sed -i.bak "s/pkg \"[^\"]*\"/pkg \"lzcomplexity-${VERSION}.pkg\"/" "$CASK_FILE"
+          
+          # Clean up backup files
+          rm -f *.bak
+      
+      - name: Commit and Push to Tap
+        run: |
+          cd ./tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/lzcomplexity.rb
+          if ! git diff --staged --quiet; then
+            git commit -m "Update lzcomplexity cask to ${VERSION}"
+            git push
+          else
+            echo "No changes to commit"
+          fi
 
   build-rpm:
     defaults:
