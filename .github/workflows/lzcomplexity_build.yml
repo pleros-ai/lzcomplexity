@@ -431,9 +431,8 @@ jobs:
           cd ./dist
           PKG_FILE=$(ls *.pkg | head -n 1)
           SHA=$(shasum -a 256 "$PKG_FILE" | awk '{print $1}')
-          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
           echo "Calculated SHA256: $SHA"
-          echo "PKG_FILE=$PKG_FILE" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Upload to GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -446,67 +445,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Checkout Homebrew Tap
-        uses: actions/checkout@v5
+      # Trigger the Tap repo workflow
+      - name: Dispatch Update to Tap Repo
+        uses: peter-evans/repository-dispatch@v4
         with:
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}  # Only needs repo:read for dispatch
           repository: ${{ secrets.HOMEBREW_TAP_REPO }}
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: ./tap
-        
-      - name: Update Cask
-        run: |
-          cd ./tap
-          CASK_FILE="Casks/lzcomplexity.rb"
-          
-          # Check if Cask file exists
-          if [ ! -f "$CASK_FILE" ]; then
-            echo "Error: Casks/lzcomplexity.rb not found in tap repository!"
-            exit 1
-          fi
-          
-          # Update version
-          # Matches: version "0.0.0"
-          sed -i.bak "s/version \"[^\"]*\"/version \"$VERSION\"/" "$CASK_FILE"
-          
-          # Update URL
-          # Matches: url "https://.../v0.0.0/filename.pkg"
-          sed -i.bak "s|url \"[^\"]*\"|url \"https://github.com/${{ github.repository }}/releases/download/${VERSION}/lzcomplexity-${VERSION}.pkg\"|" "$CASK_FILE"
-          
-          # Update SHA256
-          # Matches: sha256 "0000..."
-          sed -i.bak "s/sha256 \"[^\"]*\"/sha256 \"${{ steps.sha.outputs.sha256 }}\"/" "$CASK_FILE"
-
-          # Update pkg stanza filename to match the new versioned filename
-          # Matches: pkg "lzcomplexity-v0.0.0.pkg"
-          sed -i.bak "s/pkg \"[^\"]*\"/pkg \"lzcomplexity-${VERSION}.pkg\"/" "$CASK_FILE"
-          
-          # Clean up backup files
-          rm -f *.bak
-      
-      - name: Commit and Push to Tap
-        run: |
-          cd ./tap
-          
-          # Configure git identity
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Add the updated cask file
-          git add Casks/lzcomplexity.rb
-          
-          # Only commit if there are changes
-          if ! git diff --staged --quiet; then
-            git commit -m "Update lzcomplexity cask to ${VERSION}"
-            
-            # CRITICAL: Ensure the remote URL uses the token for authentication
-            # This embeds the token in the HTTPS URL for push operations
-            git remote set-url origin "https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/${{ secrets.HOMEBREW_TAP_REPO }}.git"
-            
-            # Push with explicit token authentication
-            git push origin main
-          else
-            echo "No changes to commit"
-          fi
+          event-type: update-cask
+          client-payload: |
+            {
+              "version": "${{ env.VERSION }}",
+              "tag": "${{ env.VERSION }}",
+              "sha256": "${{ steps.sha.outputs.sha256 }}",
+              "source_repo": "${{ github.repository }}"
+            }
 
   build-rpm:
     defaults:
