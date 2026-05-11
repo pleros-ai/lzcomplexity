@@ -74,7 +74,7 @@ auto py_effective_spectral_complexity = [](std::vector<double> signal,
 void PySpectral(py::module_& m) {
   using namespace nanobind::literals;
 
-  m.def("PowerSpectralDensity",
+  m.def("psd",
         py_process_signal,
         "signal"_a,
         "sample_frequency"_a,
@@ -127,7 +127,7 @@ void PySpectral(py::module_& m) {
     - When `cut=True`, the function computes the average PSD across all segments
     - The frequency resolution is determined by sample_frequency/signal_length
     )pbdoc");
-  m.def("SpectralEntropy",
+  m.def("entropy",
         py_spectral_entropy,
         "signal"_a,
         "sample_frequency"_a,
@@ -183,7 +183,7 @@ void PySpectral(py::module_& m) {
     - Values typically range from 0 (pure sine wave) to log2(N/2) (white noise),
       where N is the length of the signal
          )pbdoc");
-  m.def("EffectiveSpectralComplexity",
+  m.def("semc",
         py_effective_spectral_complexity,
         "signal"_a,
         "sample_frequency"_a,

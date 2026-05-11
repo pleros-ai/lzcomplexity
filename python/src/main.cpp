@@ -10,17 +10,13 @@
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
-#define VERSION_INFO 0.9.15
+#define VERSION_INFO 0.10.0
 
 namespace py = nanobind;
 
 // Forward declarations for submodule registration functions
-void PyUtils(py::module_&);
-void PySequence(py::module_&);
-void PySaStructure(py::module_&);
-void PyStructures(py::module_&);
-void PyCaps(py::module_&);
-void PyLempelZiv(py::module_&);
+void PyCore(py::module_&);
+void PyMetrics(py::module_&);
 void PySpectral(py::module_&);
 
 NB_MODULE(lzcomplexity, m) {
@@ -47,45 +43,36 @@ Quick Start
 >>> print(f"Complexity: {result.complexity}")
 >>> print(f"Entropy: {result.entropy}")
 
-Classes
--------
-- sequence: Symbolic sequence container with manipulation methods
-- LZ_Args: Configuration parameters for LZ76 algorithms
-- LZ_Shuffle: Results from shuffle-based complexity analysis
-- LempelZiv: Complete LZ76 analysis results
-- CaPS: Cache-friendly Parallel Suffix array constructor
-
 Functions
 ---------
 - lz76(): Complete LZ76 analysis
-- lz76Factorization(): Compute LZ76 complexity (number of factors)
-- lz76Factors(): Get factorization boundary positions
-- lz76EntropyDensity(): Compute normalized entropy density
-- lz76RandomShuffleComplexity(): Effective measure complexity via random shuffling
+- factorization(): Compute LZ76 complexity (number of factors)
+- factors(): Get factorization boundary positions
+- entropy_density(): Compute normalized entropy density
+- emc(): Effective measure complexity via random shuffling
 - lz76PairedShuffleComplexity(): Effective measure complexity via paired shuffling
-- lz76InformationDistance(): Compression-based distance between sequences
-- lz76RandomShuffleDistance(): Shuffle-based information distance
-- SpectralEntropy(): Spectral entropy of time-domain signals
-- PowerSpectralDensity(): Power spectral density via FFT
-- EffectiveSpectralComplexity(): Non-random spectral structure measure
+- metrics.nid(): Compression-based distance between sequences
+- metrics.rid(): Shuffle-based information distance
+- spectral.entropy(): Spectral entropy of time-domain signals
+- spectral.psd(): Power spectral density via FFT
+- spectral.semc(): Non-random spectral structure measure
+- CaPS: Cache-friendly Parallel Suffix array constructor
 
-Version: 0.9.15
+Version: 0.10.0
 Authors: Efren Aragon Perez, Ernesto Estevez Rams
 Contact: efrenaragon96@gmail.com, estevez@fisica.uh.cu
 License: MIT
 )pbdoc";
 
-  // Utils bindings
-  PyUtils(m);
-  PySaStructure(m);
-  PyStructures(m);
-  PySequence(m);
-  // Algorithms bindings
-  PyCaps(m);
-  // PySais(m);
-  // Lempel-ziv 76 functions
-  PyLempelZiv(m);
-  PySpectral(m);
+  py::module_ spectral = m.def_submodule("spectral", "Spectral analysis functions");
+  py::module_ metric = m.def_submodule("metrics", "Metric functions");
+
+  // Core functions
+  PyCore(m);
+  // Metrics module
+  PyMetrics(metric);
+  // Spectral module
+  PySpectral(spectral);
 
 #ifdef VERSION_INFO
   m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
