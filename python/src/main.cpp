@@ -10,7 +10,7 @@
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
-#define VERSION_INFO 0.10.0
+#define VERSION_INFO 0.10.1
 
 namespace py = nanobind;
 
@@ -58,7 +58,7 @@ Functions
 - spectral.semc(): Non-random spectral structure measure
 - CaPS: Cache-friendly Parallel Suffix array constructor
 
-Version: 0.10.0
+Version: 0.10.1
 Authors: Efren Aragon Perez, Ernesto Estevez Rams
 Contact: efrenaragon96@gmail.com, estevez@fisica.uh.cu
 License: MIT
