@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = ["crates/lzcomplexity-core", "crates/lzcomplexity-py"]
+
+[workspace.package]
+version = "0.10.1"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+authors = [
+    "Efren Aragon Perez <efrenaragon96@gmail.com>",
+    "Ernesto Estevez Rams <estevez@fisica.uh.cu>",
+]
+repository = "https://github.com/pleros-ai/lzcomplexity"
+
+[workspace.dependencies]
+rayon = "1.10"
+rustfft = "6.2"
+rand = "0.8"
+rand_chacha = "0.3"
+suffix = "1.3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+opt-level = 3

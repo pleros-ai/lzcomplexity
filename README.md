@@ -1,243 +1,194 @@
-<div align="center" style="width: 100%;">
-  <!-- <img src="./Pleros_AI.webp" alt="drawing" align="center" height="200"/> -->
+<div align="center">
+  <h2>lzcomplexity</h2>
+  <p><em>LZ76-based complexity analysis for symbolic sequences and time-series.</em></p>
 
-  <h2 align="center">
-    lzcomplexity: an entropy measures library
-  </h2>
+[![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.9+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![Rust](https://img.shields.io/badge/Rust-stable-DEA584.svg?style=flat&logo=rust&logoColor=white)](https://www.rust-lang.org)
 
-[![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE) 
-[![python](https://img.shields.io/badge/Python-3.9-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org) 
-![C++](https://img.shields.io/badge/C++-20-A0599C.svg?style=flat&logo=c%2B%2B&logoColor=white)
 </div>
 
-# lzcomplexity
+`lzcomplexity` computes information-theoretic measures of symbolic sequences using **Lempel–Ziv 76 (LZ76) factorization** [1]. The LZ76 complexity `c(S)` is the minimum number of factors needed to represent a sequence, where each factor is either a new symbol or the longest previously-seen substring. From `c(S)` you get a non-parametric entropy-rate estimator — `h ≈ c(S)·log_k(n)/n` — that converges to the true entropy rate of ergodic sources [2].
 
-**lzcomplexity** is a high-performance C++ library developed for complexity analysis using entropic metrics such as entropy density, effective measure complexity, and informational distance. The algorithms used to estimate the metrics employing Lempel-Ziv factorization (LZ76) [1]. The library provides efficient implementations for analyzing time series data, with applications in information theory, signal processing, and neuroscience.
+The library exposes:
 
-## Overview
+- **Complexity & entropy** — `lz76`, `factorization`, `factors`, `entropy_density`, `emc`.
+- **Information distances** (`metrics`) — `nid` (normalized info distance), `rid` (shuffle-based distance).
+- **Spectral analysis** (`spectral`) — `psd`, `entropy`, `semc`.
 
-The Lempel-Ziv complexity is a non-parametric measure of algorithmic complexity that quantifies the rate at which new patterns appear in a sequence. Unlike Shannon entropy, which assumes statistical stationarity and independence, LZ complexity captures the sequential structure and can estimate the entropy rate of ergodic sources asymptotically [2].
+The core is implemented in Rust; Python bindings are built with [PyO3](https://pyo3.rs/). Common applications: neuroscience time-series, DNA analysis, anomaly detection, structural pattern analysis.
 
-### Key Features
+> This is the **Rust implementation**. The original C++/nanobind implementation lives on the `main` branch and is preserved unchanged. Numerical outputs are equivalent up to deterministic shuffle seeding (see [Differences from the C++ version](#differences-from-the-c-version)).
 
-- **LZ76 Factorization**: Efficient computation of Lempel-Ziv complexity using the CaPS (Cache-friendly Parallel Suffix array) algorithm [3]
-- **Entropy Density**: Normalized entropy rate estimation based on LZ factorization
-- **Effective Complexity**: Effective measure complexity measures quantifying statistical dependencies between sequence halves
-- **Information Distance**: Normalized compression-based distance metrics for sequence comparison
-- **Parallel Processing**: Multi-threaded computation with support for multiple backends (OpenMP, Intel TBB, Cilk, or sequential fallback)
+---
 
-### Theoretical Background
+## Install
 
-The LZ76 complexity *c(S)* of a sequence *S* of length *n* is defined as the minimum number of factors in a factorization where each factor is either:
-1. A symbol not previously seen, or
-2. The longest substring that has appeared earlier in the sequence
+You need **Python ≥ 3.9** and a **Rust toolchain** (`stable`, installed via [rustup](https://rustup.rs)).
 
-For a random sequence over an alphabet of size *k*, the expected complexity grows as *n / log_k(n)*. The normalized entropy density *h* is estimated as:
-
-```
-h ≈ c(S) · log_k(n) / n
-```
-
-which converges to the true entropy rate for ergodic sources as $n → \infty$ [2].
-
-## Prerequisites
-
-- CMake version >= 3.5
-- C++20 compatible compiler:
-  - apple-clang >= 14
-  - clang >= 17
-  - GNU >= 9.4
-- At least one parallel backend (optional but recommended):
-  - **OpenMP** (default, widely available)
-  - **Intel oneTBB** (bundled or system installation)
-  - **OpenCilk** or Intel Cilk Plus
-  - Falls back to sequential execution if none available
-
-## Prepare the Local Workspace
-
-The project uses external submodules:
-- **[oneTBB](https://github.com/oneapi-src/oneTBB)**: Intel's Threading Building Blocks for parallel computation (optional)
-- **[nanobind](https://github.com/wjakob/nanobind)**: Small binding library for C++/Python interoperability for the Python bindings
-
-1. Initialize the submodules:
+From a clone of this repository:
 
 ```bash
-git submodule init
+pip install .
 ```
-2. Clone the submodules into your local directory:
+
+`pip` invokes [maturin](https://www.maturin.rs/) (declared in `pyproject.toml`), which compiles the Rust workspace, produces a wheel, and installs it. No CMake, no submodules, no C++ toolchain.
+
+### Development install
+
+If you want to iterate on the Rust code without reinstalling each time:
 
 ```bash
-git submodule update --recursive
+python3 -m venv .venv
+source .venv/bin/activate
+pip install maturin
+maturin develop --release
 ```
 
-3. Apply the oneTBB patch:
+After this, `import lzcomplexity` picks up your local debug build. Re-run `maturin develop --release` after Rust changes.
 
-```bash
-patch external/tbb/CMakeLists.txt patches/tbb.patch 
-```
+---
 
-## Build and Install
-
-1. Create a build directory and navigate to it:
-
-```bash
-mkdir build && cd build
-```
-
-2. Configure the build process using CMake:
-
-```bash
-cmake -DCMAKE_BUILD_TYPE=Release ..
-```
-
-3. Build and install the library:
-
-```bash
-make install
-```
-
-## Documentation
-
-After installation, access the command-line documentation via man pages:
-
-```bash
-man lzcomplexity
-man lzdistance
-```
-
-To disable man page installation, use `-DLZ_INSTALL_MAN=OFF` during CMake configuration.
-
-## CMake Options
-
-### Build Configuration
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `LZ_SHARE` | ON | Build as shared library (`.so`/`.dylib`) |
-| `LZ_ONLY_LIBS` | OFF | Build only libraries (lzcore, lzapp, lzdist) without executables |
-| `LZ_ONLY_CORE` | OFF | Build only the core library |
-| `LZ_APP` | ON | Build the `lzcomplexity` standalone application |
-| `LZ_DISTANCE` | ON | Build the `lzdistance` standalone application |
-| `LZ_INSTALL_MAN` | ON | Install man pages for command-line tools |
-| `BUILD_PYTHON` | OFF | Enable Python bindings via nanobind |
-
-### Parallel Backend Configuration
-
-The library supports multiple parallel computing backends. By default, it auto-detects the best available backend.
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `LZ_PARALLEL_BACKEND` | AUTO | Parallel backend selection: `AUTO`, `OPENMP`, `TBB`, `CILK`, `THREADS` |
-| `LZ_PARALLEL_FORCE` | OFF | Force the selected backend (fail if not found) |
-| `BUILTIN_TBB` | OFF | Use bundled oneTBB instead of system installation |
-
-**Backend Priority (AUTO mode):**
-1. **OpenMP** - Default choice, widely available on most systems
-2. **TBB** - Intel Threading Building Blocks, excellent for fine-grained parallelism
-3. **Cilk** - OpenCilk or Intel Cilk Plus, good for divide-and-conquer algorithms
-4. **Threads** - Sequential fallback using `std::thread` utilities only
-
-**Examples:**
-
-```bash
-# Auto-detect best available backend (default)
-cmake -B build
-
-# Force OpenMP backend
-cmake -B build -DLZ_PARALLEL_BACKEND=OPENMP
-
-# Force TBB with bundled version
-cmake -B build -DLZ_PARALLEL_BACKEND=TBB -DBUILTIN_TBB=ON
-
-# Force Cilk backend (requires OpenCilk compiler)
-cmake -B build -DLZ_PARALLEL_BACKEND=CILK
-
-# Sequential only (no parallelism)
-cmake -B build -DLZ_PARALLEL_BACKEND=THREADS
-```
-
-**macOS Note:** For OpenMP on macOS, install libomp via Homebrew:
-```bash
-brew install libomp
-```
-
-### Debug and Sanitizer Options
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `ASAN` | OFF | Enable sanitizers for debugging (Clang only) |
-| `ENABLE_ADDRESS_SANITIZER` | OFF | Detect memory errors (buffer overflows, use-after-free) |
-| `ENABLE_MEMORY_SANITIZER` | OFF | Detect uninitialized memory reads |
-| `ENABLE_UNDEFINED_SANITIZER` | OFF | Detect undefined behavior |
-
-## Example Usage
-
-### C++ Example
-
-```cpp
-#include <lz/lempelziv.h>
-#include <iostream>
-
-int main() {
-    // Create a symbolic sequence
-    lz::sequence seq = "ABRACADABRA";
-    
-    // Compute LZ76 complexity (number of factors)
-    auto complexity = lz::lz76Factorization(seq);
-    
-    // Compute normalized entropy density
-    auto entropy = lz::lz76EntropyDensity(seq);
-    
-    // Compute effective complexity (excess entropy)
-    auto effective = lz::lz76EffectiveComplexity(seq);
-    
-    std::cout << "LZ76 Complexity: " << complexity << std::endl;
-    std::cout << "Entropy density: " << entropy << std::endl;
-    std::cout << "Effective complexity: " << effective << std::endl;
-    
-    return 0;
-}
-```
-
-### Python Example
+## Quick start
 
 ```python
 import lzcomplexity as lz
 
-# Analyze a symbolic sequence
-seq = "ABRACADABRA"
-result = lz.lz76(seq)
+# Number of LZ76 factors
+lz.factorization("01001010101101010101110101010101010000100101011")
+# → 9
 
-print(f"LZ76 Complexity: {result.complexity}")
-print(f"Entropy density: {result.entropy}")
-print(f"Effective complexity: {result.effective_complexity}")
+# Factor count + boundaries
+lz.factors("banana")
+# → (3, [0, 1, 2, 3, 7])
+#       └── factor i spans [positions[i], positions[i+1])
+
+# Normalised entropy density (in [0, 1] by default)
+lz.entropy_density("ABRACADABRA")
+# → 0.677...   (alphabet auto-detected: 5 distinct symbols)
+
+# Full analysis — complexity, entropy, factors, random-shuffle stats
+complexity, entropy, factors, shuffle = lz.lz76("ABRACADABRA")
+max_block_size, emc_value, multi_information = shuffle
+
+# Information distance between two sequences
+lz.metrics.nid("ABRACADABRA", "ABRACADABRZ")     # → small, similar
+lz.metrics.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
+
+# Spectral entropy of a signal
+import numpy as np
+signal = np.sin(2 * np.pi * 5 * np.linspace(0, 1, 1024)).tolist()
+lz.spectral.entropy(signal, sample_frequency=1024)
 ```
+
+### Accepted input types
+
+Every sequence-accepting function accepts any of:
+
+- `str` — symbols are taken from the string bytes directly.
+- `bytes` — raw byte sequence.
+- `list[str]` — concatenated as-is (e.g. `["A","C","G","T"]`).
+- `list[int]` — each element is converted to its decimal string and concatenated. So `[0, 1, 10]` becomes the symbolic string `"0110"` (the multi-digit value collapses). For predictable behaviour with multi-symbol integer data, pre-format to `str` yourself.
+- Any iterable of ints — covers NumPy arrays via Python's sequence protocol; same conversion as `list[int]`.
+
+`spectral.psd` / `spectral.entropy` / `spectral.semc` take `list[float]` (or any iterable of floats).
+
+### Alphabet auto-detection
+
+By default, every function leaves `alphabet=None` and `log_base=None`, which means **auto-detect from the input** (number of distinct symbols, minimum 2). This is the right behaviour for almost all inputs:
+
+```python
+lz.entropy_density("01010101")    # alphabet inferred as 2
+lz.entropy_density("ABRACADABRA") # alphabet inferred as 5
+```
+
+If you specifically want entropy in bits, override `log_base`:
+
+```python
+lz.entropy_density("ABRACADABRA", log_base=2)
+```
+
+Pass `alphabet=N` explicitly only if you know the *true* alphabet differs from what is observed in the input (e.g. a short binary slice that happens to contain only `0`s).
+
+---
+
+## API reference (compact)
+
+Run `help(lzcomplexity.<name>)` from Python for full per-function docs. The complete public surface is:
+
+| Symbol | Signature | Returns |
+|---|---|---|
+| `lz.lz76(seq, ...)` | full analysis | `(complexity, entropy, factors, (mbs, emc, mi))` |
+| `lz.factorization(seq, ...)` | factor count | `int` |
+| `lz.factors(seq, ...)` | factor count + boundaries | `(int, list[int])` |
+| `lz.entropy_density(seq, ...)` | normalised entropy density | `float` |
+| `lz.emc(seq, ...)` | effective measure complexity | `(int, float, float)` |
+| `lz.metrics.nid(seq1, seq2, ...)` | normalised info distance | `float` |
+| `lz.metrics.rid(seq1, seq2, ...)` | random-shuffle info distance | `float` |
+| `lz.spectral.psd(signal, sr, ...)` | power spectral density | `list[float]` |
+| `lz.spectral.entropy(signal, sr, ...)` | spectral entropy | `float` |
+| `lz.spectral.semc(signal, sr, ...)` | spectral effective complexity | `float` |
+
+Common keyword arguments on the LZ functions:
+
+- `partitions` (int, default 1) — suffix-array partition count; performance knob, no effect on results.
+- `alphabet` (int | None, default None) — auto-detect when None.
+- `log_base` (int | None, default None) — matches `alphabet` when None.
+- `max_block_size` (int, default −1) — shuffle block-size cap; −1 auto-selects.
+- `jobs` (int, default 0) — reserved; currently ignored (rayon manages its pool).
+
+Type stubs (`__init__.pyi`) ship with the package, so editors and `mypy`/`pyright` see signatures and types directly.
+
+---
+
+## Repository layout
+
+```
+crates/
+├── lzcomplexity-core/   Rust crate: algorithms (LZ76, suffix array, LPF,
+│                         shuffle, spectral, metrics). No Python types.
+└── lzcomplexity-py/     Rust crate: PyO3 bindings. Builds the
+                          `lzcomplexity` Python extension module.
+python/lzcomplexity/     Python package skin: __init__.py re-exports,
+                          __init__.pyi type stubs, py.typed marker.
+pyproject.toml           Maturin build config.
+```
+
+The Rust workspace builds as one shared object that's installed under the `lzcomplexity` Python package. Running `cargo test --workspace` exercises the algorithmic core (suffix array on `"banana"` / `"test text"`, LCP, LPF, sequence operators, deterministic shuffle).
+
+---
+
+## Differences from the C++ version
+
+| Aspect | C++ (`main` branch) | Rust (this branch) |
+|---|---|---|
+| Build system | CMake + nanobind | Cargo + maturin |
+| Suffix array | CaPS (custom parallel) | `suffix` crate + Kasai LCP |
+| FFT | pocketfft | rustfft |
+| Parallelism | OpenMP / TBB / Cilk | rayon |
+| Shuffle RNG | `std::mt19937` (time-seeded) | `ChaCha8` (seeded from input → **deterministic**) |
+| Python surface | older versions exposed many classes (`sequence`, `LZ_Args`, `CaPS`, …) | locked to the 10 names listed above |
+
+Same input ⇒ same outputs across Rust and C++ within float tolerance, *except* shuffle-based metrics (`emc`, `rid`, `spectral.semc`), which are now reproducible run-to-run.
+
+---
 
 ## References
 
-1. Lempel, A., & Ziv, J. (1976). On the complexity of finite sequences. *IEEE Transactions on Information Theory*, 22(1), 75-81.
-
-2. Kontoyiannis, I., Algoet, P. H., Suhov, Y. M., & Wyner, A. J. (1998). Nonparametric entropy estimation for stationary processes and random fields, with applications to English text. *IEEE Transactions on Information Theory*, 44(3), 1319-1327.
-
-3. Khan, J., Rubel, T., Dhulipala, L., Molloy, E., & Patro, R. (2023). Fast, Parallel, and Cache-Friendly Suffix Array Construction. *arXiv preprint arXiv:2305.07024*.
+1. Lempel, A., & Ziv, J. (1976). On the complexity of finite sequences. *IEEE Transactions on Information Theory*, 22(1), 75–81.
+2. Kontoyiannis, I., Algoet, P. H., Suhov, Y. M., & Wyner, A. J. (1998). Nonparametric entropy estimation for stationary processes and random fields. *IEEE Transactions on Information Theory*, 44(3), 1319–1327.
 
 ## Citation
 
-If you use this library in your research, please cite:
-
 ```bibtex
-@software{lzcomplexity_2025, 
+@software{lzcomplexity_2025,
   title={lzcomplexity: an entropy measurement library},
   author={Efren Aragon-Perez},
-  url={https://github.com/pleros-ai/lzcomplexity}, 
-  year={2025} 
+  url={https://github.com/pleros-ai/lzcomplexity},
+  year={2025}
 }
 ```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
+MIT — see [LICENSE](LICENSE).
