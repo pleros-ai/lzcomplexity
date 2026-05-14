@@ -1,0 +1,16 @@
+[package]
+name = "lzcomplexity-py"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+name = "lzcomplexity"
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+lzcomplexity-core = { path = "../lzcomplexity-core" }
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py39"] }

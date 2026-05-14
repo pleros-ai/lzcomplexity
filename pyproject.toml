@@ -1,0 +1,31 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "lzcomplexity"
+version = "0.10.1"
+description = "LempelZiv-76 complexity engine. Suited for complexity analysis of time series."
+authors = [
+    { name = "Efren Aragon", email = "support@pleros.ai" },
+    { name = "Ernesto Estevez Rams", email = "estevez@fisica.uh.cu" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+[tool.maturin]
+manifest-path = "crates/lzcomplexity-py/Cargo.toml"
+module-name = "lzcomplexity.lzcomplexity"
+python-source = "python"
+features = ["pyo3/extension-module"]
+strip = true
