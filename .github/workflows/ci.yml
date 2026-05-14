@@ -32,8 +32,10 @@ jobs:
       - name: Install maturin
         run: pip install maturin
       - name: Build wheel
-        run: maturin build --release --interpreter python3
+        run: maturin build --release --interpreter python3 --out dist
       - name: Smoke-test import
+        # --no-index keeps pip away from PyPI (where the older C++ build of
+        # `lzcomplexity` lives) so the locally-built wheel is the only candidate.
         run: |
-          pip install --find-links target/wheels --force-reinstall lzcomplexity
+          pip install --no-index --find-links dist --force-reinstall lzcomplexity
           python -c "import lzcomplexity as lz; print(lz.__version__); print(lz.factorization('01010101'))"
