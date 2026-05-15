@@ -1,60 +1,20 @@
-# -------- C++ --------
-# Prerequisites
-*.d
+# Rust
+/target/
+**/*.rs.bk
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
+# Python wheel build
+/dist/
+/build/
+*.egg-info/
+__pycache__/
+*.py[cod]
 *.so
-*.so.*
-*.dylib
-*.dll
+*.pyd
+.venv/
+venv/
 
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# config files
+# Editors
+.vscode/
+.idea/
+*.swp
 .DS_Store
-*.zip
-.codechecker/**
-.cache
-
-# Dev folders
-/_packages/**
-/dist/**
-/build/**
-/modules/sa/sa_build/**
-/bin/**
-/install/**
-/data/**
-/test_data/**
-/lib/**
-/share/**
-.env
-.windsurf/**
-
-/python/build/**
-/python/dist/**
-/python/src/LempelZiv.egg-info/**
-/python/src/lzcomplexity.egg-info/**
-lzcomplexity.egg-info/**

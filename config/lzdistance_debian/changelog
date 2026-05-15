@@ -1,8 +1,0 @@
-lzdistance (0.9.15-1) UNRELEASED; urgency=medium
-  
-  fix: improve function parameters
-
-  - extract default LZ_Args into a variable.
-  - define LZ_Args parameter as a reference in all functions.
-
- -- Efren Aragon <efrenaragon96@gmail.com>  Mon, 02 Mar 2026 20:00:00 +0000
