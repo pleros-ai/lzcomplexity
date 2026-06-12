@@ -21,27 +21,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        buildplat:
-          - [ubuntu-22.04, manylinux_x86_64, ""]
-          # - [ubuntu-24.04, manylinux_x86_64]
-          - [ubuntu-22.04, musllinux_x86_64, ""]
-          # - [ubuntu-24.04, musllinux_x86_64]
-          # - [ubuntu-22.04-arm, manylinux_aarch64]
-          # - [macos-13, macosx_x86_64, accelerate] ## deprecates x86_64 arch on MacOS
-          - [macos-14, macosx_arm64, accelerate]
-        python:
-          - ["cp39", "3.9"]
-          - ["cp310", "3.10"]
-          - ["cp311", "3.11"]
-          - ["cp312", "3.12"]
-          - ["cp313", "3.13"]
-          - ["cp314", "3.14"]
+        buildplat: [ubuntu-22.04, macos-14]
 
     env:
-      name: lzcomplexity-${{ matrix.python[0] }}-${{ matrix.buildplat[0] }}-${{ matrix.buildplat[1] }}
+      name: lzcomplexity-${{ matrix.buildplat }}
 
-    name: • ${{ matrix.buildplat[0] }}-${{ matrix.buildplat[1] }} • ${{ matrix.python[0] }} •
-    runs-on: ${{ matrix.buildplat[0] }}
+    name: • ${{ matrix.buildplat }} •
+    runs-on: ${{ matrix.buildplat }}
 
     steps:
       - uses: actions/checkout@v5
@@ -61,30 +47,15 @@ jobs:
         with:
           package-dir: .
           output-dir: wheelhouse
-        env:
-          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
-          CIBW_BEFORE_ALL: "pip install scikit-build-core"
-          CIBW_AFTER_BUILD: twine check {wheel}
-          CIBW_BUILD_VERBOSITY: 1
-          CIBW_DEBUG_TRACEBACK: "TRUE"
-          CIBW_CMAKE_ARGS: >
-            -DPython_EXECUTABLE={python} 
-            -DPython_INCLUDE_DIR={python_include} 
-            -DPython_LIBRARY={python_lib}
-            -DLZ_ONLY_CORE=ON 
-            -DBUILD_PYTHON=ON 
-            -DFIXED_PYTHON=ON 
-            -DFIXED_VERSION=${{ matrix.python[1] }}
-          CIBW_ENVIRONMENT_MACOS: "RUNNER_OS=macOS MACOSX_DEPLOYMENT_TARGET=12.0"
-          # Add musllinux specific environment variables
-          CIBW_ENVIRONMENT_MUSLLINUX: "CFLAGS='-fPIC' CXXFLAGS='-fPIC' LDFLAGS='-static-libstdc++ -static-libgcc'"
-          # Ensure CMAKE_ARGS is passed correctly for all platforms
-          CIBW_ENVIRONMENT: "CMAKE_ARGS='-DLZ_ONLY_CORE=ON -DBUILD_PYTHON=ON -DFIXED_PYTHON=ON -DFIXED_VERSION=${{ matrix.python[1] }}'"
 
       - uses: actions/upload-artifact@v6
         with:
-          name: ${{ env.name }}
+          name: wheels-${{ env.name }}
           path: ./wheelhouse/*.whl
+        env:
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_DEBUG_TRACEBACK: "TRUE"
+          CIBW_ENVIRONMENT_MACOS: "RUNNER_OS=macOS MACOSX_DEPLOYMENT_TARGET=14.0"
 
       - name: Upload distribution to PyPI
         if: ${{ (github.event_name == 'push' && github.ref_type == 'tag' && startsWith(github.ref_name, 'v')) || inputs.deploy }}

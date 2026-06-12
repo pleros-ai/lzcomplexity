@@ -36,9 +36,6 @@ set(CORE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 set(CORE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set_property(GLOBAL PROPERTY CORE_INCLUDE_DIR ${CORE_INCLUDE_DIR})
 
-# Include parallel library configuration (OpenMP, TBB, Cilk, or Threads)
-include(AddParallelLib)
-
 set(LZ_LPF ${CORE_SOURCE_DIR}/lpf.cpp)
 set(LZ_LZ76 ${CORE_SOURCE_DIR}/lz76.cpp)
 set(LZ_ALGS ${CORE_SOURCE_DIR}/lempelziv.cpp)
@@ -52,9 +49,15 @@ if(LZ_SHARE)
    # set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 else()
    add_library(${PROJECT_NAME} STATIC)
+   if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
+      set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+   endif()
 endif()
 # Alias for the library
 add_library(lz::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+# Include parallel library configuration (OpenMP, TBB, Cilk, or Threads)
+include(AddParallelLib)
 
 # Suffix array algorithms form part of the core
 add_subdirectory(${CMAKE_SOURCE_DIR}/modules/utils utils)
@@ -82,7 +85,12 @@ set(public_headers
 )
 
 # Link parallel library (provides OpenMP, TBB, Cilk, or Threads based on configuration)
-target_link_libraries(${PROJECT_NAME} PRIVATE lz::parallel_lib)
+if(LZ_SHARE)
+   target_link_libraries(${PROJECT_NAME} PRIVATE lz::parallel_lib)
+else()
+   target_link_libraries(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:lz::parallel_lib>)
+endif()
+
 # possible
 if(LZ_PARALLEL_BACKEND_USED STREQUAL "TBB")
    find_package(TBB REQUIRED)
@@ -90,7 +98,11 @@ if(LZ_PARALLEL_BACKEND_USED STREQUAL "TBB")
 endif()
 
 # Compiler flags.
-target_link_libraries(${PROJECT_NAME} PRIVATE lz_compiler_config)
+if(LZ_SHARE)
+   target_link_libraries(${PROJECT_NAME} PRIVATE lz::compiler_config)
+else()
+   target_link_libraries(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:lz::compiler_config>)
+endif()
 # target_link_options(${PROJECT_NAME} PUBLIC ${CMAKE_CXX_LINK_FLAGS})
 # target_compile_features(${PROJECT_NAME} PUBLIC ${REQUIRED_FEATURES})
 # target_compile_options(${PROJECT_NAME} PRIVATE ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_BUILD_TYPE_UPPER}} ${LZ_COMPILE_SANITIZE})

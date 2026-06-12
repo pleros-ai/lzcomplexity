@@ -63,7 +63,7 @@ endif()
 if(DEFINED ENV{MACOSX_DEPLOYMENT_TARGET})
     set(LZ_MACOS_DEPLOYMENT_TARGET "$ENV{MACOSX_DEPLOYMENT_TARGET}" CACHE STRING "macOS deployment target")
 elseif(NOT DEFINED LZ_MACOS_DEPLOYMENT_TARGET)
-    set(LZ_MACOS_DEPLOYMENT_TARGET "11.0" CACHE STRING "macOS deployment target")
+    set(LZ_MACOS_DEPLOYMENT_TARGET "12.0" CACHE STRING "macOS deployment target")
 endif()
 
 # Ensure deployment target doesn't exceed current system version

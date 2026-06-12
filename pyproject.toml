@@ -1,6 +1,6 @@
 [build-system]
-requires = ["scikit-build-core", "setuptools", "tomli"]
-build-backend = "scikit_build_core.setuptools.build_meta"
+requires = ["scikit-build-core>=0.11", "cmake>=3.5"]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "lzcomplexity"
@@ -12,6 +12,7 @@ authors = [
 license = { file = "LICENSE" }
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
+keywords = ["lempel-ziv", "complexity", "time-series", "information theory"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -28,24 +29,26 @@ wheel-tag-override = true
 [tool.wheel]
 expand-macos-universal-tags = true
 
-[tool.setuptools.packages.find]
-where = ["python/src"]
+[tool.cibuildwheel]
+build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
+skip = "pp* *-win32 *-musllinux* *-manylinux_i686"
 
-[tool.setuptools.package-data]
-"*" = ["*.so", "*.pyd", "*.dll", "*.dylib"]
-
-[tool.setuptools.exclude-package-data]
-"*" = ["*.pyc", "__pycache__", "*.egg-info"]
+[tool.cibuildwheel.macos]
+before-build = "brew install libomp"
+environment = { MACOSX_DEPLOYMENT_TARGET = "14.0", RUNNER_OS = "macOS", OpenMP_ROOT = "/opt/homebrew/opt/libomp" }
 
 [tool.scikit-build]
 cmake.version = ">=3.5"
 cmake.verbose = true
 cmake.build-type = "Release"
-cmake.args = ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-GUnix Makefiles", "-DFIXED_VERSION=3.12", "-DFIXED_PYTHON=ON", "-DCMAKE_VERBOSE_MAKEFILE=ON"]
 logging.level = "INFO"
 wheel.expand-macos-universal-tags = true
 # wheel.py-api = ["cp39", "cp310", "cp311", "cp312"]
 
 [tool.scikit-build.cmake.define]
-# LZ_ONLY_CORE = true
-# BUILD_PYTHON = true
+LZ_ONLY_CORE = "ON"
+BUILD_PYTHON = "ON"
+LZ_APP = "OFF"
+LZ_DISTANCE = "OFF"
+LZ_PARALLEL_BACKEND = "OPENMP"
+CMAKE_VERBOSE_MAKEFILE = "ON"

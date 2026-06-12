@@ -40,7 +40,7 @@ option(LZ_ONLY_CORE   "Build only the core library"                             
 # Python options
 option(BUILD_PYTHON   "Build python binding of LZ lib"                           OFF)
 option(FIXED_PYTHON   "Look for a fixed python version"                          OFF)
-set(FIXED_VERSION 3.8 CACHE STRING "The fixed python version to look for")
+set(FIXED_VERSION 3.9 CACHE STRING "The fixed python version to look for")
 
 # App build options
 option(LZ_APP         "Build lzcomplexity standalone"                            ON)

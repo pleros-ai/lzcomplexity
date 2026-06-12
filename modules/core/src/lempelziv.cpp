@@ -212,12 +212,14 @@ namespace lz {
   lz_int lz76EffectiveComplexity(const sequence& text, utils::LZ_Args& args) {
     const auto mid = text.size() / 2;  // the half of the sequence
 
-    lz_int C_ = 0, C_fh = 0, C_lh = 0;
-    auto [first_half, second_half] = text.Split(mid);
-    auto new_seq = internal::MergeSequences(first_half, second_half);
+    lz_int   C_ = 0, C_fh = 0, C_lh = 0;
+    auto     split = text.Split(mid);
+    sequence first_half = split.first;
+    sequence second_half = split.second;
+    auto     new_seq = internal::MergeSequences(first_half, second_half);
 
-    auto fh_fun = [&]() { C_fh = lz76Factorization(first_half, args); };
-    auto lh_fun = [&]() { C_lh = lz76Factorization(second_half, args); };
+    auto fh_fun = [&first_half, &args, &C_fh]() { C_fh = lz76Factorization(first_half, args); };
+    auto lh_fun = [&second_half, &args, &C_lh]() { C_lh = lz76Factorization(second_half, args); };
     auto all_fun = [&C_, &new_seq, &args]() {
       auto cpy = args;
       cpy.alphabet = new_seq.getAlphabetSize();

@@ -201,6 +201,8 @@ endif()
 # Combined Compiler Interface
 # -----------------------------------------------------------------------------
 add_library(lz_compiler_config INTERFACE)
+add_library(lz::compiler_config ALIAS lz_compiler_config)
+
 target_link_libraries(lz_compiler_config INTERFACE
     lz_warnings
     lz_security
