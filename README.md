@@ -23,7 +23,7 @@ The Lempel-Ziv complexity is a non-parametric measure of algorithmic complexity 
 - **LZ76 Factorization**: Efficient computation of Lempel-Ziv complexity using the CaPS (Cache-friendly Parallel Suffix array) algorithm [3]
 - **Entropy Density**: Normalized entropy rate estimation based on LZ factorization
 - **Effective Complexity**: Effective measure complexity measures quantifying statistical dependencies between sequence halves
-- **Information Distance**: Normalized compression-based distance metrics for sequence comparison
+- **Information Distance**: Normalized LZ factorization, conditional entropy based distance.
 - **Parallel Processing**: Multi-threaded computation with support for multiple backends (OpenMP, Intel TBB, Cilk, or sequential fallback)
 
 ### Theoretical Background
@@ -206,11 +206,11 @@ import lzcomplexity as lz
 
 # Analyze a symbolic sequence
 seq = "ABRACADABRA"
-result = lz.lz76(seq)
+complexity, h, _, (emc, _, _) = lz.lz76(seq)
 
-print(f"LZ76 Complexity: {result.complexity}")
-print(f"Entropy density: {result.entropy}")
-print(f"Effective complexity: {result.effective_complexity}")
+print(f"LZ76 Complexity: {complexity}")
+print(f"Entropy density: {h}")
+print(f"Effective complexity: {emc}")
 ```
 
 ## References
