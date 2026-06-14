@@ -3,40 +3,101 @@ import re
 import subprocess
 import sys
 import glob
-import shutil
+import sysconfig
 from pathlib import Path
 
 from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
 from setuptools.command.sdist import sdist as _sdist
 
-# Try to use tomli for TOML parsing, fall back to built-in if Python 3.11+
-try:
-    import tomli
-except ImportError:
+# version
+def read_version() -> str:
+    """Read version from pyproject.toml, with fallback."""
     try:
-        import tomllib as tomli
-    except ImportError:
-        tomli = None
+        # Python 3.11+ has tomllib built in
+        if sys.version_info >= (3, 11):
+            import tomllib
+            with open("pyproject.toml", "rb") as f:
+                return tomllib.load(f)["project"]["version"]
+        else:
+            # Try third-party tomli
+            try:
+                import tomli
+                with open("pyproject.toml", "rb") as f:
+                    return tomli.load(f)["project"]["version"]
+            except ImportError:
+                pass
+    except (FileNotFoundError, KeyError):
+        pass
 
-# Read version from pyproject.toml
-try:
-    if tomli:
-        with open("pyproject.toml", "rb") as f:
-            pyproject = tomli.load(f)
-        __version__ = pyproject["project"]["version"]
-    else:
-        # Simple fallback parser for Python 3.11+
-        import re
-        with open("pyproject.toml", "r", encoding="utf-8") as f:
-            content = f.read()
-            version_match = re.search(r'version\s*=\s*"([^"]+)"', content)
-            if version_match:
-                __version__ = version_match.group(1)
-            else:
-                __version__ = "0.10.1"  # Fallback version
-except (FileNotFoundError, KeyError, ImportError):
-    __version__ = "0.10.1"  # Fallback version
+    # Last resort: regex parse
+    try:
+        content = Path("pyproject.toml").read_text(encoding="utf-8")
+        m = re.search(r'^version\s*=\s*"([^"]+)"', content, re.MULTILINE)
+        if m:
+            return m.group(1)
+    except FileNotFoundError:
+        pass
+
+    return "0.10.1"
+
+def find_python_include() -> str:
+    """
+    Reliably find Python.h across venvs, cibuildwheel, and manylinux.
+    Tries multiple strategies in order.
+    """
+    candidates = [
+        # 1. base prefix (most reliable — bypasses the venv layer)
+        sysconfig.get_path("include", vars={"installed_base": sys.base_prefix}),
+
+        # 2. standard scheme include
+        sysconfig.get_path("include"),
+
+        # 3. platinclude (some distros put it here)
+        sysconfig.get_path("platinclude"),
+
+        # 4. manual construction from base_prefix
+        str(Path(sys.base_prefix) / "include" / f"python{sys.version_info.major}.{sys.version_info.minor}"),
+        str(Path(sys.base_prefix) / "include" / f"python{sys.version_info.major}.{sys.version_info.minor}m"),
+
+        # 5. macOS framework path
+        str(Path(sys.base_prefix) / "Headers"),
+    ]
+
+    for path in candidates:
+        if path and (Path(path) / "Python.h").exists():
+            print(f"── Found Python.h in: {path}")
+            return path
+
+    # Last resort: ask the compiler via python3-config
+    try:
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, "-c",
+             "import sysconfig; print(sysconfig.get_path('include', vars={'installed_base': __import__('sys').base_prefix}))"],
+            capture_output=True, text=True, check=True
+        )
+        path = result.stdout.strip()
+        if path and (Path(path) / "Python.h").exists():
+            return path
+    except Exception:
+        pass
+
+    raise RuntimeError(
+        f"Could not find Python.h. Tried:\n" +
+        "\n".join(f"  {p}" for p in candidates if p)
+    )
+
+
+def find_python_library() -> str:
+    """Find the Python library for linking (needed on some platforms)."""
+    libdir = sysconfig.get_config_var("LIBDIR") or ""
+    ldlibrary = sysconfig.get_config_var("LDLIBRARY") or ""
+    if libdir and ldlibrary:
+        candidate = str(Path(libdir) / ldlibrary)
+        if Path(candidate).exists():
+            return candidate
+    return ""
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {
@@ -57,7 +118,6 @@ class EnhancedSDist(_sdist):
         self.announce("Preparing source distribution")
         # Run the standard sdist
         _sdist.run(self)
-
 
 class CMakeExtension(Extension):
     def __init__(self, name: str, sourcedir: str = "") -> None:
@@ -96,19 +156,48 @@ class CMakeBuild(build_ext):
         debug = int(os.environ.get("DEBUG", 0)) if self.debug is None else self.debug
         cfg = "Debug" if debug else "Release"
 
+        python_executable = sys.executable
+        python_include    = find_python_include()   # robust finder above
+        python_library    = find_python_library()
+
+        cmake_args = [
+            # Put the compiled .so/.pyd directly where setuptools expects it
+            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}{os.sep}",
+            # Force CMake to use exactly the Python running this script
+            f"-DPYTHON_EXECUTABLE={python_executable}",          # old FindPython
+            f"-DPython_EXECUTABLE={python_executable}",          # new FindPython
+            f"-DPython3_EXECUTABLE={python_executable}",         # FindPython3
+
+            # Point directly at the headers 
+            f"-DPYTHON_INCLUDE_DIR={python_include}",
+            f"-DPython_INCLUDE_DIR={python_include}",
+            f"-DPython3_INCLUDE_DIR={python_include}",
+            
+            # Prevent CMake from searching elsewhere
+            "-DPYTHON_FOUND=TRUE",
+            "-DPython_FIND_VIRTUALENV=FIRST",                  # only look in virtualenv
+            "-DPython3_FIND_VIRTUALENV=FIRST",
+
+            f"-DCMAKE_BUILD_TYPE={cfg}",
+            # Project-specific flags
+            "-DLZ_ONLY_CORE=ON",
+            "-DBUILD_PYTHON=ON",
+            "-DLZ_APP=OFF",
+            "-DLZ_DISTANCE=OFF"
+        ]
+
+        if python_library:
+            cmake_args += [
+                f"-DPYTHON_LIBRARY={python_library}",
+                f"-DPython_LIBRARY={python_library}",
+                f"-DPython3_LIBRARY={python_library}",
+            ]
+
+        build_args = []
+
         # CMake lets you override the generator - we need to check this.
         # Can be set with Conda-Build, for example.
         cmake_generator = os.environ.get("CMAKE_GENERATOR", "")
-
-        # Set Python_EXECUTABLE instead if you use PYBIND11_FINDPYTHON
-        # EXAMPLE_VERSION_INFO shows you how to pass a value into the C++ code
-        # from Python.
-        cmake_args = [
-            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}{os.sep}",
-            f"-DPYTHON_EXECUTABLE={sys.executable}",
-            f"-DCMAKE_BUILD_TYPE={cfg}",  # not used on MSVC, but no harm
-        ]
-        build_args = []
 
         # Adding CMake arguments set as environment variable
         # (needed e.g. to build for ARM OSx on conda-forge)
@@ -175,9 +264,6 @@ class CMakeBuild(build_ext):
         if not build_temp.exists():
             build_temp.mkdir(parents=True)
 
-        cmake_args += ["-DLZ_ONLY_CORE=ON", "-DBUILD_PYTHON=ON", "-DLZ_APP=OFF", "-DLZ_DISTANCE=OFF"]
-        cmake_args += ["-DBUILTIN_TBB=ON", "-DFIXED_VERSION=3.12", "-DFIXED_PYTHON=ON"]
-
         subprocess.run(
             ["cmake", ext.sourcedir, *cmake_args], cwd=build_temp, check=True
         )
@@ -198,7 +284,7 @@ except FileNotFoundError:
 
 setup(
     name="lzcomplexity",
-    version=__version__,
+    version=read_version(),
     # url="https://github.com/ZentropyUH/LempelZiv",  # Update with your actual repository URL
     author="Efren Aragon",
     author_email="support@pleros.ai",
@@ -218,12 +304,9 @@ setup(
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Information Analysis"
     ],
-    ext_modules=[CMakeExtension('')],
     python_requires='>=3.9',
-    cmdclass={
-        'build_ext': CMakeBuild,
-        'sdist': EnhancedSDist,
-    },
+    ext_modules=[CMakeExtension("lzcomplexity")],  # must match your nanobind module name
+    cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
     # Add any Python dependencies here
     # install_requires=[
