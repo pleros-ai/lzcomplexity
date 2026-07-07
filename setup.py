@@ -39,7 +39,7 @@ def read_version() -> str:
     except FileNotFoundError:
         pass
 
-    return "0.10.1"
+    return "0.10.2"
 
 def find_python_include() -> str:
     """
