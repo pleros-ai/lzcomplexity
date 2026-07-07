@@ -1,54 +1,20 @@
 [build-system]
-requires = ["scikit-build-core>=0.11", "cmake>=3.5"]
-build-backend = "scikit_build_core.build"
-
-[project]
-name = "lzcomplexity"
-version = "0.10.1"
-description = "LempelZiv-76 complexity engine. Suited for complexity analysis of time series."
-authors = [
-    { name = "Efren Aragon", email = "support@pleros.ai" }
+requires = [
+    "setuptools>=68",
+    "wheel",
+    "ninja",
+    "cmake>=3.20",
+    "tomli>=2.0; python_version < '3.11'",
 ]
-license = { file = "LICENSE" }
-readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.8"
-keywords = ["lempel-ziv", "complexity", "time-series", "information theory"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Environment :: Console",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: C++",
-    "Topic :: Software Development :: Libraries",
-    "Topic :: Scientific/Engineering",
-    "Topic :: Scientific/Engineering :: Information Analysis"
-]
-
-[tool.build]
-wheel-tag-override = true
-
-[tool.wheel]
-expand-macos-universal-tags = true
+build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
 build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
-skip = "pp* *-win32 *-musllinux* *-manylinux_i686"
+skip  = "pp* *-win32 *-musllinux* *-manylinux_i686"
 
 [tool.cibuildwheel.macos]
-before-build = "brew install libomp"
-environment = { MACOSX_DEPLOYMENT_TARGET = "14.0", RUNNER_OS = "macOS", OpenMP_ROOT = "/opt/homebrew/opt/libomp" }
+archs = ["arm64"]
+before-build = "brew install libomp llvm"
 
-[tool.scikit-build]
-cmake.version = ">=3.5"
-cmake.verbose = true
-cmake.build-type = "Release"
-logging.level = "INFO"
-wheel.expand-macos-universal-tags = true
-# wheel.py-api = ["cp39", "cp310", "cp311", "cp312"]
-
-[tool.scikit-build.cmake.define]
-LZ_ONLY_CORE = "ON"
-BUILD_PYTHON = "ON"
-LZ_APP = "OFF"
-LZ_DISTANCE = "OFF"
-LZ_PARALLEL_BACKEND = "OPENMP"
-CMAKE_VERBOSE_MAKEFILE = "ON"
+[tool.cibuildwheel.linux]
+before-build = "yum install -y libgomp-devel || apt-get install -y libgomp1"

@@ -58,22 +58,35 @@ endif()
 # include(FindThreads)
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../modules modules)
 
-if(NOT Python_FOUND AND NOT Python3_FOUND)
-  if(NOT DEFINED Python_FIND_IMPLEMENTATIONS)
-    set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
-  endif()
-
-  # GitHub Actions like activation
-  if(NOT DEFINED Python_ROOT_DIR AND DEFINED ENV{pythonLocation})
-    set(Python_ROOT_DIR "$ENV{pythonLocation}")
-  endif()
-
-  if (FIXED_PYTHON)
-    find_package(Python ${FIXED_VERSION} EXACT COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
-  else()
-    find_package(Python ${FIXED_VERSION} COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
-  endif()
+# if(NOT Python_FOUND AND NOT Python3_FOUND)
+if(NOT DEFINED Python_FIND_IMPLEMENTATIONS)
+  set(Python_FIND_IMPLEMENTATIONS CPython PyPy)
 endif()
+
+# GitHub Actions like activation
+if(NOT DEFINED Python_ROOT_DIR AND DEFINED ENV{pythonLocation})
+  set(Python_ROOT_DIR "$ENV{pythonLocation}")
+endif()
+
+if(DEFINED Python3_INCLUDE_DIR)
+    set(Python3_INCLUDE_DIRS "${Python3_INCLUDE_DIR}" CACHE PATH "" FORCE)
+    set(Python_INCLUDE_DIRS "${Python_INCLUDE_DIRS}" CACHE PATH "" FORCE)
+endif()
+if(DEFINED Python3_EXECUTABLE)
+    set(Python3_EXECUTABLE "${Python3_EXECUTABLE}" CACHE FILEPATH "" FORCE)
+endif()
+
+# Prevent CMake from finding a different Python after hints are set
+set(Python3_FIND_STRATEGY LOCATION)
+# Only look in the active virtualenv, never system paths
+set(Python3_FIND_VIRTUALENV FIRST)
+
+if (FIXED_PYTHON)
+  find_package(Python EXACT ${FIXED_VERSION} REQUIRED COMPONENTS Interpreter ${DEV_MODULE})
+else()
+  find_package(Python3 REQUIRED COMPONENTS Interpreter ${DEV_MODULE})
+endif()
+# endif()
 
 # add_subdirectory(${CMAKE_SOURCE_DIR}/external/pybind11 pybind11)
 # pybind11_add_module(${PROJECT_NAME} MODULE OPT_SIZE ${PYTHON_FILES})
