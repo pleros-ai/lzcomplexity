@@ -446,11 +446,10 @@ namespace lz {
                                     const internal::LZ_Result& R1,
                                     const sequence&            T2,
                                     const internal::LZ_Result& R2) {
-    lz_int C_all = 0;
+    lz_int C_xy = lz76Factorization(T1 + T2);
+    lz_int C_yx = lz76Factorization(T2 + T1);
 
-    C_all = lz76Factorization(T1 + T2);
-
-    auto res = (C_all - std::fmin(R1.factorization, R2.factorization))
+    auto res = (std::fmin(C_xy - R1.factorization, C_yx - R2.factorization))
       / std::fmax(R1.factorization, R2.factorization);
 
     return res;

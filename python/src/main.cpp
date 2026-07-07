@@ -51,8 +51,7 @@ Functions
 - entropy_density(): Compute normalized entropy density
 - emc(): Effective measure complexity via random shuffling
 - lz76PairedShuffleComplexity(): Effective measure complexity via paired shuffling
-- metrics.nid(): Compression-based distance between sequences
-- metrics.rid(): Shuffle-based information distance
+- metrics.information_distance(): Compression-based distance between sequences
 - spectral.entropy(): Spectral entropy of time-domain signals
 - spectral.psd(): Power spectral density via FFT
 - spectral.semc(): Non-random spectral structure measure
