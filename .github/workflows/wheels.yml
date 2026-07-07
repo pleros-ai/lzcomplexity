@@ -72,7 +72,6 @@ jobs:
           # ── Linux ─────────────────────────────────────────────────────
           CIBW_BEFORE_BUILD_LINUX: |
             yum install -y libgomp || apt-get install -y libgomp1 || true
-            yum install -y python3-devel || apt-get install -y python3-dev || true
           CIBW_ENVIRONMENT_LINUX: >
             CMAKE_POSITION_INDEPENDENT_CODE=ON
 

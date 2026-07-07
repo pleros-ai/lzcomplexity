@@ -84,7 +84,7 @@ set(Python3_FIND_VIRTUALENV FIRST)
 if (FIXED_PYTHON)
   find_package(Python EXACT ${FIXED_VERSION} REQUIRED COMPONENTS Interpreter ${DEV_MODULE})
 else()
-  find_package(Python3 REQUIRED COMPONENTS Interpreter ${DEV_MODULE})
+  find_package(Python REQUIRED COMPONENTS Interpreter ${DEV_MODULE})
 endif()
 # endif()
 
