@@ -2,21 +2,48 @@ name: CI
 
 on:
   push:
-    branches: ["main", "rust"]
+    branches: ["**"]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  rust-tests:
-    name: Rust workspace
+  rust:
+    name: Rust workspace (build · test · lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo build --workspace --release
+      - run: cargo test --workspace --release
+
+  binaries:
+    name: Standalone binaries smoke test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build --workspace --release
-      - run: cargo test --workspace --release
+      - run: cargo build --release -p lzcomplexity-cli
+      - name: Run lzcomplexity + lzdistance
+        run: |
+          printf '01001010101101010101110101010101010000100101011\n0011001100110011\n' > sample.txt
+          ./target/release/lzcomplexity --version
+          ./target/release/lzcomplexity sample.txt -m -d -o out.json
+          cat out.json
+          python3 -c "import json; d=json.load(open('out.json')); assert d['sequences'][0]['lz76Complexity']==9, d; print('lzcomplexity OK')"
+          ./target/release/lzdistance --version
+          ./target/release/lzdistance sample.txt -o dist.json
+          python3 -c "import json; d=json.load(open('dist.json')); assert len(d['information_distance'])==2; print('lzdistance OK')"
 
-  python-wheel:
+  wheel:
     name: Python wheel (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -32,10 +59,28 @@ jobs:
       - name: Install maturin
         run: pip install maturin
       - name: Build wheel
-        run: maturin build --release --interpreter python3 --out dist
-      - name: Smoke-test import
-        # --no-index keeps pip away from PyPI (where the older C++ build of
-        # `lzcomplexity` lives) so the locally-built wheel is the only candidate.
+        run: maturin build --release --out dist
+      - name: Install and smoke-test the new API
+        # --no-index keeps pip away from PyPI (where an older build may live) so
+        # the locally-built wheel is the only install candidate.
+        shell: bash
         run: |
           pip install --no-index --find-links dist --force-reinstall lzcomplexity
-          python -c "import lzcomplexity as lz; print(lz.__version__); print(lz.factorization('01010101'))"
+          python - <<'PY'
+          import lzcomplexity as lz
+          print("version:", lz.__version__)
+          # New API surface
+          c, f = lz.factorization("banana")
+          assert (c, f) == (3, [0, 1, 2, 3, 7]), (c, f)
+          assert abs(lz.entropy_density("01010101") - 0.75) < 1e-12
+          val, summ = lz.emc("01001010101101010101110101010101010000100101011")
+          assert isinstance(summ, list) and len(summ) >= 1
+          full = lz.lz76("ABRACADABRA")
+          assert full["complexity"] == 5 and "emc" in full and "extras" in full
+          assert abs(lz.metrics.nid("abcd", "abce") - 0.25) < 1e-12
+          assert lz.metrics.information_distance("abcd", "abce") == lz.metrics.nid("abcd", "abce")
+          # spectral must be gone
+          assert not hasattr(lz, "spectral"), "spectral should have been removed"
+          assert not hasattr(lz.metrics, "rid"), "rid should have been removed"
+          print("Python API OK")
+          PY
