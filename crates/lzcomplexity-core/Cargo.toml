@@ -16,4 +16,4 @@ path = "src/lib.rs"
 rayon = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
-suffix = { workspace = true }
+cdivsufsort = { workspace = true }

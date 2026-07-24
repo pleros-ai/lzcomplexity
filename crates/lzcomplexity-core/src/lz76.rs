@@ -134,7 +134,9 @@ pub fn factorize(seq: &Sequence, args: &LzArgs) -> (u32, f64, Vec<u32>, f64) {
     let epsilon = 2.0 * (1.0 + ((alphabet_f * n_f).ln() / logn).ln() / logn) / (n_f.ln() / logn);
 
     let mut lpf_arr = vec![0u32; n];
-    lpf(&mut lpf_arr, sa.sa.clone(), sa.lcp.clone(), n);
+    // Move the SA/LCP vectors into `lpf` (it consumes them); `sa` is dead after
+    // this, so no clone is needed.
+    lpf(&mut lpf_arr, sa.sa, sa.lcp, n);
 
     let mut lzf: Vec<u32> = Vec::with_capacity(n);
     lzf.push(0);
@@ -161,20 +163,18 @@ fn factors_stddev(lzf: &[u32]) -> f64 {
     if lzf.len() < 2 {
         return 0.0;
     }
-    let mut lens: Vec<u32> = Vec::with_capacity(lzf.len());
+    // Single pass over `lzf`: the mean is derived from `lzf` directly, so we
+    // accumulate the variance and track the max factor size at once (same
+    // arithmetic order as before → bit-identical result, one fewer allocation).
+    let mean = (lzf[lzf.len() - 1] as f64 - 1.0) / lzf.len() as f64;
     let mut max_factor_size = 0u32;
+    let mut sq_sum = 0.0;
     for i in 1..lzf.len() {
         let sz = lzf[i].saturating_sub(lzf[i - 1]);
-        lens.push(sz);
         if sz > max_factor_size {
             max_factor_size = sz;
         }
-    }
-    let last = lzf[lzf.len() - 1] as f64;
-    let mean = (last - 1.0) / lzf.len() as f64;
-    let mut sq_sum = 0.0;
-    for &l in &lens {
-        let diff = l as f64 - mean;
+        let diff = sz as f64 - mean;
         sq_sum += diff * diff;
     }
     if max_factor_size == 0 {
@@ -184,9 +184,14 @@ fn factors_stddev(lzf: &[u32]) -> f64 {
     }
 }
 
-/// True iff the sequence has at least 2 distinct symbols.
+/// True iff the sequence has at least 2 distinct symbols. Early-exit scan —
+/// no allocation (was `char_density().len() > 1`, which built a whole map).
 fn has_multiple_symbols(seq: &Sequence) -> bool {
-    seq.char_density().len() > 1
+    let data = seq.as_bytes();
+    match data.first() {
+        None => false,
+        Some(&first) => data[1..].iter().any(|&b| b != first),
+    }
 }
 
 /// Compute just the LZ76 complexity (factor count).
@@ -215,9 +220,9 @@ pub fn lz76_factors(seq: &Sequence, args: &LzArgs) -> Lz76Result {
     }
 }
 
-/// Compute the normalized LZ76 entropy density.
-pub fn lz76_entropy_density(seq: &Sequence, args: &LzArgs) -> f64 {
-    let factorization = lz76_factorization(seq, args) as f64;
+/// Normalized entropy density from an already-computed factor count. Lets
+/// callers that already have the complexity avoid re-factorizing.
+pub fn entropy_density_from(count: u32, seq: &Sequence, args: &LzArgs) -> f64 {
     let log_base = if args.log_base == NO_ALPHABET {
         seq.alphabet_size().max(2)
     } else {
@@ -228,5 +233,10 @@ pub fn lz76_entropy_density(seq: &Sequence, args: &LzArgs) -> f64 {
         return 0.0;
     }
     let div = n / (n.ln() / log_base.ln());
-    factorization / div
+    count as f64 / div
+}
+
+/// Compute the normalized LZ76 entropy density.
+pub fn lz76_entropy_density(seq: &Sequence, args: &LzArgs) -> f64 {
+    entropy_density_from(lz76_factorization(seq, args), seq, args)
 }

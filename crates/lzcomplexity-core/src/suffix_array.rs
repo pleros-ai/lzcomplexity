@@ -1,8 +1,10 @@
 //! Suffix array + LCP construction.
 //!
 //! The C++ library has its own CaPS algorithm (a parallel SA construction).
-//! We delegate SA construction to the `suffix` crate (or a small SA-IS-style
-//! implementation) and compute LCP with Kasai's algorithm.
+//! We build the suffix array in linear time with `cdivsufsort` (a byte-level
+//! divsufsort) and compute LCP with Kasai's algorithm. The suffix array of a
+//! string is unique, so this produces the same order as a comparison sort would
+//! — bit-identical downstream results — but in O(n) instead of O(n² log n).
 
 /// Suffix array + LCP array for a text of length `n`.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -32,25 +34,22 @@ pub fn build_suffix_array(text: &[u8]) -> Vec<u32> {
     if text.is_empty() {
         return Vec::new();
     }
-    // Use a simple sort-of-suffixes implementation. For n <= LARGE_N we sort
-    // indices directly by their suffix slice. For longer inputs we delegate to
-    // the `suffix` crate, which gives O(n) construction over UTF-8 strings.
-    // The text we get is raw bytes (potentially with embedded zeros), so the
-    // sort path is the safer general default — `suffix` requires a valid &str.
-    const SMALL_N: usize = 4096;
-    if text.len() <= SMALL_N {
+    // Both paths produce the (unique) suffix array, so results are identical.
+    // For tiny inputs a plain suffix sort has a much lower constant than
+    // divsufsort's setup, and even its worst case is sub-millisecond at this
+    // size; above the cutoff we switch to the byte-level linear-time divsufsort
+    // so repetitive/large inputs never hit the O(n² log n) sort.
+    const SORT_CUTOFF: usize = 2048;
+    if text.len() < SORT_CUTOFF {
         sort_based_sa(text)
-    } else if let Ok(s) = std::str::from_utf8(text) {
-        // `suffix::SuffixTable` allocates and runs SA-IS-like construction.
-        let table = suffix::SuffixTable::new(s);
-        // `table.table()` returns &[u32] of the byte-indexed suffix array.
-        table.table().to_vec()
     } else {
-        // Fallback: still sort-based, but for large inputs this is O(n^2 log n).
-        sort_based_sa(text)
+        let (_, sa) = cdivsufsort::sort(text).into_parts();
+        sa.into_iter().map(|x| x as u32).collect()
     }
 }
 
+/// Comparison suffix sort — low constant, but O(n² log n) on repetitive data,
+/// so it is only used below `SORT_CUTOFF` (and as the fuzz-test reference).
 fn sort_based_sa(text: &[u8]) -> Vec<u32> {
     let n = text.len();
     let mut idx: Vec<u32> = (0..n as u32).collect();
@@ -117,6 +116,36 @@ mod tests {
     fn test_text_sa() {
         let sa = build_suffix_array(b"test text");
         assert_eq!(sa, vec![4, 1, 6, 2, 8, 3, 0, 5, 7]);
+    }
+
+    #[test]
+    fn fuzz_sa_matches_reference() {
+        // The fast (divsufsort) SA must equal the reference comparison sort for
+        // every input — including non-UTF-8 bytes and degenerate repeats.
+        let mut state: u64 = 0x1234_5678_9abc_def0;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        let alphabets: [&[u8]; 5] = [b"01", b"012", b"ACGT", &[0u8, 1, 255], b"abcdefghij"];
+        for _ in 0..300 {
+            let ab = alphabets[(next() as usize) % alphabets.len()];
+            // Span both branches of build_suffix_array: below the sort cutoff
+            // (sort path) and above it (divsufsort path, vs the sort reference).
+            let n = 1 + (next() as usize) % 5000;
+            let text: Vec<u8> = (0..n).map(|_| ab[(next() as usize) % ab.len()]).collect();
+            assert_eq!(
+                build_suffix_array(&text),
+                sort_based_sa(&text),
+                "SA mismatch for prefix {:?}",
+                &text[..text.len().min(24)]
+            );
+        }
+        // degenerate: all-equal bytes
+        assert_eq!(build_suffix_array(&[7u8; 500]), sort_based_sa(&[7u8; 500]));
+        assert_eq!(build_suffix_array(b"a"), sort_based_sa(b"a"));
     }
 
     #[test]

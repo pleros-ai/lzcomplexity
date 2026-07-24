@@ -41,11 +41,14 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
     // Index 0 unused, indices 1..=mm hold the per-block-size complexity.
     let mut res: Vec<i32> = vec![0; mm + 3];
 
+    // Hash the sequence content ONCE; each per-block seed only differs by the
+    // `idx` term (bit-identical seeds → identical shuffles → identical EMC).
+    let base = fnv1a(seq.as_bytes());
     let computed: Vec<(usize, i32)> = (1..=mm)
         .into_par_iter()
         .map(|idx| {
-            let rand_seq =
-                shuffle_copy_seeded(seq, idx as u32, (seq.len() / 2) as u32, seed_for(seq, idx));
+            let seed = seed_from_base(base, idx);
+            let rand_seq = shuffle_copy_seeded(seq, idx as u32, (seq.len() / 2) as u32, seed);
             let c = lz76_factorization(&rand_seq, args);
             (idx, c as i32)
         })
@@ -113,7 +116,16 @@ pub fn shuffle_entropy_calculation(
 
 /// `lz76RandomShuffleComplexity` — full pipeline.
 pub fn lz76_random_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> LzShuffle {
-    let complexity = lz76_factorization(seq, args) as i32;
+    lz76_random_shuffle_complexity_with(seq, args, lz76_factorization(seq, args) as i32)
+}
+
+/// Same, but with an already-computed original-sequence complexity (so callers
+/// that already have it — e.g. the `lz76` driver — skip one factorization).
+pub fn lz76_random_shuffle_complexity_with(
+    seq: &Sequence,
+    args: &LzArgs,
+    complexity: i32,
+) -> LzShuffle {
     let (h_rand, mm) = shuffle_factorization(seq, args);
     shuffle_entropy_calculation(seq, args, complexity, &h_rand, mm)
 }
@@ -148,12 +160,17 @@ pub fn merge_sequences(s1: &Sequence, s2: &Sequence) -> Sequence {
     Sequence::from_bytes_with_alphabet(buf, s1.alphabet_size().saturating_mul(s2.alphabet_size()))
 }
 
-fn seed_for(seq: &Sequence, idx: usize) -> u64 {
-    // Deterministic per (sequence content, block size)
+/// FNV-1a hash of the sequence bytes (the content-dependent part of the seed).
+fn fnv1a(bytes: &[u8]) -> u64 {
     let mut h: u64 = 14695981039346656037; // FNV offset basis (64-bit)
-    for &c in seq.as_bytes() {
+    for &c in bytes {
         h ^= c as u64;
         h = h.wrapping_mul(1099511628211);
     }
-    h ^ ((idx as u64).wrapping_mul(0x9E3779B97F4A7C15))
+    h
+}
+
+/// Derive the per-block-size seed from the (once-computed) content hash.
+fn seed_from_base(base: u64, idx: usize) -> u64 {
+    base ^ ((idx as u64).wrapping_mul(0x9E3779B97F4A7C15))
 }
