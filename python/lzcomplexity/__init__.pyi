@@ -16,9 +16,9 @@ __version__: str
 __all__ = [
     "lz76",
     "factorization",
-    "entropy_density",
+    "h",
     "emc",
-    "metrics",
+    "nid",
 ]
 
 
@@ -33,14 +33,14 @@ def factorization(
     ...
 
 
-def entropy_density(
+def h(
     seq: SeqLike,
     partitions: int = 1,
     alphabet: int | None = None,
     log_base: int | None = None,
     jobs: int = 0,
 ) -> float:
-    """Return the LZ76-based normalized entropy density of ``seq``."""
+    """Return the LZ76-based normalized entropy density (entropy rate) of ``seq``."""
     ...
 
 
@@ -60,6 +60,18 @@ def emc(
     ...
 
 
+def nid(
+    seq1: SeqLike,
+    seq2: SeqLike,
+    partitions: int = 1,
+    alphabet: int | None = None,
+    log_base: int | None = None,
+    jobs: int = 0,
+) -> float:
+    """Normalized information distance (NID) between ``seq1`` and ``seq2``."""
+    ...
+
+
 def lz76(
     seq: SeqLike,
     partitions: int = 1,
@@ -70,42 +82,9 @@ def lz76(
 ) -> Dict[str, Any]:
     """Full LZ76 analysis, returned as a dict.
 
-    Keys: ``complexity``, ``entropy_density``, ``factors``, ``emc`` (a dict of
+    Keys: ``complexity``, ``h``, ``factors``, ``emc`` (a dict of
     ``value``/``summands``/``max_block_size``/``multi_information``),
     ``epsilon``, ``factors_stddev``, ``normal_error``, ``poison_error``,
     ``extras`` (a dict). See ``help(lzcomplexity.lz76)`` for details.
     """
     ...
-
-
-# ── Submodule stubs ─────────────────────────────────────────────────────────
-
-class _MetricsModule:
-    """Information distance between two sequences."""
-
-    @staticmethod
-    def nid(
-        seq1: SeqLike,
-        seq2: SeqLike,
-        partitions: int = 1,
-        alphabet: int | None = None,
-        log_base: int | None = None,
-        jobs: int = 0,
-    ) -> float:
-        """Normalized information distance between ``seq1`` and ``seq2``."""
-        ...
-
-    @staticmethod
-    def information_distance(
-        seq1: SeqLike,
-        seq2: SeqLike,
-        partitions: int = 1,
-        alphabet: int | None = None,
-        log_base: int | None = None,
-        jobs: int = 0,
-    ) -> float:
-        """C++-compatible alias for :func:`nid`."""
-        ...
-
-
-metrics: _MetricsModule

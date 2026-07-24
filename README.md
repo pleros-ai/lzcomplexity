@@ -61,8 +61,8 @@ import lzcomplexity as lz
 complexity, factors = lz.factorization("banana")
 # → (3, [0, 1, 2, 3, 7])
 
-# Normalised entropy density (entropy-rate estimator)
-lz.entropy_density("01010101")
+# Normalised entropy density / entropy-rate estimator — `h`
+lz.h("01010101")
 # → 0.75
 
 # Effective measure complexity: the value and the terms that sum to it
@@ -70,13 +70,13 @@ emc_value, summands = lz.emc("01001010101101010101110101010101010000100101011")
 
 # Everything in one call (returns a dict)
 full = lz.lz76("ABRACADABRA")
-full["complexity"], full["entropy_density"], full["factors"]
+full["complexity"], full["h"], full["factors"]
 full["emc"]     # {"value", "summands", "max_block_size", "multi_information"}
 full["extras"]  # {"rajski_distance", "redundancy", "fh_uncertainty", ...}
 
 # Normalized information distance (NID) between two sequences
-lz.metrics.nid("ABRACADABRA", "ABRACADABRZ")     # → small, similar
-lz.metrics.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
+lz.nid("ABRACADABRA", "ABRACADABRZ")     # → small, similar
+lz.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
 ```
 
 ### Public API
@@ -84,13 +84,12 @@ lz.metrics.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
 | Symbol | Signature | Returns |
 |---|---|---|
 | `lz.factorization(seq, ...)` | complexity + factor boundaries | `(int, list[int])` |
-| `lz.entropy_density(seq, ...)` | normalised entropy density | `float` |
+| `lz.h(seq, ...)` | normalised entropy density (entropy rate) | `float` |
 | `lz.emc(seq, ...)` | effective measure complexity | `(float, list[float])` — `(value, summands)` |
+| `lz.nid(seq1, seq2, ...)` | normalised information distance | `float` |
 | `lz.lz76(seq, ...)` | the full analysis | `dict` (see below) |
-| `lz.metrics.nid(seq1, seq2, ...)` | normalised information distance | `float` |
-| `lz.metrics.information_distance(...)` | C++-compatible alias for `nid` | `float` |
 
-`lz.lz76(...)` returns a dict with keys: `complexity`, `entropy_density`, `factors`, `emc` (a nested dict), `epsilon`, `factors_stddev`, `normal_error`, `poison_error`, `extras` (a nested dict).
+`lz.lz76(...)` returns a dict with keys: `complexity`, `h`, `factors`, `emc` (a nested dict), `epsilon`, `factors_stddev`, `normal_error`, `poison_error`, `extras` (a nested dict).
 
 Common keyword arguments:
 
@@ -231,7 +230,7 @@ pyproject.toml           Maturin build config.
 | Parallelism | OpenMP / TBB / Cilk | rayon |
 | Shuffle RNG | `std::mt19937` (time-seeded) | `ChaCha8` (seeded from input → **deterministic**) |
 | Spectral analysis | included (`psd`, `entropy`, `semc`) | **removed** (moved to a separate package) |
-| Python surface | many names, `nid`/`rid`, class exports | `factorization`, `entropy_density`, `emc`, `lz76`, `metrics.nid` |
+| Python surface | many names, `nid`/`rid`, class exports | `factorization`, `h`, `emc`, `nid`, `lz76` |
 
 Same input ⇒ same outputs across Rust and C++ within float tolerance for the deterministic measures (factorization, factors, entropy density, information distance) — verified by differential testing. Shuffle-based metrics (`emc`) differ only in that Rust is reproducible run-to-run.
 

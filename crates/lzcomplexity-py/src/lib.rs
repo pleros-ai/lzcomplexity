@@ -1,9 +1,8 @@
 //! Python bindings for the `lzcomplexity` core library.
 //!
-//! Public surface (deliberately small):
+//! Public surface (deliberately small, all top-level):
 //!
-//! Top-level:        `factorization`, `entropy_density`, `emc`, `lz76`
-//! `metrics` module: `nid` (a.k.a. `information_distance`)
+//!   `factorization`, `h`, `emc`, `nid`, `lz76`
 //!
 //! Spectral analysis was removed from this library — it now lives in a separate
 //! package. See the README for the migration note.
@@ -154,11 +153,11 @@ fn factorization(
 /// Examples
 /// --------
 /// >>> import lzcomplexity as lz
-/// >>> lz.entropy_density("01010101")
+/// >>> lz.h("01010101")
 /// 0.75
 #[pyfunction]
 #[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, jobs=0))]
-fn entropy_density(
+fn h(
     seq: &Bound<'_, PyAny>,
     partitions: i32,
     alphabet: Option<u32>,
@@ -294,7 +293,7 @@ fn lz76(
 
         let out = PyDict::new_bound(py);
         out.set_item("complexity", r.complexity)?;
-        out.set_item("entropy_density", r.entropy_density)?;
+        out.set_item("h", r.entropy_density)?;
         out.set_item("factors", r.factors)?;
         out.set_item("emc", emc)?;
         out.set_item("epsilon", r.epsilon)?;
@@ -306,7 +305,7 @@ fn lz76(
     })
 }
 
-// ── metrics submodule ───────────────────────────────────────────────────────
+// ── Information distance ─────────────────────────────────────────────────────
 
 /// Normalized information distance (NID) between two sequences.
 ///
@@ -314,9 +313,6 @@ fn lz76(
 /// LZ76-based, conditional-entropy-flavoured normalized distance. The result
 /// lies in ``[0, 1]`` for well-behaved inputs — 0 means the two sequences
 /// carry the same information, 1 means they are maximally distinct.
-///
-/// This function is also exported as ``metrics.information_distance`` (the name
-/// used by the C++ backend).
 ///
 /// Parameters
 /// ----------
@@ -340,7 +336,7 @@ fn lz76(
 /// Examples
 /// --------
 /// >>> import lzcomplexity as lz
-/// >>> lz.metrics.nid("abcd", "abce")
+/// >>> lz.nid("abcd", "abce")
 /// 0.25
 #[pyfunction]
 #[pyo3(signature = (seq1, seq2, partitions=1, alphabet=None, log_base=None, jobs=0))]
@@ -366,13 +362,10 @@ fn nid(
 /// Top-level functions
 /// -------------------
 /// - :func:`factorization` — complexity + factor boundaries.
-/// - :func:`entropy_density` — normalized entropy density.
+/// - :func:`h` — normalized entropy density (entropy-rate estimator).
 /// - :func:`emc` — effective measure complexity (value + summand terms).
+/// - :func:`nid` — normalized information distance between two sequences.
 /// - :func:`lz76` — the full analysis (everything, as a dict).
-///
-/// Submodule
-/// ---------
-/// - :mod:`metrics` — information distance (``nid`` / ``information_distance``).
 ///
 /// All sequence-accepting functions accept ``str``, ``bytes``, ``list[int]``,
 /// ``list[str]``, or any iterable of ints (e.g. NumPy arrays). For
@@ -383,23 +376,15 @@ fn lzcomplexity(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
     m.add_function(wrap_pyfunction!(factorization, m)?)?;
-    m.add_function(wrap_pyfunction!(entropy_density, m)?)?;
+    m.add_function(wrap_pyfunction!(h, m)?)?;
     m.add_function(wrap_pyfunction!(emc, m)?)?;
+    m.add_function(wrap_pyfunction!(nid, m)?)?;
     m.add_function(wrap_pyfunction!(lz76, m)?)?;
-
-    let metrics = PyModule::new_bound(py, "metrics")?;
-    metrics.add_function(wrap_pyfunction!(nid, &metrics)?)?;
-    // `information_distance` is the C++-compatible alias for `nid`.
-    metrics.add("information_distance", metrics.getattr("nid")?)?;
-    m.add_submodule(&metrics)?;
 
     // Lock the public surface — anything not listed here is hidden from
     // `from lzcomplexity import *` and from generic tooling that respects
     // `__all__`.
-    let all = pyo3::types::PyList::new_bound(
-        py,
-        ["factorization", "entropy_density", "emc", "lz76", "metrics"],
-    );
+    let all = pyo3::types::PyList::new_bound(py, ["factorization", "h", "emc", "nid", "lz76"]);
     m.add("__all__", all)?;
 
     Ok(())

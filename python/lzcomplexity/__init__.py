@@ -3,13 +3,10 @@
 Top-level functions
 -------------------
 - ``factorization`` — complexity (factor count) and factor boundary list.
-- ``entropy_density`` — normalized entropy density (entropy-rate estimator).
+- ``h`` — normalized entropy density (entropy-rate estimator).
 - ``emc`` — effective measure complexity (value and its summand terms).
+- ``nid`` — normalized information distance between two sequences.
 - ``lz76`` — the full analysis, returned as a dict with everything.
-
-Submodule
----------
-- ``metrics`` — information distance (``nid`` / ``information_distance``).
 
 All sequence-accepting functions accept ``str``, ``bytes``, ``list[int]``,
 ``list[str]``, or any iterable of ints (e.g. NumPy arrays). For
@@ -28,17 +25,17 @@ from .lzcomplexity import (
     __version__,
     lz76,
     factorization,
-    entropy_density,
+    h,
     emc,
-    metrics,
+    nid,
 )
 
 __all__ = [
     "lz76",
     "factorization",
-    "entropy_density",
+    "h",
     "emc",
-    "metrics",
+    "nid",
 ]
 
 # Hide the compiled-extension submodule from `dir(lzcomplexity)` and from

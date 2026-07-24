@@ -72,15 +72,15 @@ jobs:
           # New API surface
           c, f = lz.factorization("banana")
           assert (c, f) == (3, [0, 1, 2, 3, 7]), (c, f)
-          assert abs(lz.entropy_density("01010101") - 0.75) < 1e-12
+          assert abs(lz.h("01010101") - 0.75) < 1e-12
           val, summ = lz.emc("01001010101101010101110101010101010000100101011")
           assert isinstance(summ, list) and len(summ) >= 1
           full = lz.lz76("ABRACADABRA")
-          assert full["complexity"] == 5 and "emc" in full and "extras" in full
-          assert abs(lz.metrics.nid("abcd", "abce") - 0.25) < 1e-12
-          assert lz.metrics.information_distance("abcd", "abce") == lz.metrics.nid("abcd", "abce")
-          # spectral must be gone
+          assert full["complexity"] == 5 and "h" in full and "emc" in full and "extras" in full
+          assert abs(lz.nid("abcd", "abce") - 0.25) < 1e-12
+          # removed surface must be gone
           assert not hasattr(lz, "spectral"), "spectral should have been removed"
-          assert not hasattr(lz.metrics, "rid"), "rid should have been removed"
+          assert not hasattr(lz, "metrics"), "metrics submodule should have been removed"
+          assert not hasattr(lz, "entropy_density"), "entropy_density was renamed to h"
           print("Python API OK")
           PY
