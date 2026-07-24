@@ -6,6 +6,10 @@ name: Release
 on:
   push:
     branches: ["rust-backend"]
+  # Manual escape hatch: build wheels and publish the CURRENT version to PyPI
+  # (and re-attach binaries to its release) without waiting on release-please —
+  # useful for recovery or the first bootstrap publish.
+  workflow_dispatch:
 
 permissions: {}
 
@@ -19,7 +23,9 @@ jobs:
       pull-requests: write
     outputs:
       release_created: ${{ steps.rp.outputs.release_created }}
-      tag_name: ${{ steps.rp.outputs.tag_name }}
+      # In manifest mode release-please exposes per-package details on a
+      # path-prefixed output (`.--tag_name`); the bare `tag_name` is empty.
+      tag_name: ${{ steps.rp.outputs.tag_name || steps.rp.outputs['.--tag_name'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: rp
@@ -32,17 +38,19 @@ jobs:
   build-wheels:
     name: Wheel • ${{ matrix.os }} • ${{ matrix.target }}
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.release_created || github.event_name == 'workflow_dispatch' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        # macOS x86_64 is cross-compiled on the Apple-Silicon runner so the
+        # pipeline never depends on scarce macos-13 (Intel) runners.
         include:
           - { os: ubuntu-latest, target: x86_64, manylinux: auto }
           - { os: ubuntu-latest, target: aarch64, manylinux: auto }
           - { os: windows-latest, target: x64, manylinux: "" }
-          - { os: macos-13, target: x86_64, manylinux: "" }
           - { os: macos-14, target: aarch64, manylinux: "" }
+          - { os: macos-14, target: x86_64, manylinux: "" }
     steps:
       - uses: actions/checkout@v4
       - name: Build wheels
@@ -61,7 +69,7 @@ jobs:
   build-sdist:
     name: Source distribution
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.release_created || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -80,7 +88,7 @@ jobs:
   publish-pypi:
     name: Publish to PyPI
     needs: [release-please, build-wheels, build-sdist]
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.release_created || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write # required for trusted publishing
@@ -105,7 +113,7 @@ jobs:
   build-binaries:
     name: Binaries • ${{ matrix.target }}
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.release_created || github.event_name == 'workflow_dispatch' }}
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -115,7 +123,7 @@ jobs:
         include:
           - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu, suffix: linux-x86_64 }
           - { os: macos-14, target: aarch64-apple-darwin, suffix: macos-arm64 }
-          - { os: macos-13, target: x86_64-apple-darwin, suffix: macos-x86_64 }
+          - { os: macos-14, target: x86_64-apple-darwin, suffix: macos-x86_64 }
           - { os: windows-latest, target: x86_64-pc-windows-msvc, suffix: windows-x86_64, ext: ".exe" }
     steps:
       - uses: actions/checkout@v4
@@ -123,17 +131,19 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - run: cargo build --release -p lzcomplexity-cli --target ${{ matrix.target }}
-      - name: Package binaries
-        shell: bash
-        run: |
-          mkdir -p out
-          bindir="target/${{ matrix.target }}/release"
-          tag="${{ needs.release-please.outputs.tag_name }}"
-          for b in lzcomplexity lzdistance; do
-            cp "$bindir/$b${{ matrix.ext }}" "out/$b-$tag-${{ matrix.suffix }}${{ matrix.ext }}"
-          done
-      - name: Upload to release
+      - name: Package and upload binaries
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ needs.release-please.outputs.tag_name }}" out/* --clobber
+        run: |
+          tag="${{ needs.release-please.outputs.tag_name }}"
+          if [ -z "$tag" ]; then
+            tag=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 1 --json tagName --jq '.[0].tagName')
+          fi
+          echo "Uploading binaries to release $tag"
+          mkdir -p out
+          bindir="target/${{ matrix.target }}/release"
+          for b in lzcomplexity lzdistance; do
+            cp "$bindir/$b${{ matrix.ext }}" "out/$b-$tag-${{ matrix.suffix }}${{ matrix.ext }}"
+          done
+          gh release upload "$tag" out/* --clobber
