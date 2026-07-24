@@ -6,40 +6,20 @@ editors and type-checkers (mypy, pyright, ruff) can show signatures and
 docstrings without loading the compiled extension.
 """
 
-from typing import Iterable, List, Tuple, Union
+from typing import Any, Dict, Iterable, List, Tuple, Union
 
 # A sequence-like input accepted by every `lz76*` function.
 SeqLike = Union[str, bytes, List[int], List[str], Iterable[int]]
-SignalLike = Union[List[float], Iterable[float]]
 
 __version__: str
 
 __all__ = [
     "lz76",
     "factorization",
-    "factors",
     "entropy_density",
     "emc",
     "metrics",
-    "spectral",
 ]
-
-
-def lz76(
-    seq: SeqLike,
-    partitions: int = 1,
-    alphabet: int | None = None,
-    log_base: int | None = None,
-    max_block_size: int = -1,
-    jobs: int = 0,
-) -> Tuple[int, float, List[int], Tuple[int, float, float]]:
-    """Full LZ76 analysis.
-
-    Returns ``(complexity, entropy, factors, (max_block_size, emc_value,
-    multi_information))``. See ``help(lzcomplexity.lz76)`` for parameter
-    semantics.
-    """
-    ...
 
 
 def factorization(
@@ -48,19 +28,8 @@ def factorization(
     alphabet: int | None = None,
     log_base: int | None = None,
     jobs: int = 0,
-) -> int:
-    """Return the LZ76 factor count of ``seq``."""
-    ...
-
-
-def factors(
-    seq: SeqLike,
-    partitions: int = 1,
-    alphabet: int | None = None,
-    log_base: int | None = None,
-    jobs: int = 0,
 ) -> Tuple[int, List[int]]:
-    """Return ``(complexity, factor_positions)`` for ``seq``."""
+    """Return ``(complexity, factor_boundary_indices)`` for ``seq``."""
     ...
 
 
@@ -82,10 +51,29 @@ def emc(
     log_base: int | None = None,
     max_block_size: int = -1,
     jobs: int = 0,
-) -> Tuple[int, float, float]:
+) -> Tuple[float, List[float]]:
     """Effective measure complexity via random block shuffling.
 
-    Returns ``(max_block_size, emc_value, multi_information)``.
+    Returns ``(emc_value, summands)`` — the EMC value and the list of
+    per-block-size terms whose sum is the EMC value.
+    """
+    ...
+
+
+def lz76(
+    seq: SeqLike,
+    partitions: int = 1,
+    alphabet: int | None = None,
+    log_base: int | None = None,
+    max_block_size: int = -1,
+    jobs: int = 0,
+) -> Dict[str, Any]:
+    """Full LZ76 analysis, returned as a dict.
+
+    Keys: ``complexity``, ``entropy_density``, ``factors``, ``emc`` (a dict of
+    ``value``/``summands``/``max_block_size``/``multi_information``),
+    ``epsilon``, ``factors_stddev``, ``normal_error``, ``poison_error``,
+    ``extras`` (a dict). See ``help(lzcomplexity.lz76)`` for details.
     """
     ...
 
@@ -93,77 +81,31 @@ def emc(
 # ── Submodule stubs ─────────────────────────────────────────────────────────
 
 class _MetricsModule:
-    """Information distances between two sequences."""
+    """Information distance between two sequences."""
 
     @staticmethod
     def nid(
         seq1: SeqLike,
         seq2: SeqLike,
         partitions: int = 1,
-        alphabet: int = 2,
-        log_base: int = 2,
+        alphabet: int | None = None,
+        log_base: int | None = None,
         jobs: int = 0,
     ) -> float:
         """Normalized information distance between ``seq1`` and ``seq2``."""
         ...
 
     @staticmethod
-    def rid(
+    def information_distance(
         seq1: SeqLike,
         seq2: SeqLike,
         partitions: int = 1,
-        alphabet: int = 2,
-        log_base: int = 2,
+        alphabet: int | None = None,
+        log_base: int | None = None,
         jobs: int = 0,
     ) -> float:
-        """Random-shuffle information distance between ``seq1`` and ``seq2``."""
-        ...
-
-
-class _SpectralModule:
-    """FFT-based spectral analysis."""
-
-    @staticmethod
-    def psd(
-        signal: SignalLike,
-        sample_frequency: int,
-        use_complex: bool = True,
-        cut: bool = False,
-        step: int = 10,
-        apply_window: bool = False,
-        win: str = "hann",
-    ) -> List[float]:
-        """Power spectral density of ``signal`` via FFT."""
-        ...
-
-    @staticmethod
-    def entropy(
-        signal: SignalLike,
-        sample_frequency: int,
-        use_complex: bool = True,
-        cut: bool = False,
-        step: int = 10,
-        apply_window: bool = False,
-        win: str = "hann",
-    ) -> float:
-        """Shannon entropy of the normalized PSD."""
-        ...
-
-    @staticmethod
-    def semc(
-        signal: SignalLike,
-        sample_frequency: int,
-        block_size: int = 0,
-        use_complex: bool = True,
-        cut: bool = False,
-        change_shuffle: bool = False,
-        step: int = 10,
-        apply_window: bool = False,
-        win: str = "hann",
-    ) -> float:
-        """Spectral effective measure complexity."""
+        """C++-compatible alias for :func:`nid`."""
         ...
 
 
 metrics: _MetricsModule
-spectral: _SpectralModule

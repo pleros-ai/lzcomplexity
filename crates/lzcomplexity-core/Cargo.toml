@@ -5,6 +5,8 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
+repository.workspace = true
+description = "LZ76 factorization and complexity measures — the algorithmic core of lzcomplexity."
 
 [lib]
 name = "lzcomplexity_core"
@@ -12,7 +14,6 @@ path = "src/lib.rs"
 
 [dependencies]
 rayon = { workspace = true }
-rustfft = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
 suffix = { workspace = true }

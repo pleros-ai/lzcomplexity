@@ -2,16 +2,14 @@
 
 Top-level functions
 -------------------
-- ``lz76`` — full analysis (complexity, entropy, factors, shuffle).
-- ``factorization`` — just the LZ76 factor count.
-- ``factors`` — complexity and factor boundary list.
-- ``entropy_density`` — normalized entropy density.
-- ``emc`` — effective measure complexity (random shuffle).
+- ``factorization`` — complexity (factor count) and factor boundary list.
+- ``entropy_density`` — normalized entropy density (entropy-rate estimator).
+- ``emc`` — effective measure complexity (value and its summand terms).
+- ``lz76`` — the full analysis, returned as a dict with everything.
 
-Submodules
-----------
-- ``metrics`` — information distances (``nid``, ``rid``).
-- ``spectral`` — FFT-based spectral analysis (``psd``, ``entropy``, ``semc``).
+Submodule
+---------
+- ``metrics`` — information distance (``nid`` / ``information_distance``).
 
 All sequence-accepting functions accept ``str``, ``bytes``, ``list[int]``,
 ``list[str]``, or any iterable of ints (e.g. NumPy arrays). For
@@ -20,27 +18,27 @@ All sequence-accepting functions accept ``str``, ``bytes``, ``list[int]``,
 
 Use ``help(lzcomplexity.<name>)`` on any of the names above for full
 parameter docs.
+
+.. note::
+   Spectral analysis (``psd``, spectral ``entropy``, ``semc``) was removed
+   from this library and now lives in a separate package.
 """
 
 from .lzcomplexity import (
     __version__,
     lz76,
     factorization,
-    factors,
     entropy_density,
     emc,
     metrics,
-    spectral,
 )
 
 __all__ = [
     "lz76",
     "factorization",
-    "factors",
     "entropy_density",
     "emc",
     "metrics",
-    "spectral",
 ]
 
 # Hide the compiled-extension submodule from `dir(lzcomplexity)` and from

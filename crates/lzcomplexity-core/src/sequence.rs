@@ -1,7 +1,7 @@
 //! Byte-sequence type mirroring the C++ `lz::sequence` class.
 
-use rand::SeedableRng;
 use rand::Rng;
+use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
 use crate::ALPHABET_SIZE;
@@ -31,6 +31,9 @@ impl Sequence {
         }
     }
 
+    // Inherent constructor mirroring the C++ `sequence(string)`; not the
+    // `FromStr` trait (it is infallible and part of the public port surface).
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
         let mut seq = Self {
             data: s.as_bytes().to_vec(),
@@ -157,11 +160,15 @@ impl Sequence {
     }
 
     pub fn min_range(&self, start: usize, end: usize) -> Option<u8> {
-        self.data.get(start..end).and_then(|s| s.iter().copied().min())
+        self.data
+            .get(start..end)
+            .and_then(|s| s.iter().copied().min())
     }
 
     pub fn max_range(&self, start: usize, end: usize) -> Option<u8> {
-        self.data.get(start..end).and_then(|s| s.iter().copied().max())
+        self.data
+            .get(start..end)
+            .and_then(|s| s.iter().copied().max())
     }
 
     /// Mirror of `seq.Take(l)` — first l characters, clamped.

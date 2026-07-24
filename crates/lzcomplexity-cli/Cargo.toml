@@ -1,0 +1,25 @@
+[package]
+name = "lzcomplexity-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Standalone command-line tools (lzcomplexity, lzdistance) built on the LZ76 core."
+
+[[bin]]
+name = "lzcomplexity"
+path = "src/bin/lzcomplexity.rs"
+
+[[bin]]
+name = "lzdistance"
+path = "src/bin/lzdistance.rs"
+
+[dependencies]
+lzcomplexity-core = { path = "../lzcomplexity-core" }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+flate2 = { workspace = true }
+rayon = { workspace = true }

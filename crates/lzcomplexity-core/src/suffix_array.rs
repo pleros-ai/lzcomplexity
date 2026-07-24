@@ -84,9 +84,7 @@ pub fn build_lcp(text: &[u8], sa: &[u32]) -> Vec<u32> {
                 h += 1;
             }
             lcp[r] = h;
-            if h > 0 {
-                h -= 1;
-            }
+            h = h.saturating_sub(1);
         } else {
             h = 0;
         }

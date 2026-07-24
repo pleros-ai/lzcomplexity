@@ -131,9 +131,7 @@ pub fn factorize(seq: &Sequence, args: &LzArgs) -> (u32, f64, Vec<u32>, f64) {
     let log_base_f = log_base.max(2) as f64;
     let logn = log_base_f.ln();
     let n_f = n as f64;
-    let epsilon = 2.0
-        * (1.0 + ((alphabet_f * n_f).ln() / logn).ln() / logn)
-        / (n_f.ln() / logn);
+    let epsilon = 2.0 * (1.0 + ((alphabet_f * n_f).ln() / logn).ln() / logn) / (n_f.ln() / logn);
 
     let mut lpf_arr = vec![0u32; n];
     lpf(&mut lpf_arr, sa.sa.clone(), sa.lcp.clone(), n);
@@ -232,4 +230,3 @@ pub fn lz76_entropy_density(seq: &Sequence, args: &LzArgs) -> f64 {
     let div = n / (n.ln() / log_base.ln());
     factorization / div
 }
-

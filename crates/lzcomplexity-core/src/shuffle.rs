@@ -44,7 +44,8 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
     let computed: Vec<(usize, i32)> = (1..=mm)
         .into_par_iter()
         .map(|idx| {
-            let rand_seq = shuffle_copy_seeded(seq, idx as u32, (seq.len() / 2) as u32, seed_for(seq, idx));
+            let rand_seq =
+                shuffle_copy_seeded(seq, idx as u32, (seq.len() / 2) as u32, seed_for(seq, idx));
             let c = lz76_factorization(&rand_seq, args);
             (idx, c as i32)
         })
@@ -63,8 +64,10 @@ pub fn shuffle_entropy_calculation(
     h_rand: &[i32],
     mm: usize,
 ) -> LzShuffle {
-    let mut result = LzShuffle::default();
-    result.max_block_size = mm as i32;
+    let mut result = LzShuffle {
+        max_block_size: mm as i32,
+        ..Default::default()
+    };
     if args.get_shuffle_terms {
         result.summands = vec![0.0; mm];
     }
