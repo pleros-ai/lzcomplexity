@@ -10,33 +10,38 @@
 
 `lzcomplexity` computes information-theoretic measures of symbolic sequences using **Lempel–Ziv 76 (LZ76) factorization** [1]. The LZ76 complexity `c(S)` is the minimum number of factors needed to represent a sequence, where each factor is either a new symbol or the longest previously-seen substring. From `c(S)` you get a non-parametric entropy-rate estimator — `h ≈ c(S)·log_k(n)/n` — that converges to the true entropy rate of ergodic sources [2].
 
-The library exposes:
+The library ships **two things**:
 
-- **Complexity & entropy** — `lz76`, `factorization`, `factors`, `entropy_density`, `emc`.
-- **Information distances** (`metrics`) — `nid` (normalized info distance), `rid` (shuffle-based distance).
-- **Spectral analysis** (`spectral`) — `psd`, `entropy`, `semc`.
+1. A **Python library** (`import lzcomplexity`) built on a Rust core via [PyO3](https://pyo3.rs/).
+2. Two **standalone command-line tools** — `lzcomplexity` and `lzdistance`.
 
-The core is implemented in Rust; Python bindings are built with [PyO3](https://pyo3.rs/). Common applications: neuroscience time-series, DNA analysis, anomaly detection, structural pattern analysis.
+The core is implemented in Rust; the two front-ends share it. Common applications: neuroscience time-series, DNA analysis, anomaly detection, structural pattern analysis.
 
-> This is the **Rust implementation**. The original C++/nanobind implementation lives on the `main` branch and is preserved unchanged. Numerical outputs are equivalent up to deterministic shuffle seeding (see [Differences from the C++ version](#differences-from-the-c-version)).
+> This is the **Rust implementation**, the current production backend. The original C++/nanobind implementation lives on the `main` branch. Numerical outputs are equivalent up to deterministic shuffle seeding (see [Differences from the C++ version](#differences-from-the-c-version)).
+>
+> **Spectral analysis** (`psd`, spectral `entropy`, `semc`) has been **removed** from this library and now lives in a separate package.
 
 ---
 
-## Install
+## Python library
 
-You need **Python ≥ 3.9** and a **Rust toolchain** (`stable`, installed via [rustup](https://rustup.rs)).
+### Install
 
-From a clone of this repository:
+You need **Python ≥ 3.9**. From PyPI:
+
+```bash
+pip install lzcomplexity
+```
+
+Or from a clone of this repository (requires a [Rust toolchain](https://rustup.rs)):
 
 ```bash
 pip install .
 ```
 
-`pip` invokes [maturin](https://www.maturin.rs/) (declared in `pyproject.toml`), which compiles the Rust workspace, produces a wheel, and installs it. No CMake, no submodules, no C++ toolchain.
+`pip` invokes [maturin](https://www.maturin.rs/), which compiles the Rust workspace, produces a wheel, and installs it. No CMake, no submodules, no C++ toolchain.
 
-### Development install
-
-If you want to iterate on the Rust code without reinstalling each time:
+#### Development install
 
 ```bash
 python3 -m venv .venv
@@ -45,99 +50,159 @@ pip install maturin
 maturin develop --release
 ```
 
-After this, `import lzcomplexity` picks up your local debug build. Re-run `maturin develop --release` after Rust changes.
+Re-run `maturin develop --release` after Rust changes.
 
----
-
-## Quick start
+### Quick start
 
 ```python
 import lzcomplexity as lz
 
-# Number of LZ76 factors
-lz.factorization("01001010101101010101110101010101010000100101011")
-# → 9
-
-# Factor count + boundaries
-lz.factors("banana")
+# Complexity + factor boundaries — factor i spans [factors[i], factors[i+1])
+complexity, factors = lz.factorization("banana")
 # → (3, [0, 1, 2, 3, 7])
-#       └── factor i spans [positions[i], positions[i+1])
 
-# Normalised entropy density (in [0, 1] by default)
-lz.entropy_density("ABRACADABRA")
-# → 0.677...   (alphabet auto-detected: 5 distinct symbols)
+# Normalised entropy density (entropy-rate estimator)
+lz.entropy_density("01010101")
+# → 0.75
 
-# Full analysis — complexity, entropy, factors, random-shuffle stats
-complexity, entropy, factors, shuffle = lz.lz76("ABRACADABRA")
-max_block_size, emc_value, multi_information = shuffle
+# Effective measure complexity: the value and the terms that sum to it
+emc_value, summands = lz.emc("01001010101101010101110101010101010000100101011")
 
-# Information distance between two sequences
+# Everything in one call (returns a dict)
+full = lz.lz76("ABRACADABRA")
+full["complexity"], full["entropy_density"], full["factors"]
+full["emc"]     # {"value", "summands", "max_block_size", "multi_information"}
+full["extras"]  # {"rajski_distance", "redundancy", "fh_uncertainty", ...}
+
+# Normalized information distance (NID) between two sequences
 lz.metrics.nid("ABRACADABRA", "ABRACADABRZ")     # → small, similar
 lz.metrics.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
-
-# Spectral entropy of a signal
-import numpy as np
-signal = np.sin(2 * np.pi * 5 * np.linspace(0, 1, 1024)).tolist()
-lz.spectral.entropy(signal, sample_frequency=1024)
 ```
+
+### Public API
+
+| Symbol | Signature | Returns |
+|---|---|---|
+| `lz.factorization(seq, ...)` | complexity + factor boundaries | `(int, list[int])` |
+| `lz.entropy_density(seq, ...)` | normalised entropy density | `float` |
+| `lz.emc(seq, ...)` | effective measure complexity | `(float, list[float])` — `(value, summands)` |
+| `lz.lz76(seq, ...)` | the full analysis | `dict` (see below) |
+| `lz.metrics.nid(seq1, seq2, ...)` | normalised information distance | `float` |
+| `lz.metrics.information_distance(...)` | C++-compatible alias for `nid` | `float` |
+
+`lz.lz76(...)` returns a dict with keys: `complexity`, `entropy_density`, `factors`, `emc` (a nested dict), `epsilon`, `factors_stddev`, `normal_error`, `poison_error`, `extras` (a nested dict).
+
+Common keyword arguments:
+
+- `partitions` (int, default 1) — suffix-array partition count; performance knob, no effect on results.
+- `alphabet` (int | None, default None) — auto-detect (distinct symbols, min 2) when None.
+- `log_base` (int | None, default None) — matches `alphabet` when None (normalised entropy in units of symbols); pass `2` for bits.
+- `max_block_size` (int, default −1) — shuffle block-size cap for `emc`/`lz76`; −1 auto-selects.
+- `jobs` (int, default 0) — reserved; currently ignored (rayon manages its pool).
+
+Run `help(lzcomplexity.<name>)` for full per-function docs. Type stubs (`__init__.pyi`) ship with the package.
 
 ### Accepted input types
 
 Every sequence-accepting function accepts any of:
 
-- `str` — symbols are taken from the string bytes directly.
+- `str` — symbols taken from the string bytes directly.
 - `bytes` — raw byte sequence.
 - `list[str]` — concatenated as-is (e.g. `["A","C","G","T"]`).
-- `list[int]` — each element is converted to its decimal string and concatenated. So `[0, 1, 10]` becomes the symbolic string `"0110"` (the multi-digit value collapses). For predictable behaviour with multi-symbol integer data, pre-format to `str` yourself.
-- Any iterable of ints — covers NumPy arrays via Python's sequence protocol; same conversion as `list[int]`.
-
-`spectral.psd` / `spectral.entropy` / `spectral.semc` take `list[float]` (or any iterable of floats).
-
-### Alphabet auto-detection
-
-By default, every function leaves `alphabet=None` and `log_base=None`, which means **auto-detect from the input** (number of distinct symbols, minimum 2). This is the right behaviour for almost all inputs:
-
-```python
-lz.entropy_density("01010101")    # alphabet inferred as 2
-lz.entropy_density("ABRACADABRA") # alphabet inferred as 5
-```
-
-If you specifically want entropy in bits, override `log_base`:
-
-```python
-lz.entropy_density("ABRACADABRA", log_base=2)
-```
-
-Pass `alphabet=N` explicitly only if you know the *true* alphabet differs from what is observed in the input (e.g. a short binary slice that happens to contain only `0`s).
+- `list[int]` — each element becomes its decimal string, concatenated, so `[0, 1, 10]` → `"0110"`.
+- Any iterable of ints — covers NumPy arrays; same conversion as `list[int]`.
 
 ---
 
-## API reference (compact)
+## Standalone binaries
 
-Run `help(lzcomplexity.<name>)` from Python for full per-function docs. The complete public surface is:
+Two command-line tools are built from the same Rust core.
 
-| Symbol | Signature | Returns |
+Build them from a clone:
+
+```bash
+cargo build --release
+# → target/release/lzcomplexity   and   target/release/lzdistance
+```
+
+Prebuilt binaries for Linux/macOS/Windows are attached to each [GitHub release](https://github.com/pleros-ai/lzcomplexity/releases).
+
+### `lzcomplexity`
+
+Reads a sequence file and writes a JSON report with the LZ76 complexity, entropy density, and random-shuffle effective measure complexity.
+
+```bash
+lzcomplexity input.txt                 # → input.lz76.json
+lzcomplexity input.txt -m -d           # multi-line + distance between consecutive lines
+lzcomplexity input.txt -n              # entropy density only
+lzcomplexity input.txt -a 4 -l 2       # explicit alphabet / log base
+```
+
+Key flags: `-a/--alphabet`, `-l/--log-base`, `-p/--partitions`, `-m/--multi-line`, `-d/--dlz`, `-n/--entropy-density`, `-f/--factors <file>`, `-F/--format <fmt>`, `-o/--output`, `-v/--verbose`, `-V/--version`.
+
+### `lzdistance`
+
+Computes pairwise information-distance and shuffle-distance matrices between one or two data sources (files or directories).
+
+```bash
+lzdistance sequences.txt               # self-distance matrix (first_dim × first_dim)
+lzdistance A.txt B.txt                  # cross matrix
+lzdistance genomes/ -a                  # a directory of files, DNA complement-aware
+lzdistance A.txt B.txt -g 5             # also emit the directed graph
+```
+
+Key flags: `-a/--adn` (DNA), `-b/--binary`, `-r/--reverse`, `-y/--trajectory`, `-g/--get-direction [threshold]`, `-I/--first-format`, `-S/--second-format`, `-i/--first #:#`, `-s/--second #:#`, `-p/--partitions`, `-o/--output`, `-L/--logs`, `-v/--version`.
+
+### Input formats
+
+Both tools auto-detect the format (or accept `-F`/`-I`/`-S`): raw **text** and **binary**, **CSV**/**TSV**, **PBM/PGM** images (P1/P2/P4/P5), and **FASTA/DNA/RNA** (including `.gz`). Use `-m` (or a directory) to treat each line/file as a separate sequence.
+
+---
+
+## Contributing & releases
+
+This repo uses **[Conventional Commits](https://www.conventionalcommits.org/)** together with **[release-please](https://github.com/googleapis/release-please)** so that versioning and PyPI publishing happen **automatically** — you never bump a version or push a tag by hand.
+
+### How to commit
+
+Prefix every commit **title** with a type:
+
+| Prefix | Use for | Version effect (pre-1.0) |
 |---|---|---|
-| `lz.lz76(seq, ...)` | full analysis | `(complexity, entropy, factors, (mbs, emc, mi))` |
-| `lz.factorization(seq, ...)` | factor count | `int` |
-| `lz.factors(seq, ...)` | factor count + boundaries | `(int, list[int])` |
-| `lz.entropy_density(seq, ...)` | normalised entropy density | `float` |
-| `lz.emc(seq, ...)` | effective measure complexity | `(int, float, float)` |
-| `lz.metrics.nid(seq1, seq2, ...)` | normalised info distance | `float` |
-| `lz.metrics.rid(seq1, seq2, ...)` | random-shuffle info distance | `float` |
-| `lz.spectral.psd(signal, sr, ...)` | power spectral density | `list[float]` |
-| `lz.spectral.entropy(signal, sr, ...)` | spectral entropy | `float` |
-| `lz.spectral.semc(signal, sr, ...)` | spectral effective complexity | `float` |
+| `feat:` | a new feature | bumps the **minor** (`0.11 → 0.12`) |
+| `fix:` | a bug fix | bumps the **patch** (`0.11.0 → 0.11.1`) |
+| `perf:` | a performance improvement | patch |
+| `refactor:`, `docs:`, `build:`, `ci:`, `test:`, `chore:` | everything else | no release on its own |
 
-Common keyword arguments on the LZ functions:
+Add `!` after the type (e.g. `feat!:`) or a `BREAKING CHANGE:` footer to force a larger bump.
 
-- `partitions` (int, default 1) — suffix-array partition count; performance knob, no effect on results.
-- `alphabet` (int | None, default None) — auto-detect when None.
-- `log_base` (int | None, default None) — matches `alphabet` when None.
-- `max_block_size` (int, default −1) — shuffle block-size cap; −1 auto-selects.
-- `jobs` (int, default 0) — reserved; currently ignored (rayon manages its pool).
+```
+feat: add spectral-free NID batch mode
+fix: correct off-by-one in PGM reader
+docs: document the lzdistance directed graph
+```
 
-Type stubs (`__init__.pyi`) ship with the package, so editors and `mypy`/`pyright` see signatures and types directly.
+### What happens automatically
+
+The Python package is released from the **`rust-backend`** branch; the C++ `main`
+branch is kept only as a verification reference and is not published.
+
+1. You merge conventional commits into `rust-backend`.
+2. **release-please** opens (and keeps updating) a "release PR" that bumps the version in `Cargo.toml` **and** `pyproject.toml`, and updates `CHANGELOG.md`.
+3. When you merge that release PR, release-please tags the release (`vX.Y.Z`) and creates a GitHub release.
+4. The [`Release`](.github/workflows/release.yml) workflow then builds the wheels with maturin, **publishes them to PyPI** via OIDC trusted publishing (no token needed), and attaches the standalone binaries to the GitHub release.
+
+So the entire flow is: **write conventional commits → merge the release PR → PyPI updates itself.**
+
+> One-time setup on PyPI: the *trusted publisher* for the `lzcomplexity` project
+> (Settings → Publishing) is keyed on the repository and the **workflow filename**
+> (plus an optional environment) — **not** on a branch. Point its *Workflow name*
+> at **`release.yml`** (the previous C++ setup used `wheels.yml`). No API token
+> or secret is stored in the repo.
+
+### CI
+
+Every push and PR runs [`CI`](.github/workflows/ci.yml): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, a smoke test of both standalone binaries, and a wheel build + Python API smoke test on Linux/macOS/Windows.
 
 ---
 
@@ -146,15 +211,14 @@ Type stubs (`__init__.pyi`) ship with the package, so editors and `mypy`/`pyrigh
 ```
 crates/
 ├── lzcomplexity-core/   Rust crate: algorithms (LZ76, suffix array, LPF,
-│                         shuffle, spectral, metrics). No Python types.
-└── lzcomplexity-py/     Rust crate: PyO3 bindings. Builds the
-                          `lzcomplexity` Python extension module.
-python/lzcomplexity/     Python package skin: __init__.py re-exports,
-                          __init__.pyi type stubs, py.typed marker.
+│                        shuffle, metrics). No Python or CLI types.
+├── lzcomplexity-py/     PyO3 bindings → the `lzcomplexity` Python extension.
+└── lzcomplexity-cli/    The `lzcomplexity` and `lzdistance` binaries.
+python/lzcomplexity/     Python package skin: __init__.py, __init__.pyi, py.typed.
 pyproject.toml           Maturin build config.
 ```
 
-The Rust workspace builds as one shared object that's installed under the `lzcomplexity` Python package. Running `cargo test --workspace` exercises the algorithmic core (suffix array on `"banana"` / `"test text"`, LCP, LPF, sequence operators, deterministic shuffle).
+`cargo test --workspace` exercises the algorithmic core.
 
 ---
 
@@ -164,12 +228,12 @@ The Rust workspace builds as one shared object that's installed under the `lzcom
 |---|---|---|
 | Build system | CMake + nanobind | Cargo + maturin |
 | Suffix array | CaPS (custom parallel) | `suffix` crate + Kasai LCP |
-| FFT | pocketfft | rustfft |
 | Parallelism | OpenMP / TBB / Cilk | rayon |
 | Shuffle RNG | `std::mt19937` (time-seeded) | `ChaCha8` (seeded from input → **deterministic**) |
-| Python surface | older versions exposed many classes (`sequence`, `LZ_Args`, `CaPS`, …) | locked to the 10 names listed above |
+| Spectral analysis | included (`psd`, `entropy`, `semc`) | **removed** (moved to a separate package) |
+| Python surface | many names, `nid`/`rid`, class exports | `factorization`, `entropy_density`, `emc`, `lz76`, `metrics.nid` |
 
-Same input ⇒ same outputs across Rust and C++ within float tolerance, *except* shuffle-based metrics (`emc`, `rid`, `spectral.semc`), which are now reproducible run-to-run.
+Same input ⇒ same outputs across Rust and C++ within float tolerance for the deterministic measures (factorization, factors, entropy density, information distance) — verified by differential testing. Shuffle-based metrics (`emc`) differ only in that Rust is reproducible run-to-run.
 
 ---
 
