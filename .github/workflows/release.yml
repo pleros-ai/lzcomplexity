@@ -131,19 +131,36 @@ jobs:
         with:
           targets: ${{ matrix.target }}
       - run: cargo build --release -p lzcomplexity-cli --target ${{ matrix.target }}
-      - name: Package and upload binaries
+      - name: Package binaries
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${{ needs.release-please.outputs.tag_name }}"
           if [ -z "$tag" ]; then
-            tag=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 1 --json tagName --jq '.[0].tagName')
+            tag=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null)
           fi
-          echo "Uploading binaries to release $tag"
+          [ -z "$tag" ] && tag="dev"
+          echo "TAG=$tag" >> "$GITHUB_ENV"
           mkdir -p out
           bindir="target/${{ matrix.target }}/release"
           for b in lzcomplexity lzdistance; do
             cp "$bindir/$b${{ matrix.ext }}" "out/$b-$tag-${{ matrix.suffix }}${{ matrix.ext }}"
           done
-          gh release upload "$tag" out/* --clobber
+      # Binaries are always published as workflow artifacts (retained per repo
+      # policy) so they are available regardless of release immutability.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.suffix }}
+          path: out/*
+          if-no-files-found: error
+      # Best-effort attach to the GitHub release. If the org has "immutable
+      # releases" enabled, assets cannot be added after creation (HTTP 422) —
+      # that is non-fatal here; the artifacts above remain the source of truth.
+      - name: Attach to release (best-effort)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$TAG" out/* --clobber \
+            || echo "::warning::Could not attach binaries to release $TAG (immutable release?). Use the workflow artifacts instead."
