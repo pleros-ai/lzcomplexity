@@ -1,0 +1,18 @@
+version: 2
+updates:
+  # Keep GitHub Actions pinned versions fresh (this is what let the C++
+  # cibuildwheel pin rot into a broken CI).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+
+  # Keep Rust dependencies up to date.
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "build"

@@ -7,8 +7,6 @@
       "package-name": "lzcomplexity",
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": false,
-      "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
       "extra-files": [
         { "type": "generic", "path": "Cargo.toml" },
         { "type": "generic", "path": "pyproject.toml" }
