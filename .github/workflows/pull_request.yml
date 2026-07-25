@@ -117,7 +117,7 @@ jobs:
           python-version: 3.x
 
       - name: Generate wheel
-        uses: pypa/cibuildwheel@3.4.0
+        uses: pypa/cibuildwheel@v3.4.0
         with:
           package-dir: .
           output-dir: wheelhouse
