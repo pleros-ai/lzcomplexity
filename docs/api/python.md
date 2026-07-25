@@ -8,7 +8,7 @@ public surface: no classes, no submodules, no exception hierarchy.
 ```pycon
 >>> import lzcomplexity as lz
 >>> lz.__version__
-'1.0.0'
+'1.0.1'
 >>> lz.__all__
 ['lz76', 'factorization', 'h', 'emc', 'nid']
 ```
@@ -654,7 +654,7 @@ shuffle-based EMC needs `n > 50` before the block size leaves single digits.
 
 | Name | Value | Notes |
 |---|---|---|
-| `lzcomplexity.__version__` | `'1.0.0'` | comes from the Rust crate version, not from `pyproject.toml`. **Not in `__all__`**, so `from lzcomplexity import *` does not bind it |
+| `lzcomplexity.__version__` | `'1.0.1'` | comes from the Rust crate version, not from `pyproject.toml`. **Not in `__all__`**, so `from lzcomplexity import *` does not bind it |
 | `lzcomplexity.__all__` | `['lz76', 'factorization', 'h', 'emc', 'nid']` | a star-import binds exactly these five |
 | `lzcomplexity.__doc__` | the package docstring | what `help(lzcomplexity)` shows |
 
