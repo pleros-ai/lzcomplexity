@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "lzcomplexity"
-version = "0.12.0" # x-release-please-version
+version = "0.13.0" # x-release-please-version
 description = "LempelZiv-76 complexity engine. Suited for complexity analysis of time series."
 authors = [
     { name = "Efren Aragon", email = "support@pleros.ai" },
