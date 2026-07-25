@@ -7,6 +7,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 description = "LZ76 factorization and complexity measures — the algorithmic core of lzcomplexity."
+readme = "README.md"
 keywords = ["lempel-ziv", "complexity", "entropy", "information-theory", "compression"]
 categories = ["algorithms", "science", "compression"]
 

@@ -238,7 +238,7 @@ checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
 name = "lzcomplexity-cli"
-version = "0.11.0"
+version = "1.0.0"
 dependencies = [
  "clap",
  "flate2",
@@ -250,7 +250,7 @@ dependencies = [
 
 [[package]]
 name = "lzcomplexity-core"
-version = "0.11.0"
+version = "1.0.0"
 dependencies = [
  "cdivsufsort",
  "rand",
@@ -260,7 +260,7 @@ dependencies = [
 
 [[package]]
 name = "lzcomplexity-py"
-version = "0.11.0"
+version = "1.0.0"
 dependencies = [
  "lzcomplexity-core",
  "pyo3",
