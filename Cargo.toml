@@ -12,8 +12,9 @@ edition = "2021"
 rust-version = "1.75"
 license = "MIT"
 authors = [
-    "Efren Aragon Perez <efrenaragon96@gmail.com>",
-    "Ernesto Estevez Rams <estevez@fisica.uh.cu>",
+    "Efrén Aragón Pérez <efrenaragon96@gmail.com>",
+    "Daniel Estévez Moya <kemossabee@gmail.com>",
+    "Ernesto Estévez Rams <estevez@fisica.uh.cu>",
 ]
 repository = "https://github.com/pleros-ai/lzcomplexity"
 

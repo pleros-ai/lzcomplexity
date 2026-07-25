@@ -6,6 +6,8 @@
 [![Python](https://img.shields.io/badge/Python-3.9+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![Rust](https://img.shields.io/badge/Rust-stable-DEA584.svg?style=flat&logo=rust&logoColor=white)](https://www.rust-lang.org)
 
+**[Documentation](https://pleros-ai.github.io/lzcomplexity/)**
+
 </div>
 
 `lzcomplexity` computes information-theoretic measures of symbolic sequences using **Lempel–Ziv 76 (LZ76) factorization** [1]. The LZ76 complexity `c(S)` is the minimum number of factors needed to represent a sequence, where each factor is either a new symbol or the longest previously-seen substring. From `c(S)` you get a non-parametric entropy-rate estimator — `h ≈ c(S)·log_k(n)/n` — that converges to the true entropy rate of ergodic sources [2].
@@ -166,14 +168,18 @@ This repo uses **[Conventional Commits](https://www.conventionalcommits.org/)** 
 
 Prefix every commit **title** with a type:
 
-| Prefix | Use for | Version effect (pre-1.0) |
+| Prefix | Use for | Version effect (the project is 1.x) |
 |---|---|---|
-| `feat:` | a new feature | bumps the **minor** (`0.11 → 0.12`) |
-| `fix:` | a bug fix | bumps the **patch** (`0.11.0 → 0.11.1`) |
+| `feat:` | a new feature | bumps the **minor** (`1.0.0 → 1.1.0`) |
+| `fix:` | a bug fix | bumps the **patch** (`1.0.0 → 1.0.1`) |
 | `perf:` | a performance improvement | patch |
 | `refactor:`, `docs:`, `build:`, `ci:`, `test:`, `chore:` | everything else | no release on its own |
 
-Add `!` after the type (e.g. `feat!:`) or a `BREAKING CHANGE:` footer to force a larger bump.
+Add `!` after the type (e.g. `feat!:`) or a `BREAKING CHANGE:` footer to force a **major** bump
+(`1.x → 2.0.0`). Before 1.0 a breaking change only bumped the minor; that is no longer the case.
+
+> Keep commit messages **ASCII-only**. release-please failed to parse a message containing Unicode
+> maths symbols and silently dropped it from the changelog.
 
 ```
 feat: add spectral-free NID batch mode
@@ -226,7 +232,7 @@ pyproject.toml           Maturin build config.
 | Aspect | C++ (`main` branch) | Rust (this branch) |
 |---|---|---|
 | Build system | CMake + nanobind | Cargo + maturin |
-| Suffix array | CaPS (custom parallel) | `suffix` crate + Kasai LCP |
+| Suffix array | CaPS (custom parallel) | comparison sort below 2048 bytes, `cdivsufsort` above, + Kasai LCP |
 | Parallelism | OpenMP / TBB / Cilk | rayon |
 | Shuffle RNG | `std::mt19937` (time-seeded) | `ChaCha8` (seeded from input → **deterministic**) |
 | Spectral analysis | included (`psd`, `entropy`, `semc`) | **removed** (moved to a separate package) |
@@ -241,14 +247,25 @@ Same input ⇒ same outputs across Rust and C++ within float tolerance for the d
 1. Lempel, A., & Ziv, J. (1976). On the complexity of finite sequences. *IEEE Transactions on Information Theory*, 22(1), 75–81.
 2. Kontoyiannis, I., Algoet, P. H., Suhov, Y. M., & Wyner, A. J. (1998). Nonparametric entropy estimation for stationary processes and random fields. *IEEE Transactions on Information Theory*, 44(3), 1319–1327.
 
+## Authors
+
+- **Efrén Aragón Pérez** — principal author and creator of `lzcomplexity`. The library exists
+  because of him; he wrote the original implementation this work descends from.
+- **Daniel Estévez Moya** — the Rust rewrite that is the current production backend.
+- **Ernesto Estévez Rams** — from the research lineage of the original C++ implementation.
+
 ## Citation
 
 ```bibtex
-@software{lzcomplexity_2025,
-  title={lzcomplexity: an entropy measurement library},
-  author={Efren Aragon-Perez},
-  url={https://github.com/pleros-ai/lzcomplexity},
-  year={2025}
+@software{lzcomplexity_2026,
+  title   = {lzcomplexity: LZ76 complexity, entropy rate and information distance
+             for symbolic sequences},
+  author  = {Arag{\'o}n P{\'e}rez, Efr{\'e}n and
+             Est{\'e}vez Moya, Daniel and
+             Est{\'e}vez Rams, Ernesto},
+  url     = {https://github.com/pleros-ai/lzcomplexity},
+  version = {1.0.0},
+  year    = {2026}
 }
 ```
 

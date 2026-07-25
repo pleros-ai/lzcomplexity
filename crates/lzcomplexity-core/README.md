@@ -54,7 +54,9 @@ let d = metrics::lz76_information_distance(
 assert!((d - 0.25).abs() < 1e-12);
 ```
 
-See the [API documentation](https://docs.rs/lzcomplexity-core) for the full surface.
+See the [API documentation](https://docs.rs/lzcomplexity-core) for the full surface, and the
+[project documentation](https://pleros-ai.github.io/lzcomplexity/) for the theory, the recipes and
+the command-line tools.
 
 ## Notes
 
@@ -69,6 +71,12 @@ See the [API documentation](https://docs.rs/lzcomplexity-core) for the full surf
    *IEEE Transactions on Information Theory*, 22(1), 75–81.
 2. Kontoyiannis, I., et al. (1998). Nonparametric entropy estimation for
    stationary processes and random fields. *IEEE TIT*, 44(3), 1319–1327.
+
+## Authors
+
+- **Efrén Aragón Pérez** — principal author and creator of `lzcomplexity`.
+- **Daniel Estévez Moya** — the Rust rewrite.
+- **Ernesto Estévez Rams** — research lineage of the original C++ implementation.
 
 ## License
 

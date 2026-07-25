@@ -7,8 +7,9 @@ name = "lzcomplexity"
 version = "1.0.1" # x-release-please-version
 description = "LempelZiv-76 complexity engine. Suited for complexity analysis of time series."
 authors = [
-    { name = "Efren Aragon", email = "support@pleros.ai" },
-    { name = "Ernesto Estevez Rams", email = "estevez@fisica.uh.cu" },
+    { name = "Efrén Aragón Pérez", email = "efrenaragon96@gmail.com" },
+    { name = "Daniel Estévez Moya", email = "kemossabee@gmail.com" },
+    { name = "Ernesto Estévez Rams", email = "estevez@fisica.uh.cu" },
 ]
 license = { file = "LICENSE" }
 readme = "README.md"
