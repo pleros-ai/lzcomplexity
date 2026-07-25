@@ -312,13 +312,18 @@ namespace lz {
     }
 
     const auto log_base = args.log_base == details::NO_ALPHABET ? str.getAlphabetSize() : args.log_base;
-    const auto alphabet = args.alphabet == details::NO_ALPHABET ? str.getAlphabetSize() : args.alphabet;
+
+    // Block-entropy estimator: g = log_k(N)/N, so the original's entropy density
+    // is h_hat = C_LZ(u)*g and the block entropy at scale l is H_l = l*C_LZ(u^{RS(l)})*g
+    // (H_0 = 0). Each summand is the entropy gain's excess: ΔH_l - h_hat.
+    const lz_double g     = utils::log(str.size(), log_base) / (lz_double)str.size();
+    const lz_double h_hat = (lz_double)complexity * g;
 
     auto body = [&](const auto& rng, lz_double init) -> lz_double {
       for (auto idx = rng.begin(); idx != rng.end(); idx++) {
-        auto term = utils::log(str.size(), log_base)
-          * std::fabs((lz_double)H_rand[idx] - (lz_double)complexity)
-          / (str.size() * utils::log(alphabet, log_base));
+        const lz_double H_l    = (lz_double)idx * (lz_double)H_rand[idx] * g;
+        const lz_double H_prev = (lz_double)(idx - 1) * (lz_double)H_rand[idx - 1] * g;  // H_0 = 0
+        auto            term   = (H_l - H_prev) - h_hat;
         init += term;
 
         if (args.get_shuffle_terms) {
@@ -348,15 +353,23 @@ namespace lz {
     }
 
     const auto log_base = args.log_base == details::NO_ALPHABET ? str.getAlphabetSize() : args.log_base;
-    const auto alphabet = args.alphabet == details::NO_ALPHABET ? str.getAlphabetSize() : args.alphabet;
+
+    // Block-entropy estimator (see the H_rand overload). This variant shuffles
+    // inline, so it recomputes C_LZ(u^{RS(l-1)}) to form the first difference.
+    const lz_double g     = utils::log(str.size(), log_base) / (lz_double)str.size();
+    const lz_double h_hat = (lz_double)complexity * g;
 
     auto body = [&](const auto& rng, lz_double init) -> lz_double {
       for (auto idx = rng.begin(); idx != rng.end(); idx++) {
-        sequence rand_seq = Shuffle(str, idx, str.size() / 2);
-        auto     c_rand = lz76Factorization(rand_seq, args);
+        auto            c_l = lz76Factorization(Shuffle(str, idx, str.size() / 2), args);
+        const lz_double H_l = (lz_double)idx * (lz_double)c_l * g;
 
-        auto term = utils::log(str.size(), log_base) * std::fabs((lz_double)c_rand - (lz_double)complexity)
-          / (str.size() * utils::log(alphabet, log_base));
+        lz_double H_prev = 0.0;  // H_0 = 0
+        if (idx > 1) {
+          auto c_prev = lz76Factorization(Shuffle(str, idx - 1, str.size() / 2), args);
+          H_prev      = (lz_double)(idx - 1) * (lz_double)c_prev * g;
+        }
+        auto term = (H_l - H_prev) - h_hat;
         init += term;
 
         if (args.get_shuffle_terms) {
