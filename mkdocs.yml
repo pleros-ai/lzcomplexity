@@ -1,0 +1,157 @@
+site_name: lzcomplexity
+site_description: LZ76 complexity, entropy rate and information distance for symbolic sequences.
+site_url: https://pleros-ai.github.io/lzcomplexity/
+repo_url: https://github.com/pleros-ai/lzcomplexity
+repo_name: pleros-ai/lzcomplexity
+# The documentation lives on the `docs` branch, so "edit this page" points there.
+edit_uri: edit/docs/docs/
+copyright: MIT &middot; Lempel&ndash;Ziv 76
+
+theme:
+  name: material
+
+  # No Google Fonts request — every stack resolves from the OS. The site makes
+  # no external network requests at all, so it works offline and behind a
+  # firewall.
+  font: false
+
+  language: en
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/pulse
+  favicon: assets/favicon.svg
+
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Follow system
+
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark
+
+    # Dark is the canonical look; the palette is defined in assets/extra.css.
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light
+
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    - content.action.edit
+
+extra_css:
+  - assets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/pleros-ai/lzcomplexity
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/lzcomplexity/
+    - icon: simple/rust
+      link: https://crates.io/crates/lzcomplexity-core
+  generator: false
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: "&para;"
+      permalink_title: Link to this section
+      toc_depth: 3
+
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+      # Server-side highlighting — no highlight.js fetched from a CDN.
+      use_pygments: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  # Formulas are set as Unicode inside .lz-formula callouts rather than with
+  # MathJax, which would pull a script from a CDN and break the offline promise.
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify {kwds: {case: lower}}
+  - pymdownx.tilde
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+
+  - Guide:
+      - Getting started:
+          - Install: guide/install.md
+          - Your first factorization: guide/first-factorization.md
+          - Reading the numbers: guide/reading-the-numbers.md
+      - Concepts:
+          - LZ76 factorization: concepts/lz76.md
+          - Entropy density (h): concepts/entropy-density.md
+          - Effective measure complexity: concepts/emc.md
+          - Information distance (NID): concepts/nid.md
+          - Alphabets and log bases: concepts/alphabets.md
+          - Sequence length and convergence: concepts/convergence.md
+      - Recipes:
+          - EEG and neural time-series: recipes/neuro.md
+          - DNA and FASTA: recipes/genomics.md
+          - The route to chaos: recipes/dynamical-systems.md
+          - Comparing many sequences: recipes/batch-distance.md
+
+  - API:
+      - Python: api/python.md
+      - Input types: api/inputs.md
+      - Rust crate: api/rust.md
+
+  - CLI:
+      - Overview: cli/index.md
+      - lzcomplexity: cli/lzcomplexity.md
+      - lzdistance: cli/lzdistance.md
+      - Input formats: cli/formats.md
+
+  - Project:
+      - Performance: project/performance.md
+      - Determinism: project/determinism.md
+      - Rust vs C++: project/cpp-parity.md
+      - Releases: project/releases.md
+      - Authors and citation: project/authors.md
+      - References: project/references.md

@@ -13,8 +13,12 @@ __pycache__/
 .venv/
 venv/
 
+# MkDocs build output
+/site/
+
 # Editors
 .vscode/
 .idea/
+.claude/
 *.swp
 .DS_Store

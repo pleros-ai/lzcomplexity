@@ -1,0 +1,5 @@
+# Documentation toolchain. Pinned to majors so Dependabot can bump them and CI
+# catches breakage before it reaches the published site.
+mkdocs~=1.6
+mkdocs-material~=9.5
+pymdown-extensions~=10.9
