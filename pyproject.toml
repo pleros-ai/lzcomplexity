@@ -14,7 +14,7 @@ license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Programming Language :: Python :: 3",
     "Programming Language :: Rust",
@@ -22,6 +22,12 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
+
+[project.urls]
+Homepage = "https://github.com/pleros-ai/lzcomplexity"
+Repository = "https://github.com/pleros-ai/lzcomplexity"
+Changelog = "https://github.com/pleros-ai/lzcomplexity/releases"
+Issues = "https://github.com/pleros-ai/lzcomplexity/issues"
 
 [tool.maturin]
 manifest-path = "crates/lzcomplexity-py/Cargo.toml"
