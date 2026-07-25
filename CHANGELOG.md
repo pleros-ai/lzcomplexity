@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.13.0](https://github.com/pleros-ai/lzcomplexity/compare/v0.12.0...v0.13.0) (2026-07-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* emc() and lz76()["emc"] now return values from the block-entropy estimator, which differ numerically from the previous formula.
+
+### Features
+
+* emc uses the block-entropy estimator ([d16939d](https://github.com/pleros-ai/lzcomplexity/commit/d16939d354ed6ada6eef93b612502fd91784fef6))
+
+
+### Performance
+
+* linear-time suffix array + reuse/parallelize factorizations ([8f858be](https://github.com/pleros-ai/lzcomplexity/commit/8f858beead0a182dcad0fd8543c84199239591bc))
+
 ## [0.12.0](https://github.com/pleros-ai/lzcomplexity/compare/v0.11.0...v0.12.0) (2026-07-24)
 
 
