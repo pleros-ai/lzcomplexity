@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/pleros-ai/lzcomplexity/compare/v1.0.0...v1.0.1) (2026-07-25)
+
+
+### Documentation
+
+* add a README for the core crate ([b1bae5e](https://github.com/pleros-ai/lzcomplexity/commit/b1bae5e39522b15d7c555d541e96d397ca4ad9ab))
+
 ## [1.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v0.13.0...v1.0.0) (2026-07-25)
 
 
