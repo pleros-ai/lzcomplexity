@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v0.13.0...v1.0.0) (2026-07-25)
+
+
+### Features
+
+* declare a stable 1.0 public API ([76ad6c7](https://github.com/pleros-ai/lzcomplexity/commit/76ad6c713fd4460d083eb2511477c82c121a6a18))
+
+
+### Build System
+
+* add package metadata and mark the package production-stable ([8889072](https://github.com/pleros-ai/lzcomplexity/commit/8889072c0b4e1b111e678ab30727b7f11737d1f8))
+
+
+### CI
+
+* add Dependabot and publish the core crate to crates.io ([533b285](https://github.com/pleros-ai/lzcomplexity/commit/533b285afeca4e3904749cfdc7a8504b1828fd0a))
+
 ## [0.13.0](https://github.com/pleros-ai/lzcomplexity/compare/v0.12.0...v0.13.0) (2026-07-25)
 
 
