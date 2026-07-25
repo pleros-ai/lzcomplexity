@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/pleros-ai/lzcomplexity/compare/v1.0.1...v1.0.2) (2026-07-25)
+
+
+### Documentation
+
+* credit Efren Aragon Perez as principal author ([748902b](https://github.com/pleros-ai/lzcomplexity/commit/748902b11b33a5381973a303155c4db590b60626))
+
 ## [1.0.1](https://github.com/pleros-ai/lzcomplexity/compare/v1.0.0...v1.0.1) (2026-07-25)
 
 
