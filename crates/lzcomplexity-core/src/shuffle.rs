@@ -59,7 +59,17 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
     (res, mm)
 }
 
-/// Mirror of `ShuffleEntropyCalculation(seq, args, complexity, H_rand, mm)`.
+/// Effective measure complexity via the block-entropy estimator.
+///
+/// For each block size `l`, `h_rand[l]` is `C_LZ(u^{RS(l)})`, the LZ complexity
+/// of `u` block-shuffled at scale `l`. From it we form a block-entropy estimate
+/// `H_l = l * C_LZ(u^{RS(l)}) * log_k(N) / N` (with `H_0 = 0`), take the entropy
+/// gain `ΔH_l = H_l - H_{l-1}`, and sum each gain's excess over the original
+/// sequence's entropy density `ĥ = C_LZ(u) * log_k(N) / N`:
+///
+/// ```text
+/// Ê = Σ_{l=1}^{mm} (ΔH_l - ĥ)
+/// ```
 pub fn shuffle_entropy_calculation(
     seq: &Sequence,
     args: &LzArgs,
@@ -79,36 +89,31 @@ pub fn shuffle_entropy_calculation(
     } else {
         args.log_base.max(2)
     } as f64;
-    let alphabet = if args.alphabet == NO_ALPHABET {
-        seq.alphabet_size().max(2)
-    } else {
-        args.alphabet.max(2)
-    } as f64;
 
     let n = seq.len() as f64;
     if n <= 1.0 || mm == 0 {
         return result;
     }
-    let log_n = n.ln() / log_base.ln();
-    let log_a = alphabet.ln() / log_base.ln();
-    let denom = n * log_a;
-    if denom == 0.0 {
-        return result;
-    }
+    // g = log_k(N) / N, so ĥ = C_LZ(u)·g and H_l = l·C_LZ(u^{RS(l)})·g.
+    let g = (n.ln() / log_base.ln()) / n;
+    let h_hat = complexity as f64 * g; // entropy density of the original sequence
 
     let mut emc = 0.0f64;
-    for idx in 1..=mm {
-        if idx >= h_rand.len() {
+    let mut h_prev = 0.0f64; // H_0 = 0
+    for l in 1..=mm {
+        if l >= h_rand.len() {
             break;
         }
-        let term = log_n * ((h_rand[idx] as f64) - (complexity as f64)).abs() / denom;
+        let h_l = l as f64 * h_rand[l] as f64 * g;
+        let term = (h_l - h_prev) - h_hat; // ΔH_l - ĥ
         emc += term;
         if args.get_shuffle_terms {
-            result.summands[idx - 1] = term;
+            result.summands[l - 1] = term;
         }
-        if idx == 1 {
+        if l == 1 {
             result.multi_information = term;
         }
+        h_prev = h_l;
     }
     result.emc_value = emc;
     result
@@ -173,4 +178,39 @@ fn fnv1a(bytes: &[u8]) -> u64 {
 /// Derive the per-block-size seed from the (once-computed) content hash.
 fn seed_from_base(base: u64, idx: usize) -> u64 {
     base ^ ((idx as u64).wrapping_mul(0x9E3779B97F4A7C15))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn emc_block_entropy_formula() {
+        // Binary sequence (alphabet 2 -> log_base auto = 2), n = 100.
+        let mut data = vec![b'0'; 50];
+        data.extend(std::iter::repeat(b'1').take(50));
+        let seq = Sequence::from_bytes(data);
+        let mut args = LzArgs::new();
+        args.get_shuffle_terms = true;
+
+        let complexity = 10i32; // C_LZ(u)
+        let h_rand = vec![0, 20, 15, 12]; // index 0 unused; c_1=20, c_2=15, c_3=12
+        let mm = 3usize;
+        let r = shuffle_entropy_calculation(&seq, &args, complexity, &h_rand, mm);
+
+        // Hand-computed: g = log_2(100)/100, ĥ = 10·g, H_l = l·c_l·g (H_0 = 0).
+        let n = 100.0f64;
+        let g = (n.ln() / 2f64.ln()) / n;
+        let h_hat = 10.0 * g;
+        let (h1, h2, h3) = (1.0 * 20.0 * g, 2.0 * 15.0 * g, 3.0 * 12.0 * g);
+        let expected = (h1 - 0.0 - h_hat) + (h2 - h1 - h_hat) + (h3 - h2 - h_hat);
+        assert!(
+            (r.emc_value - expected).abs() < 1e-12,
+            "{} vs {}",
+            r.emc_value,
+            expected
+        );
+        assert!((r.summands[0] - (h1 - h_hat)).abs() < 1e-12);
+        assert!((r.multi_information - (h1 - h_hat)).abs() < 1e-12);
+    }
 }
