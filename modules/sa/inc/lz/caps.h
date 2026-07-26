@@ -40,6 +40,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <cstdlib>
 #include <new>
 
 #include "sa_structures.h"
@@ -91,14 +92,18 @@ namespace lz {
       lz_int              n_;     ///< Length of the input text.
       std::vector<lz_int> SA_;    ///< The computed suffix array.
       std::vector<lz_int> LCP_;   ///< The computed LCP array.
-      lz_int*             SA_w;   ///< Working space for SA construction.
-      lz_int*             LCP_w;  ///< Working space for LCP construction.
+      // The four raw buffers below default to null. The move constructor delegates to
+      // the move-assignment operator without a member-initialiser list, so anything
+      // that operator does not assign would otherwise be left indeterminate -- and
+      // clean_up() would hand it to free().
+      lz_int*             SA_w = nullptr;   ///< Working space for SA construction.
+      lz_int*             LCP_w = nullptr;  ///< Working space for LCP construction.
 
       lz_int               p_;               ///< Number of subproblems for parallel construction.
       lz_int               max_context;      ///< Maximum prefix length for suffix comparison.
-      lz_int*              pivot_;           ///< Pivot values for partitioning.
+      lz_int*              pivot_ = nullptr;  ///< Pivot values for partitioning.
       lz_int               pivot_per_part_;  ///< Number of pivots sampled per subarray.
-      lz_int*              part_size_scan_;  ///< Prefix sum of partition sizes.
+      lz_int*              part_size_scan_ = nullptr;  ///< Prefix sum of partition sizes.
       std::vector<lz_int>  part_ruler_;      ///< Indices of sub-subarrays in each partition.
       std::atomic_uint64_t solved_;          ///< Progress counter for solved subproblems.
       // lz_int               c;                ///< Constant for pivot count selection.
@@ -327,6 +332,20 @@ namespace lz {
           // c = std::exchange(rhs.c, std::numeric_limits<lz_int>::max());
           max_context = std::exchange(rhs.max_context, std::numeric_limits<lz_int>::max());
           pivot_per_part_ = std::exchange(rhs.pivot_per_part_, std::numeric_limits<lz_int>::max());
+
+          // Transfer the raw working buffers too, releasing whatever we already hold and
+          // leaving `rhs` with nothing to free. Omitting these leaked our own buffers and,
+          // via the move constructor, left the moved-to object holding indeterminate
+          // pointers for clean_up() to free.
+          std::free(SA_w);
+          SA_w = std::exchange(rhs.SA_w, nullptr);
+          std::free(LCP_w);
+          LCP_w = std::exchange(rhs.LCP_w, nullptr);
+          std::free(pivot_);
+          pivot_ = std::exchange(rhs.pivot_, nullptr);
+          std::free(part_size_scan_);
+          part_size_scan_ = std::exchange(rhs.part_size_scan_, nullptr);
+          part_ruler_ = std::move(rhs.part_ruler_);
         }
         return *this;
       };
