@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v1.0.2...v2.0.0) (2026-07-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* emc() and lz76()["emc"] now return values read off a projected block-entropy ladder. The value and every summand are non-negative, the summands are increments of the projected ladder rather than raw differences of independent block-entropy estimates, and values change for any input whose raw ladder was not monotone. multi_information is unchanged.
+
+### Features
+
+* project the EMC ladder onto the cone excess entropy lives in ([fb0a16d](https://github.com/pleros-ai/lzcomplexity/commit/fb0a16d241bde97daff097a9442bb870c97e8f3c))
+
+
+### Build System
+
+* pin rand and rand_chacha exactly, and sync Cargo.lock ([cecc611](https://github.com/pleros-ai/lzcomplexity/commit/cecc611a1151a3113b9cb7a51f2e0945f32dafbf))
+
 ## [1.0.2](https://github.com/pleros-ai/lzcomplexity/compare/v1.0.1...v1.0.2) (2026-07-25)
 
 
