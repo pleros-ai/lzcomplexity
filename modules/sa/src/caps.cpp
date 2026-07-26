@@ -1,7 +1,45 @@
 #include <lz/caps.h>
 
+#include <cmath>
+
 namespace lz {
   namespace suffixarray {
+
+    namespace {
+
+      /**
+       * @brief Cap the subproblem count so every subarray can supply its own pivots.
+       *
+       * `select_pivots` samples `pivot_per_part_ == p_ - 1` pivots out of each sorted
+       * subarray of `n_ / p_` elements, and `sample_pivots` strides through it with
+       * `gap = n / (m + 1)`. When a subarray holds fewer than `pivot_per_part_ + 1`,
+       * that is fewer than `p_`, elements, the stride truncates to zero and
+       * `sample_pivots` evaluates `X[(i + 1) * gap - 1]`, i.e. **`X[-1]`** -- a read
+       * from before the subarray, once per pivot.
+       *
+       * The garbage it collects is then used as suffix indices by `locate_pivots`,
+       * whose results can leave a partition with a *negative* size, at which point
+       * `collate` writes outside `SA_w` and corrupts the heap. It surfaces far from
+       * the cause, as `free(): invalid size` inside `clean_up`. An `assert` in
+       * `partition_sub_subarrays` would have caught it, but asserts are compiled out
+       * in release builds.
+       *
+       * Requiring `n_ / p_ >= p_`, i.e. `n_ >= p_ * p_`, removes the case entirely.
+       * The suffix array is unique, so lowering `p_` changes only how the work is
+       * split and never the result -- it costs some parallelism on short inputs,
+       * which are the only ones affected.
+       */
+      lz_int cap_subproblem_count(const lz_int p, const lz_int n) {
+        if (p <= 1 || n <= 0) return 1;
+
+        lz_int max_p = static_cast<lz_int>(std::sqrt(static_cast<double>(n)));
+        while (max_p > 1 && max_p > n / max_p) --max_p;  // guard against double rounding
+        if (max_p < 1) max_p = 1;
+
+        return p < max_p ? p : max_p;
+      }
+
+    }  // namespace
 
     CaPS_SA::CaPS_SA(std::vector<char> T, lz_int n, lz_int subproblem_count, lz_int max_context)
       : T_(T)
@@ -10,12 +48,13 @@ namespace lz {
       , LCP_(n_, 0)
       , SA_w(nullptr)
       , LCP_w(nullptr)
-      , p_(subproblem_count > 0 ? subproblem_count
-             : n < 100          ? 1
-             : n < 1e6          ? utils::num_workers()
-             : n_ < 1e7         ? 256
-             : n_ < 1e8         ? 1024
-                                : default_subproblem_count)
+      , p_(cap_subproblem_count(subproblem_count > 0 ? subproblem_count
+                                  : n < 100          ? 1
+                                  : n < 1e6          ? utils::num_workers()
+                                  : n_ < 1e7         ? 256
+                                  : n_ < 1e8         ? 1024
+                                                     : default_subproblem_count,
+                                n_))
       , max_context(max_context ? max_context : n_)
       , pivot_(nullptr)
       , pivot_per_part_(p_ == 1 ? 1 : p_ - 1)
@@ -200,6 +239,17 @@ namespace lz {
     void CaPS_SA::sample_pivots(const lz_int* const X, const lz_int n, const lz_int m, lz_int* const P) {
       const auto gap = n / (m + 1);  // Distance-gap between pivots.
       // std::cout << "gap value: " << gap << " and M: " << m << " and n: " << n << std::endl;
+
+      // `cap_subproblem_count` keeps every subarray long enough for `gap >= 1`. This
+      // guard is a second line of defence: with a zero gap the loop below would read
+      // X[-1], and the resulting garbage pivots corrupt the heap several phases later.
+      // Repeating the last element instead yields empty partitions, which is handled.
+      if (gap <= 0) [[unlikely]] {
+        const lz_int fallback = n > 0 ? X[n - 1] : 0;
+        for (lz_int i = 0; i < m; ++i) P[i] = fallback;
+        return;
+      }
+
       for (lz_int i = 0; i < m; ++i) P[i] = X[(i + 1) * gap - 1];
     }
 
@@ -512,12 +562,13 @@ namespace lz {
       T_ = std::move(T);
       n_ = T.size();
 
-      p_ = p_ > 0  ? p_
-        : n_ < 100 ? 1
-        : n_ < 1e6 ? utils::num_workers()
-        : n_ < 1e7 ? 256
-        : n_ < 1e8 ? 1024
-                   : default_subproblem_count;
+      p_ = cap_subproblem_count(p_ > 0  ? p_
+                                  : n_ < 100 ? 1
+                                  : n_ < 1e6 ? utils::num_workers()
+                                  : n_ < 1e7 ? 256
+                                  : n_ < 1e8 ? 1024
+                                             : default_subproblem_count,
+                                n_);
       pivot_per_part_ = p_ == 1 ? 1 : p_ - 1;
       // c = p_ == 1 ? 1 : p_ - 1;
 
@@ -530,12 +581,13 @@ namespace lz {
 
       // T_ = std::vector<const char>();
       n_ = T.length();
-      p_ = p_ > 0  ? p_
-        : n_ < 100 ? 1
-        : n_ < 1e6 ? utils::num_workers()
-        : n_ < 1e7 ? 256
-        : n_ < 1e8 ? 1024
-                   : default_subproblem_count;
+      p_ = cap_subproblem_count(p_ > 0  ? p_
+                                  : n_ < 100 ? 1
+                                  : n_ < 1e6 ? utils::num_workers()
+                                  : n_ < 1e7 ? 256
+                                  : n_ < 1e8 ? 1024
+                                             : default_subproblem_count,
+                                n_);
       pivot_per_part_ = p_ == 1 ? 1 : p_ - 1;
       // c = p_ == 1 ? 1 : p_ - 1;
 
