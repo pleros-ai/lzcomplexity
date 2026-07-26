@@ -409,7 +409,13 @@ namespace lz {
             sub_subarr_idx[i] = curr_idx;
             std::memcpy(Y_j + sub_subarr_idx[i], X_i + P_i[j], sub_subarr_size * sizeof(lz_int));
             std::memcpy(LCP_Y_j + sub_subarr_idx[i], LCP_X_i + P_i[j], sub_subarr_size * sizeof(lz_int));
-            LCP_Y_j[sub_subarr_idx[i]] = 0;
+            // Mark the sub-subarray's first element as an LCP boundary -- but only when it
+            // has one. An empty sub-subarray leaves `curr_idx` at the partition's end, so
+            // this store would be one element past it; for the *last* partition that is
+            // one past `LCP_w` itself, landing on the malloc header of the allocation that
+            // follows. The two memcpys above write nothing when the size is zero, which is
+            // why this bare store was the only thing out of bounds.
+            if (sub_subarr_size > 0) LCP_Y_j[sub_subarr_idx[i]] = 0;
             curr_idx += sub_subarr_size;
             // if (debug) std::cout << "Collect: " << std::to_string(sub_subarr_size) + "< j: " +
             // std::to_string(j) + "< " << std::endl;
