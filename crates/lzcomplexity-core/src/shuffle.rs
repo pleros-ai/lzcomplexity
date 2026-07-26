@@ -62,14 +62,48 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
 /// Effective measure complexity via the block-entropy estimator.
 ///
 /// For each block size `l`, `h_rand[l]` is `C_LZ(u^{RS(l)})`, the LZ complexity
-/// of `u` block-shuffled at scale `l`. From it we form a block-entropy estimate
-/// `H_l = l * C_LZ(u^{RS(l)}) * log_k(N) / N` (with `H_0 = 0`), take the entropy
-/// gain `ΔH_l = H_l - H_{l-1}`, and sum each gain's excess over the original
-/// sequence's entropy density `ĥ = C_LZ(u) * log_k(N) / N`:
+/// of `u` block-shuffled at scale `l`. The surrogate is (idealised) an i.i.d.
+/// stream of `l`-blocks whose entropy rate is `H(l)/l`, so multiplying back
+/// recovers a block-entropy estimate `H_l = l · C_LZ(u^{RS(l)}) · g`, with
+/// `g = log_k(N)/N` and `ĥ = C_LZ(u) · g` the entropy density of `u`. That
+/// gives one *finite-scale excess entropy* per block size — the subextensive
+/// part of the block entropy at scale `l`:
 ///
 /// ```text
-/// Ê = Σ_{l=1}^{mm} (ΔH_l - ĥ)
+/// Ê(l) = H_l − l·ĥ = l · g · ( C_LZ(u^{RS(l)}) − C_LZ(u) )
 /// ```
+///
+/// Theory pins down the shape of that ladder: `E(l) = Σ_{j≤l} [h(j) − h]` with
+/// every increment `h(j) − h ≥ 0`, so `E(l)` is non-negative and non-decreasing
+/// in `l` and rises to `E` (Crutchfield & Feldman, *Chaos* 13:25 (2003),
+/// Lemma 1 and Eq. 52). The raw ladder violates both properties, because each
+/// `Ê(l)` is an *independent* surrogate draw rather than a slice of one
+/// consistent block-entropy curve. We therefore project it onto that cone —
+/// non-negative isotonic regression, see [`non_negative_isotonic`] — and read
+/// the answer off the projection:
+///
+/// ```text
+/// summands[l−1] = Ê_fit(l) − Ê_fit(l−1)   ≥ 0     (the estimate of h(l) − h)
+/// Ê             = Ê_fit(mm) = Σ summands  ≥ 0
+/// ```
+///
+/// Every block size informs the fit, and the returned scalar can no longer go
+/// negative — a mutual information never does.
+///
+/// # Why not sum the raw differences
+///
+/// Versions ≤ 1.0.1 summed `(H_l − H_{l−1}) − ĥ` directly. That is the same
+/// textbook identity written the other way round, `Σ_l [h(l) − h] = H(L) − L·h`,
+/// so the `H_l` telescoped and the total collapsed *exactly* to
+/// `mm · g · (C_LZ(u^{RS(mm)}) − C_LZ(u))`: only the largest block size reached
+/// the scalar, the other `mm − 1` factorizations cancelled algebraically, and a
+/// single unlucky surrogate draw could push the result below zero. Projecting
+/// first is what couples the scales together.
+///
+/// `multi_information` stays the *raw* `l = 1` contrast `H_1 − ĥ`, unchanged
+/// from earlier versions: it is a separate quantity (the multi-information rate
+/// of the source), not a term of the sum, and it is the best-calibrated number
+/// this estimator produces.
 pub fn shuffle_entropy_calculation(
     seq: &Sequence,
     args: &LzArgs,
@@ -98,25 +132,66 @@ pub fn shuffle_entropy_calculation(
     let g = (n.ln() / log_base.ln()) / n;
     let h_hat = complexity as f64 * g; // entropy density of the original sequence
 
-    let mut emc = 0.0f64;
-    let mut h_prev = 0.0f64; // H_0 = 0
-    for l in 1..=mm {
-        if l >= h_rand.len() {
-            break;
-        }
-        let h_l = l as f64 * h_rand[l] as f64 * g;
-        let term = (h_l - h_prev) - h_hat; // ΔH_l - ĥ
-        emc += term;
+    // The raw ladder Ê(l) = H_l − l·ĥ, one finite-scale excess entropy per
+    // block size. `h_rand` is 1-indexed, so `len` is how many scales it holds.
+    let len = mm.min(h_rand.len().saturating_sub(1));
+    if len == 0 {
+        return result;
+    }
+    let raw: Vec<f64> = (1..=len)
+        .map(|l| l as f64 * (h_rand[l] as f64 * g - h_hat))
+        .collect();
+
+    // The l = 1 contrast, before any projection.
+    result.multi_information = raw[0];
+
+    // Project onto {non-negative, non-decreasing} and read off the increments.
+    let fitted = non_negative_isotonic(&raw);
+    let mut prev = 0.0f64; // Ê_fit(0) = 0
+    for l in 1..=len {
+        let term = fitted[l - 1] - prev;
         if args.get_shuffle_terms {
             result.summands[l - 1] = term;
         }
-        if l == 1 {
-            result.multi_information = term;
-        }
-        h_prev = h_l;
+        prev = fitted[l - 1];
     }
-    result.emc_value = emc;
+    result.emc_value = prev; // = Ê_fit(len)
     result
+}
+
+/// L2 projection of `y` onto the cone of non-negative, non-decreasing sequences.
+///
+/// The isotonic part is the pool-adjacent-violators algorithm (Ayer et al.,
+/// *Ann. Math. Statist.* 26:641 (1955)): walk left to right, and whenever the
+/// newest block averages below its predecessor, merge the two and re-check.
+/// Blocks are stored as `(sum, count)` pairs, so this is O(n) overall. The
+/// non-negative projection is then the pointwise positive part, which preserves
+/// monotonicity.
+fn non_negative_isotonic(y: &[f64]) -> Vec<f64> {
+    let mut sums: Vec<f64> = Vec::with_capacity(y.len());
+    let mut counts: Vec<usize> = Vec::with_capacity(y.len());
+    for &v in y {
+        sums.push(v);
+        counts.push(1);
+        while sums.len() > 1 {
+            let k = sums.len();
+            let last = sums[k - 1] / counts[k - 1] as f64;
+            let prev = sums[k - 2] / counts[k - 2] as f64;
+            if prev <= last {
+                break;
+            }
+            sums[k - 2] += sums[k - 1];
+            counts[k - 2] += counts[k - 1];
+            sums.pop();
+            counts.pop();
+        }
+    }
+    let mut out = Vec::with_capacity(y.len());
+    for (s, c) in sums.iter().zip(counts.iter()) {
+        let level = (s / *c as f64).max(0.0);
+        out.extend(std::iter::repeat(level).take(*c));
+    }
+    out
 }
 
 /// `lz76RandomShuffleComplexity` — full pipeline.
@@ -184,33 +259,100 @@ fn seed_from_base(base: u64, idx: usize) -> u64 {
 mod tests {
     use super::*;
 
-    #[test]
-    fn emc_block_entropy_formula() {
-        // Binary sequence (alphabet 2 -> log_base auto = 2), n = 100.
+    /// A binary sequence (alphabet 2 -> log_base auto = 2) of length 100, plus
+    /// `g = log_2(100)/100`. The block-entropy arithmetic only reads the length
+    /// and the alphabet, so the content is irrelevant to these tests.
+    fn fixture() -> (Sequence, LzArgs, f64) {
         let mut data = vec![b'0'; 50];
         data.extend(std::iter::repeat(b'1').take(50));
         let seq = Sequence::from_bytes(data);
         let mut args = LzArgs::new();
         args.get_shuffle_terms = true;
-
-        let complexity = 10i32; // C_LZ(u)
-        let h_rand = vec![0, 20, 15, 12]; // index 0 unused; c_1=20, c_2=15, c_3=12
-        let mm = 3usize;
-        let r = shuffle_entropy_calculation(&seq, &args, complexity, &h_rand, mm);
-
-        // Hand-computed: g = log_2(100)/100, ĥ = 10·g, H_l = l·c_l·g (H_0 = 0).
         let n = 100.0f64;
-        let g = (n.ln() / 2f64.ln()) / n;
-        let h_hat = 10.0 * g;
-        let (h1, h2, h3) = (1.0 * 20.0 * g, 2.0 * 15.0 * g, 3.0 * 12.0 * g);
-        let expected = (h1 - 0.0 - h_hat) + (h2 - h1 - h_hat) + (h3 - h2 - h_hat);
-        assert!(
-            (r.emc_value - expected).abs() < 1e-12,
-            "{} vs {}",
-            r.emc_value,
-            expected
+        (seq, args, (n.ln() / 2f64.ln()) / n)
+    }
+
+    #[test]
+    fn emc_projects_the_excess_ladder() {
+        let (seq, args, g) = fixture();
+        // c_1 = 20, c_2 = 15, c_3 = 12 against C_LZ(u) = 10, so the raw ladder
+        // Ê(l) = l·g·(c_l − 10) is [10g, 10g, 6g] — non-monotone at l = 3.
+        let r = shuffle_entropy_calculation(&seq, &args, 10, &[0, 20, 15, 12], 3);
+
+        // Pooling all three violators gives one block at (10 + 10 + 6)/3 g.
+        let level = (26.0 / 3.0) * g;
+        assert!((r.emc_value - level).abs() < 1e-12, "{}", r.emc_value);
+        assert!((r.summands[0] - level).abs() < 1e-12);
+        assert_eq!(r.summands[1], 0.0);
+        assert_eq!(r.summands[2], 0.0);
+        // multi_information is the *raw* l = 1 contrast, not the fitted one.
+        assert!((r.multi_information - 10.0 * g).abs() < 1e-12);
+    }
+
+    #[test]
+    fn emc_keeps_the_closed_form_when_the_ladder_is_monotone() {
+        let (seq, args, g) = fixture();
+        // c_l = 11 for every l gives Ê(l) = l·g, already strictly increasing,
+        // so the projection is the identity and the total is the old
+        // closed form mm·g·(c_mm − C_LZ(u)).
+        let r = shuffle_entropy_calculation(&seq, &args, 10, &[0, 11, 11, 11], 3);
+
+        assert!((r.emc_value - 3.0 * g).abs() < 1e-12, "{}", r.emc_value);
+        for s in &r.summands {
+            assert!((s - g).abs() < 1e-12, "{s}");
+        }
+    }
+
+    #[test]
+    fn emc_is_never_negative() {
+        let (seq, args, g) = fixture();
+        // Every surrogate less complex than the original: the raw ladder is
+        // [−10g, −20g, −30g], entirely below zero.
+        let r = shuffle_entropy_calculation(&seq, &args, 20, &[0, 10, 10, 10], 3);
+
+        assert_eq!(r.emc_value, 0.0);
+        assert!(r.summands.iter().all(|&s| s == 0.0), "{:?}", r.summands);
+        // The diagnostic still shows the negative contrast.
+        assert!((r.multi_information + 10.0 * g).abs() < 1e-12);
+    }
+
+    #[test]
+    fn isotonic_pools_adjacent_violators() {
+        // 3.0 then 2.0 violates monotonicity; they pool to 2.5.
+        assert_eq!(
+            non_negative_isotonic(&[1.0, 3.0, 2.0, 4.0]),
+            vec![1.0, 2.5, 2.5, 4.0]
         );
-        assert!((r.summands[0] - (h1 - h_hat)).abs() < 1e-12);
-        assert!((r.multi_information - (h1 - h_hat)).abs() < 1e-12);
+        // Already isotonic: unchanged apart from the non-negativity clamp.
+        assert_eq!(non_negative_isotonic(&[-1.0, 0.5]), vec![0.0, 0.5]);
+        // A strictly decreasing input pools into one block.
+        assert_eq!(non_negative_isotonic(&[6.0, 3.0, 0.0]), vec![3.0, 3.0, 3.0]);
+        assert_eq!(non_negative_isotonic(&[]), Vec::<f64>::new());
+    }
+
+    #[test]
+    fn summands_are_non_negative_and_sum_to_the_value() {
+        // A real end-to-end run: period-8 motif, n = 2000.
+        let data: Vec<u8> = b"00010111".iter().copied().cycle().take(2000).collect();
+        let seq = Sequence::from_bytes(data);
+        let mut args = LzArgs::new();
+        args.get_shuffle_terms = true;
+        let r = lz76_random_shuffle_complexity(&seq, &args);
+
+        assert_eq!(r.summands.len(), r.max_block_size as usize);
+        assert!(r.emc_value > 0.0, "expected structure, got {}", r.emc_value);
+        assert!(r.summands.iter().all(|&s| s >= 0.0), "{:?}", r.summands);
+        let total: f64 = r.summands.iter().sum();
+        assert!(
+            (total - r.emc_value).abs() < 1e-12,
+            "{total} vs {}",
+            r.emc_value
+        );
+        // The ladder is non-decreasing, so partial sums climb to the total.
+        let mut acc = 0.0;
+        for &s in &r.summands {
+            acc += s;
+            assert!(acc <= r.emc_value + 1e-12);
+        }
     }
 }

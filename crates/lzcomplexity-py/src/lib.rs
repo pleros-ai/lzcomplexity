@@ -177,8 +177,27 @@ fn h(
 /// content. Higher values mean more structure than random noise of the same
 /// length and alphabet.
 ///
+/// For each block size ``l = 1 ... max_block_size`` the sequence is shuffled in
+/// blocks of length ``l`` and re-factorized, which gives one estimate of the
+/// *excess entropy accumulated up to scale l*. Excess entropy is a mutual
+/// information between the past and the future, so that ladder must be
+/// non-negative and non-decreasing in ``l``; the raw estimates are not, because
+/// each rests on its own surrogate draw. They are projected onto that shape
+/// (non-negative isotonic regression) before the terms are read off, so
+/// **every returned value is non-negative** and every block size informs the
+/// total.
+///
 /// The shuffle is seeded deterministically from the sequence content, so
 /// repeated calls on the same input produce identical results.
+///
+/// .. warning::
+///
+///    Treat the value as an **ordinal index at fixed sequence length**, not as
+///    a bit count. It is biased upward (roughly 2-3x the analytic excess
+///    entropy for order-1 Markov sources) and it scales with
+///    ``max_block_size``, which itself grows with length -- so never compare
+///    values across sequences of different length. Report it alongside
+///    :func:`h`.
 ///
 /// Parameters
 /// ----------
@@ -198,9 +217,15 @@ fn h(
 /// Returns
 /// -------
 /// tuple[float, list[float]]
-///     ``(emc_value, summands)`` where ``emc_value`` is the effective measure
-///     complexity and ``summands`` is the list of per-block-size terms whose
-///     sum is ``emc_value``. ``summands[0]`` is the multi-information term.
+///     ``(emc_value, summands)``. ``emc_value`` is the effective measure
+///     complexity, always ``>= 0.0``. ``summands`` has one entry per block
+///     size, ``summands[l-1]`` estimating the scale-``l`` conditional-entropy
+///     excess ``h(l) - h``; every entry is ``>= 0.0`` and they sum to
+///     ``emc_value``. Their running sum is the excess entropy captured up to
+///     each scale, so a profile that keeps climbing past the first few entries
+///     indicates long-range or hierarchical correlation. Zero entries mean
+///     neighbouring scales were pooled by the projection, not that the scale
+///     was skipped.
 ///
 /// Examples
 /// --------

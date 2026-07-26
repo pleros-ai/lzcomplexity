@@ -54,8 +54,12 @@ def emc(
 ) -> Tuple[float, List[float]]:
     """Effective measure complexity via random block shuffling.
 
-    Returns ``(emc_value, summands)`` — the EMC value and the list of
-    per-block-size terms whose sum is the EMC value.
+    Returns ``(emc_value, summands)``. Both the value and every summand are
+    non-negative, and the summands sum to the value; ``summands[l-1]``
+    estimates the scale-``l`` conditional-entropy excess ``h(l) - h``.
+
+    Read the value as an ordinal index at fixed sequence length, not as a bit
+    count, and never compare it across lengths.
     """
     ...
 
