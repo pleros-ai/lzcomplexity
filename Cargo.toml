@@ -20,8 +20,28 @@ repository = "https://github.com/pleros-ai/lzcomplexity"
 
 [workspace.dependencies]
 rayon = "1.10"
-rand = "0.8"
-rand_chacha = "0.3"
+# PINNED EXACTLY, AND NOT AS A SUPPLY-CHAIN MEASURE.
+#
+# The block shuffle behind `emc` draws from `ChaCha8Rng::seed_from_u64` and
+# `Rng::gen_range`, so the exact byte stream these two crates produce is part of
+# this library's observable output: it decides which surrogates are drawn, and
+# therefore the value `emc` returns. Two things depend on it.
+#
+#   1. `emc` is documented as reproducible for a given input on any machine at any
+#      thread count. See docs/project/determinism.md.
+#   2. The C++ backend on `main` reproduces these crates' *internal* algorithms by
+#      hand -- rand_core's PCG32 seed expansion, ChaCha8 with a 64-word buffer, and
+#      gen_range's `(range << leading_zeros) - 1` rejection zone -- so that both
+#      backends return identical values. See modules/core/inc/lz/rng.h there, and
+#      docs/project/cpp-parity.md.
+#
+# A minor-version bump of either crate may change that stream without any API
+# change and without any warning, which would silently break both properties. Do
+# not relax these to caret requirements. To upgrade deliberately: re-run the C++
+# `rng_parity` test (ctest) against the new stream, regenerate its vectors if it
+# fails, and treat the resulting `emc` change as a breaking change.
+rand = "=0.8.6"
+rand_chacha = "=0.3.1"
 cdivsufsort = "2.0"
 clap = { version = "4.5", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
