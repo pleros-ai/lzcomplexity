@@ -49,6 +49,14 @@ option(LZ_DISTANCE    "Build lzdistance standalone"                             
 # Documentation options
 option(LZ_INSTALL_MAN "Install man pages"                                        ON)
 
+# Test options
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(LZ_BUILD_TESTING_DEFAULT ON)
+else()
+    set(LZ_BUILD_TESTING_DEFAULT OFF)
+endif()
+option(LZ_BUILD_TESTING "Build the test suite and register it with CTest" ${LZ_BUILD_TESTING_DEFAULT})
+
 # Feature options
 option(PLEROS_INTERNAL "Enable internal Pleros features (mixed entropy and paired shuffle)" OFF)
 
@@ -272,6 +280,17 @@ endfunction()
 add_subdirectory(modules)
 
 # =============================================================================
+# Tests
+# =============================================================================
+# On by default only for a top-level build, so consumers using this project via
+# add_subdirectory() do not inherit our tests. Run them with `ctest` from the
+# build directory.
+if(LZ_BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(test)
+endif()
+
+# =============================================================================
 # Standalone Applications
 # =============================================================================
 if(NOT BUILD_PYTHON AND NOT LZ_ONLY_LIBS AND NOT LZ_ONLY_CORE)
@@ -337,6 +356,7 @@ message(STATUS "    LZ_DISTANCE:    ${LZ_DISTANCE}")
 message(STATUS "    BUILD_PYTHON:   ${BUILD_PYTHON}")
 message(STATUS "    PLEROS_INTERNAL:${PLEROS_INTERNAL}")
 message(STATUS "    ASAN:           ${ASAN}")
+message(STATUS "    TESTING:        ${LZ_BUILD_TESTING}")
 message(STATUS "")
 message(STATUS "  Parallel:")
 message(STATUS "    Threads:        FOUND")

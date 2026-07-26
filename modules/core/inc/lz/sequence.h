@@ -33,6 +33,7 @@
 
 #include <lz/exceptions.h>
 #include <lz/general.h>
+#include <lz/rng.h>
 
 /**
  * @file sequence.h
@@ -599,13 +600,48 @@ public:
 
   /**
    * @brief Shuffles the sequence in place using block-based permutation.
+   *
+   * The canonical kernel, shared by every overload below. It transposes one pair of
+   * aligned, non-overlapping length-`block_size` blocks, drawing indices from
+   * @p gen. Equivalent to `shuffle_in_place` in the Rust backend down to the guards
+   * and both boundary conditions: a sequence of ten symbols or fewer is never
+   * touched, and the second block may sit immediately to the right of the first.
+   *
+   * @param s The sequence to shuffle.
+   * @param block_size The size of blocks to permute.
+   * @param gen The deterministic generator supplying block indices.
+   */
+  void Shuffle(sequence& s, lz_uint block_size, rng::ChaCha8& gen);
+
+  /**
+   * @brief Creates a shuffled copy from an explicit seed -- reproducible.
+   *
+   * One generator is seeded once and reused across all @p times transpositions,
+   * matching `shuffle_copy_seeded` in the Rust backend. The same seed and input
+   * give the same output on any machine at any thread count.
+   *
+   * @param s The sequence to shuffle.
+   * @param block_size The size of blocks to permute.
+   * @param times The number of shuffle iterations to perform.
+   * @param seed The generator seed.
+   * @return A new shuffled sequence.
+   */
+  sequence Shuffle(const sequence& s, lz_uint block_size, lz_uint times, std::uint64_t seed);
+
+  /**
+   * @brief Shuffles in place with a non-reproducible seed.
+   *
+   * Kept for source compatibility. The EMC path does **not** use this -- it seeds
+   * from a hash of the sequence content, so its results are reproducible. Prefer
+   * the seeded overload for anything whose output you intend to publish.
+   *
    * @param s The sequence to shuffle.
    * @param block_size The size of blocks to permute.
    */
   void Shuffle(sequence& s, lz_uint block_size);
 
   /**
-   * @brief Creates a shuffled copy of the sequence.
+   * @brief Creates a shuffled copy with a non-reproducible seed.
    * @param s The sequence to shuffle.
    * @param block_size The size of blocks to permute.
    * @param times The number of shuffle iterations to perform.

@@ -144,42 +144,58 @@ namespace lz {
   // Shuffle Operations
   // ═══════════════════════════════════════════════════════════════════════════════
 
+  void Shuffle(sequence& s, lz_uint block_size, rng::ChaCha8& gen) {
+    const lz_size seq_size = s.size();
+    const lz_size bs = block_size;
+    if (bs == 0 || seq_size <= bs + 1) return;  // Guard against underflow
+
+    const lz_size max_block_idx = (seq_size - bs - 1) / bs;
+    if (max_block_idx == 0) return;  // Only one eligible block: nothing to transpose
+
+    // Find the first valid block index.
+    lz_size op1 = bs * gen.gen_range_inclusive(max_block_idx);
+    while (op1 + bs > seq_size - 1) {
+      op1 = bs * gen.gen_range_inclusive(max_block_idx);
+    }
+
+    if (seq_size <= 10) return;  // Too small for a meaningful shuffle
+
+    // Find a second block that neither overlaps op1 nor runs off the end. Note the
+    // boundaries: op2 == op1 + bs is accepted, and op2 + bs == seq_size - 1 is in
+    // bounds. Both match the Rust backend; tightening either desynchronises them.
+    for (;;) {
+      const lz_size op2 = bs * gen.gen_range_inclusive(max_block_idx);
+      const bool    no_overlap = (op2 + bs <= op1) || (op2 >= op1 + bs);
+      const bool    in_bounds = (op2 + bs <= seq_size - 1);
+      if (no_overlap && in_bounds) {
+        swap(s, op1, op2, bs);
+        return;
+      }
+    }
+  }
+
+  sequence Shuffle(const sequence& s, lz_uint block_size, lz_uint times, std::uint64_t seed) {
+    sequence     result(s);
+    rng::ChaCha8 gen(seed);  // one generator across all iterations, as in Rust
+    for (lz_uint i = 0; i < times; ++i) {
+      Shuffle(result, block_size, gen);
+    }
+    return result;
+  }
+
   void Shuffle(sequence& s, lz_uint block_size) {
     static std::random_device rd_seed;
-    static std::mt19937       random_engine(rd_seed());
+    static std::mt19937_64    random_engine(rd_seed());
 
-    const auto seq_size = s.size();
-    if (seq_size <= block_size + 1) return;  // Guard against underflow
-
-    const auto                             max_block_idx = (seq_size - block_size - 1) / block_size;
-    std::uniform_int_distribution<lz_uint> dis(0, max_block_idx);
-
-    // Find first valid block index
-    lz_uint op1 = block_size * dis(random_engine);
-    while (op1 > seq_size - block_size - 1) {
-      op1 = block_size * dis(random_engine);
-    }
-
-    // Find second non-overlapping block index
-    if (seq_size <= 10) return;  // Too small for meaningful shuffle
-
-    lz_uint op2 = block_size * dis(random_engine);
-    while (true) {
-      op2 = block_size * dis(random_engine);
-      const bool no_overlap = (op2 < op1 || op2 > op1 + block_size);
-      const bool in_bounds = (op2 < seq_size - block_size - 1);
-      if (no_overlap && in_bounds) break;
-    }
-
-    swap(s, op1, op2, block_size);
+    rng::ChaCha8 gen(random_engine());
+    Shuffle(s, block_size, gen);
   }
 
   sequence Shuffle(const sequence& s, lz_uint block_size, lz_uint times) {
-    sequence result(s);
-    for (lz_uint i = 0; i < times; ++i) {
-      Shuffle(result, block_size);
-    }
-    return result;
+    static std::random_device rd_seed;
+    static std::mt19937_64    random_engine(rd_seed());
+
+    return Shuffle(s, block_size, times, random_engine());
   }
 
 }  // namespace lz

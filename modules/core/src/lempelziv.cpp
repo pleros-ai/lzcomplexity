@@ -242,39 +242,115 @@ namespace lz {
     return excess / div;
   }
 
-  utils::LZ_Shuffle lz76RandomShuffleComplexitySequential(const sequence& str, utils::LZ_Args& args) {
-    std::size_t mm = args.block_size;
-    if (mm <= 0) {
-      mm = utils::max_block_size(str.size());  // the maximum number for the sum in the entropy estimation
-      mm += 10;                                // begin aggressive
+  namespace {
+
+    /**
+     * @brief L2 projection of @p y onto non-negative, non-decreasing sequences.
+     *
+     * Pool-adjacent-violators (Ayer, Brunk, Ewing, Reid & Silverman, *Ann. Math.
+     * Statist.* 26:641, 1955): walk left to right over `(sum, count)` blocks and
+     * merge backwards whenever the newest block averages below its predecessor.
+     * The non-negativity projection is then the pointwise positive part, which
+     * preserves monotonicity. Mirrors `non_negative_isotonic` in the Rust backend.
+     */
+    std::vector<lz_double> non_negative_isotonic(const std::vector<lz_double>& y) {
+      std::vector<lz_double>   sums;
+      std::vector<std::size_t> counts;
+      sums.reserve(y.size());
+      counts.reserve(y.size());
+
+      for (const lz_double v : y) {
+        sums.push_back(v);
+        counts.push_back(1);
+        while (sums.size() > 1) {
+          const std::size_t k = sums.size();
+          const lz_double   last = sums[k - 1] / static_cast<lz_double>(counts[k - 1]);
+          const lz_double   prev = sums[k - 2] / static_cast<lz_double>(counts[k - 2]);
+          if (prev <= last) break;
+          sums[k - 2] += sums[k - 1];
+          counts[k - 2] += counts[k - 1];
+          sums.pop_back();
+          counts.pop_back();
+        }
+      }
+
+      std::vector<lz_double> out;
+      out.reserve(y.size());
+      for (std::size_t b = 0; b < sums.size(); ++b) {
+        const lz_double level = std::max(0.0, sums[b] / static_cast<lz_double>(counts[b]));
+        out.insert(out.end(), counts[b], level);
+      }
+      return out;
     }
 
-    const auto log_base = args.log_base == details::NO_ALPHABET ? str.getAlphabetSize() : args.log_base;
-    const auto alphabet = args.alphabet == details::NO_ALPHABET ? str.getAlphabetSize() : args.alphabet;
+    /**
+     * @brief Read the reported values off the raw per-scale excess-entropy ladder.
+     *
+     * Each rung is `E(l) = H_l - l*h_hat = l*g*(C_LZ(u^{RS(l)}) - C_LZ(u))`, an
+     * estimate of the excess entropy accumulated up to scale `l`. Theory says that
+     * ladder is non-negative and non-decreasing, because every increment `h(l) - h`
+     * is non-negative (Crutchfield & Feldman, *Chaos* 13:25 (2003), Lemma 1 and
+     * Eq. 52). The raw rungs are neither, because each rests on its own surrogate
+     * draw -- so project, then report the projection's increments as `summands` and
+     * its top as `emc_value`.
+     *
+     * Do not sum the raw first differences `(H_l - H_{l-1}) - h_hat` instead. That
+     * is the identity `sum_l [h(l) - h] = H(L) - L*h`, so the terms telescope and
+     * the total collapses to the largest block size alone: able to go negative, and
+     * exactly zero whenever the source period divides `mm`.
+     *
+     * `multi_information` stays the *raw* scale-1 rung -- a separate diagnostic,
+     * not a term of the sum.
+     */
+    void ReadOffLadder(utils::LZ_Shuffle& result, const std::vector<lz_double>& raw, bool want_terms) {
+      if (raw.empty()) return;
+      result.multi_information = raw.front();
+
+      const std::vector<lz_double> fitted = non_negative_isotonic(raw);
+      lz_double                    prev = 0.0;  // E_fit(0) = 0
+      for (std::size_t i = 0; i < fitted.size(); ++i) {
+        const lz_double term = fitted[i] - prev;
+        if (want_terms) result.summands[i] = term;
+        prev = fitted[i];
+      }
+      result.emc_value = prev;  // = E_fit(mm)
+    }
+
+  }  // namespace
+
+  utils::LZ_Shuffle lz76RandomShuffleComplexitySequential(const sequence& str, utils::LZ_Args& args) {
+    lz_size mm = 0;
+    if (args.block_size <= 0) {
+      mm = utils::max_block_size(str.size());  // the maximum number for the sum in the entropy estimation
+      mm += str.size() > 50 ? 10 : 0;          // begin aggressive
+    } else {
+      mm = static_cast<lz_size>(args.block_size);
+    }
+
+    const auto        log_base = args.log_base == details::NO_ALPHABET ? str.getAlphabetSize() : args.log_base;
     utils::LZ_Shuffle result;
-    result.max_block_size = mm;
-    lz_double  emc_entropy = 0;
-    const auto complex = lz76Factorization(str, args);
+    result.max_block_size = static_cast<lz_int>(mm);
 
     if (args.get_shuffle_terms) [[unlikely]] {
-      result.summands.reserve(mm);
+      result.summands = std::vector<lz_double>(mm);
+    }
+    if (str.size() <= 1 || mm == 0) return result;
+
+    const auto      complex = lz76Factorization(str, args);
+    const lz_double g = utils::log(str.size(), log_base) / static_cast<lz_double>(str.size());
+    const lz_double h_hat = static_cast<lz_double>(complex) * g;
+    const auto      seed_base = rng::fnv1a(str.SequenceVector());
+
+    std::vector<lz_double> raw(mm);
+    for (lz_size m = 1; m <= mm; m++) {
+      // Shuffling is made for half the size of the sequence, hope that is enough
+      const sequence rand_seq
+        = Shuffle(str, static_cast<lz_uint>(m), str.size() / 2, rng::seed_from_base(seed_base, m));
+      const auto rand_complexity = lz76Factorization(rand_seq, args);
+      raw[m - 1] = static_cast<lz_double>(m) * (static_cast<lz_double>(rand_complexity) * g - h_hat);
     }
 
-    for (unsigned int m = 1; m <= mm; m++) {
-      sequence rand_seq = Shuffle(
-        str, m, str.size() / 2);  // Shuffling is made for half the size of the sequence, hope that is enough
-      const auto      rand_complexity = lz76Factorization(rand_seq, args);
-      const lz_double ee_term = utils::log(str.size(), log_base)
-        * std::fabs(static_cast<lz_double>(rand_complexity) - static_cast<lz_double>(complex))
-        / (str.size() * utils::log(alphabet, log_base));
-
-      emc_entropy += ee_term;
-
-      if (args.get_shuffle_terms) result.summands.push_back(ee_term);
-      if (m == 1) result.multi_information = ee_term;
-    }
-
-    result.emc_value = emc_entropy;
+    ReadOffLadder(result, raw, args.get_shuffle_terms);
     return result;
   }
 
@@ -287,9 +363,15 @@ namespace lz {
 
     std::vector<lz_int> res(mm + 3);  // Reserve the number of blocks for shuffling + 3
 
-    auto fun = [&res, &str, &args](lz_size idx) {
-      sequence rand_seq = Shuffle(str, idx, str.size() / 2);  // Shuffling is made for half the
-                                                              // size of the sequence, hope that is enough
+    // Hash the sequence content once; each per-block seed differs only by `idx`, so
+    // the same input yields the same surrogates on any machine at any thread count,
+    // and the same ones the Rust backend draws.
+    const auto seed_base = rng::fnv1a(str.SequenceVector());
+
+    auto fun = [&res, &str, &args, seed_base](lz_size idx) {
+      // Shuffling is made for half the size of the sequence, hope that is enough
+      sequence rand_seq
+        = Shuffle(str, static_cast<lz_uint>(idx), str.size() / 2, rng::seed_from_base(seed_base, idx));
       auto rand_complexity = lz76Factorization(rand_seq, args);
       res[idx] = rand_complexity;
     };
@@ -313,31 +395,24 @@ namespace lz {
 
     const auto log_base = args.log_base == details::NO_ALPHABET ? str.getAlphabetSize() : args.log_base;
 
-    // Block-entropy estimator: g = log_k(N)/N, so the original's entropy density
-    // is h_hat = C_LZ(u)*g and the block entropy at scale l is H_l = l*C_LZ(u^{RS(l)})*g
-    // (H_0 = 0). Each summand is the entropy gain's excess: ΔH_l - h_hat.
-    const lz_double g     = utils::log(str.size(), log_base) / (lz_double)str.size();
+    if (str.size() <= 1 || mm <= 0) return result;
+
+    // Block-entropy estimator: g = log_k(N)/N, so the original's entropy density is
+    // h_hat = C_LZ(u)*g and the block entropy at scale l is H_l = l*C_LZ(u^{RS(l)})*g.
+    // The rung is the subextensive part, E(l) = H_l - l*h_hat.
+    const lz_double g = utils::log(str.size(), log_base) / (lz_double)str.size();
     const lz_double h_hat = (lz_double)complexity * g;
 
-    auto body = [&](const auto& rng, lz_double init) -> lz_double {
-      for (auto idx = rng.begin(); idx != rng.end(); idx++) {
-        const lz_double H_l    = (lz_double)idx * (lz_double)H_rand[idx] * g;
-        const lz_double H_prev = (lz_double)(idx - 1) * (lz_double)H_rand[idx - 1] * g;  // H_0 = 0
-        auto            term   = (H_l - H_prev) - h_hat;
-        init += term;
+    // The projection is a left-to-right pass, so the ladder is built in order rather
+    // than reduced in parallel. It is mm doubles; the cost is nil beside the
+    // factorizations that produced H_rand.
+    const lz_size          len = std::min<lz_size>(static_cast<lz_size>(mm), H_rand.size() - 1);
+    std::vector<lz_double> raw(len);
+    for (lz_size idx = 1; idx <= len; ++idx) {
+      raw[idx - 1] = (lz_double)idx * ((lz_double)H_rand[idx] * g - h_hat);
+    }
 
-        if (args.get_shuffle_terms) {
-          result.summands[idx - 1] = term;
-        }
-
-        if (idx == 1) result.multi_information = term;
-      }
-      return init;
-    };
-    auto reduce = [](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
-
-    // result.emc_value = tbb::parallel_reduce(tbb_range, 0.0, body, reduce);
-    result.emc_value = utils::parallel_reduce(1, mm + 1, 0.0, body, reduce);
+    ReadOffLadder(result, raw, args.get_shuffle_terms);
     return result;
   }
 
@@ -354,36 +429,27 @@ namespace lz {
 
     const auto log_base = args.log_base == details::NO_ALPHABET ? str.getAlphabetSize() : args.log_base;
 
+    if (str.size() <= 1 || mm <= 0) return result;
+
     // Block-entropy estimator (see the H_rand overload). This variant shuffles
-    // inline, so it recomputes C_LZ(u^{RS(l-1)}) to form the first difference.
-    const lz_double g     = utils::log(str.size(), log_base) / (lz_double)str.size();
+    // inline. Each scale now needs only its own surrogate: the projection consumes
+    // the whole ladder, so there is no first difference to form and no reason to
+    // re-factorize scale l-1 as the previous implementation did.
+    const lz_double g = utils::log(str.size(), log_base) / (lz_double)str.size();
     const lz_double h_hat = (lz_double)complexity * g;
+    const auto      seed_base = rng::fnv1a(str.SequenceVector());
 
-    auto body = [&](const auto& rng, lz_double init) -> lz_double {
-      for (auto idx = rng.begin(); idx != rng.end(); idx++) {
-        auto            c_l = lz76Factorization(Shuffle(str, idx, str.size() / 2), args);
-        const lz_double H_l = (lz_double)idx * (lz_double)c_l * g;
-
-        lz_double H_prev = 0.0;  // H_0 = 0
-        if (idx > 1) {
-          auto c_prev = lz76Factorization(Shuffle(str, idx - 1, str.size() / 2), args);
-          H_prev      = (lz_double)(idx - 1) * (lz_double)c_prev * g;
-        }
-        auto term = (H_l - H_prev) - h_hat;
-        init += term;
-
-        if (args.get_shuffle_terms) {
-          result.summands[idx - 1] = term;
-        }
-
-        if (idx == 1) result.multi_information = term;
-      }
-      return init;
+    const lz_size          len = static_cast<lz_size>(mm);
+    std::vector<lz_double> raw(len);
+    auto                   fun = [&](lz_size idx) {
+      const sequence rand_seq
+        = Shuffle(str, static_cast<lz_uint>(idx), str.size() / 2, rng::seed_from_base(seed_base, idx));
+      const auto c_l = lz76Factorization(rand_seq, args);
+      raw[idx - 1] = (lz_double)idx * ((lz_double)c_l * g - h_hat);
     };
-    auto reduce = [](const lz_double& a, const lz_double& b) -> lz_double { return a + b; };
+    utils::parallel_for(1, mm + 1, fun);
 
-    // result.emc_value = tbb::parallel_reduce(tbb_range, 0.0, body, reduce);
-    result.emc_value = utils::parallel_reduce(1, mm + 1, 0.0, body, reduce);
+    ReadOffLadder(result, raw, args.get_shuffle_terms);
     return result;
   }
 
