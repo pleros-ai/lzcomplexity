@@ -397,7 +397,7 @@ Three details in that report are worth reading closely.
 The **second** line — the pseudorandom one, `c = 10` — gets `"value": 0.0` with four zero summands:
 its whole ladder sat at or below zero, so the projection flattened it. That is the correct reading
 for an input with no multi-scale structure. The periodic first line, by contrast, reports
-`0.8726503907376808`. Under 1.0.1 those two verdicts were the other way round, because the total
+`0.8726503907376808`. Under 1.0.2 those two verdicts were the other way round, because the total
 telescoped to the scale-4 rung and 4 is a multiple of the period.
 
 The constant line reports `"alphabet": [48]`, a one-element array, next to `"alphabet_size": 2`.

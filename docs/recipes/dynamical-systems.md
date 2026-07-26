@@ -223,14 +223,14 @@ ranges. That is the largest EMC anywhere in the sweep, 31× the value at r = 4.
     on a single surrogate draw, so the column is one realisation. Full treatment in
     [Effective measure complexity](../concepts/emc.md).
 
-    Up to 1.0.1 the total was the sum of the raw first differences, which telescopes down to the
+    Up to 1.0.2 the total was the sum of the raw first differences, which telescopes down to the
     scale-`mm` rung alone. That is why the three period-3 rows at r = 3.830–3.840 used to report
     **−1.3 × 10⁻¹⁵** — floating-point zero. The block shuffle permutes `mm`-aligned blocks, `mm = 21`,
     and 3 divides 21, so the scale-21 shuffle is the identity on a period-3 sequence and the surrogate
     *was* the original. Those rows now report ≈1.80, from the scales that did see structure.
 
 The repaired sweep says something the old one could not. Its **minimum is now at r = 4.000**, full
-chaos, at `emc` 0.2400 — the physically correct place for excess entropy to bottom out. Under 1.0.1
+chaos, at `emc` 0.2400 — the physically correct place for excess entropy to bottom out. Under 1.0.2
 the smallest value anywhere in the sweep was the floating-point zero in the period-3 window, an
 artefact of the block grid rather than a statement about the map. No point in the sweep returns
 exactly zero any more.

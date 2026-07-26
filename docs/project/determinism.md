@@ -166,25 +166,28 @@ and both do so deterministically. See [Python API](../api/python.md).
 
 The C++ implementation this library descends from seeded a single function-local `static` Mersenne
 Twister from `std::random_device` at first use. Every call in the process drew from that one shared,
-clock-seeded stream.
+clock-seeded stream. **The C++ backend has since adopted the scheme below**, so the columns now agree;
+the left column describes releases up to and including C++ `0.10.2`.
 
 <div class="lz-scroll lz-compare" markdown>
 
-| | C++ (`main`) | Rust (this library) |
+| | C++ up to `0.10.2` | Both backends, current |
 |---|---|---|
-| Engine | `std::mt19937` | `ChaCha8Rng` |
+| Engine | `std::mt19937` | `ChaCha8` |
 | Seed source | `std::random_device` at first call | FNV-1a of the sequence bytes ⊕ `l · 0x9E3779B97F4A7C15` |
 | RNG state | one `static`, shared by every call | one RNG per block size, per call |
 | Same input twice in one process | different answers | identical |
 | Same input in two processes | different answers | identical |
 | Under a thread pool | different answers, **and a data race** on the shared engine | identical |
+| Against the other backend | not comparable | **identical** |
 
 </div>
 
-Practical consequence for anyone migrating results: a C++ `emc` figure in an old notebook cannot be
-reproduced, not even by the C++ binary that produced it. A Rust `emc` figure can be reproduced from
-the input file indefinitely. The remaining behavioural differences between the two implementations
-are catalogued in [Rust vs C++](cpp-parity.md).
+Practical consequence for anyone migrating results: a C++ `emc` figure from `0.10.2` or earlier cannot
+be reproduced, not even by the C++ binary that produced it. Current figures from either backend can be
+reproduced from the input file indefinitely, and the two backends agree with each other — 188 of 188
+differential cases matched bit-for-bit. What that parity does and does not guarantee is set out in
+[Rust vs C++](cpp-parity.md).
 
 ---
 
@@ -273,7 +276,7 @@ variance of the statistic is invisible from inside the library.
     non-negativity constraint: on structureless input the estimator can only err in one direction.
 
     Only the *zero* is now unambiguous. `lz.emc("01" * 4096)`, a perfectly periodic input, returned
-    `0.0` under 1.0.1 for a completely different reason — the aligned block shuffle at `mm = 18` was
+    `0.0` under 1.0.2 for a completely different reason — the aligned block shuffle at `mm = 18` was
     the identity — and now returns `0.904541015625`.
     [Effective measure complexity](../concepts/emc.md) tabulates the noise floor by length.
 
@@ -351,7 +354,7 @@ read into that offset: the library's surrogate applies ⌊n/2⌋ pairwise block 
 uniform permutation, but at these sizes that is ~10 transpositions per block and the two mix
 comparably. Read `sd = 0.0992` as the answer to "how much of my `emc` is the draw?"
 
-!!! note "This is `mm` times as expensive as the pre-1.0.1 version of the recipe"
+!!! note "This is `mm` times as expensive as the version of this recipe that shipped before 2.0.0"
 
     The old recipe resampled only the scale-`mm` surrogate, because that was the only one the total
     depended on. Now every rung matters, so each repetition costs `mm` entropy calls rather than one —
@@ -468,8 +471,8 @@ contract.
 
 ### Record the version
 
-The estimator changed shape at 0.13.0 — `emc` moved to the block-entropy form, and the formula it
-replaced was non-negative by construction. A number without a version is not reproducible.
+The estimator changed shape twice: at 0.13.0 `emc` moved to the block-entropy form, and at 2.0.0 that
+ladder started being projected. A number without a version is not reproducible.
 <p class="lz-card__api"><code>lz.__version__</code></p>
 
 </div>

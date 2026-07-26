@@ -413,6 +413,7 @@ deploys.
 | 0.13.0 | `feat!: emc uses the block-entropy estimator` + `perf: linear-time suffix array` | **`Release-As: 0.13.0`** — the automatic result would also have been 0.13.0 |
 | 1.0.0 | `feat: declare a stable 1.0 public API` + `build:` + `ci:` | **`Release-As: 1.0.0`** — a deliberate 0.13 → 1.0 jump; the automatic result would have been 0.14.0 |
 | 1.0.1 | `docs: add a README for the core crate` | **`Release-As: 1.0.1`** |
+| 1.0.2 | `docs: credit Efren Aragon Perez as principal author` | automatic patch bump from a `docs:` commit |
 | 2.0.0 *(pending)* | `feat!: project the EMC ladder onto the cone excess entropy lives in` | automatic — a `feat!` on a 1.x line is a major bump |
 
 The release commit is always titled `chore(rust-backend): release X.Y.Z (#N)`.
@@ -433,6 +434,12 @@ block size contributes.** Inputs whose raw ladder was already monotone are uncha
 reporting the telescoping artefact moved. See
 [Effective measure complexity](../concepts/emc.md) for the derivation, the old-versus-new comparison
 and the two biases that remain.
+
+`2.0.0` also closes the gap to the C++ backend on `main`, which took the same projection plus the
+content-seeded ChaCha8 shuffle. The two backends now return **identical** `emc` for the same input —
+188 of 188 differential cases matched bit-for-bit — where previously they could not agree even in
+principle, because the C++ drew its surrogates from a clock-seeded generator. See
+[Rust vs C++](cpp-parity.md).
 
 `0.11.0` moved numbers too, but against the C++ `0.10.2` it replaced rather than against another
 Rust release: `emc` draws different surrogates under the new RNG, and `h` on non-binary input

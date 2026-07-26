@@ -229,7 +229,7 @@ result has three properties the raw ladder lacks.
 
 ### Why the raw sum was not usable
 
-Versions up to and including 1.0.1 summed the first differences of the ladder directly,
+Versions up to and including 1.0.2 summed the first differences of the ladder directly,
 `Σ_l [(H_l − H_{l−1}) − ĥ]`. That is the definition written as a sum, and it is *correct
 mathematics* — but it is also the identity `Σ_l [h(l) − h] = H(L) − L·h`, so the `H_l` telescope and
 the whole sum collapses to its own last rung:
@@ -245,7 +245,7 @@ original, multiplied by `mm`. Three things went wrong, and all three are consequ
 
 <div class="lz-scroll lz-compare" markdown>
 
-| symptom | ≤ 1.0.1 | now |
+| symptom | ≤ 1.0.2 | now |
 |---|---|---|
 | **Negative values.** Excess entropy is a mutual information; it cannot be negative. One unlucky surrogate could make `C(u^RS(mm)) < C(u)`. | i.i.d. binary at `n = 20 000` returns **−0.1950**; 9 of 20 draws negative | **0.0**; 0 of 20 negative, by construction |
 | **Periodic collapse.** The shuffle only permutes phase-aligned blocks, so if the period `p` divides `mm` the shuffle is the identity and the top rung is exactly zero — dragging the whole total to zero. | period 3, 7 and 21 at `mm = 21` all return floating-point **zero** | **1.8193**, **4.1974**, **6.0262** — the scales that *did* see structure now carry it |
@@ -261,7 +261,7 @@ values that moved are the ones that were reporting an artefact.
 
 !!! warning "This is a breaking change, and it is not a bug fix in the surrogate"
 
-    `emc` values from 1.0.1 and earlier are not comparable with current ones for any input whose
+    `emc` values from 1.0.2 and earlier are not comparable with current ones for any input whose
     ladder was not monotone. Nothing about the shuffle, the seeding or the factorization changed —
     only how the `mm` rungs are turned into one number. See [Releases](../project/releases.md).
 
@@ -347,7 +347,7 @@ larger alphabets it does not, and the docs will not pretend otherwise.
 The `l = 1` rung gets its own field. It is `H_1 − ĥ`, the entropy-rate increase caused by destroying
 *all* correlations, which is the multi-information (total correlation) rate of the source. The name
 is correct, and the field is reported **before** the projection — it is a separate diagnostic, not a
-term of the sum, and its values are unchanged from 1.0.1 and earlier.
+term of the sum, and its values are unchanged from 1.0.2 and earlier.
 
 It is also the best-calibrated number the estimator produces — but only for short-memory processes.
 For an order-1 Markov chain, Prop. 11 makes the `l = 1` term the whole excess entropy, and the
@@ -536,11 +536,11 @@ appears, and it always equals the block size. There is no resolution below `g / 
 
 !!! note "An exact zero means the whole ladder sat at or below zero"
 
-    Under 1.0.1 an exact `0.0` was ambiguous: it could mean "structureless" *or* "the source period
+    Under 1.0.2 an exact `0.0` was ambiguous: it could mean "structureless" *or* "the source period
     divides `mm`, so the top surrogate was the identity". The second case is gone — a period-`p`
     sequence with `p | mm` now reports the structure the other `mm − 1` scales found:
 
-    | period `p` | motif | `p` divides 21 | `emc` (≤ 1.0.1) | `emc` (now) |
+    | period `p` | motif | `p` divides 21 | `emc` (≤ 1.0.2) | `emc` (now) |
     |---:|---|---|---:|---:|
     | 2 | `01` | no | 1.7102 | 1.7102 |
     | 3 | `001` | **yes** | **−1.3e−15** | **1.8193** |
@@ -588,7 +588,7 @@ Read the last column as the level a value has to clear before it is worth interp
 floor still falls with `n`. **A small positive `emc` is the null, not a weak signal.** Establish the
 floor for your own data: shuffle, re-run 20–30 times, take mean + 2 s.d.
 
-The comparison with 1.0.1 at `n = 20 000` is the whole trade in one line — the old floor was
+The comparison with 1.0.2 at `n = 20 000` is the whole trade in one line — the old floor was
 `mean 0.0075, s.d. 0.1230, negative in 9/20`; the new one is `mean 0.0613, s.d. 0.0702, negative in
 0/20`. Half the spread, no sign violations, a positive offset you have to subtract yourself.
 
@@ -610,7 +610,7 @@ the fully chaotic regime, elevated in between. The logistic-map sweep in
 the control parameter, one fixed `n`, `h` and `emc` side by side.
 
 That sweep is also the clearest evidence for the projection. Its peak is unchanged — **7.4410 at
-r = 3.570**, the first grid point past the Feigenbaum point — but its *minimum* moved. Under 1.0.1
+r = 3.570**, the first grid point past the Feigenbaum point — but its *minimum* moved. Under 1.0.2
 the smallest value in the sweep was a floating-point zero at the period-3 window near r = 3.83, an
 artefact of `3 | mm`. It is now **0.2400 at r = 4.000**, full chaos, which is where excess-entropy
 theory says the minimum belongs. The shape the estimator was supposed to show is the shape it now

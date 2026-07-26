@@ -350,7 +350,7 @@ $ cat multi.factors.json
     A `value` of `0.0` means no scale showed a monotone rise — the reading for a structureless input.
     On 1,000-symbol inputs (`mm` = 17) a pseudorandom binary sequence returns `0.0`, while a
     period-2 sequence returns `2.0330199940710660`, a period-4 sequence `4.404876653820643` and a
-    period-17 sequence `6.869747300227065`. Under 1.0.1 the period-17 case collapsed to `8.9e-16`,
+    period-17 sequence `6.869747300227065`. Under 1.0.2 the period-17 case collapsed to `8.9e-16`,
     because the total depended on the scale-17 shuffle alone and 17 divides 17; that artefact is gone.
     The remaining trap is the *small positive* value — the noise floor sits above zero.
     [Effective measure complexity](../concepts/emc.md) derives it and tabulates the floor.

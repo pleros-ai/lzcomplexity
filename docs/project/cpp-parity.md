@@ -9,14 +9,15 @@ schema were all designed there first.
 
 This site documents the **Rust rewrite** on the `rust-backend` branch, which is the current
 production backend: it is what `pip install lzcomplexity` gives you and what
-`cargo add lzcomplexity-core` builds against. The rewrite is a port rather than a redesign, with one
-exception: the EMC estimator was replaced outright in 0.13.0. Four measures are bit-identical to the
-C++ backend, two differ on purpose, and one differs because the C++ had a bug.
+`cargo add lzcomplexity-core` builds against. The rewrite is a port rather than a redesign: the EMC
+estimator was replaced outright in 0.13.0, but that replacement has since been applied to the C++
+backend too, so **all five measures are now bit-identical across the two backends**. One field still
+differs on purpose (the Python default log base), and one differs because the C++ had a bug.
 
 <div class="lz-stats">
   <div class="lz-stat"><div class="lz-stat__v">289</div><div class="lz-stat__k">differential cases matched</div></div>
-  <div class="lz-stat"><div class="lz-stat__v">4</div><div class="lz-stat__k">measures bit-identical</div></div>
-  <div class="lz-stat"><div class="lz-stat__v">2</div><div class="lz-stat__k">intentional divergences</div></div>
+  <div class="lz-stat"><div class="lz-stat__v">188</div><div class="lz-stat__k">EMC cases bit-identical</div></div>
+  <div class="lz-stat"><div class="lz-stat__v">1</div><div class="lz-stat__k">intentional divergence</div></div>
   <div class="lz-stat"><div class="lz-stat__v">1</div><div class="lz-stat__k">C++ bug fixed</div></div>
 </div>
 
@@ -35,8 +36,8 @@ C++ backend, two differ on purpose, and one differs because the C++ had a bug.
 <tr><td>Suffix array</td><td>CaPS (custom parallel construction)</td><td class="is-changed">hybrid: comparison sort below 2048 bytes, <code>cdivsufsort</code> above</td></tr>
 <tr><td>LCP array</td><td>bundled with CaPS</td><td>Kasai's algorithm, O(<i>n</i>)</td></tr>
 <tr><td>Parallelism</td><td>OpenMP, with TBB / Cilk / <code>std::thread</code> fallbacks chosen at configure time</td><td class="is-changed">rayon, always</td></tr>
-<tr><td>Shuffle RNG</td><td><code>std::mt19937</code>, one function-local <code>static</code>, seeded from <code>std::random_device</code></td><td class="is-changed">ChaCha8, one instance per block size, seeded from an FNV-1a hash of the input</td></tr>
-<tr><td>Shuffle reproducibility</td><td class="is-no">not reproducible run to run</td><td class="is-yes">reproducible on any machine, any thread count</td></tr>
+<tr><td>Shuffle RNG</td><td>ChaCha8, one instance per block size, seeded from an FNV-1a hash of the input — <code>modules/core/inc/lz/rng.h</code></td><td>the same, bit-for-bit</td></tr>
+<tr><td>Shuffle reproducibility</td><td class="is-yes">reproducible on any machine, any thread count</td><td class="is-yes">reproducible on any machine, any thread count</td></tr>
 <tr><td>Spectral analysis</td><td><code>spectral.psd</code>, <code>spectral.entropy</code>, <code>spectral.semc</code></td><td class="is-changed">removed — moved to a separate package</td></tr>
 <tr><td>Python surface</td><td><code>lz76</code>, <code>factorization</code>, <code>factors</code>, <code>entropy_density</code>, <code>emc</code>, plus <code>metrics</code> and <code>spectral</code> submodules</td><td class="is-changed">five top-level functions, no submodules</td></tr>
 <tr><td>Python defaults</td><td><code>alphabet=2</code>, <code>log_base=2</code> (hard-coded literals)</td><td class="is-changed"><code>alphabet=None</code>, <code>log_base=None</code> — auto-detected from the data</td></tr>
@@ -115,77 +116,84 @@ against 1.0.
 
 ## What differs on purpose
 
-### `emc`: a new estimator, and a new RNG
+### `emc`: the two backends now agree bit-for-bit
 
-Two independent changes stack here. Either one on its own would already make the numbers
-incomparable.
+**This section used to say the two `emc` values were incomparable. That is no longer true.** Both
+backends now run the same estimator over the same surrogates and return identical values — the same
+`value`, the same `multi_information` and the same `summands`, to the last bit.
 
-**The estimator was replaced in 0.13.0, and refined again after 1.0.1.** The C++ summed *absolute*
-complexity differences over every block size. The Rust version builds a block-entropy ladder — one
-finite-scale excess entropy per block size, in excess of the sequence's own entropy density — and
-projects it onto the non-negative non-decreasing cone that the quantity provably occupies. These are
-different statistics, not two spellings of one, and the Rust value can never be negative where the
-C++ one could.
+Getting there took two changes, because an `emc` value is a function of both the formula and the
+surrogates it is computed from.
+
+**The estimator.** The C++ originally summed *absolute* complexity differences across block sizes.
+It moved to the block-entropy ladder in 0.13.0 (Rust) and the matching C++ release, and both now
+project that ladder onto the non-negative non-decreasing cone excess entropy provably occupies,
+reading the total and the per-scale terms off the projection.
 
 <div class="lz-scroll">
 <table class="lz-compare">
 <thead>
-<tr><th>Aspect</th><th>C++ (<code>0.10.2</code>)</th><th>Rust (<code>1.0</code>)</th></tr>
+<tr><th>Aspect</th><th>C++ (<code>0.10.2</code>, the last release before the port)</th><th>Both backends, current</th></tr>
 </thead>
 <tbody>
 <tr><td>Per-scale term</td><td><code>g · |C<sub>LZ</sub>(u<sup>RS(l)</sup>) − C<sub>LZ</sub>(u)|</code></td><td class="is-changed">the increments of the projected ladder <code>Ê(l) = H<sub>l</sub> − l·ĥ</code>, with <code>H<sub>l</sub> = l · C<sub>LZ</sub>(u<sup>RS(l)</sup>) · g</code></td></tr>
 <tr><td>Sign</td><td>never negative — the term is an absolute value</td><td>never negative — the projection enforces it</td></tr>
 <tr><td>Scales reaching the total</td><td>all <code>mm</code> of them</td><td>all <code>mm</code> of them</td></tr>
 <tr><td><code>g</code></td><td><code>log<sub>a</sub>(N) / N</code>, <code>a</code> = <code>alphabet</code></td><td class="is-changed"><code>log<sub>k</sub>(N) / N</code>, <code>k</code> = <code>log_base</code></td></tr>
+<tr><td>Shuffle RNG</td><td>one shared <code>static std::mt19937</code> seeded from <code>std::random_device</code></td><td class="is-changed">ChaCha8 per block size, seeded from an FNV-1a hash of the input</td></tr>
+<tr><td>Reproducible run to run</td><td class="is-no">no</td><td class="is-yes">yes, on any machine at any thread count</td></tr>
 </tbody>
 </table>
 </div>
 
-That last row only bites if you pass `alphabet` and `log_base` separately; on the defaults both
+The `g` row only bites if you pass `alphabet` and `log_base` separately; on the defaults both
 resolve to the detected alphabet size.
 
-**The RNG was replaced in the port.** The C++ shuffle drew from a single function-local
-`static std::mt19937` seeded once from `std::random_device`. That state was shared by every call and
-mutated from `parallel_for` workers, so the C++ `emc` is not reproducible run to run and not
-reproducible under a different thread count.
+**The surrogates.** The old C++ shuffle drew from a single function-local
+`static std::mt19937` seeded once from `std::random_device`, shared across calls and mutated from
+`parallel_for` workers — so its `emc` was reproducible neither run to run nor across thread counts,
+and could not agree with anything. Both backends now hash the sequence bytes with FNV-1a once, mix
+the hash with the block index using the 64-bit golden-ratio constant, and seed a private ChaCha8 per
+block size. The C++ implementation lives in `modules/core/inc/lz/rng.h` and reproduces Rust's
+generator exactly, down to the rejection zone `(range << range.leading_zeros()) − 1` that `rand`
+uses for its bounded draws.
 
-The Rust shuffle hashes the sequence bytes with FNV-1a once, mixes the hash with the block index
-using the 64-bit golden-ratio constant, and seeds a private `ChaCha8Rng` per block size. No shared
-state, no scheduling dependence: the same input always returns the same `emc`, on any machine, with
-any number of threads. Verified bit-identical across repeated runs and across the Rust and Python
-entry points. See [Determinism](determinism.md).
-
-The port also added two guards the C++ lacked in the swap kernel: a zero block size divided by zero
-in C++, and a degenerate block count sent it into an infinite loop. Two further in-kernel
-differences are not guards, and both widen the set of eligible second blocks — C++ rejected the
-block immediately to the right of the first (`op2 == op1 + block_size`) where Rust accepts it, and
-C++ required `op2 < n − block_size − 1` where Rust allows `op2 ≤ n − block_size − 1`.
-
-!!! danger
-    An `emc` value produced by the C++ backend cannot be reproduced by the Rust backend, and neither
-    can be reproduced by a second run of the C++ backend. Do not mix `emc` numbers from the two
-    implementations in one figure, table or statistical test, and do not read a small gap between
-    them as a rounding artefact.
-
-    The two backends would disagree even if they drew identical surrogates, because the formulas in
-    the table above are different. On top of that, the Rust estimator draws one surrogate per block
-    size and combines all `mm` of them, so a different RNG stream is a different ladder and therefore
-    a different number. The per-scale `summands` differ for both reasons at once.
-
-    The two agree only where the shuffle kernel is a no-op: `n ≤ 10` returns exactly `0.0` in both.
-    Elsewhere the Rust values are non-negative by construction — `lz.emc("0" * 20000)` returns
-    exactly `0.0`, and `lz.emc("01" * 10000)`, a perfectly periodic input, returns
-    `1.710239171832069`. See [Effective measure complexity](../concepts/emc.md).
+Three divergences in the swap kernel itself also had to go, all of which changed which blocks were
+eligible: the C++ consumed one extra draw before its second-block loop, it rejected the block
+immediately to the right of the first (`op2 == op1 + block_size`) where Rust accepts it, and it
+required `op2 < n − block_size − 1` where Rust allows equality. The C++ also gained the two guards
+it lacked — a zero block size divided by zero, and a degenerate block count looped forever.
 
 <div class="lz-formula">
   <p class="lz-math"><i>Ê</i>(<i>l</i>) = <i>l</i> · <i>g</i> · ( C<sub>LZ</sub>(<i>u</i><sup>RS(<i>l</i>)</sup>) − C<sub>LZ</sub>(<i>u</i>) ),&nbsp;&nbsp; <i>g</i> = log<sub><i>k</i></sub>(<i>N</i>) ⁄ <i>N</i>,&nbsp;&nbsp; <i>Ê</i> = non_negative_isotonic( <i>Ê</i>(1), …, <i>Ê</i>(<i>mm</i>) )(<i>mm</i>)</p>
   <dl class="lz-formula__key">
     <dt><i>mm</i></dt><dd>largest block size; every scale from 1 to <i>mm</i> enters the projection</dd>
-    <dt><i>u</i><sup>RS(<i>l</i>)</sup></dt><dd>the block-shuffled surrogate at scale <i>l</i> — one draw per scale, and a different RNG stream gives a different ladder</dd>
+    <dt><i>u</i><sup>RS(<i>l</i>)</sup></dt><dd>the block-shuffled surrogate at scale <i>l</i> — one draw per scale, now from the same stream in both backends</dd>
     <dt><i>N</i>, <i>k</i></dt><dd>sequence length and log base</dd>
   </dl>
-  <p class="lz-formula__cite">The Rust estimator only. Up to 1.0.1 it summed the first differences of this ladder, which telescopes to Ê(mm) alone; it now projects the ladder onto the non-negative non-decreasing cone and reads the total off the top.</p>
+  <p class="lz-formula__cite">Now shared by both backends. Earlier versions summed the first differences of this ladder, which telescopes to Ê(mm) alone.</p>
 </div>
+
+!!! success "Measured parity"
+
+    188 of 188 differential comparisons of `lz76RandomShuffleComplexity` between the two backends came
+    back **bit-identical** in `value`, `multi_information` and every `summand` — across lengths 1 to
+    20 000, alphabets 2, 4, 5 and 26, and periodic, Thue–Morse, Markov, i.i.d. and constant inputs, at
+    both the auto block size and pinned ones. Worst absolute difference: exactly zero.
+
+!!! warning "Two caveats on that parity"
+
+    **It does not extend backwards.** An `emc` from any earlier release of either backend is not
+    comparable with a current one. Do not mix values across versions in one figure, table or test.
+
+    **It is not guarded by a test.** The C++ repository has no test suite, and the parity rests on the
+    C++ reproducing the *internal* algorithms of Rust's `rand` 0.8.6 and `rand_chacha` 0.3.1. A bump
+    of those dependencies could desynchronise the backends silently. If you rely on cross-backend
+    agreement, verify it on your own data rather than assuming it.
+
+    `entropy_density` is a separate story and still differs between the two **command-line tools** —
+    that divergence is about which flag feeds the log base, is unrelated to `emc`, and is described
+    under [`lzcomplexity`](../cli/lzcomplexity.md).
 
 ### Spectral analysis, removed
 

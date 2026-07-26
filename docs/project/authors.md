@@ -33,7 +33,8 @@ input returns the same `emc` on every run and at any thread count. There is no u
 parameter.
 
 Factor counts, factor boundaries and `nid` match the C++ backend exactly; `h` matches at equal log
-base, and `emc` deliberately does not match, because the two backends draw different surrogates. See
+base, and `emc` now matches too — the C++ backend adopted both the projected-ladder estimator and the
+content-seeded ChaCha8 shuffle, so the two draw the same surrogates. See
 [Rust vs C++](cpp-parity.md) and [Determinism](determinism.md).
 
 Spectral analysis (`spectral.psd`, `spectral.entropy`, `spectral.semc`) was removed in the same

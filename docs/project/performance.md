@@ -323,7 +323,7 @@ stage roughly 4:1 on random data and 1.5:1 on repetitive data.
     the increments of the fitted ladder. Full treatment on
     [Effective measure complexity](../concepts/emc.md).
 
-    Versions up to 1.0.1 summed the first differences instead, which telescopes: the total then
+    Versions up to 1.0.2 summed the first differences instead, which telescopes: the total then
     reduced exactly to `mm · g · (C_LZ(shuffled at mm) − C_LZ(original))` and the other `mm − 1`
     factorizations were computed and then algebraically cancelled. **That is the one respect in which
     the intermediate scales used to be wasted work; they are not any more.** The cost model below is

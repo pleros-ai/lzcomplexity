@@ -8,7 +8,7 @@ public surface: no classes, no submodules, no exception hierarchy.
 ```pycon
 >>> import lzcomplexity as lz
 >>> lz.__version__
-'1.0.1'
+'1.0.2'
 >>> lz.__all__
 ['lz76', 'factorization', 'h', 'emc', 'nid']
 ```
@@ -352,7 +352,7 @@ increments:
     An exact `0.0` now means one thing: no scale showed a monotone rise, which is what structureless
     input looks like. Constant sequences return `0.0` with all-zero summands, and so does i.i.d.
     binary at `n = 20 000`. It is no longer produced by resonance between the block grid and the
-    source period — `lz.emc("01" * 1024)` returned `0.0` under 1.0.1 because `mm = 18` is a multiple
+    source period — `lz.emc("01" * 1024)` returned `0.0` under 1.0.2 because `mm = 18` is a multiple
     of the period, and now returns `1.0196126302083333`, while `lz.emc("01" * 500)` returns
     `2.033019994071066` (`mm = 17`). A small positive value is more likely to be the noise floor than
     a weak signal; [Effective measure complexity](../concepts/emc.md) tabulates that floor by length.
@@ -658,7 +658,7 @@ shuffle-based EMC needs `n > 50` before the block size leaves single digits.
 
 | Name | Value | Notes |
 |---|---|---|
-| `lzcomplexity.__version__` | `'1.0.1'` | comes from the Rust crate version, not from `pyproject.toml`. **Not in `__all__`**, so `from lzcomplexity import *` does not bind it |
+| `lzcomplexity.__version__` | `'1.0.2'` | comes from the Rust crate version, not from `pyproject.toml`. **Not in `__all__`**, so `from lzcomplexity import *` does not bind it |
 | `lzcomplexity.__all__` | `['lz76', 'factorization', 'h', 'emc', 'nid']` | a star-import binds exactly these five |
 | `lzcomplexity.__doc__` | the package docstring | what `help(lzcomplexity)` shows |
 
@@ -764,7 +764,7 @@ See [Performance](../project/performance.md) and
     `log_base=2` to reproduce the old numbers.
 
     Separately, **EMC numbers are not comparable across three generations of the estimator.**
-    Before 0.13.0 it summed absolute complexity differences. From 0.13.0 to 1.0.1 it summed
+    Before 0.13.0 it summed absolute complexity differences. From 0.13.0 to 1.0.2 it summed
     block-entropy first differences, which telescoped to a single block size and could return
     negative values. Since then it projects the whole block-entropy ladder and returns a
     non-negative total. Values agree between the last two only where the raw ladder was already

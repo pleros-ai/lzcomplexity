@@ -245,7 +245,7 @@ block size and no ensemble, so no error bar comes with the number. The `normal_e
 
 !!! note "An exact `0.0` means 'no monotone structure found' — and it is now the only thing it means"
 
-    Up to 1.0.1 the total collapsed to its largest-block-size rung alone, so a source whose period
+    Up to 1.0.2 the total collapsed to its largest-block-size rung alone, so a source whose period
     divided `mm` was left completely invariant by the aligned block shuffle and scored exactly zero.
     That ambiguity is gone; a periodic sequence now reports what the other scales found:
 

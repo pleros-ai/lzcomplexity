@@ -489,7 +489,7 @@ it is lower. When the top rungs pool, `emc_value` is their mean and the closed f
     — the surrogate at scale `l` was still computed. The `mm` surrogate factorizations happen
     regardless of `get_shuffle_terms`.
 
-    Up to 1.0.1 this vector held the raw first differences and its signs alternated
+    Up to 1.0.2 this vector held the raw first differences and its signs alternated
     (`[+1.0390625, −1.0390625, +1.3125, −1.3125, …]` for `"01" * 64`), because the sum telescoped:
     `Σ_l [(H_l − H_{l−1}) − ĥ]` collapses to `Ê(mm)` and the intermediate scales cancelled out of
     the total. They no longer do.
@@ -498,12 +498,12 @@ it is lower. When the top rungs pool, `emc_value` is their mean and the closed f
 
     Zero is now a single, readable outcome: no scale showed a monotone rise, which is what
     structureless input looks like. It is no longer produced by *resonance* between the block grid
-    and the source period — under 1.0.1, `"0011" * 128` returned `0.0` and `"01" * 1000` returned
+    and the source period — under 1.0.2, `"0011" * 128` returned `0.0` and `"01" * 1000` returned
     `-4.440892098500626e-16` purely because the scale-`mm` shuffle happened to be the identity;
     they now return `2.70263671875` and `1.040835691685843`. A 512-symbol pseudorandom binary string
     (`random.Random(3)`, `random.choice("01")`) returned `-0.28125` and now returns `0.205078125`.
 
-    `emc_value` can never be negative. If you are comparing against a value from 1.0.1 or earlier,
+    `emc_value` can never be negative. If you are comparing against a value from 1.0.2 or earlier,
     see [Releases](../project/releases.md).
 
 The derivation, the two remaining biases and the surrogate-quality caveats are on

@@ -319,7 +319,7 @@ Same source, same generating rule, `emc` moves by 8 % — and it does not even m
     `emc` across lengths compares two different estimators. See
     [Effective measure complexity](emc.md).
 
-    One ambiguity that used to live here is gone. Up to 1.0.1 the total telescoped to its own top
+    One ambiguity that used to live here is gone. Up to 1.0.2 the total telescoped to its own top
     rung, so a periodic sequence whose period divided `mm` and a structureless random one both landed
     at zero, for opposite reasons. A zero now means only the second thing.
 
