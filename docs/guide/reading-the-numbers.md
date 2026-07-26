@@ -10,7 +10,7 @@ interpret anything.
 <div class="lz-stats" markdown>
 <div class="lz-stat"><span class="lz-stat__v">1.012</span><span class="lz-stat__k">h of a fair coin at n = 10⁶</span></div>
 <div class="lz-stat"><span class="lz-stat__v">1.001</span><span class="lz-stat__k">normalised LZc of a biased coin</span></div>
-<div class="lz-stat"><span class="lz-stat__v">0.0</span><span class="lz-stat__k">emc of a period-2 sequence at n = 2048</span></div>
+<div class="lz-stat"><span class="lz-stat__v">0.17</span><span class="lz-stat__k">mean emc of structureless input at n = 2048</span></div>
 <div class="lz-stat"><span class="lz-stat__v">0.860</span><span class="lz-stat__k">nid of two unrelated sequences at n = 20 000</span></div>
 </div>
 
@@ -20,7 +20,7 @@ interpret anything.
 |---|---|---|---|---|---|
 | Complexity | `lz.factorization(s)[0]` | integer, `1` … `≈ n/log_k n` | long stretches reused from earlier in the same string | little reuse | **No** |
 | Entropy density | `lz.h(s)` | `log_k(n)/n` … `1.82` observed | ordered, compressible | as incompressible as i.i.d. uniform | Cautiously — same alphabet, lengths within an order of magnitude |
-| EMC | `lz.emc(s)[0]` | unbounded, **can be negative** | nothing destroyed at the top block size | structure destroyed at the top block size | **No** |
+| EMC | `lz.emc(s)[0]` | `0` … unbounded, **never negative** | no multi-scale structure the shuffle could destroy — but check against a null, the floor is above zero | correlations destroyed across many block scales | **No** |
 | Information distance | `lz.nid(a, b)` | `[0, 1]` in all testing | much shared literal content | little shared content | Only within a length band |
 
 <div class="lz-tickrule"></div>
@@ -201,67 +201,66 @@ That 11 % is finite-size bias, not redundancy. Absolute `h` values are worth quo
 ## `emc` — effective measure complexity
 
 `emc` is a **surrogate-data structure score**, not an estimate of `I(past; future)` in bits. Read it
-as: the largest block size `mm`, times how much the entropy rate rises when you scramble the
-sequence in blocks of that size.
+as: how much more compressible the sequence is than versions of itself with all correlations beyond
+each of `mm` block scales destroyed.
 
-### The sum telescopes to a single term
+### One rung per block size, then a projection
 
-The estimator computes `mm` block-shuffled surrogates and sums `mm` terms of the form
-`(H_l − H_{l−1}) − ĥ`. That sum telescopes exactly:
+The estimator computes `mm` block-shuffled surrogates. Each gives a **rung** — the excess entropy
+accumulated up to that scale:
 
 <div class="lz-formula">
-  <p class="lz-math"><i>Ê</i> = <i>mm</i> · (log<sub><i>k</i></sub>&thinsp;<i>N</i> ⁄ <i>N</i>) · ( <i>C</i><sub>LZ</sub>(shuffled at <i>mm</i>) − <i>C</i><sub>LZ</sub>(original) )</p>
+  <p class="lz-math"><i>Ê</i>(<i>l</i>) = <i>l</i> · (log<sub><i>k</i></sub>&thinsp;<i>N</i> ⁄ <i>N</i>) · ( <i>C</i><sub>LZ</sub>(shuffled at <i>l</i>) − <i>C</i><sub>LZ</sub>(original) )</p>
   <dl class="lz-formula__key">
+    <dt><i>l</i></dt><dd>block size, 1 … <i>mm</i></dd>
     <dt><i>mm</i></dt><dd>largest block size, derived automatically from <i>N</i></dd>
     <dt><i>N</i></dt><dd>sequence length</dd>
     <dt><i>C</i><sub>LZ</sub></dt><dd>LZ76 factor count</dd>
   </dl>
-  <p class="lz-formula__cite">Checked on 300 random binary sequences (n = 60…4000): <i>Ê</i> ⁄ (<i>mm</i> · log<sub><i>k</i></sub> <i>N</i> ⁄ <i>N</i>) came back an integer to within 6 × 10⁻¹⁴, and the closed form matched the reported total to within 4 × 10⁻¹⁵ absolute. The telescoping is exact in real arithmetic; in floating point a total that should be zero can come back as a residue of order 10⁻¹⁵.</p>
+  <p class="lz-formula__cite">The true ladder is non-negative and non-decreasing in <i>l</i>, because excess entropy is a mutual information between past and future. The raw rungs are neither — each rests on its own surrogate draw — so they are projected onto that shape (isotonic regression) before the value and the per-scale terms are read off.</p>
 </div>
 
-**Only the largest block size contributes to the total.** The intermediate scales cancel
-algebraically; `mm − 1` of the `mm` surrogate factorizations are computed and then discarded from
-the returned value. The per-scale `summands` remain informative — they let you reconstruct the whole
-block-entropy curve, and `summands[0]` is the multi-information — but the total does not depend on
-them. Expect `summands` to change sign repeatedly and to cancel down to a small residue. That is the
-telescoping made visible, not a bug.
+**All `mm` block sizes contribute to the total.** `summands[l-1]` is the fitted increment at scale
+`l`, every entry is non-negative, and they sum to the value. Their running sum is the excess entropy
+captured up to each scale — the curve worth plotting. A `0.0` entry means two neighbouring scales
+were pooled by the projection, not that the scale was skipped.
 
 ### Range, sign, and the noise floor
 
-`emc` is unbounded and **routinely negative**, even though the excess entropy it approximates cannot
-be. Twenty i.i.d. binary sequences at `n = 2048` (seeds 0–19):
+`emc` is unbounded above and **cannot be negative**. The catch is at the other end: because the value
+cannot go below zero, the estimator's noise on structureless input piles up *above* zero, so the null
+distribution has a positive mean. Twenty i.i.d. binary sequences at `n = 2048` (seeds 0–19):
 
 ```text
-[-0.097,  0.000, -0.097, -0.967, -0.677,  0.193, -0.290,  0.483,  0.580,  0.193,
- -0.387, -0.097,  0.193,  0.773, -0.193,  0.580,  0.580, -0.483,  0.193,  0.387]
+[0.100, 0.000, 0.000, 0.387, 0.416, 0.148, 0.000, 0.000, 0.174, 0.277,
+ 0.387, 0.000, 0.231, 0.000, 0.000, 0.483, 0.193, 0.378, 0.290, 0.000]
 
-mean = 0.044   sd = 0.460   negative in 9 of 20
+mean = 0.1732   sd = 0.1721   exactly zero in 8 of 20   max = 0.4834
 ```
 
-Mean ≈ 0, which is what an unbiased score should do on structureless input — but any single `emc`
-whose magnitude is under about 0.5 at that length (one sd) is indistinguishable from noise. There is
-one surrogate per block
-size and no ensemble, so no error bar comes with the number. The `normal_error` and `poison_error`
-fields of `lz.lz76()` are estimates for `h`, not for `emc`.
+The null is **not centred at zero**, so "positive" is not evidence of structure. At `n = 2048`
+anything below about `mean + 2 sd = 0.52` is indistinguishable from noise. There is one surrogate per
+block size and no ensemble, so no error bar comes with the number. The `normal_error` and
+`poison_error` fields of `lz.lz76()` are estimates for `h`, not for `emc`.
 
-!!! danger "`emc = 0.0` does not mean 'no structure' — a perfectly periodic sequence returns it too"
+!!! note "An exact `0.0` means 'no monotone structure found' — and it is now the only thing it means"
 
-    Blocks are aligned to multiples of the block size, so a source whose period divides `mm` is left
-    **completely invariant** by the shuffle and the score collapses to exactly zero. A period-4
-    sequence gives `0.0` at `n = 400` and `n = 512`, where `mm = 16` and 4 divides 16, and `4.150` at
-    `n = 1024`, where `mm = 17` and it does not. Nothing about the source changed — only `mm` crossed
-    an arithmetic boundary.
+    Up to 1.0.1 the total collapsed to its largest-block-size rung alone, so a source whose period
+    divided `mm` was left completely invariant by the aligned block shuffle and scored exactly zero.
+    That ambiguity is gone; a periodic sequence now reports what the other scales found:
 
     ```python
-    lz.emc("0011" * 100)[0]   # n = 400   → 0.0
-    lz.emc("0011" * 128)[0]   # n = 512   → 0.0
-    lz.emc("0011" * 256)[0]   # n = 1024  → 4.150390625
-    lz.emc("01"   * 1024)[0]  # n = 2048  → 0.0
-    lz.emc("0"    * 2048)[0]  # constant  → 0.0
+    lz.emc("0011" * 100)[0]   # n = 400   → 2.7471255453127803   (was 0.0)
+    lz.emc("0011" * 128)[0]   # n = 512   → 2.70263671875        (was 0.0)
+    lz.emc("0011" * 256)[0]   # n = 1024  → 4.150390625          (unchanged)
+    lz.emc("01"   * 1024)[0]  # n = 2048  → 1.0196126302083333   (was 0.0)
+    lz.emc("0"    * 2048)[0]  # constant  → 0.0                  (unchanged)
     ```
 
-    A `0.0` therefore carries no information on its own: at `n = 2048` a period-2 sequence produces
-    it, and so did one of the twenty i.i.d. sequences above.
+    A `0.0` now means the whole ladder sat at or below zero, which is what a structureless input
+    looks like — 8 of the 20 i.i.d. sequences above return it. A constant sequence returns it too,
+    and correctly: it has nothing to predict. The remaining trap is the *small positive* value, not
+    the zero.
 
 Sequences of ten symbols or fewer are never shuffled at all, so `emc` is identically `0.0` there.
 
@@ -479,9 +478,9 @@ not call it `h`, and do not compare it across epochs whose statistics differ.
 <div class="lz-card" markdown>
 ### Which scale the structure lives at
 
-`emc`'s value depends on exactly one block size, the largest, so it cannot localise structure to a
-scale. The `summands` carry the per-scale terms if you want the block-entropy curve, but the
-headline number does not use them.
+Read `summands`, not the value. The scalar aggregates every block size into one number; the vector
+is the per-scale profile, and its running sum shows where the accumulated structure flattens off.
+The value alone cannot tell an order-1 source from a hierarchical one.
 </div>
 
 <div class="lz-card" markdown>

@@ -272,7 +272,7 @@ bypasses the rule above:
     <dt>log_base</dt><dd><code>int | None</code> — sets the scaling factor <i>g</i> = log<sub><i>b</i></sub>(<i>N</i>) ⁄ <i>N</i>.</dd>
     <dt>max_block_size</dt><dd><code>int</code> — the largest shuffle block size. Any value <code>&lt;= 0</code> (including <code>-1</code>, <code>0</code> and <code>-100</code>) selects automatically from the sequence length. <b>It is never clamped to <code>len(seq)</code>.</b></dd>
     <dt>jobs</dt><dd><code>int</code> — ignored.</dd>
-    <dt>returns</dt><dd><code>(emc_value, summands)</code>. <code>summands</code> always has exactly as many entries as the <i>effective</i> block size — never empty, never <code>None</code>, even for degenerate input. <code>emc_value</code> is the running total of those terms in order, so a plain <code>for</code> loop reproduces it exactly; CPython's builtin <code>sum()</code> compensates and can land 1 ulp away. <code>summands[0]</code> is the multi-information term.</dd>
+    <dt>returns</dt><dd><code>(emc_value, summands)</code>. <code>summands</code> always has exactly as many entries as the <i>effective</i> block size — never empty, never <code>None</code>, even for degenerate input. Every entry is <code>&gt;= 0.0</code> and they sum to <code>emc_value</code>, which is itself <code>&gt;= 0.0</code>; <code>summands[l-1]</code> estimates the scale-<i>l</i> conditional-entropy excess <i>h</i>(<i>l</i>) − <i>h</i>. <code>emc_value</code> is read off the projected ladder rather than accumulated, so <code>sum(summands)</code> can land 1 ulp away. <code>summands[0]</code> usually equals <code>multi_information</code>, but not always — see <a href="../concepts/emc/#multi_information">the field note</a>.</dd>
   </dl>
 </div>
 
@@ -280,8 +280,8 @@ bypasses the rule above:
 >>> lz.emc("ABRACADABRA")
 (0.5417804008745377, [0.27089020043726886, 0.27089020043726886])
 >>> lz.emc(SEQ)
-(0.0, [0.11818274152505626, -0.11818274152505626,
-       0.35454822457516877, -0.35454822457516877])
+(0.17727411228758438, [0.05909137076252813, 0.0,
+                       0.11818274152505626, 0.0])
 >>> lz.emc(""), lz.emc("a"), lz.emc("abab")
 ((0.0, [0.0]), (0.0, [0.0]), (0.0, [0.0]))
 >>> lz.emc("a", max_block_size=5)
@@ -303,55 +303,59 @@ bypasses the rule above:
 
     ```pycon
     >>> value
-    2.2024383269103205
+    2.2024383269103214
     >>> len(summands)
     17
     >>> summands
-    [0.5082549985177665, 0.049828921423310524, 0.578015488510401, -0.17938411712391766,
-     0.43849450852513194, 0.03986313713864864, 0.3786998028171593, -0.6178786256490494,
-     0.6876391156416835, -0.1893499014085791, 0.38866558710182075, -0.40859715567114496,
-     0.787296958488304, -0.6477759785030355, 0.8769890170502641, -1.5745939169766097,
-     1.0862704870281668]
-    >>> total = 0.0
-    >>> for term in summands:
-    ...     total += term
-    ...
-    >>> total == value
+    [0.5082549985177665, 0.049828921423310524, 0.488323429948442, 0.0,
+     0.34880244996317344, 0.039863137138647975, 0.06976048999263496, 0.0,
+     0.2840248521128692, 0.0, 0.08969205856195894, 0.0, 0.14201242605643505,
+     0.0, 0.0, 0.0, 0.1818755631950828]
+    >>> min(summands) >= 0.0
     True
-    >>> sum(summands) == value       # builtin sum() compensates on CPython 3.12+
-    False
+    >>> abs(sum(summands) - value) < 1e-12
+    True
     >>> lz.factorization(s)[0]
     51
     ```
 
-### The sum telescopes — only the largest block size contributes
+    The four `0.0` entries are scales the projection pooled with their left neighbour, not scales
+    that were skipped — all 17 surrogates were factorized.
 
-Each summand is `(H_l - H_{l-1}) - h_hat`. Summed over the scales, the block-entropy terms
-cancel in pairs and everything except the largest scale drops out:
+### Every block size contributes, and the terms cannot go negative
+
+Each block size `l` yields a rung `Ê(l) = l · g · (C_LZ(u^RS(l)) − C_LZ(u))`, an estimate of the
+excess entropy accumulated up to scale `l`. Excess entropy is a mutual information between past and
+future, so the true ladder is non-negative and non-decreasing; the raw rungs are neither, because
+each rests on its own surrogate draw. The library projects the ladder onto that shape and returns the
+increments:
 
 <div class="lz-formula">
-  <p class="lz-math">Ê = Σ<sub><i>l</i> = 1…<i>mm</i></sub> [(<i>H</i><sub><i>l</i></sub> − <i>H</i><sub><i>l</i>−1</sub>) − <i>ĥ</i>] = <i>mm</i> · <i>g</i> · (<i>C</i><sub>LZ</sub>(<i>u</i><sup>RS(<i>mm</i>)</sup>) − <i>C</i><sub>LZ</sub>(<i>u</i>))</p>
+  <p class="lz-math"><i>Ê</i><sub>fit</sub> = argmin<sub><i>v</i></sub> Σ<sub><i>l</i></sub> (<i>v</i><sub><i>l</i></sub> − <i>Ê</i>(<i>l</i>))²&emsp;subject to&emsp;0 ≤ <i>v</i><sub>1</sub> ≤ … ≤ <i>v</i><sub><i>mm</i></sub></p>
+  <p class="lz-math">summands[<i>l</i>−1] = <i>Ê</i><sub>fit</sub>(<i>l</i>) − <i>Ê</i><sub>fit</sub>(<i>l</i>−1) &emsp;·&emsp; Ê = <i>Ê</i><sub>fit</sub>(<i>mm</i>)</p>
   <dl class="lz-formula__key">
     <dt><i>mm</i></dt><dd>the effective <code>max_block_size</code>, which also equals <code>len(summands)</code></dd>
     <dt><i>g</i></dt><dd>log<sub><i>b</i></sub>(<i>N</i>) ⁄ <i>N</i></dd>
     <dt><i>C</i><sub>LZ</sub>(<i>u</i>)</dt><dd>complexity of the original sequence</dd>
-    <dt><i>C</i><sub>LZ</sub>(<i>u</i><sup>RS(<i>mm</i>)</sup>)</dt><dd>complexity after block-shuffling at scale <i>mm</i></dd>
+    <dt><i>C</i><sub>LZ</sub>(<i>u</i><sup>RS(<i>l</i>)</sup>)</dt><dd>complexity after block-shuffling at scale <i>l</i></dd>
   </dl>
-  <p class="lz-formula__cite">Confirmed by inverting the identity, which recovers integral factor counts: the worked example above gives exactly 64.000, and 300 random binary strings (n = 200…2 000) all came back integral to within 3 × 10<sup>−14</sup>.</p>
+  <p class="lz-formula__cite">Isotonic regression by pool-adjacent-violators. Reading the total off the projection rather than summing the raw first differences is what keeps the intermediate scales in play — the raw sum telescopes to its own top rung. Derived on <a href="../concepts/emc/">Effective measure complexity</a>.</p>
 </div>
 
-!!! danger "The total does not depend on the intermediate scales"
+!!! warning "Read the value as an ordinal index at fixed length, not as a bit count"
 
-    Do not read the EMC total as an accumulation across scales. Algebraically it reduces to
-    `mm × (the rise in entropy rate when the sequence is scrambled in blocks of size mm)` and
-    nothing else — the intermediate summands cancel exactly. The per-scale `summands` remain
-    informative and are worth plotting, but the returned scalar is a two-point statistic.
+    The total is non-negative and every scale informs it, but two biases survive: the estimator
+    overshoots the analytic excess entropy of order-1 Markov sources by 2–3×, and it scales with
+    `max_block_size`, which is itself derived from `len(seq)`. **Never compare `emc` between
+    sequences of different length.**
 
-    A direct consequence: `emc(SEQ)` is exactly `0.0` because block-shuffling `SEQ` at
-    `mm = 4` happens to leave its complexity at 9. An exact zero is a resonance, not an
-    absence of structure — `lz.emc("01" * 1024)` is also exactly `0.0` (mm = 18, a multiple
-    of the period), while `lz.emc("01" * 500)` returns `2.0330199940710654` (mm = 17).
-    Constant sequences return `0.0` with all-zero summands.
+    An exact `0.0` now means one thing: no scale showed a monotone rise, which is what structureless
+    input looks like. Constant sequences return `0.0` with all-zero summands, and so does i.i.d.
+    binary at `n = 20 000`. It is no longer produced by resonance between the block grid and the
+    source period — `lz.emc("01" * 1024)` returned `0.0` under 1.0.1 because `mm = 18` is a multiple
+    of the period, and now returns `1.0196126302083333`, while `lz.emc("01" * 500)` returns
+    `2.033019994071066` (`mm = 17`). A small positive value is more likely to be the noise floor than
+    a weak signal; [Effective measure complexity](../concepts/emc.md) tabulates that floor by length.
 
 ### Automatic `max_block_size`
 
@@ -500,10 +504,10 @@ Real output from `lzcomplexity` 1.0.0, unedited:
 
 | Key | Type | Meaning |
 |---|---|---|
-| `value` | `float` | the same float as `emc(seq)[0]` |
-| `summands` | `list[float]` | the same list as `emc(seq)[1]`; its length equals `max_block_size` |
+| `value` | `float` | the same float as `emc(seq)[0]`; always `>= 0.0` |
+| `summands` | `list[float]` | the same list as `emc(seq)[1]`; its length equals `max_block_size`, every entry is `>= 0.0`, and they sum to `value` |
 | `max_block_size` | `int` | the block size actually used, after auto-selection |
-| `multi_information` | `float` | the first summand, `summands[0]` |
+| `multi_information` | `float` | the **raw** `l = 1` rung, reported before the projection. Usually equals `summands[0]`; differs when the first rung was clamped or pooled |
 
 **`["extras"]` — 5 keys.** All five compare the first half of the sequence (`fh`, split at
 `n // 2`) with the second half (`lh`), using `mi = C(fh) + C(lh) − C(seq)`.
@@ -759,8 +763,12 @@ See [Performance](../project/performance.md) and
     size, so for DNA (k = 4) the value is `log(2)/log(4) = 0.5×` the old one. Pass
     `log_base=2` to reproduce the old numbers.
 
-    Separately, **any EMC number published before 0.13.0 is not comparable with a 1.0.0
-    number** — the estimator was replaced with a block-entropy formulation.
+    Separately, **EMC numbers are not comparable across three generations of the estimator.**
+    Before 0.13.0 it summed absolute complexity differences. From 0.13.0 to 1.0.1 it summed
+    block-entropy first differences, which telescoped to a single block size and could return
+    negative values. Since then it projects the whole block-entropy ladder and returns a
+    non-negative total. Values agree between the last two only where the raw ladder was already
+    monotone. See [Effective measure complexity](../concepts/emc.md).
 
 A drop-in shim for old call sites:
 

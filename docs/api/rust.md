@@ -238,8 +238,8 @@ c = 3  factors = [0, 1, 2, 3, 7]
 h = 0.75
 nid = 0.25
 emc = 2.4609375  mm = 15
-summands = [1.0390625, -1.0390625, 1.3125, -1.3125, 1.640625, -1.640625, 1.9140625,
-            -1.9140625, 1.96875, -1.96875, 3.0078125, -3.0078125, 2.84375, -2.84375, 2.4609375]
+summands = [0.51953125, 0.0, 0.13671875, 0.0, 0.1640625, 0.0, 0.13671875, 0.0,
+            0.02734375, 0.0, 0.478515625, 0.0, 0.0, 0.0, 0.998046875]
 ```
 
 </div>
@@ -296,9 +296,9 @@ through the entropy, EMC and extras stages.
 | Field | Type | Meaning |
 |---|---|---|
 | `max_block_size` | `i32` | the block-size ceiling *mm* actually used |
-| `emc_value` | `f64` | the effective measure complexity |
-| `multi_information` | `f64` | the `l = 1` term of the sum, kept separately |
-| `summands` | `Vec<f64>` | the *mm* per-scale terms — **empty unless `get_shuffle_terms` is set** |
+| `emc_value` | `f64` | the effective measure complexity — the top of the projected ladder, always `>= 0.0` |
+| `multi_information` | `f64` | the **raw**, unprojected `l = 1` rung `H_1 − ĥ`, kept separately. May be slightly negative |
+| `summands` | `Vec<f64>` | the *mm* per-scale terms, all `>= 0.0`, summing to `emc_value` — **empty unless `get_shuffle_terms` is set** |
 
 ### `LzExtra` — from `lz76_extras`
 
@@ -458,47 +458,55 @@ let c_textbook = r.factorization + overshoot as u32;
     `&seq.as_bytes()[lzf[k-1] as usize .. (lzf[k] as usize).min(n)]`. Python slicing happens to
     clamp for you; Rust does not.
 
-### The EMC sum telescopes to a single term
+### The EMC ladder is projected, not summed
 
-`shuffle_entropy_calculation` accumulates `Ê = Σ_{l=1..mm} [(H_l − H_{l−1}) − ĥ]`. With
-`H_0 = 0` every intermediate `H_l` cancels algebraically and the total reduces to:
+`shuffle_entropy_calculation` builds one rung per block size and then projects the ladder:
 
 <div class="lz-formula">
-  <p class="lz-math">Ê = <i>mm</i> · <i>g</i> · ( C<sub>LZ</sub>(<i>u</i><sup>RS(<i>mm</i>)</sup>) − C<sub>LZ</sub>(<i>u</i>) ), &nbsp; <i>g</i> = log<sub><i>k</i></sub>(<i>N</i>) ⁄ <i>N</i></p>
+  <p class="lz-math"><i>Ê</i>(<i>l</i>) = <i>l</i> · <i>g</i> · ( C<sub>LZ</sub>(<i>u</i><sup>RS(<i>l</i>)</sup>) − C<sub>LZ</sub>(<i>u</i>) ), &nbsp; <i>g</i> = log<sub><i>k</i></sub>(<i>N</i>) ⁄ <i>N</i></p>
+  <p class="lz-math"><i>Ê</i><sub>fit</sub> = non_negative_isotonic( <i>Ê</i>(1), …, <i>Ê</i>(<i>mm</i>) ) &emsp;·&emsp; summands[<i>l</i>−1] = <i>Ê</i><sub>fit</sub>(<i>l</i>) − <i>Ê</i><sub>fit</sub>(<i>l</i>−1) &emsp;·&emsp; <code>emc_value</code> = <i>Ê</i><sub>fit</sub>(<i>mm</i>)</p>
   <dl class="lz-formula__key">
     <dt><i>mm</i></dt><dd><code>LzShuffle::max_block_size</code> — the largest block size in the ladder</dd>
-    <dt><i>u</i><sup>RS(<i>mm</i>)</sup></dt><dd>the sequence block-shuffled at scale <i>mm</i></dd>
+    <dt><i>u</i><sup>RS(<i>l</i>)</sup></dt><dd>the sequence block-shuffled at scale <i>l</i></dd>
     <dt><i>k</i></dt><dd>the log base: the detected alphabet size, or <code>LzArgs::log_base</code></dd>
     <dt><i>N</i></dt><dd><code>seq.len()</code></dd>
   </dl>
-  <p class="lz-formula__cite">Only the largest block size reaches the total. The other <i>mm</i> − 1 factorizations are computed and then algebraically discarded — they survive only in <code>summands</code>.</p>
+  <p class="lz-formula__cite">Every block size reaches the total. <code>non_negative_isotonic</code> is pool-adjacent-violators plus a positive-part clamp — the least-squares projection onto {0 ≤ v₁ ≤ … ≤ v<sub>mm</sub>}, which is the shape Crutchfield &amp; Feldman's Lemma 1 guarantees for the true finite-scale excess entropy.</p>
 </div>
 
-For `"01" * 64`: `N = 128`, `k = 2`, `mm = 15`, `C_LZ(u) = 2`, and `C_LZ` of the scale-15 shuffle
-is `5`, so `15 · (7/128) · (5 − 2) = 2.4609375` — exactly the accumulated `emc_value` printed
-above, bit for bit. The agreement is not guaranteed in general: `emc_value` is a running sum, so
-it carries rounding the closed form does not, and the two can differ in the last few ulp.
+The projection is the identity on a ladder that is already non-negative and non-decreasing, so in
+that case `emc_value` is just the top rung. `"01" * 64` is one: `N = 128`, `k = 2`, `mm = 15`,
+`C_LZ(u) = 2`, and `C_LZ` of the scale-15 shuffle is `5`, so
+`15 · (7/128) · (5 − 2) = 2.4609375` — exactly the `emc_value` printed above, bit for bit. Do not
+read that as a general closed form: the top rung survives unpooled here only because the rung below
+it is lower. When the top rungs pool, `emc_value` is their mean and the closed form is wrong.
 
-!!! warning "Signs flip from scale to scale — that is the cancellation, not a bug"
+!!! tip "Every summand is non-negative, and they sum to `emc_value`"
 
-    Printing `summands` for `"01" * 64` gives `[+1.0390625, −1.0390625, +1.3125, −1.3125, …]`,
-    which reads as numerical garbage. The neat pairing is specific to that input, where every even
-    scale happens to reproduce the original complexity. A 512-symbol pseudorandom binary string
-    (`random.seed(3)`, `random.choice("01")`) gives
-    `[−0.0176, +0.0527, +0.0176, −0.0527, 0.0, +0.1055, −0.3516, …]` with no such pattern. What is
-    general is the telescoping: every intermediate `H_l` cancels, so the **total does not depend on
-    the intermediate scales**. The per-scale terms remain informative — `H_l` is recoverable from
-    the running sum of `summands[j] + ĥ`.
+    `summands` holds the increments of the fitted ladder, so `summands[l-1] >= 0.0` for every `l`,
+    the running sums climb monotonically, and the total equals `emc_value` to floating-point
+    rounding. A `0.0` entry means scales `l−1` and `l` were pooled into one block by the projection
+    — the surrogate at scale `l` was still computed. The `mm` surrogate factorizations happen
+    regardless of `get_shuffle_terms`.
 
-!!! danger "An `emc_value` of `0.0` means resonance, not absence of structure"
+    Up to 1.0.1 this vector held the raw first differences and its signs alternated
+    (`[+1.0390625, −1.0390625, +1.3125, −1.3125, …]` for `"01" * 64`), because the sum telescoped:
+    `Σ_l [(H_l − H_{l−1}) − ĥ]` collapses to `Ê(mm)` and the intermediate scales cancelled out of
+    the total. They no longer do.
 
-    Zero comes out exactly when the scale-*mm* shuffle leaves the complexity unchanged, which is a
-    property of *mm* against the input, not a verdict on the input. Measured: `"0011" * 128`
-    returns `0.0`, `"01" * 1000` returns `-4.440892098500626e-16`, and `"01" * 64` — no less
-    periodic — returns `2.4609375`. Negative totals are normal and mean the shuffle **lowered** the
-    complexity; the 512-symbol pseudorandom string above returns `-0.28125`.
+!!! note "An `emc_value` of `0.0` means the whole ladder sat at or below zero"
 
-The derivation and the surrogate-quality caveats are on
+    Zero is now a single, readable outcome: no scale showed a monotone rise, which is what
+    structureless input looks like. It is no longer produced by *resonance* between the block grid
+    and the source period — under 1.0.1, `"0011" * 128` returned `0.0` and `"01" * 1000` returned
+    `-4.440892098500626e-16` purely because the scale-`mm` shuffle happened to be the identity;
+    they now return `2.70263671875` and `1.040835691685843`. A 512-symbol pseudorandom binary string
+    (`random.Random(3)`, `random.choice("01")`) returned `-0.28125` and now returns `0.205078125`.
+
+    `emc_value` can never be negative. If you are comparing against a value from 1.0.1 or earlier,
+    see [Releases](../project/releases.md).
+
+The derivation, the two remaining biases and the surrogate-quality caveats are on
 [Effective measure complexity](../concepts/emc.md).
 
 <div class="lz-tickrule"></div>

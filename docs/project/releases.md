@@ -413,14 +413,26 @@ deploys.
 | 0.13.0 | `feat!: emc uses the block-entropy estimator` + `perf: linear-time suffix array` | **`Release-As: 0.13.0`** — the automatic result would also have been 0.13.0 |
 | 1.0.0 | `feat: declare a stable 1.0 public API` + `build:` + `ci:` | **`Release-As: 1.0.0`** — a deliberate 0.13 → 1.0 jump; the automatic result would have been 0.14.0 |
 | 1.0.1 | `docs: add a README for the core crate` | **`Release-As: 1.0.1`** |
+| 2.0.0 *(pending)* | `feat!: project the EMC ladder onto the cone excess entropy lives in` | automatic — a `feat!` on a 1.x line is a major bump |
 
 The release commit is always titled `chore(rust-backend): release X.Y.Z (#N)`.
 
-`0.13.0` is the only release *within* the Rust line that moved a number: `emc()` and
-`lz76()["emc"]` switched to the block-entropy estimator. Factorization, entropy density and
-information distance were untouched by it. See
-[Effective measure complexity](../concepts/emc.md) for what the current estimator computes, and why
-only the largest block size contributes to the total.
+**Two releases have moved `emc` within the Rust line, and no other measure has moved at all.**
+Factorization, entropy density and information distance are untouched by both.
+
+`0.13.0` switched `emc()` and `lz76()["emc"]` to a block-entropy estimator. That estimator summed
+the first differences of its own block-entropy ladder, which telescopes, so the total reduced to the
+largest block size alone — it could return negative values, and it returned exactly zero whenever the
+source period divided the block-size ceiling.
+
+`2.0.0` keeps the ladder and changes only how it is combined: it is projected onto the non-negative
+non-decreasing cone that excess entropy provably occupies, and the total and the per-scale
+`summands` are read off the projection. **Values and every summand are now non-negative, and every
+block size contributes.** Inputs whose raw ladder was already monotone are unchanged to the last bit
+— including `"01" * 64`, `"0011" * 256`, Thue–Morse and `markov(8192, 0.9, seed=6)`. Inputs that were
+reporting the telescoping artefact moved. See
+[Effective measure complexity](../concepts/emc.md) for the derivation, the old-versus-new comparison
+and the two biases that remain.
 
 `0.11.0` moved numbers too, but against the C++ `0.10.2` it replaced rather than against another
 Rust release: `emc` draws different surrogates under the new RNG, and `h` on non-binary input

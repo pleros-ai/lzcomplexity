@@ -229,39 +229,47 @@ the same as the original — so the single term is exactly zero. Give it somethi
 ```python
 >>> lz.emc("banana" * 4)
 (1.0847959727678895,
- [0.36159865758929655, -0.36159865758929655, 1.0847959727678895])
+ [0.18079932879464827, 0.0, 0.9039966439732412])
 ```
 
-`emc` returns `(value, summands)`. Each summand belongs to one block scale; the value is their
-sum.
+`emc` returns `(value, summands)`. Each summand belongs to one block scale, every summand is
+non-negative, and the value is their sum.
 
-!!! danger
-    That sum telescopes, so the total carries information from one scale only. Each term is
-    `(H_l − H_{l−1}) − ĥ`, and the whole sum collapses exactly to
-    `mm · g · (C_LZ(shuffled at mm) − C_LZ(original))`, where `mm` is the largest block size and
-    `g = log_k(n) / n`. **Only the largest scale survives; the intermediate scales cancel.**
-    Check it on the example above — `mm = 3`, `n = 24`, `k = 3`, `C_LZ = 4` — and inverting the
-    identity recovers a shuffled complexity of exactly `7.0`, an integer, as it must be.
+!!! note
+    The summands are not raw per-scale measurements. Each block scale `l` gives a rung
+    `Ê(l) = l · g · (C_LZ(shuffled at l) − C_LZ(original))`, where `g = log_k(n)/n` — an estimate of
+    the excess entropy accumulated up to scale `l`. Because excess entropy is a mutual information
+    between past and future, the true ladder rises and never dips below zero, while the raw rungs do
+    both. `emc` projects the ladder onto that shape first, then reports the increments; the `0.0`
+    above is a scale that the projection pooled with its neighbour, not a scale that was skipped.
 
-    Two consequences follow, and both bite in practice. The value has **no lower bound at
-    zero**: if the shuffle at scale `mm` factorises into *fewer* components than the original,
-    the result is negative.
+    The **running sum** of `summands` is often the more useful curve: it is the excess entropy
+    captured up to each scale, and where it flattens is where the sequence runs out of structure.
+
+!!! danger "`0.0` is a real reading; a small positive number often is not"
+
+    A structureless sequence returns exactly zero, because its whole ladder sits at or below zero
+    and the projection flattens it:
 
     ```python
     >>> import random
     >>> r = random.Random(0)
     >>> noise = "".join(r.choice("01") for _ in range(2000))
     >>> lz.emc(noise)[0]
-    -0.39476823424783447
+    0.0
     ```
 
-    And `0.0` means only that the shuffle at scale `mm` happened to leave the complexity
-    unchanged — it is not a signature of periodicity. `lz.emc("0101" * 100)[0]` is `0.0`, but
-    `lz.emc("01" * 400)[0]` is `2.6641152724252684`, for the same period-2 structure at a
-    different length.
+    The trap is the other direction. Because the value cannot go negative, the noise on a
+    structureless input piles up *above* zero, so at `n = 2 000` a value of a few tenths is still
+    consistent with no structure at all. Build a null before you read a small number as signal —
+    [Effective measure complexity](../concepts/emc.md) tabulates the floor by length.
 
-    The per-scale `summands` stay informative about where structure sits. Read
-    [Effective measure complexity](../concepts/emc.md) before reporting any of this.
+    Two other cautions carry over. `emc` scales with the largest block size, which is derived from
+    `len(seq)`, so **never compare values across lengths**: the same period-2 structure gives
+    `1.1345061249079327` at `n = 400` (`lz.emc("0101" * 100)[0]`) and `2.664115272425268` at
+    `n = 800` (`lz.emc("01" * 400)[0]`). And it overshoots the true excess entropy by 2–3× on
+    sources where that quantity is known, so report it as an ordinal index, never as a bit count.
+    Read [Effective measure complexity](../concepts/emc.md) before reporting any of this.
 
 ## What to read next
 

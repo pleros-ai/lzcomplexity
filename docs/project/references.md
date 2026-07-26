@@ -150,7 +150,7 @@ Cover & Thomas (2006)
 
 These are four community names for one quantity, and the equivalence is a theorem chain rather than a convention — Crutchfield & Feldman (2003), Propositions 6, 7 and 8.
 
-Carry one implementation fact into all of these papers: the library's `emc` sum telescopes. `Σ_l [(H_l − H_{l−1}) − ĥ]` collapses exactly to `mm · g · (C_LZ(shuffled at mm) − C_LZ(original))`, where `g = log_k(N)/N`, so only the largest block size contributes to the total. The per-scale `summands` stay informative; the scalar total does not depend on the intermediate scales at all. See [Effective measure complexity](../concepts/emc.md).
+Carry one implementation fact into all of these papers: the library does not sum the first differences of its block-entropy ladder. Doing so would be the identity `Σ_L [h(L) − h] = H(L) − L·h`, which telescopes, leaving the total equal to its own largest-block-size rung — one surrogate draw, able to go negative, and exactly zero whenever the source period divides `mm`. Instead it forms one finite-scale excess entropy `Ê(l) = l · g · (C_LZ(shuffled at l) − C_LZ(original))` per block size, with `g = log_k(N)/N`, projects that ladder onto the non-negative non-decreasing cone that Crutchfield & Feldman's Lemma 1 guarantees the true `E(l)` occupies, and reads the total and the per-scale `summands` off the projection. Every block size therefore enters the total, and both it and every summand are non-negative. Worked out on [Effective measure complexity](../concepts/emc.md).
 
 Crutchfield & Packard (1983)
 :   Crutchfield, J. P., & Packard, N. H. (1983). Symbolic dynamics of noisy chaos. *Physica D*, **7**, 201–223.
@@ -202,7 +202,7 @@ Melchert & Hartmann (2015)
 
 Estevez-Rams, Mesa Rodriguez & Estevez-Moya (2019)
 :   Estevez-Rams, E., Mesa Rodriguez, A., & Estevez-Moya, D. (2019). Complexity-entropy analysis at different levels of organisation in written language. *PLOS ONE*, **14**(5), e0214863. [10.1371/journal.pone.0214863](https://doi.org/10.1371/journal.pone.0214863). Preprint: [arXiv:1903.07416](https://arxiv.org/abs/1903.07416)
-:   The direct antecedent of the shuffle-surrogate estimator in this library, and the source of the block-shuffle construction. Its Eq. (4) sums `h_LZ(S_(M)) − h_LZ(S)`; the library multiplies by `M` before taking the discrete derivative, which recovers Grassberger's summand exactly. That is a correction rather than a reimplementation — and it is also what makes the library's sum telescope, which is worked out on [Effective measure complexity](../concepts/emc.md).
+:   The direct antecedent of the shuffle-surrogate estimator in this library, and the source of the block-shuffle construction. Its Eq. (4) sums `h_LZ(S_(M)) − h_LZ(S)`; the library multiplies by `M` first, which turns each term into a finite-scale excess entropy `E(M) = H(M) − M·h` rather than an entropy-rate difference. That is a correction rather than a reimplementation. It also means the terms cannot simply be added — the sum would telescope — which is why the library projects the ladder instead. See [Effective measure complexity](../concepts/emc.md).
 
 von Wegner, Wiemers, Hermann, Tödt, Tagliazucchi & Laufs (2024)
 :   von Wegner, F., Wiemers, M., Hermann, G., Tödt, I., Tagliazucchi, E., & Laufs, H. (2024). Complexity measures for EEG microstate sequences: concepts and algorithms. *Brain Topography*, **37**(2), 296–311. [10.1007/s10548-023-01006-2](https://doi.org/10.1007/s10548-023-01006-2)
@@ -291,6 +291,10 @@ Ko & Aluru (2003)
 Crochemore & Ilie (2008)
 :   Crochemore, M., & Ilie, L. (2008). Computing longest previous factor in linear time and applications. *Information Processing Letters*, **106**(2), 75–80. [10.1016/j.ipl.2007.10.006](https://doi.org/10.1016/j.ipl.2007.10.006)
 :   Given a suffix array and an LCP array, the longest-previous-factor array costs `O(n)` via a monotone stack. `LPF` is what makes the parse self-referential: a match may start before position `i` and run past it.
+
+Ayer, Brunk, Ewing, Reid & Silverman (1955)
+:   Ayer, M., Brunk, H. D., Ewing, G. M., Reid, W. T., & Silverman, E. (1955). An empirical distribution function for sampling with incomplete information. *Annals of Mathematical Statistics*, **26**(4), 641–647. [10.1214/aoms/1177728423](https://doi.org/10.1214/aoms/1177728423)
+:   Pool-adjacent-violators — the linear-time isotonic regression that `emc` uses to project its block-entropy ladder onto the non-negative non-decreasing cone. One left-to-right pass over `(sum, count)` blocks, merging backwards whenever the newest block averages below its predecessor. Standard modern treatment: Barlow, Bartholomew, Bremner & Brunk, *Statistical Inference under Order Restrictions* (Wiley, 1972). See [Effective measure complexity](../concepts/emc.md).
 
 Crochemore, Ilie & Smyth (2008)
 :   Crochemore, M., Ilie, L., & Smyth, W. F. (2008). A simple algorithm for computing the Lempel–Ziv factorization. *DCC 2008*, 482–488.

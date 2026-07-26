@@ -191,45 +191,47 @@ Measured on a 200-symbol binary sequence (auto block size 15):
     disappears. Write `-e=f` and `-e=5` with an equals sign, and put a bare `-e` last on the line
     (`lzcomplexity random.txt -e`).
 
-### Only the largest block size affects the total
+### `-e=l` is a different estimate, not a prefix of the full run
 
-The EMC sum telescopes:
+Every block size from 1 to `max_block_size` contributes to `value`. The estimator builds one rung
+per block size and then projects the whole ladder:
 
 <div class="lz-formula">
-  <p class="lz-math"><i>Ê</i> = Σ<sub><i>l</i> = 1..<i>mm</i></sub> [ (<i>H</i><sub><i>l</i></sub> − <i>H</i><sub><i>l</i>−1</sub>) − <i>ĥ</i> ] = <i>mm</i> · <i>g</i> · [ <i>C</i><sub>LZ</sub>(shuffled at <i>mm</i>) − <i>C</i><sub>LZ</sub>(original) ]</p>
+  <p class="lz-math"><i>Ê</i>(<i>l</i>) = <i>l</i> · <i>g</i> · [ <i>C</i><sub>LZ</sub>(shuffled at <i>l</i>) − <i>C</i><sub>LZ</sub>(original) ],&emsp;<i>Ê</i> = non_negative_isotonic( <i>Ê</i>(1) … <i>Ê</i>(<i>mm</i>) )(<i>mm</i>)</p>
   <dl class="lz-formula__key">
     <dt><i>mm</i></dt><dd><code>max_block_size</code>, the largest block size used</dd>
-    <dt><i>H</i><sub><i>l</i></sub></dt><dd>block entropy at scale <i>l</i>, with <i>H</i><sub>0</sub> = 0</dd>
-    <dt><i>ĥ</i></dt><dd>the entropy-rate estimate subtracted at every scale</dd>
+    <dt><i>Ê</i>(<i>l</i>)</dt><dd>the finite-scale excess entropy at scale <i>l</i> — a rung of the ladder</dd>
     <dt><i>g</i></dt><dd>log<sub><i>b</i></sub>(<i>N</i>) ⁄ <i>N</i>, the per-symbol scaling</dd>
     <dt><i>C</i><sub>LZ</sub></dt><dd>LZ76 factor count</dd>
   </dl>
-  <p class="lz-formula__cite">Both sides checked against the shipped binary — see below.</p>
+  <p class="lz-formula__cite">The projection is a least-squares fit onto {0 ≤ v₁ ≤ … ≤ v<sub>mm</sub>}; <code>summands</code> holds its increments, so every entry is non-negative and they sum to <code>value</code>.</p>
 </div>
 
-The intermediate scales cancel algebraically, so **`value` depends only on the shuffle at
-`max_block_size`**. The running total after `l` scales is bit-identical to a fresh run with `-e=l`:
+Because the projection couples the rungs, **`-e=l` re-fits a shorter ladder** — its `value` is not
+in general the `l`-th partial sum of the full run's `summands`. On a 5 000-symbol period-8 sequence
+(`mm = 19`), `-e=3` reports `3.111249` while the full run's third partial sum is `2.243736`; the two
+disagree at 12 of the 19 scales. They coincide only when no pooling crosses the truncation point,
+which on a structureless input means everywhere:
 
 <div class="lz-run" markdown>
 
 ```console
-$ lzcomplexity -e=1 random.txt -o T.json    # value  -0.07643856189774723
-$ lzcomplexity -e=2 random.txt -o T.json    # value   0.0
-$ lzcomplexity -e=3 random.txt -o T.json    # value   0.0
-$ lzcomplexity -e=4 random.txt -o T.json    # value  -0.1528771237954949
-$ lzcomplexity -e=5 random.txt -o T.json    # value  -0.3821928094887359
+$ lzcomplexity -e=1 random.txt -o T.json    # value  0.0
+$ lzcomplexity -e=2 random.txt -o T.json    # value  0.0
+$ lzcomplexity -e=3 random.txt -o T.json    # value  0.0
+$ lzcomplexity -e=4 random.txt -o T.json    # value  0.0
+$ lzcomplexity -e=5 random.txt -o T.json    # value  0.0
 ```
 
 </div>
 
-Those five numbers are exactly the running sums of the first five entries of the 15-element
-`summands` array from `-e=f`, compared with `==` on the raw doubles. For the full run,
-`value / (mm * g) = -3.0` to within one ULP: the shuffled sequence factorises into three fewer
-components than the original, and that single integer difference is the whole EMC.
+`random.txt` is 200 pseudorandom bits, so every rung of its ladder sits at or below zero and the
+projection flattens all of them: the full run also reports `value` `0.0` with fifteen zero summands.
+That is the correct reading for a structureless input, and `value` can never be negative.
 
-The per-scale `summands` stay informative — they show *where* structure lives — but the total does
-not depend on the intermediate scales. [Effective measure complexity](../concepts/emc.md) works
-through what that means for interpretation.
+Pin `-e=l` when you need EMC comparable across sequences of different lengths — just pin the *same*
+`l` for all of them, and do not mix pinned and auto runs.
+[Effective measure complexity](../concepts/emc.md) works through what that means for interpretation.
 
 <div class="lz-tickrule"></div>
 
@@ -259,19 +261,32 @@ Measured on a 200-symbol binary sequence (`c = 30`, detected alphabet size 2):
 
 | Flags | `lz76EntropyDensity` | `lz76RandomShuffleComplexity.value` |
 |---|---|---|
-| *(none)*, `-a 2`, `-a auto`, `-a xyz`, `-a 0`, `-l 2` | `1.1465784284662086` | `-1.7198676426993127` |
-| `-a 4` | `0.5732892142331043` | `-0.8599338213496563` |
-| `-a 10` | `0.34515449934959713` | `-0.517731749024395` |
-| `-l 4` | `1.1465784284662086` | `-0.8599338213496563` |
-| `-l 10` | `1.1465784284662086` | `-0.517731749024395` |
-| `-a 4 -l 2` | `0.5732892142331043` | `-1.7198676426993127` |
+| *(none)*, `-a 2`, `-a auto`, `-a xyz`, `-a 0`, `-l 2` | `1.1465784284662086` | `0.0` |
+| `-a 4` | `0.5732892142331043` | `0.0` |
+| `-a 10` | `0.34515449934959713` | `0.0` |
+| `-l 4` | `1.1465784284662086` | `0.0` |
+| `-l 10` | `1.1465784284662086` | `0.0` |
+| `-a 4 -l 2` | `0.5732892142331043` | `0.0` |
 
 </div>
 
-Read that table twice. `-a` moves both columns, because when `-l` is absent the log base is copied
-from `-a`. `-l` moves only the EMC column. Neither flag changes `lz76Complexity` — the factor count
-is alphabet-free. And `alphabet_size` in the report is always the **detected** value, never the
-`-a` override.
+Read that table twice. `-a` moves the entropy column, because when `-l` is absent the log base is
+copied from `-a`. Neither flag changes `lz76Complexity` — the factor count is alphabet-free. And
+`alphabet_size` in the report is always the **detected** value, never the `-a` override.
+
+The EMC column is `0.0` throughout because `random.txt` is pseudorandom and its whole ladder projects
+to zero — a genuine reading, not a missing measurement. The log base does still scale EMC by
+`1/ln(log_base)`; it takes a structured input to see it. On `"01" × 100`, also 200 symbols:
+
+<div class="lz-scroll lz-compare" markdown>
+
+| Flags | `lz76RandomShuffleComplexity.value` |
+|---|---|
+| *(none)* — detected base 2 | `1.2306608465537305` |
+| `-l 4` | `0.6153304232768653` — exactly half |
+| `-l 10` | `0.3704658293019009` |
+
+</div>
 
 Values below 2 are clamped to 2, so `-a 0` and `-a 1` behave like `-a 2`.
 [Entropy density](../concepts/entropy-density.md) covers units and convergence;
@@ -322,12 +337,12 @@ $ lzcomplexity -v -d -e 4:f trials.txt -o trials.lz76.json
         "max_block_size": 4,
         "multi_information": 0.8144736980218353,
         "summands": [
-          0.8144736980218353,
-          -0.8144736980218353,
-          1.7453007814753616,
-          -1.7453007814753616
+          0.40723684901091767,
+          0.0,
+          0.46541354172676314,
+          0.0
         ],
-        "value": 0.0
+        "value": 0.8726503907376808
       },
       "size": 48
     },
@@ -345,10 +360,10 @@ $ lzcomplexity -v -d -e 4:f trials.txt -o trials.lz76.json
         "summands": [
           0.0,
           0.0,
-          0.3490601562950726,
-          -0.8144736980218354
+          0.0,
+          0.0
         ],
-        "value": -0.46541354172676286
+        "value": 0.0
       },
       "size": 48
     },
@@ -379,8 +394,11 @@ $ lzcomplexity -v -d -e 4:f trials.txt -o trials.lz76.json
 
 Three details in that report are worth reading closely.
 
-The periodic line gets `"value": 0.0` — exactly zero, not a rounded zero. Its summands are two
-equal-and-opposite pairs that cancel to the last bit.
+The **second** line — the pseudorandom one, `c = 10` — gets `"value": 0.0` with four zero summands:
+its whole ladder sat at or below zero, so the projection flattened it. That is the correct reading
+for an input with no multi-scale structure. The periodic first line, by contrast, reports
+`0.8726503907376808`. Under 1.0.1 those two verdicts were the other way round, because the total
+telescoped to the scale-4 rung and 4 is a multiple of the period.
 
 The constant line reports `"alphabet": [48]`, a one-element array, next to `"alphabet_size": 2`.
 That is not a serialiser bug. `alphabet` lists the distinct bytes actually present;
@@ -436,7 +454,7 @@ sequence `i+1`.
 | `value` | float | the EMC total |
 | `max_block_size` | integer | the largest block size used; `-1` when `-n` skipped the stage |
 | `multi_information` | float | the scale-1 summand |
-| `summands` | array of float | **optional** — present only when `-e` requested `f`. One entry per scale, with `sum(summands) == value` and `summands[0] == multi_information` |
+| `summands` | array of float | **optional** — present only when `-e` requested `f`. One entry per scale, every entry `>= 0`, with `sum(summands) == value` to rounding. `summands[0] == multi_information` in the common case, but not when the first rung was clamped or pooled by the projection |
 
 The auto block size is a function of length alone: 1 at n = 8, 4 at n = 50, 14 at n = 51 (there is
 a `+10` step past 50), 15 at n = 200, 17 at n = 1000, 23 at n = 100 000. Cross-length EMC
@@ -600,6 +618,18 @@ the escape sequences. `[ Info ]` goes to stdout, `[ Error ]` to stderr.
 Every transcript below was run against `random.txt` (200 binary symbols), `trials.txt` (the
 three-line file above), `table.csv` and a 4×3 P2 greyscale `img.pgm`.
 
+??? note "Regenerating `random.txt`"
+
+    ```python
+    import random
+    open("random.txt", "w").write(
+        "".join(random.Random(0).choice("01") for _ in range(200))
+    )
+    ```
+
+    That gives `lz76Complexity` 30, `lz76EntropyDensity` 1.1465784284662086 and the 31 factor
+    boundaries printed under transcript 6 below.
+
 **1 — Baseline.** Complexity, entropy density and EMC for one time series.
 
 <div class="lz-run" markdown>
@@ -609,7 +639,7 @@ $ lzcomplexity -v random.txt
  [ Info ] Sequences to process: 1
  [ Info ] Saved results in: random.lz76.json
 $ cat random.lz76.json
-{"filename":"random.txt","format":"AUTO","sequences":[{"alphabet":[49,48],"alphabet_size":2,"lz76Complexity":30,"lz76EntropyDensity":1.1465784284662086,"lz76RandomShuffleComplexity":{"max_block_size":15,"multi_information":-0.07643856189774723,"value":-1.7198676426993127},"size":200}],"size":1}
+{"filename":"random.txt","format":"AUTO","sequences":[{"alphabet":[49,48],"alphabet_size":2,"lz76Complexity":30,"lz76EntropyDensity":1.1465784284662086,"lz76RandomShuffleComplexity":{"max_block_size":15,"multi_information":-0.07643856189774723,"value":0.0},"size":200}],"size":1}
 ```
 
 </div>
@@ -659,7 +689,7 @@ sequences of different lengths, since the auto block size is length-dependent.
 ```console
 $ lzcomplexity -e=3:f random.txt -o Q3.json
 $ python3 -c "import json;print(json.load(open('Q3.json'))['sequences'][0]['lz76RandomShuffleComplexity'])"
-{'max_block_size': 3, 'multi_information': -0.07643856189774723, 'summands': [-0.07643856189774723, 0.07643856189774723, 0.0], 'value': 0.0}
+{'max_block_size': 3, 'multi_information': -0.07643856189774723, 'summands': [0.0, 0.0, 0.0], 'value': 0.0}
 ```
 
 </div>

@@ -314,19 +314,27 @@ performs exactly n/2 swaps whatever the bytes are — so the 8 % spread across c
 noise, not signal. At n = 10⁶ the factorization stage outweighs the shuffle
 stage roughly 4:1 on random data and 1.5:1 on repetitive data.
 
-!!! danger "You pay for `mm` factorizations and only the largest block size changes the answer."
+!!! note "You pay for `mm` factorizations, and all `mm` of them reach the answer."
 
-    The EMC sum telescopes. `sum_l [(H_l − H_{l−1}) − ĥ]` reduces exactly to
-    `mm · g · (C_LZ(shuffled at mm) − C_LZ(original))`, so the scalar `emc` value depends on the
-    largest block size alone — the intermediate scales cost you real time and contribute nothing to
-    the total. The per-scale `summands` remain informative and are worth reading. The derivation is
-    on [Effective measure complexity](../concepts/emc.md).
+    Every block size enters the total. The estimator forms one rung `Ê(l) = l · g · (C_LZ(shuffled at
+    l) − C_LZ(original))` per block size, projects the whole ladder onto the non-negative
+    non-decreasing cone, and reads the value off the top of the projection — so a scale that violates
+    monotonicity is pooled with its neighbours rather than discarded, and the per-scale `summands` are
+    the increments of the fitted ladder. Full treatment on
+    [Effective measure complexity](../concepts/emc.md).
 
-    A **constant** input returns `0` — both counts are 1, and `lz.emc("0" * 1000)[0]` is `-1.04e-17`.
-    A long **i.i.d.** input returns `0` to rounding because shuffling does not change its complexity;
-    on 10⁵ random bits the value is `-6.66e-16`. A **periodic** input does not:
-    `lz.emc("01" * 500)[0]` is `2.033`, because shuffling destroys the period and `C_LZ` jumps from 2
-    to 14.
+    Versions up to 1.0.1 summed the first differences instead, which telescopes: the total then
+    reduced exactly to `mm · g · (C_LZ(shuffled at mm) − C_LZ(original))` and the other `mm − 1`
+    factorizations were computed and then algebraically cancelled. **That is the one respect in which
+    the intermediate scales used to be wasted work; they are not any more.** The cost model below is
+    unchanged either way — the projection is a single linear pass over `mm` floats and does not show
+    up in any timing on this page.
+
+    A **constant** input returns exactly `0.0` — both counts are 1, so every rung is zero. A long
+    **i.i.d.** input also returns exactly `0.0`, because shuffling does not change its complexity and
+    the whole ladder sits at or below zero: on 10⁵ random bits the value is `0.0`. A **periodic**
+    input does not: `lz.emc("01" * 500)[0]` is `2.033`, because shuffling destroys the period and
+    `C_LZ` jumps from 2 to 14.
 
 ### Parallel behaviour
 

@@ -217,36 +217,39 @@ input in any useful sense — a small perturbation resamples the Monte Carlo.
     hamming distance : 1
     complexity       : 301 -> 301
     h                : 0.4776611328125 -> 0.4776611328125
-    emc              : 1.30126953125 -> 1.142578125
+    emc              : 1.30126953125 -> 1.2495814732142858
     ```
 
     </div>
 
     The factorization of the input is untouched: same 301 components, same entropy density to the
-    last bit. The entire change in `emc` comes from the surrogate — the shuffled sequence at block
-    size `mm = 20` factorised into five components *fewer* than before, so `emc` fell by
-    `5 × 0.03173828125 = 0.15869140625`. That step, `mm · log₂(n)/n = 20 · 13 / 8192`, is the
-    smallest change `emc` can express at this length; the direction and size of the jump are
-    arbitrary, because the new seed indexes an unrelated point in the surrogate distribution.
+    last bit. The entire change in `emc` comes from the surrogates — all twenty of them are redrawn
+    from an unrelated stream, so the whole ladder shifts and the projection lands somewhere else. The
+    direction and size of the jump are arbitrary.
+
+    The two values are not even the same *kind* of rational. The original ladder is monotone at the
+    top, so its value is `mm · g · (c_mm − c) = 820 · g` with `g = log₂(n)/n = 13/8192`. The flipped
+    one has its top seven rungs pooled, so its value is their mean, `5512/7 · g` — the trailing run
+    of six zeros in `summands` is what tells you the top block has size seven.
 
 ### The estimate still carries sampling error
 
-The EMC sum telescopes. Writing `g = log_k(n)/n`, the sum `Σ_l [(H_l − H_{l−1}) − ĥ]` reduces exactly
-to a single term:
+The value is read off a ladder of `mm` rungs, one per block size, and each rung rests on exactly one
+surrogate draw:
 
 <div class="lz-formula">
-  <p class="lz-math"><i>Ê</i> = <i>mm</i> · <i>g</i> · ( <i>C</i><sub>LZ</sub>(<i>u</i><sup>RS(<i>mm</i>)</sup>) − <i>C</i><sub>LZ</sub>(<i>u</i>) )</p>
+  <p class="lz-math"><i>Ê</i>(<i>l</i>) = <i>l</i> · <i>g</i> · ( <i>C</i><sub>LZ</sub>(<i>u</i><sup>RS(<i>l</i>)</sup>) − <i>C</i><sub>LZ</sub>(<i>u</i>) ),&emsp;<i>Ê</i> = non_negative_isotonic( <i>Ê</i>(1) … <i>Ê</i>(<i>mm</i>) )(<i>mm</i>)</p>
   <dl class="lz-formula__key">
     <dt><i>mm</i></dt><dd>the largest block size — <code>lz76(seq)["emc"]["max_block_size"]</code></dd>
-    <dt><i>u</i><sup>RS(<i>mm</i>)</sup></dt><dd>the block-shuffled surrogate at block size <i>mm</i>; <b>one</b> realisation</dd>
+    <dt><i>u</i><sup>RS(<i>l</i>)</sup></dt><dd>the block-shuffled surrogate at block size <i>l</i>; <b>one</b> realisation per scale</dd>
     <dt><i>g</i></dt><dd>log<sub><i>k</i></sub>(<i>n</i>) ⁄ <i>n</i></dd>
   </dl>
-  <p class="lz-formula__cite">The per-scale <code>summands</code> telescope: every surrogate complexity except <i>c</i><sub><i>mm</i></sub> cancels out of the total. The individual summands stay informative; the total depends on only one of the <i>mm</i> shuffles. Derived in <a href="../../concepts/emc/">Effective measure complexity</a>.</p>
+  <p class="lz-formula__cite">Projecting rather than summing the first differences is what keeps all <i>mm</i> scales in the total; it also halves the spread over an i.i.d. null. It does not turn one draw per scale into an ensemble. Derived in <a href="../../concepts/emc/">Effective measure complexity</a>.</p>
 </div>
 
-So the returned scalar is a difference of two integers, one of which came from a single shuffle at a
-single block size. Repeating the call re-derives that same shuffle from the same seed and returns the
-same integer. The variance of the statistic is invisible from inside the library.
+So the returned scalar is a deterministic function of `mm` integers, each from a single shuffle.
+Repeating the call re-derives the same shuffles from the same seeds and returns the same value. The
+variance of the statistic is invisible from inside the library.
 
 !!! danger "A repeated `emc` call is not a replication, and reporting it as one overstates the evidence"
 
@@ -260,23 +263,27 @@ same integer. The variance of the statistic is invisible from inside the library
       true excess entropy is exactly 0:
 
     ```text
-    mean -0.0087   sd 0.1603   min -0.4761   max 0.3809
-    95% interval [-0.3491, 0.2856]   negative in 93/200
+    mean 0.0771   sd 0.0882   min 0.0000   max 0.3809
+    95% interval [0.0000, 0.2928]   negative in 0/200   exactly zero in 67/200
     ```
 
-    Each of those 200 numbers is perfectly reproducible. Only 18 of them are 0.
+    Each of those 200 numbers is perfectly reproducible, and none of them is negative — but the
+    correct answer is 0 and the mean is 0.0771, so **the null is offset upward, not centred**. A
+    reproducible 0.15 on this input would be pure noise. That offset is the price of the
+    non-negativity constraint: on structureless input the estimator can only err in one direction.
 
-    Both a perfectly periodic input and a purely random one can return exactly `0.0`, for entirely
-    different reasons — `lz.emc("01" * 4096)` is `0.0`, and so are those 18 i.i.d. draws.
-    [Effective measure complexity](../concepts/emc.md) sets out when each happens.
+    Only the *zero* is now unambiguous. `lz.emc("01" * 4096)`, a perfectly periodic input, returned
+    `0.0` under 1.0.1 for a completely different reason — the aligned block shuffle at `mm = 18` was
+    the identity — and now returns `0.904541015625`.
+    [Effective measure complexity](../concepts/emc.md) tabulates the noise floor by length.
 
 ---
 
 ## Getting an uncertainty estimate anyway
 
-Resample the surrogate yourself, with your own seeds. The recipe mirrors the library's estimator —
-`mm · (h(shuffled at mm) − h(original))` — but draws a fresh uniform permutation of the blocks on
-every repetition instead of reusing one.
+Resample the surrogates yourself, with your own seeds. The recipe mirrors the library's estimator —
+rebuild the whole ladder, project it, take the top — but draws a fresh uniform permutation of the
+blocks at every scale on every repetition instead of reusing one.
 
 ```python
 import random
@@ -284,28 +291,47 @@ import statistics
 import lzcomplexity as lz
 
 
-def emc_ensemble(seq, reps=200, seed=0):
-    """Resample the block-shuffle surrogate with your own seeds."""
+def pava_nonneg(y):
+    """Project onto {0 <= v1 <= v2 <= ...}: pool adjacent violators, then clamp."""
+    sums, counts = [], []
+    for v in y:
+        sums.append(float(v))
+        counts.append(1)
+        while len(sums) > 1 and sums[-2] / counts[-2] > sums[-1] / counts[-1]:
+            s, c = sums.pop(), counts.pop()
+            sums[-1] += s
+            counts[-1] += c
+    out = []
+    for s, c in zip(sums, counts):
+        out.extend([max(0.0, s / c)] * c)
+    return out
+
+
+def emc_ensemble(seq, reps=40, seed=0):
+    """Resample every rung of the block-shuffle ladder with your own seeds."""
     mm = lz.lz76(seq)["emc"]["max_block_size"]
     h0 = lz.h(seq)
     rng = random.Random(seed)
-    nblocks = len(seq) // mm
-    head, tail = seq[: nblocks * mm], seq[nblocks * mm :]
-    blocks = [head[i * mm : (i + 1) * mm] for i in range(nblocks)]
     out = []
     for _ in range(reps):
-        rng.shuffle(blocks)
-        out.append(mm * (lz.h("".join(blocks) + tail) - h0))
+        ladder = []
+        for l in range(1, mm + 1):
+            nblocks = len(seq) // l
+            head, tail = seq[: nblocks * l], seq[nblocks * l :]
+            blocks = [head[i * l : (i + 1) * l] for i in range(nblocks)]
+            rng.shuffle(blocks)
+            ladder.append(l * (lz.h("".join(blocks) + tail) - h0))
+        out.append(pava_nonneg(ladder)[-1])
     return out
 
 
 seq = open("markov.txt").read().strip()
-draws = sorted(emc_ensemble(seq, reps=200, seed=0))
+draws = sorted(emc_ensemble(seq, reps=40, seed=0))
 
 print(f"lz.emc      {lz.emc(seq)[0]:.4f}   (one realisation, fixed seed)")
 print(f"mean        {statistics.mean(draws):.4f}")
 print(f"sd          {statistics.stdev(draws):.4f}")
-print(f"95% band    [{draws[4]:.4f}, {draws[194]:.4f}]")
+print(f"range       [{draws[0]:.4f}, {draws[-1]:.4f}]")
 ```
 
 <div class="lz-run" markdown>
@@ -313,19 +339,24 @@ print(f"95% band    [{draws[4]:.4f}, {draws[194]:.4f}]")
 ```console
 $ python3 emc_ci.py
 lz.emc      1.3013   (one realisation, fixed seed)
-mean        1.2173
-sd          0.1400
-95% band    [0.9521, 1.4600]
+mean        1.2404
+sd          0.0992
+range       [1.1085, 1.5552]
 ```
 
 </div>
 
-The library's single draw, 1.3013, sits inside the band, 0.6 sd above the mean. Nothing should be
+The library's single draw, 1.3013, sits inside the range, 0.61 sd above the mean. Nothing should be
 read into that offset: the library's surrogate applies ⌊n/2⌋ pairwise block swaps rather than a
 uniform permutation, but at these sizes that is ~10 transpositions per block and the two mix
-comparably — repeated over ten `markov(8192, 0.9, seed=s)` sequences the library's draw landed
-between −2.4 and +1.3 sd of its own ensemble mean, with no consistent direction. Read `sd = 0.1400`
-as the answer to "how much of my `emc` is the draw?"
+comparably. Read `sd = 0.0992` as the answer to "how much of my `emc` is the draw?"
+
+!!! note "This is `mm` times as expensive as the pre-1.0.1 version of the recipe"
+
+    The old recipe resampled only the scale-`mm` surrogate, because that was the only one the total
+    depended on. Now every rung matters, so each repetition costs `mm` entropy calls rather than one —
+    hence 40 reps here rather than 200. If that is too slow, resample at a reduced `max_block_size`
+    and compare like with like; do not resample one scale and pretend it is the whole ladder.
 
 That is a narrower question than "could this value have come from an unstructured sequence?" The
 i.i.d. null measured above has a 95 % interval of `[−0.3491, 0.2856]` at the same length, so a gap of

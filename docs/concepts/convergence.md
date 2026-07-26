@@ -267,7 +267,7 @@ By measure, rather than by alphabet:
 |---|---:|---|
 | `complexity` | any *n* | Exact at every length — it is a count, not an estimate. But it is comparable **only** at fixed *n* and fixed alphabet. |
 | `h` | *n* ≳ 10³ to rank, 10⁶ to quote | Bias falls off like a power of `1/log n`, and its sign depends on the source. Report `epsilon` alongside it. |
-| `emc` | *n* ≳ 10⁴, and only to rank | Rests on a single surrogate at a single block size that is itself a function of *n*. Over 50 i.i.d. binary draws at *n* = 2 048 the spread is s.d. 0.33 (−0.97 to +0.77) around a mean of −0.02, negative in 44 % of them. |
+| `emc` | *n* ≳ 10⁴, and only to rank | Rests on one surrogate per block size, at a block-size ceiling that is itself a function of *n*. Non-negative by construction, so its noise on structureless input is one-sided: over 50 i.i.d. binary draws at *n* = 2 048 the null sits at mean 0.15, s.d. 0.17, up to 0.58, and is exactly `0.0` in 19 of them. Subtract that floor before reading a small value as signal. |
 | `nid` | *n* ≳ 10³ for shape, 10⁴–10⁵ for a number | A ratio, so the leading length factors cancel — but both endpoints are compressed toward the middle at short *n* (below). |
 | `multi_information` | diagnostic only | Built from the block-size-1 shuffle, which performs *n*/2 single-symbol swaps and so never touches about 37 % of the positions (e⁻¹) at any *n*. |
 
@@ -300,22 +300,28 @@ period-8 square wave, at three lengths, read off `lz.lz76(seq)` (`mm` is
 
 | n | `complexity` | `h` | `emc` | `mm` |
 |---:|---:|---:|---:|---:|
-| 2 000 | 3 | 0.016449 | +4.5398 | 18 |
+| 2 000 | 3 | 0.016449 | +5.2992 | 18 |
 | 5 000 | 3 | 0.007373 | +5.7433 | 19 |
 | 20 000 | 3 | 0.002143 | +5.4308 | 21 |
 
-Same source, same generating rule, `emc` moves by 26 % — and it does not even move monotonically
-with *n*.
+Same source, same generating rule, `emc` moves by 8 % — and it does not even move monotonically with
+*n*. Widen the range and the drift is larger: the same motif measured from *n* = 1 000 to
+*n* = 100 000 falls from 5.9296 to 4.9701, 16 % on a source whose true excess entropy is a constant
+3 bits.
 
-!!! danger "The EMC sum telescopes, so only the largest block size survives"
+!!! danger "`emc` is evaluated on a ladder of block sizes whose top rung is a function of *n*"
 
-    Everything except `mm` cancels algebraically: `sum_l [(H_l − H_{l−1}) − h_hat]` reduces exactly
-    to `mm * g * (C_LZ(shuffled at mm) − C_LZ(original))`, with `g = log_k(n)/n`. The per-scale
-    `summands` remain informative and let you rebuild the block-entropy curve, but the **total**
-    rests on one surrogate at one block size — and `mm` is a function of *n*. A periodic sequence
-    whose period divides `mm` and a structureless random one both land indistinguishably close to
-    zero, for opposite reasons. Comparing `emc` across lengths compares two different estimators.
-    See [Effective measure complexity](emc.md) for the full derivation.
+    The estimator builds one rung per block size, `Ê(l) = l · g · (C_LZ(shuffled at l) −
+    C_LZ(original))` with `g = log_k(n)/n`, and reads the value off the top of the ladder after
+    projecting it onto the non-negative non-decreasing cone. Every scale contributes, but the ceiling
+    `mm` is derived from *n* and the rungs keep climbing past the block length the sample can support
+    — so two lengths mean two different ladders and the totals are not on a common axis. Comparing
+    `emc` across lengths compares two different estimators. See
+    [Effective measure complexity](emc.md).
+
+    One ambiguity that used to live here is gone. Up to 1.0.1 the total telescoped to its own top
+    rung, so a periodic sequence whose period divided `mm` and a structureless random one both landed
+    at zero, for opposite reasons. A zero now means only the second thing.
 
 ### Fix 1 — truncate to the shortest
 

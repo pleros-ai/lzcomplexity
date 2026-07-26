@@ -341,16 +341,19 @@ $ cat multi.factors.json
 
 !!! note
 
-    The `summands` array from `-e=f` is worth reading scale by scale, but the total is not a sum over
-    scales in any meaningful sense. The EMC sum telescopes, reducing exactly to
-    `mm · g · (C_LZ(shuffled at mm) − C_LZ(original))`, so only the largest block size survives into
-    `value` — the other `mm − 1` factorizations are computed and then cancelled out.
+    The `summands` array from `-e=f` is worth reading scale by scale, and all of it feeds `value`.
+    Each block size `l` gives a rung `Ê(l) = l · g · (C_LZ(shuffled at l) − C_LZ(original))`; the
+    ladder is projected onto the non-negative non-decreasing shape that excess entropy provably has,
+    and `summands` holds the increments of the projection. So every entry is `>= 0`, they sum to
+    `value`, and `value` itself can never be negative.
 
-    A `value` of 0.0 therefore means "the block shuffle did not change the factor count", which is
-    not the same as "no structure". On 1,000-symbol inputs (`mm` = 17) a period-17 sequence returns
-    `8.9e-16`, but a period-2 sequence returns `2.033`, a period-4 sequence `4.235` and a random
-    binary sequence `0.339`. Exactly the periods that divide `mm` collapse.
-    [Effective measure complexity](../concepts/emc.md) derives it.
+    A `value` of `0.0` means no scale showed a monotone rise — the reading for a structureless input.
+    On 1,000-symbol inputs (`mm` = 17) a pseudorandom binary sequence returns `0.0`, while a
+    period-2 sequence returns `2.0330199940710660`, a period-4 sequence `4.404876653820643` and a
+    period-17 sequence `6.869747300227065`. Under 1.0.1 the period-17 case collapsed to `8.9e-16`,
+    because the total depended on the scale-17 shuffle alone and 17 divides 17; that artefact is gone.
+    The remaining trap is the *small positive* value — the noise floor sits above zero.
+    [Effective measure complexity](../concepts/emc.md) derives it and tabulates the floor.
 
 Every flag, the complete JSON schema and the `-e` parsing rules: [`lzcomplexity`](lzcomplexity.md).
 

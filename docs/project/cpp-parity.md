@@ -120,9 +120,12 @@ against 1.0.
 Two independent changes stack here. Either one on its own would already make the numbers
 incomparable.
 
-**The estimator was replaced in 0.13.0.** The C++ summed *absolute* complexity differences over
-every block size. The Rust version sums block-entropy first differences in excess of the sequence's
-own entropy density. These are different statistics, not two spellings of one.
+**The estimator was replaced in 0.13.0, and refined again after 1.0.1.** The C++ summed *absolute*
+complexity differences over every block size. The Rust version builds a block-entropy ladder — one
+finite-scale excess entropy per block size, in excess of the sequence's own entropy density — and
+projects it onto the non-negative non-decreasing cone that the quantity provably occupies. These are
+different statistics, not two spellings of one, and the Rust value can never be negative where the
+C++ one could.
 
 <div class="lz-scroll">
 <table class="lz-compare">
@@ -130,9 +133,9 @@ own entropy density. These are different statistics, not two spellings of one.
 <tr><th>Aspect</th><th>C++ (<code>0.10.2</code>)</th><th>Rust (<code>1.0</code>)</th></tr>
 </thead>
 <tbody>
-<tr><td>Per-scale term</td><td><code>g · |C<sub>LZ</sub>(u<sup>RS(l)</sup>) − C<sub>LZ</sub>(u)|</code></td><td class="is-changed"><code>(H<sub>l</sub> − H<sub>l−1</sub>) − ĥ</code>, with <code>H<sub>l</sub> = l · C<sub>LZ</sub>(u<sup>RS(l)</sup>) · g</code></td></tr>
-<tr><td>Sign</td><td>never negative — the term is an absolute value</td><td class="is-changed">signed; negative totals are routine on near-random input</td></tr>
-<tr><td>Scales reaching the total</td><td>all <code>mm</code> of them</td><td class="is-changed">telescopes down to the largest one alone</td></tr>
+<tr><td>Per-scale term</td><td><code>g · |C<sub>LZ</sub>(u<sup>RS(l)</sup>) − C<sub>LZ</sub>(u)|</code></td><td class="is-changed">the increments of the projected ladder <code>Ê(l) = H<sub>l</sub> − l·ĥ</code>, with <code>H<sub>l</sub> = l · C<sub>LZ</sub>(u<sup>RS(l)</sup>) · g</code></td></tr>
+<tr><td>Sign</td><td>never negative — the term is an absolute value</td><td>never negative — the projection enforces it</td></tr>
+<tr><td>Scales reaching the total</td><td>all <code>mm</code> of them</td><td>all <code>mm</code> of them</td></tr>
 <tr><td><code>g</code></td><td><code>log<sub>a</sub>(N) / N</code>, <code>a</code> = <code>alphabet</code></td><td class="is-changed"><code>log<sub>k</sub>(N) / N</code>, <code>k</code> = <code>log_base</code></td></tr>
 </tbody>
 </table>
@@ -165,26 +168,23 @@ C++ required `op2 < n − block_size − 1` where Rust allows `op2 ≤ n − blo
     them as a rounding artefact.
 
     The two backends would disagree even if they drew identical surrogates, because the formulas in
-    the table above are different. On top of that, the Rust sum telescopes:
-    `sum_l [(H_l − H_{l−1}) − h_hat]` reduces exactly to
-    `mm * g * (C_LZ(shuffled at mm) − C_LZ(original))`, so the whole value rests on one surrogate at
-    one block size. A different RNG stream is a different surrogate and therefore a different number.
-    The per-scale `summands` differ for both reasons at once.
+    the table above are different. On top of that, the Rust estimator draws one surrogate per block
+    size and combines all `mm` of them, so a different RNG stream is a different ladder and therefore
+    a different number. The per-scale `summands` differ for both reasons at once.
 
     The two agree only where the shuffle kernel is a no-op: `n ≤ 10` returns exactly `0.0` in both.
-    Elsewhere, near-zero is not zero — `lz.emc("0" * 20000)` returns `-2.168404344971009e-19`, and
-    `lz.emc("01" * 10000)`, a perfectly periodic input, returns `1.7102391718320673`. The resonance
-    artefacts come from the block grid, which both implementations share.
-    See [Effective measure complexity](../concepts/emc.md).
+    Elsewhere the Rust values are non-negative by construction — `lz.emc("0" * 20000)` returns
+    exactly `0.0`, and `lz.emc("01" * 10000)`, a perfectly periodic input, returns
+    `1.710239171832069`. See [Effective measure complexity](../concepts/emc.md).
 
 <div class="lz-formula">
-  <p class="lz-math">Ê = <i>mm</i> · <i>g</i> · ( C<sub>LZ</sub>(<i>u</i><sup>RS(<i>mm</i>)</sup>) − C<sub>LZ</sub>(<i>u</i>) ),&nbsp;&nbsp; <i>g</i> = log<sub><i>k</i></sub>(<i>N</i>) ⁄ <i>N</i></p>
+  <p class="lz-math"><i>Ê</i>(<i>l</i>) = <i>l</i> · <i>g</i> · ( C<sub>LZ</sub>(<i>u</i><sup>RS(<i>l</i>)</sup>) − C<sub>LZ</sub>(<i>u</i>) ),&nbsp;&nbsp; <i>g</i> = log<sub><i>k</i></sub>(<i>N</i>) ⁄ <i>N</i>,&nbsp;&nbsp; <i>Ê</i> = non_negative_isotonic( <i>Ê</i>(1), …, <i>Ê</i>(<i>mm</i>) )(<i>mm</i>)</p>
   <dl class="lz-formula__key">
-    <dt><i>mm</i></dt><dd>largest block size — the only scale that survives the telescoping</dd>
-    <dt><i>u</i><sup>RS(<i>mm</i>)</sup></dt><dd>the one block-shuffled surrogate the value depends on; a different RNG stream gives a different one</dd>
+    <dt><i>mm</i></dt><dd>largest block size; every scale from 1 to <i>mm</i> enters the projection</dd>
+    <dt><i>u</i><sup>RS(<i>l</i>)</sup></dt><dd>the block-shuffled surrogate at scale <i>l</i> — one draw per scale, and a different RNG stream gives a different ladder</dd>
     <dt><i>N</i>, <i>k</i></dt><dd>sequence length and log base</dd>
   </dl>
-  <p class="lz-formula__cite">The Rust estimator only. Every scale below <i>mm</i> cancels, so the total rests on a single surrogate.</p>
+  <p class="lz-formula__cite">The Rust estimator only. Up to 1.0.1 it summed the first differences of this ladder, which telescopes to Ê(mm) alone; it now projects the ladder onto the non-negative non-decreasing cone and reads the total off the top.</p>
 </div>
 
 ### Spectral analysis, removed
@@ -341,7 +341,7 @@ The right-hand column, run on `seq = "010010101011010101011101010101010100001001
 >>> lz.h(seq, log_base=2)
 1.063644673725505
 >>> lz.emc(seq)
-(0.0, [0.11818274152505626, -0.11818274152505626, 0.35454822457516877, -0.35454822457516877])
+(0.17727411228758438, [0.05909137076252813, 0.0, 0.11818274152505626, 0.0])
 >>> full = lz.lz76(seq)
 >>> full["emc"]["max_block_size"], full["emc"]["multi_information"]
 (4, 0.11818274152505626)

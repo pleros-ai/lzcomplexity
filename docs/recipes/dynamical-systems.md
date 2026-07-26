@@ -129,7 +129,7 @@ Two different shapes, from the same 20 000 symbols:
 
 That is precisely the one-hump behaviour excess entropy is supposed to show: small for a memoryless
 source, small for a trivially predictable one, large where structure is long-ranged. The estimator
-earns its keep here, telescoping caveat and all — see
+earns its keep here, remaining biases and all — see
 [Effective measure complexity](../concepts/emc.md).
 
 ## The numbers
@@ -144,14 +144,14 @@ bits per symbol.
 | 3.555 | period 8 | 3 | 0.0021 | 5.2207 |
 | **3.570** | **first grid point past r<sub>∞</sub>** | **43** | **0.0307** | **7.4410** |
 | 3.600 | chaotic | 433 | 0.3093 | 3.8855 |
-| 3.630 | period-6 window | 2 | 0.0014 | 1.7102 |
+| 3.630 | period-6 window | 2 | 0.0014 | 2.8783 |
 | 3.700 | chaotic | 788 | 0.5629 | 1.5152 |
 | 3.740 | period-5 window | 4 | 0.0029 | 4.0956 |
 | 3.800 | chaotic | 938 | 0.6701 | 1.1552 |
-| 3.830 | period-3 window | 2 | 0.0014 | −0.0000 |
-| **3.850** | **period-3 window, chaotic band** | **35** | **0.0250** | **4.7857** |
+| 3.830 | period-3 window | 2 | 0.0014 | 1.8000 |
+| **3.850** | **period-3 window, chaotic band** | **35** | **0.0250** | **5.0962** |
 | 3.900 | chaotic | 1076 | 0.7687 | 1.3802 |
-| 3.950 | chaotic | 1238 | 0.8844 | 0.5401 |
+| 3.950 | chaotic | 1238 | 0.8844 | 0.5772 |
 | **4.000** | **fully chaotic** | **1424** | **1.0173** | **0.2400** |
 
 The regime labels are not decoration. Each one was read off the orbit by testing
@@ -211,28 +211,29 @@ EMC does the thing `h` cannot: it separates *structured* from *random*, rather t
 stopped being periodic, `h` is still only 0.0307, and correlations extend over arbitrarily long
 ranges. That is the largest EMC anywhere in the sweep, 31× the value at r = 4.
 
-!!! warning "The `summands` list looks like a scale-resolved spectrum. Its total is not one."
+!!! note "`summands` is a scale-resolved profile, and the whole of it feeds the total"
 
-    The EMC sum telescopes. Written out, `sum_l [(H_l − H_{l−1}) − h_hat]` reduces exactly to
-
-    ```text
-    mm · g · ( C_LZ(shuffled at mm) − C_LZ(original) )        with g = log_k(n)/n
-    ```
-
-    so **only the largest block size `mm` contributes to the total**; the other `mm − 1` surrogate
-    factorizations cancel out of it. The per-scale `summands` stay informative — they trace the
-    block-entropy curve, and `summands[0]` is the multi-information term — but the scalar total
-    does not depend on the intermediate scales. Two consequences for this page: the EMC column is
-    comparable across the sweep only because every point uses the same n and therefore the same
-    `mm = 21`; and the total rides on a single surrogate draw. Full treatment in
+    Each block size `l` contributes a rung `Ê(l) = l · g · (C_LZ(shuffled at l) − C_LZ(original))`
+    with `g = log_k(n)/n`. Excess entropy is a mutual information between past and future, so the
+    true ladder is non-negative and rises with `l`; the raw rungs are neither, because each rests on
+    its own surrogate draw. The library projects the ladder onto that shape and reports the
+    increments, so **every scale reaches the total**, every summand is non-negative, and they sum to
+    `value`. Two consequences for this page: the EMC column is comparable across the sweep only
+    because every point uses the same n and therefore the same `mm = 21`; and each rung still rides
+    on a single surrogate draw, so the column is one realisation. Full treatment in
     [Effective measure complexity](../concepts/emc.md).
 
-One symptom of that structure is already visible in the table. At r = 3.830 the symbol sequence is
-exactly period 3, and `emc` comes back as **−1.3 × 10⁻¹⁵** — floating-point zero. The block shuffle
-swaps `mm`-aligned blocks, `mm = 21`, and 3 divides 21, so the shuffle is the identity on a period-3
-sequence and the surrogate *is* the original. The period-2, -4, -5, -6 and -8 rows all return
-non-zero EMC because their periods do not divide 21. The correct reading: EMC is near zero at both
-degenerate extremes, and *exactly* zero when the source period divides `mm`.
+    Up to 1.0.1 the total was the sum of the raw first differences, which telescopes down to the
+    scale-`mm` rung alone. That is why the three period-3 rows at r = 3.830–3.840 used to report
+    **−1.3 × 10⁻¹⁵** — floating-point zero. The block shuffle permutes `mm`-aligned blocks, `mm = 21`,
+    and 3 divides 21, so the scale-21 shuffle is the identity on a period-3 sequence and the surrogate
+    *was* the original. Those rows now report ≈1.80, from the scales that did see structure.
+
+The repaired sweep says something the old one could not. Its **minimum is now at r = 4.000**, full
+chaos, at `emc` 0.2400 — the physically correct place for excess entropy to bottom out. Under 1.0.1
+the smallest value anywhere in the sweep was the floating-point zero in the period-3 window, an
+artefact of the block grid rather than a statement about the map. No point in the sweep returns
+exactly zero any more.
 
 ## The period-3 window
 
@@ -241,17 +242,17 @@ loudly. The sweep walks through it in seven steps:
 
 | r | orbit | `c` | `h` | `emc` |
 |---|---|---:|---:|---:|
-| 3.830 | period 3 | 2 | 0.0014 | −0.0000 |
-| 3.835 | period 3 | 3 | 0.0021 | −0.0000 |
-| 3.840 | period 3 | 3 | 0.0021 | −0.0000 |
-| 3.845 | period 6 | 4 | 0.0029 | 1.6652 |
-| **3.850** | **aperiodic band** | **35** | **0.0250** | **4.7857** |
-| 3.855 | period 30 | 5 | 0.0036 | 3.9906 |
+| 3.830 | period 3 | 2 | 0.0014 | 1.8000 |
+| 3.835 | period 3 | 3 | 0.0021 | 1.7962 |
+| 3.840 | period 3 | 3 | 0.0021 | 1.7962 |
+| 3.845 | period 6 | 4 | 0.0029 | 2.9904 |
+| **3.850** | **aperiodic band** | **35** | **0.0250** | **5.0962** |
+| 3.855 | period 30 | 5 | 0.0036 | 5.2403 |
 | 3.860 | chaotic | 880 | 0.6287 | 2.6554 |
 
 At r = 3.850 the orbit has period-doubled its way off the 3-cycle into a narrow chaotic band around
-it. **Complexity collapses to 35** — 2.5% of the 1424 at r = 4 — while **EMC jumps back to 4.79**,
-20× the r = 4 value. To `h`, a window inside chaos looks almost like a fixed point; to EMC it looks
+it. **Complexity collapses to 35** — 2.5% of the 1424 at r = 4 — while **EMC jumps to 5.10**,
+21× the r = 4 value. To `h`, a window inside chaos looks almost like a fixed point; to EMC it looks
 like the most structured thing in the neighbourhood. Both readings are correct, and you only get
 the second one by computing EMC.
 
@@ -284,7 +285,7 @@ the second one by computing EMC.
     001011001001001011001011001001
     35 37 20001
     0.025003496664211537
-    4.785669261530087 21 0.9687068993334527
+    5.09618887724563 21 0.9687068993334527
     ```
 
     The literal `3.8499999999999903` is the value the sweep loop actually reaches at that step —
@@ -306,7 +307,7 @@ the second one by computing EMC.
     | 3.900 | 1076 | 1085 | +0.84% |
     | 4.000 | 1424 | 1423 | −0.07% |
 
-    EMC moves by 0.09 to 0.15 on the same four points. Across all 78 chaotic-band points the
+    EMC moves by 0.04 to 0.09 on the same four points. Across all 78 chaotic-band points the
     median change in `c` is 0.77% and the largest is 3.76% (at r = 3.625); 47 of the 78 come in
     under 1%. The sensitivity is largest near r<sub>∞</sub>, where the orbit is most delicately
     structured. **Treat individual `c`, `h` and `emc` values from a chaotic sweep as one draw from
@@ -394,7 +395,7 @@ Four rules carry over unchanged:
 
 - [Entropy density (h)](../concepts/entropy-density.md) — what the normalisation does, and why `h`
   has no ceiling at 1.
-- [Effective measure complexity](../concepts/emc.md) — the telescoping identity, the `mm`
+- [Effective measure complexity](../concepts/emc.md) — the ladder and its projection, the `mm`
   heuristic, and when the number is noise.
 - [Reading the numbers](../guide/reading-the-numbers.md) — a short tour of every field the library
   returns.
