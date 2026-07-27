@@ -3,6 +3,7 @@
 //! This crate is a Rust port of the C++ `lzcomplexity` library. It contains
 //! the algorithm implementations, independent of any Python bindings.
 
+mod block_lz76;
 pub mod lpf;
 pub mod lz76;
 pub mod metrics;
