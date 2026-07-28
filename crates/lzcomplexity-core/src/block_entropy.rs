@@ -190,8 +190,8 @@ mod tests {
     #[test]
     fn chao_shen_falls_back_on_all_singletons() {
         // Every category seen exactly once: coverage estimate collapses to
-        // 0. Must fall back to a finite value (the plug-in estimate: a
-        // uniform distribution over 100 categories, 2 bits... i.e. log2(100)),
+        // 0. Must fall back to a finite value — the plug-in estimate of a
+        // uniform distribution over 100 categories, log2(100) ≈ 6.64 bits —
         // not NaN/infinity.
         let counts = vec![1u32; 100];
         let h = chao_shen_entropy_bits(&counts);

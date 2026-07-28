@@ -213,9 +213,7 @@ fn shuffle_entropy_calculation(
     if len == 0 {
         return result;
     }
-    let raw: Vec<f64> = (1..=len)
-        .map(|l| h_block[l] - (l as f64) * h_hat)
-        .collect();
+    let raw: Vec<f64> = (1..=len).map(|l| h_block[l] - (l as f64) * h_hat).collect();
 
     // The l = 1 contrast, before any projection.
     result.multi_information = raw[0];
@@ -397,7 +395,13 @@ mod tests {
         let (seq, args, g) = fixture();
         // Ĥ = [20g, 30g, 36g] against ĥ = 10g: raw(l) = Ĥ_l − l·10g =
         // [10g, 10g, 6g] — non-monotone at l = 3.
-        let r = shuffle_entropy_calculation(&seq, &args, 10, &ladder(&[20.0 * g, 30.0 * g, 36.0 * g]), 3);
+        let r = shuffle_entropy_calculation(
+            &seq,
+            &args,
+            10,
+            &ladder(&[20.0 * g, 30.0 * g, 36.0 * g]),
+            3,
+        );
 
         // Pooling all three violators gives one block at (10 + 10 + 6)/3 g.
         let level = (26.0 / 3.0) * g;
@@ -414,7 +418,13 @@ mod tests {
         let (seq, args, g) = fixture();
         // Ĥ = [11g, 22g, 33g] gives raw(l) = Ĥ_l − l·10g = [g, 2g, 3g],
         // already strictly increasing, so the projection is the identity.
-        let r = shuffle_entropy_calculation(&seq, &args, 10, &ladder(&[11.0 * g, 22.0 * g, 33.0 * g]), 3);
+        let r = shuffle_entropy_calculation(
+            &seq,
+            &args,
+            10,
+            &ladder(&[11.0 * g, 22.0 * g, 33.0 * g]),
+            3,
+        );
 
         assert!((r.emc_value - 3.0 * g).abs() < 1e-9, "{}", r.emc_value);
         for s in &r.summands {
@@ -427,7 +437,13 @@ mod tests {
         let (seq, args, g) = fixture();
         // Ĥ = [10g, 10g, 10g] against ĥ = 20g: raw(l) = [−10g, −30g, −50g],
         // entirely below zero.
-        let r = shuffle_entropy_calculation(&seq, &args, 20, &ladder(&[10.0 * g, 10.0 * g, 10.0 * g]), 3);
+        let r = shuffle_entropy_calculation(
+            &seq,
+            &args,
+            20,
+            &ladder(&[10.0 * g, 10.0 * g, 10.0 * g]),
+            3,
+        );
 
         assert_eq!(r.emc_value, 0.0);
         assert!(r.summands.iter().all(|&s| s == 0.0), "{:?}", r.summands);
@@ -438,11 +454,12 @@ mod tests {
     #[test]
     fn auto_mode_truncates_at_the_ladder_peak() {
         let (seq, mut args, g) = fixture();
-        args.block_size = -1; // auto mode: this is what's under test here
-                               // Ĥ = [15g, 30g, 36g, 38g] against ĥ = 10g gives
-                               // raw(l) = [5g, 10g, 6g, −2g]: rises to a peak at
-                               // l=2, then declines. Auto mode should stop at that
-                               // peak (l=2) rather than including the decline.
+        // Auto mode is what's under test here.
+        args.block_size = -1;
+        // Ĥ = [15g, 30g, 36g, 38g] against ĥ = 10g gives raw(l) =
+        // [5g, 10g, 6g, −2g]: rises to a peak at l=2, then declines. Auto
+        // mode should stop at that peak (l=2) rather than including the
+        // decline.
         let r = shuffle_entropy_calculation(
             &seq,
             &args,
