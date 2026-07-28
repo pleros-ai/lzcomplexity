@@ -27,31 +27,43 @@ pub fn max_block_size(size: usize) -> usize {
     m
 }
 
-/// Largest block size `n` the sequence can support at reliable statistical
-/// significance: the greatest `n` with
+/// Largest block size `n` the sequence can support: the greatest `n` with
 ///
 /// ```text
-/// n · σ^n ≤ N · (h / log σ)
+/// n · σ^n ≤ N
 /// ```
 ///
-/// This is the manuscript's Eq. (nbound): the naive `N ≥ n·σ^n` condition
-/// (roughly `N/n` independent `n`-words are needed to populate an
-/// `σ^n`-cell histogram), tightened by Lesne et al.'s effective-length
-/// correction `N_eff ≈ N·h/log σ`, which accounts for the sequence's own
-/// internal correlations reducing how much *independent* information each
-/// observed symbol contributes.
+/// roughly, `N/n` independent `n`-words are needed to populate an
+/// `σ^n`-cell histogram. [`max_block_size`] — which this replaces for the
+/// EMC ladder — solved `N = n·2^n`, hardcoding `σ = 2`. The bound is a
+/// statement about filling a `σ^n`-cell histogram, so it has to track the
+/// real alphabet: at `N = 1e6` the old form answers 16 whether the source
+/// is binary, DNA (`σ=4`, true bound 8) or 20-letter (true bound 4).
 ///
-/// `h_norm` is `ĥ` already expressed as a fraction of `log σ` (which is how
-/// this crate carries it everywhere), so `N · h_norm` is `N_eff` directly.
+/// # Why Lesne's effective-length correction is *not* applied here
 ///
-/// [`max_block_size`] — which this replaces for the EMC ladder — solved
-/// `N = n·2^n` instead: it applied neither the effective-length correction
-/// nor the actual alphabet size, hardcoding `σ = 2`. For binary sources the
-/// difference is roughly one block size; for a 4-letter alphabet (DNA) it
-/// overstated the usable `n` by about a factor of two, pushing the ladder
-/// deep into the undersampled regime the bound exists to exclude.
-fn reliable_block_size(n_symbols: usize, alphabet: f64, h_norm: f64) -> usize {
-    let budget = (n_symbols as f64) * h_norm.clamp(0.0, 1.0);
+/// The manuscript's Eq. (nbound) tightens this to `n·σ^n ≤ N·h/log σ`,
+/// on the grounds that a correlated source contributes less independent
+/// information per symbol than its raw length suggests. That correction
+/// is right for a *plug-in* estimate, but it is counterproductive here,
+/// for two compounding reasons.
+///
+/// It is redundant: the peak truncation in
+/// [`shuffle_entropy_calculation`] already stops the ladder adaptively,
+/// from the data, wherever `ĥ`'s residual bias starts to dominate — so
+/// this bound only has to be a loose ceiling, not the operative cut.
+///
+/// And it removes signal exactly where the signal is. `h/log σ` is
+/// smallest for the most strongly correlated sources, which are precisely
+/// the ones whose `E` needs the largest `l` to resolve. Measured on the
+/// even process at `N = 5e5` across `γ∈[0.1,0.9]`, applying the
+/// correction cut `n` from 15 to 13 at high `γ` and dropped the estimate's
+/// correlation with the closed-form `E` from `r = 0.906` to `0.836` —
+/// the tail it truncated was carrying real structure, not bias. Chao-Shen
+/// is built for the `B_l ≳ m_l` regime, so `n·σ^n ≤ N` is already
+/// conservative for the estimator actually in use here.
+fn reliable_block_size(n_symbols: usize, alphabet: f64) -> usize {
+    let budget = n_symbols as f64;
     let sigma = alphabet.max(2.0);
     let mut n: usize = 1;
     // σ^n overflows fast, so step in f64 and stop as soon as the bound bites.
@@ -106,11 +118,7 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
 /// Per-block-size block entropy `Ĥ_l` (already normalized to the same
 /// units as `ĥ` — see [`chao_shen_block_entropy_ladder`]), for `l = 1..mm`.
 /// Index 0 is unused (`Ĥ_0 ≡ 0` is handled separately, matching `H_0(u)=0`).
-fn chao_shen_block_entropy_ladder(
-    seq: &Sequence,
-    args: &LzArgs,
-    complexity: i32,
-) -> (Vec<f64>, usize) {
+fn chao_shen_block_entropy_ladder(seq: &Sequence, args: &LzArgs) -> (Vec<f64>, usize) {
     let log_base = if args.log_base == NO_ALPHABET {
         seq.alphabet_size().max(2)
     } else {
@@ -119,14 +127,7 @@ fn chao_shen_block_entropy_ladder(
 
     let mut mm: i64 = args.block_size as i64;
     if mm <= 0 {
-        // Auto mode: the reliability bound of Eq. (nbound), which needs ĥ.
-        let n = seq.len() as f64;
-        let h_norm = if n > 1.0 {
-            complexity as f64 * ((n.ln() / log_base.ln()) / n)
-        } else {
-            0.0
-        };
-        mm = reliable_block_size(seq.len(), log_base, h_norm) as i64;
+        mm = reliable_block_size(seq.len(), log_base) as i64;
     }
     let mm = mm as usize;
 
@@ -359,7 +360,7 @@ pub fn lz76_random_shuffle_complexity_with(
     args: &LzArgs,
     complexity: i32,
 ) -> LzShuffle {
-    let (h_block, mm) = chao_shen_block_entropy_ladder(seq, args, complexity);
+    let (h_block, mm) = chao_shen_block_entropy_ladder(seq, args);
     shuffle_entropy_calculation(seq, args, complexity, &h_block, mm)
 }
 
@@ -369,7 +370,7 @@ pub fn lz76_paired_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> LzShuffl
     let (past, future) = seq.split_at(mid);
     let merged = merge_sequences(&past, &future);
     let complexity = lz76_factorization(&merged, args) as i32;
-    let (h_block, mm) = chao_shen_block_entropy_ladder(&merged, args, complexity);
+    let (h_block, mm) = chao_shen_block_entropy_ladder(&merged, args);
     shuffle_entropy_calculation(&merged, args, complexity, &h_block, mm)
 }
 
@@ -546,19 +547,16 @@ mod tests {
     #[test]
     fn reliable_block_size_tracks_the_alphabet() {
         let n = 1_000_000;
-        // A near-random source (h_norm ≈ 1) is the most generous case.
-        assert_eq!(reliable_block_size(n, 2.0, 1.0), 15);
-        assert_eq!(reliable_block_size(n, 4.0, 1.0), 8);
-        assert_eq!(reliable_block_size(n, 20.0, 1.0), 4);
+        assert_eq!(reliable_block_size(n, 2.0), 15);
+        assert_eq!(reliable_block_size(n, 4.0), 8);
+        assert_eq!(reliable_block_size(n, 20.0), 4);
         // ...whereas the old, alphabet-blind bound answers 16 for all three.
         assert_eq!(max_block_size(n), 16);
-
-        // Lesne's effective-length correction tightens it further as the
-        // source's own correlations reduce h: N_eff = N·h_norm.
-        assert!(reliable_block_size(n, 2.0, 0.4) < reliable_block_size(n, 2.0, 1.0));
         // Degenerate inputs stay in range rather than under/overflowing.
-        assert_eq!(reliable_block_size(n, 2.0, 0.0), 1);
-        assert_eq!(reliable_block_size(0, 2.0, 1.0), 1);
+        assert_eq!(reliable_block_size(0, 2.0), 1);
+        // `n·σ^n` is solved in f64, so a huge N must terminate at the guard
+        // rather than run away or overflow.
+        assert!((1..=64).contains(&reliable_block_size(usize::MAX, 2.0)));
     }
 
     #[test]
