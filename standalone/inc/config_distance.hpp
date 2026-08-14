@@ -394,17 +394,17 @@ inline auto process_args(cxxopts::parse_result& result) -> lz_options {
     iss << "Summary of results:\n";
     if (!options.first_input_dir.empty() && !options.second_input_dir.empty()) {
       iss << " - Information distance between the files of two data source directories\n";
-      iss << " - Random shuffle distance between the files of two data source directories\n";
+      // iss << " - Random shuffle distance between the files of two data source directories\n";
     } else if ((!options.first_input_dir.empty() && !options.second_input.empty())
                || (!options.first_input.empty() && !options.second_input_dir.empty())) {
       iss << " - Information distance between files into a directory and a file\n";
-      iss << " - Random shuffle distance between files into a directory and a file\n";
+      // iss << " - Random shuffle distance between files into a directory and a file\n";
     } else if (!options.first_input.empty() && !options.second_input.empty()) {
       iss << " - Information distance between sequences in input data source files\n";
-      iss << " - Random shuffle distance between sequences in input data source files\n";
+      // iss << " - Random shuffle distance between sequences in input data source files\n";
     } else {
       iss << " - Information distance between sequences of the input data source file\n";
-      iss << " - Random shuffle distance between sequences of the input data source file\n";
+      // iss << " - Random shuffle distance between sequences of the input data source file\n";
     }
 
     if (options.matrix_threshold != std::numeric_limits<lz::lz_int>::max()) {

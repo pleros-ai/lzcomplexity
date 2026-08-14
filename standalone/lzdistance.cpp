@@ -122,26 +122,27 @@ lz::lz_int process(lz_options& opt) {
               << std::endl;
   }
 
-  if (opt.verbose) {
-    std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << lz::END_COLOR
-              << ". Calculating shuffle distance matrix\n";
-    init_time = now();
-  }
-  lz::lz76ShuffleDistanceMatrix(flags, lz);
-  if (opt.verbose) {
-    const auto end_time = now();
-    std::cout << print_msg(MSG::INFO, "Shuffle distance matrix: ");
-    for (auto i = 0ul; i < first_dim; i++) {
-      if (i > 0) std::cout << std::string(35, ' ');
-      for (auto j = 0ul; j < second_dim; j++) {
-        std::cout << lz.shuffle_distance[i][j] << " ";
-      }
-      std::cout << std::endl;
-    }
-    std::cout << print_msg(MSG::INFO, "Finished in: " + std::to_string(duration(end_time - init_time)) + " s")
-              << std::endl
-              << std::endl;
-  }
+  // if (opt.verbose) {
+  //   std::cout << lz::GREEN_COLOR << "2." << verbose_index++ << lz::END_COLOR
+  //             << ". Calculating shuffle distance matrix\n";
+  //   init_time = now();
+  // }
+  // lz::lz76ShuffleDistanceMatrix(flags, lz);
+  // if (opt.verbose) {
+  //   const auto end_time = now();
+  //   std::cout << print_msg(MSG::INFO, "Shuffle distance matrix: ");
+  //   for (auto i = 0ul; i < first_dim; i++) {
+  //     if (i > 0) std::cout << std::string(35, ' ');
+  //     for (auto j = 0ul; j < second_dim; j++) {
+  //       std::cout << lz.shuffle_distance[i][j] << " ";
+  //     }
+  //     std::cout << std::endl;
+  //   }
+  //   std::cout << print_msg(MSG::INFO, "Finished in: " + std::to_string(duration(end_time - init_time)) + "
+  //   s")
+  //             << std::endl
+  //             << std::endl;
+  // }
 
   if (opt.matrix_threshold != std::numeric_limits<lz::lz_int>::max()) {
     if (opt.verbose) {
