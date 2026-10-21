@@ -42,7 +42,7 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
     let mut res: Vec<i32> = vec![0; mm + 3];
 
     // Hash the sequence content ONCE; each per-block seed only differs by the
-    // `idx` term (bit-identical seeds → identical shuffles → identical EMC).
+    // `idx` term (bit-identical seeds → identical shuffles → identical scores).
     let base = fnv1a(seq.as_bytes());
     let computed: Vec<(usize, i32)> = (1..=mm)
         .into_par_iter()
@@ -59,51 +59,33 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
     (res, mm)
 }
 
-/// Effective measure complexity via the block-entropy estimator.
+/// Shuffle-based EMC-like complexity score, retaining the released formula.
 ///
-/// For each block size `l`, `h_rand[l]` is `C_LZ(u^{RS(l)})`, the LZ complexity
-/// of `u` block-shuffled at scale `l`. The surrogate is (idealised) an i.i.d.
-/// stream of `l`-blocks whose entropy rate is `H(l)/l`, so multiplying back
-/// recovers a block-entropy estimate `H_l = l · C_LZ(u^{RS(l)}) · g`, with
-/// `g = log_k(N)/N` and `ĥ = C_LZ(u) · g` the entropy density of `u`. That
-/// gives one *finite-scale excess entropy* per block size — the subextensive
-/// part of the block entropy at scale `l`:
+/// For each block size `l`, `h_rand[l]` is the LZ76 factor count of a
+/// separately content-seeded, block-shuffled copy. With `g = log_b(N)/N`,
+/// the operational raw score at that scale is
 ///
 /// ```text
-/// Ê(l) = H_l − l·ĥ = l · g · ( C_LZ(u^{RS(l)}) − C_LZ(u) )
+/// D(l) = l * g * (C_LZ(shuffled_l) - C_LZ(original)).
 /// ```
 ///
-/// Theory pins down the shape of that ladder: `E(l) = Σ_{j≤l} [h(j) − h]` with
-/// every increment `h(j) − h ≥ 0`, so `E(l)` is non-negative and non-decreasing
-/// in `l` and rises to `E` (Crutchfield & Feldman, *Chaos* 13:25 (2003),
-/// Lemma 1 and Eq. 52). The raw ladder violates both properties, because each
-/// `Ê(l)` is an *independent* surrogate draw rather than a slice of one
-/// consistent block-entropy curve. We therefore project it onto that cone —
-/// non-negative isotonic regression, see [`non_negative_isotonic`] — and read
-/// the answer off the projection:
+/// The existing reporting convention projects these scores onto nonnegative,
+/// nondecreasing sequences using `non_negative_isotonic`. The returned
+/// scalar is the final fitted score; `summands` are its successive increments.
+/// These properties follow from the projection, not from a proof that the
+/// score equals Shannon excess entropy, mutual information, or exact EMC.
+/// Fixed-length block swaps and finite-sequence LZ counts do not establish
+/// that the surrogates are independent block draws or that `l*h_LZ` is an
+/// unbiased block-entropy estimate.
 ///
-/// ```text
-/// summands[l−1] = Ê_fit(l) − Ê_fit(l−1)   ≥ 0     (the estimate of h(l) − h)
-/// Ê             = Ê_fit(mm) = Σ summands  ≥ 0
-/// ```
+/// The `l` multiplier and projection are part of this implementation's
+/// versioned definition. They differ from the unweighted sum of shuffled
+/// entropy-rate contrasts in Estevez-Rams et al. (2019), Eq. (4). Changing
+/// those choices changes the scientific measure and requires separate review.
 ///
-/// Every block size informs the fit, and the returned scalar can no longer go
-/// negative — a mutual information never does.
-///
-/// # Why not sum the raw differences
-///
-/// Versions ≤ 1.0.1 summed `(H_l − H_{l−1}) − ĥ` directly. That is the same
-/// textbook identity written the other way round, `Σ_l [h(l) − h] = H(L) − L·h`,
-/// so the `H_l` telescoped and the total collapsed *exactly* to
-/// `mm · g · (C_LZ(u^{RS(mm)}) − C_LZ(u))`: only the largest block size reached
-/// the scalar, the other `mm − 1` factorizations cancelled algebraically, and a
-/// single unlucky surrogate draw could push the result below zero. Projecting
-/// first is what couples the scales together.
-///
-/// `multi_information` stays the *raw* `l = 1` contrast `H_1 − ĥ`, unchanged
-/// from earlier versions: it is a separate quantity (the multi-information rate
-/// of the source), not a term of the sum, and it is the best-calibrated number
-/// this estimator produces.
+/// `multi_information` retains its historical name for API compatibility:
+/// it is the raw `l=1` contrast, before projection. It is not a calibrated
+/// mutual-information estimate or an uncertainty on the returned score.
 pub fn shuffle_entropy_calculation(
     seq: &Sequence,
     args: &LzArgs,
@@ -128,12 +110,12 @@ pub fn shuffle_entropy_calculation(
     if n <= 1.0 || mm == 0 {
         return result;
     }
-    // g = log_k(N) / N, so ĥ = C_LZ(u)·g and H_l = l·C_LZ(u^{RS(l)})·g.
+    // Keep the released normalization and arithmetic order for reproducibility.
     let g = (n.ln() / log_base.ln()) / n;
     let h_hat = complexity as f64 * g; // entropy density of the original sequence
 
-    // The raw ladder Ê(l) = H_l − l·ĥ, one finite-scale excess entropy per
-    // block size. `h_rand` is 1-indexed, so `len` is how many scales it holds.
+    // The operational M-weighted shuffle-contrast ladder. `h_rand` is
+    // one-indexed, so `len` is the number of available scales.
     let len = mm.min(h_rand.len().saturating_sub(1));
     if len == 0 {
         return result;
@@ -189,7 +171,7 @@ fn non_negative_isotonic(y: &[f64]) -> Vec<f64> {
     let mut out = Vec::with_capacity(y.len());
     for (s, c) in sums.iter().zip(counts.iter()) {
         let level = (s / *c as f64).max(0.0);
-        out.extend(std::iter::repeat(level).take(*c));
+        out.extend(std::iter::repeat_n(level, *c));
     }
     out
 }
@@ -260,11 +242,11 @@ mod tests {
     use super::*;
 
     /// A binary sequence (alphabet 2 -> log_base auto = 2) of length 100, plus
-    /// `g = log_2(100)/100`. The block-entropy arithmetic only reads the length
-    /// and the alphabet, so the content is irrelevant to these tests.
+    /// `g = log_2(100)/100`. These arithmetic tests supply surrogate counts
+    /// directly; the sequence provides only the length and alphabet.
     fn fixture() -> (Sequence, LzArgs, f64) {
         let mut data = vec![b'0'; 50];
-        data.extend(std::iter::repeat(b'1').take(50));
+        data.extend(std::iter::repeat_n(b'1', 50));
         let seq = Sequence::from_bytes(data);
         let mut args = LzArgs::new();
         args.get_shuffle_terms = true;
@@ -328,6 +310,93 @@ mod tests {
         // A strictly decreasing input pools into one block.
         assert_eq!(non_negative_isotonic(&[6.0, 3.0, 0.0]), vec![3.0, 3.0, 3.0]);
         assert_eq!(non_negative_isotonic(&[]), Vec::<f64>::new());
+    }
+
+    #[test]
+    fn isotonic_matches_independent_min_max_characterization() {
+        // The least-squares isotonic solution also has the closed form
+        // fit[i] = max_{a <= i} min_{b >= i} mean(y[a..=b]). This oracle
+        // enumerates intervals rather than repeating the PAV implementation.
+        for len in 1..=5 {
+            for pattern in 0..5usize.pow(len as u32) {
+                let mut remaining = pattern;
+                let values: Vec<f64> = (0..len)
+                    .map(|_| {
+                        let value = (remaining % 5) as f64 - 2.0;
+                        remaining /= 5;
+                        value
+                    })
+                    .collect();
+                let fitted = non_negative_isotonic(&values);
+                for (i, &actual) in fitted.iter().enumerate() {
+                    let expected = (0..=i)
+                        .map(|start| {
+                            (i..len)
+                                .map(|end| {
+                                    values[start..=end].iter().sum::<f64>()
+                                        / (end - start + 1) as f64
+                                })
+                                .fold(f64::INFINITY, f64::min)
+                        })
+                        .fold(f64::NEG_INFINITY, f64::max)
+                        .max(0.0);
+                    assert!(
+                        (actual - expected).abs() < 1e-12,
+                        "{values:?}, index {i}: {actual} vs {expected}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn logarithm_units_scale_values_without_changing_shuffle_scales() {
+        let seq = Sequence::from_bytes(b"00010111".iter().copied().cycle().take(2048).collect());
+        let mut args = LzArgs::new();
+        args.block_size = 8;
+        args.get_shuffle_terms = true;
+        args.log_base = 2;
+        let bits = lz76_random_shuffle_complexity(&seq, &args);
+        assert!(bits.emc_value > 0.0);
+        for base in [4, 10] {
+            args.log_base = base;
+            let converted = lz76_random_shuffle_complexity(&seq, &args);
+            let scale = (base as f64).log2();
+            assert_eq!(converted.max_block_size, bits.max_block_size);
+            assert!((converted.emc_value * scale - bits.emc_value).abs() < 1e-12);
+            assert!((converted.multi_information * scale - bits.multi_information).abs() < 1e-12);
+            assert_eq!(converted.summands.len(), bits.summands.len());
+            for (term, reference) in converted.summands.iter().zip(&bits.summands) {
+                assert!((term * scale - reference).abs() < 1e-12);
+            }
+        }
+    }
+
+    #[test]
+    fn shuffle_measure_is_bit_identical_across_thread_counts() {
+        let seq = Sequence::from_bytes(b"00010111".iter().copied().cycle().take(2048).collect());
+        let mut args = LzArgs::new();
+        args.block_size = 8;
+        args.get_shuffle_terms = true;
+        let one = rayon::ThreadPoolBuilder::new()
+            .num_threads(1)
+            .build()
+            .unwrap();
+        let three = rayon::ThreadPoolBuilder::new()
+            .num_threads(3)
+            .build()
+            .unwrap();
+        let expected = one.install(|| lz76_random_shuffle_complexity(&seq, &args));
+        for _ in 0..3 {
+            let actual = three.install(|| lz76_random_shuffle_complexity(&seq, &args));
+            assert_eq!(actual.max_block_size, expected.max_block_size);
+            assert_eq!(actual.emc_value.to_bits(), expected.emc_value.to_bits());
+            assert_eq!(
+                actual.multi_information.to_bits(),
+                expected.multi_information.to_bits()
+            );
+            assert_eq!(actual.summands, expected.summands);
+        }
     }
 
     #[test]

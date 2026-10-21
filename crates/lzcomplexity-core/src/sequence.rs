@@ -3,31 +3,63 @@
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
+use std::sync::OnceLock;
 
 use crate::ALPHABET_SIZE;
 
-/// A symbolic sequence stored as raw bytes, plus a cached alphabet.
+#[derive(Clone, Debug)]
+struct AlphabetInfo {
+    symbols: Vec<u8>,
+    size: u32,
+}
+
+impl AlphabetInfo {
+    fn from_bytes(data: &[u8], legacy_hint: Option<u32>) -> Self {
+        let mut seen = [false; 256];
+        for &symbol in data {
+            seen[symbol as usize] = true;
+        }
+        let symbols: Vec<u8> = (0..=255u16)
+            .rev()
+            .filter(|&symbol| seen[symbol as usize])
+            .map(|symbol| symbol as u8)
+            .collect();
+        let observed = symbols.len() as u32;
+        // Preserve the legacy constructor's exact-match hints, including
+        // zero for empty data and one for a singleton alphabet.
+        let size = if legacy_hint == Some(observed) {
+            observed
+        } else {
+            observed.max(ALPHABET_SIZE)
+        };
+        Self { symbols, size }
+    }
+}
+
+/// A symbolic sequence stored as raw bytes, with lazily cached alphabet data.
+/// Symbol-changing mutations invalidate the observed alphabet. An explicit
+/// size declaration remains in force until `determine_alphabet` or `clear`.
 #[derive(Clone, Debug)]
 pub struct Sequence {
-    pub(crate) data: Vec<u8>,
-    pub(crate) alphabet: Vec<u8>,
-    pub(crate) alphabet_size: u32,
+    data: Vec<u8>,
+    alphabet: OnceLock<AlphabetInfo>,
+    declared_alphabet_size: Option<u32>,
 }
 
 impl Sequence {
     pub fn new() -> Self {
         Self {
             data: Vec::new(),
-            alphabet: Vec::new(),
-            alphabet_size: ALPHABET_SIZE,
+            alphabet: OnceLock::new(),
+            declared_alphabet_size: None,
         }
     }
 
     pub fn with_capacity(cap: usize) -> Self {
         Self {
             data: Vec::with_capacity(cap),
-            alphabet: Vec::new(),
-            alphabet_size: ALPHABET_SIZE,
+            alphabet: OnceLock::new(),
+            declared_alphabet_size: None,
         }
     }
 
@@ -35,40 +67,36 @@ impl Sequence {
     // `FromStr` trait (it is infallible and part of the public port surface).
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
-        let mut seq = Self {
-            data: s.as_bytes().to_vec(),
-            alphabet: Vec::new(),
-            alphabet_size: ALPHABET_SIZE,
-        };
-        seq.determine_alphabet();
-        seq
+        Self::from_bytes(s.as_bytes().to_vec())
     }
 
     pub fn from_bytes(b: Vec<u8>) -> Self {
-        let mut seq = Self {
+        let alphabet = AlphabetInfo::from_bytes(&b, None);
+        Self {
             data: b,
-            alphabet: Vec::new(),
-            alphabet_size: ALPHABET_SIZE,
-        };
-        seq.determine_alphabet();
-        seq
+            alphabet: OnceLock::from(alphabet),
+            declared_alphabet_size: None,
+        }
     }
 
+    /// Construct from bytes using the legacy alphabet-size hint. The observed
+    /// alphabet replaces a mismatching hint; use `set_alphabet_size` to declare
+    /// a size that remains fixed through subsequent symbol changes.
     pub fn from_bytes_with_alphabet(b: Vec<u8>, alphabet_size: u32) -> Self {
-        let mut seq = Self {
+        let alphabet = AlphabetInfo::from_bytes(&b, Some(alphabet_size));
+        Self {
             data: b,
-            alphabet: Vec::new(),
-            alphabet_size,
-        };
-        seq.determine_alphabet();
-        seq
+            alphabet: OnceLock::from(alphabet),
+            declared_alphabet_size: None,
+        }
     }
 
+    /// Construct an empty sequence with an explicit alphabet-size declaration.
     pub fn with_alphabet_size(alphabet_size: u32) -> Self {
         Self {
             data: Vec::new(),
-            alphabet: Vec::new(),
-            alphabet_size,
+            alphabet: OnceLock::new(),
+            declared_alphabet_size: Some(alphabet_size),
         }
     }
 
@@ -76,7 +104,10 @@ impl Sequence {
         &self.data
     }
 
+    /// Mutable bytes. Observed alphabet data is rebuilt lazily after the
+    /// mutable borrow ends; an explicit alphabet-size declaration is retained.
     pub fn as_bytes_mut(&mut self) -> &mut [u8] {
+        self.alphabet.take();
         &mut self.data
     }
 
@@ -85,15 +116,24 @@ impl Sequence {
     }
 
     pub fn alphabet(&self) -> &[u8] {
-        &self.alphabet
+        &self
+            .alphabet
+            .get_or_init(|| AlphabetInfo::from_bytes(&self.data, None))
+            .symbols
     }
 
     pub fn alphabet_size(&self) -> u32 {
-        self.alphabet_size
+        self.declared_alphabet_size.unwrap_or_else(|| {
+            self.alphabet
+                .get_or_init(|| AlphabetInfo::from_bytes(&self.data, None))
+                .size
+        })
     }
 
+    /// Declare the size used by downstream normalization without changing the
+    /// observed symbol list. `determine_alphabet` restores observed-size mode.
     pub fn set_alphabet_size(&mut self, s: u32) {
-        self.alphabet_size = s;
+        self.declared_alphabet_size = Some(s);
     }
 
     pub fn len(&self) -> usize {
@@ -104,38 +144,37 @@ impl Sequence {
         self.data.is_empty()
     }
 
-    /// Scan the data and rebuild the alphabet (sorted descending), updating
-    /// `alphabet_size` if needed. Mirrors the C++ `DetermineAlphabet()`.
+    /// Scan the data and rebuild the alphabet (sorted descending), replacing
+    /// any explicit size declaration. Retains the C++ exact-match hint behavior
+    /// for zero/one-symbol alphabets.
     pub fn determine_alphabet(&mut self) -> Vec<u8> {
-        let mut seen = [false; 256];
-        for &c in &self.data {
-            seen[c as usize] = true;
-        }
-        let mut alph = Vec::with_capacity(64);
-        for i in (0..=255u16).rev() {
-            if seen[i as usize] {
-                alph.push(i as u8);
-            }
-        }
-        if alph.len() as u32 != self.alphabet_size {
-            self.alphabet_size = if alph.len() < 2 { 2 } else { alph.len() as u32 };
-        }
-        self.alphabet = alph.clone();
-        alph
+        let hint = self
+            .declared_alphabet_size
+            .or_else(|| self.alphabet.get().map(|cached| cached.size));
+        let alphabet = AlphabetInfo::from_bytes(&self.data, hint);
+        let symbols = alphabet.symbols.clone();
+        self.alphabet = OnceLock::from(alphabet);
+        self.declared_alphabet_size = None;
+        symbols
     }
 
     pub fn push(&mut self, c: u8) -> usize {
+        self.alphabet.take();
         self.data.push(c);
         self.data.len()
     }
 
     pub fn pop(&mut self) -> usize {
-        self.data.pop();
+        if !self.data.is_empty() {
+            self.alphabet.take();
+            self.data.pop();
+        }
         self.data.len()
     }
 
     pub fn clear(&mut self) {
-        self.alphabet_size = ALPHABET_SIZE;
+        self.alphabet.take();
+        self.declared_alphabet_size = None;
         self.data.clear();
     }
 
@@ -174,23 +213,32 @@ impl Sequence {
     /// Mirror of `seq.Take(l)` — first l characters, clamped.
     pub fn take(&self, l: usize) -> Self {
         let n = l.min(self.data.len());
-        Sequence::from_bytes_with_alphabet(self.data[..n].to_vec(), self.alphabet_size)
+        Sequence::from_bytes_with_alphabet(self.data[..n].to_vec(), self.alphabet_size())
     }
 
     /// Mirror of `seq.Drop(l)` — skip first l characters.
     pub fn drop(&self, l: usize) -> Self {
         if l >= self.data.len() {
-            return Sequence::with_alphabet_size(self.alphabet_size);
+            return Self {
+                data: Vec::new(),
+                // Keep the legacy empty-result size without mistaking an
+                // inherited auto size for an explicit user declaration.
+                alphabet: OnceLock::from(AlphabetInfo {
+                    symbols: Vec::new(),
+                    size: self.alphabet_size(),
+                }),
+                declared_alphabet_size: self.declared_alphabet_size,
+            };
         }
-        Sequence::from_bytes_with_alphabet(self.data[l..].to_vec(), self.alphabet_size)
+        Sequence::from_bytes_with_alphabet(self.data[l..].to_vec(), self.alphabet_size())
     }
 
     /// Mirror of `seq.Split(l)`.
     pub fn split_at(&self, l: usize) -> (Self, Self) {
         let n = l.min(self.data.len());
         (
-            Sequence::from_bytes_with_alphabet(self.data[..n].to_vec(), self.alphabet_size),
-            Sequence::from_bytes_with_alphabet(self.data[n..].to_vec(), self.alphabet_size),
+            Sequence::from_bytes_with_alphabet(self.data[..n].to_vec(), self.alphabet_size()),
+            Sequence::from_bytes_with_alphabet(self.data[n..].to_vec(), self.alphabet_size()),
         )
     }
 
@@ -229,7 +277,7 @@ impl Sequence {
     }
 
     pub fn pi(&mut self) -> &mut Self {
-        self.data.pop();
+        self.pop();
         self
     }
 
@@ -277,12 +325,15 @@ impl Sequence {
         }
         Self {
             data,
-            alphabet: Vec::new(),
-            alphabet_size: self.alphabet_size,
+            alphabet: OnceLock::new(),
+            declared_alphabet_size: self.declared_alphabet_size,
         }
     }
 
     pub fn extend_from_slice(&mut self, other: &[u8]) {
+        if !other.is_empty() {
+            self.alphabet.take();
+        }
         self.data.extend_from_slice(other);
     }
 
@@ -290,6 +341,9 @@ impl Sequence {
     pub fn xor_with(&mut self, other: &Sequence) -> Result<(), &'static str> {
         if self.data.len() != other.data.len() {
             return Err("SequenceNoMatchSize");
+        }
+        if !self.data.is_empty() {
+            self.alphabet.take();
         }
         for i in 0..self.data.len() {
             self.data[i] = if self.data[i] == other.data[i] { 0 } else { 1 };
@@ -332,14 +386,20 @@ impl std::ops::Add for &Sequence {
         data.extend_from_slice(&rhs.data);
         Sequence {
             data,
-            alphabet: Vec::new(),
-            alphabet_size: self.alphabet_size.max(rhs.alphabet_size),
+            alphabet: OnceLock::new(),
+            declared_alphabet_size: if self.declared_alphabet_size.is_some()
+                || rhs.declared_alphabet_size.is_some()
+            {
+                Some(self.alphabet_size().max(rhs.alphabet_size()))
+            } else {
+                None
+            },
         }
     }
 }
 
 /// In-place block shuffle of `s`. Picks two non-overlapping aligned blocks of
-/// `block_size` and swaps them. Deterministic when called via [`Sequence::shuffle_seeded`].
+/// `block_size` and swaps them. Deterministic when called via [`shuffle_copy_seeded`].
 ///
 /// Mirrors `lz::Shuffle(sequence&, lz_uint)` from the C++.
 pub fn shuffle_in_place(s: &mut Sequence, block_size: u32, rng: &mut ChaCha8Rng) {
@@ -447,5 +507,220 @@ mod tests {
         let a = shuffle_copy_seeded(&s, 3, 5, 42);
         let b = shuffle_copy_seeded(&s, 3, 5, 42);
         assert_eq!(a.data, b.data);
+    }
+
+    #[test]
+    fn block_swaps_preserve_symbols_blocks_and_legacy_suffix() {
+        for len in 0..=80 {
+            let original: Vec<u8> = (0..len).map(|i| i as u8).collect();
+            let seq = Sequence::from_bytes(original.clone());
+            for block_size in 0..=100 {
+                let shuffled = shuffle_copy_seeded(&seq, block_size, 20, 42);
+                assert_eq!(shuffled.len(), len);
+                let mut sorted = shuffled.data.clone();
+                sorted.sort_unstable();
+                assert_eq!(sorted, original);
+                if len <= 10 || block_size == 0 {
+                    assert_eq!(shuffled.data, original);
+                }
+                if len > 0 {
+                    // The released sampler deliberately never moves the last
+                    // byte; preserving that convention protects RNG parity.
+                    assert_eq!(shuffled.data[len - 1], original[len - 1]);
+                }
+                let width = block_size as usize;
+                if width > 0 && len > width + 1 {
+                    let prefix = ((len - width - 1) / width + 1) * width;
+                    assert_eq!(&shuffled.data[prefix..], &original[prefix..]);
+                    let mut before: Vec<_> = original[..prefix].chunks(width).collect();
+                    let mut after: Vec<_> = shuffled.data[..prefix].chunks(width).collect();
+                    before.sort_unstable();
+                    after.sort_unstable();
+                    assert_eq!(before, after);
+                }
+            }
+        }
+    }
+
+    fn assert_observed_alphabet_matches_fresh(seq: &Sequence) {
+        let fresh = Sequence::from_bytes(seq.as_bytes().to_vec());
+        assert_eq!(seq.alphabet(), fresh.alphabet());
+        assert_eq!(seq.alphabet_size(), fresh.alphabet_size());
+    }
+
+    #[test]
+    fn legacy_constructor_hints_keep_existing_metadata() {
+        for data in [Vec::new(), vec![7; 4], vec![0, 1], (0..=255).collect()] {
+            let observed = data
+                .iter()
+                .copied()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len() as u32;
+            let fresh = Sequence::from_bytes(data.clone());
+            assert_eq!(fresh.alphabet_size(), observed.max(2));
+            for hint in [0, 1, 2, 4, 20, 256] {
+                let mut seq = Sequence::from_bytes_with_alphabet(data.clone(), hint);
+                let expected = if observed == hint {
+                    observed
+                } else {
+                    observed.max(2)
+                };
+                assert_eq!(seq.alphabet_size(), expected);
+                assert_eq!(seq.alphabet(), fresh.alphabet());
+                assert_eq!(seq.clone().alphabet_size(), expected);
+                seq.determine_alphabet();
+                assert_eq!(seq.alphabet_size(), expected);
+            }
+        }
+    }
+
+    #[test]
+    fn symbol_mutations_invalidate_without_rescanning_each_push() {
+        let mut seq = Sequence::with_capacity(256);
+        assert_eq!(seq.alphabet(), &[]);
+        for symbol in 0..=255 {
+            seq.push(symbol);
+            // Metadata stays uninitialized throughout a bulk build: pushing
+            // does not repeatedly scan the growing data buffer.
+            assert!(seq.alphabet.get().is_none());
+        }
+        assert_observed_alphabet_matches_fresh(&seq);
+        assert_eq!(seq.alphabet_size(), 256);
+        seq.pop();
+        assert_observed_alphabet_matches_fresh(&seq);
+        assert_eq!(seq.alphabet_size(), 255);
+        seq.pi();
+        assert_observed_alphabet_matches_fresh(&seq);
+        seq.extend_from_slice(&[254, 255]);
+        assert_observed_alphabet_matches_fresh(&seq);
+        let clone = seq.clone();
+        seq.as_bytes_mut().fill(0);
+        assert_observed_alphabet_matches_fresh(&seq);
+        assert_eq!(seq.alphabet(), &[0]);
+        assert_eq!(clone.alphabet_size(), 256);
+        seq.clear();
+        assert_observed_alphabet_matches_fresh(&seq);
+        assert_eq!(seq.alphabet(), &[]);
+        assert_eq!(seq.pop(), 0);
+    }
+
+    #[test]
+    fn transforms_rebuild_auto_alphabets_and_preserve_declarations() {
+        let source = Sequence::from_bytes((0..=255).collect());
+        let mapped = source.map(|symbol| symbol % 2);
+        assert_observed_alphabet_matches_fresh(&mapped);
+        assert_eq!(mapped.alphabet(), &[1, 0]);
+
+        let left = Sequence::from_str("AB");
+        let right = Sequence::from_str("CD");
+        let combined = &left + &right;
+        assert_observed_alphabet_matches_fresh(&combined);
+        assert_eq!(combined.alphabet_size(), 4);
+
+        let mut emptied = combined.drop(combined.len());
+        assert_eq!(emptied.alphabet_size(), 4); // Legacy initial empty size.
+        emptied.extend_from_slice(b"XY");
+        assert_observed_alphabet_matches_fresh(&emptied);
+        assert_eq!(emptied.alphabet_size(), 2);
+
+        let mut xor = Sequence::from_bytes(vec![0, 1, 2, 3]);
+        assert_eq!(xor.alphabet_size(), 4);
+        xor.xor_with(&Sequence::from_bytes(vec![0, 0, 2, 0]))
+            .unwrap();
+        assert_eq!(xor.as_bytes(), &[0, 1, 0, 1]);
+        assert_observed_alphabet_matches_fresh(&xor);
+
+        let mut declared = Sequence::with_alphabet_size(20);
+        declared.extend_from_slice(b"AB");
+        assert_eq!(declared.alphabet_size(), 20);
+        assert_eq!(declared.alphabet(), b"BA");
+        let mapped = declared.map(|_| 0);
+        assert_eq!(mapped.alphabet_size(), 20);
+        assert_eq!(mapped.alphabet(), &[0]);
+        let combined = &declared + &right;
+        assert_eq!(combined.alphabet_size(), 20);
+        assert_eq!(combined.alphabet(), b"DCBA");
+        let mut emptied = declared.drop(declared.len());
+        emptied.extend_from_slice(b"XY");
+        assert_eq!(emptied.alphabet_size(), 20);
+        assert_eq!(emptied.alphabet(), b"YX");
+    }
+
+    #[test]
+    fn explicit_size_survives_mutation_until_recomputed() {
+        let mut seq = Sequence::from_str("ACGT");
+        seq.set_alphabet_size(20);
+        seq.push(b'N');
+        assert_eq!(seq.alphabet_size(), 20);
+        assert_eq!(seq.alphabet(), b"TNGCA");
+        let mut clone = seq.clone();
+        clone.as_bytes_mut().fill(b'A');
+        assert_eq!(clone.alphabet_size(), 20);
+        assert_eq!(clone.alphabet(), b"A");
+        assert_eq!(seq.alphabet(), b"TNGCA");
+        clone.determine_alphabet();
+        assert_eq!(clone.alphabet_size(), 2);
+        clone.extend_from_slice(b"BC");
+        assert_eq!(clone.alphabet_size(), 3);
+        seq.clear();
+        assert_eq!(seq.alphabet_size(), 2);
+        assert!(seq.alphabet().is_empty());
+    }
+
+    #[test]
+    fn permutation_operations_keep_the_observed_cache() {
+        let mut seq = Sequence::from_str("ABCDABCDABCDABCD");
+        seq.reverse().left_shift(3).right_shift(2);
+        assert!(seq.alphabet.get().is_some());
+        assert_eq!(seq.alphabet(), b"DCBA");
+        let shuffled = shuffle_copy_seeded(&seq, 2, 20, 42);
+        assert!(shuffled.alphabet.get().is_some());
+        assert_observed_alphabet_matches_fresh(&shuffled);
+    }
+
+    #[test]
+    fn mutated_and_fresh_data_have_identical_h_and_shuffle_values() {
+        use crate::lz76::{lz76_entropy_density, LzArgs};
+        use crate::shuffle::lz76_random_shuffle_complexity;
+
+        fn check(seq: &Sequence) {
+            let fresh = Sequence::from_bytes(seq.as_bytes().to_vec());
+            let mut args = LzArgs::new();
+            args.block_size = 8;
+            args.get_shuffle_terms = true;
+            assert_eq!(
+                lz76_entropy_density(seq, &args).to_bits(),
+                lz76_entropy_density(&fresh, &args).to_bits()
+            );
+            let actual = lz76_random_shuffle_complexity(seq, &args);
+            let expected = lz76_random_shuffle_complexity(&fresh, &args);
+            assert_eq!(actual.emc_value.to_bits(), expected.emc_value.to_bits());
+            assert_eq!(actual.summands, expected.summands);
+            assert_eq!(
+                actual.multi_information.to_bits(),
+                expected.multi_information.to_bits()
+            );
+        }
+
+        let data: Vec<u8> = b"ACGT".iter().copied().cycle().take(2048).collect();
+        let mut pushed = Sequence::new();
+        for &symbol in &data {
+            pushed.push(symbol);
+        }
+        check(&pushed);
+        let mut extended = Sequence::new();
+        extended.extend_from_slice(&data);
+        check(&extended);
+        let mut borrowed = Sequence::from_bytes(vec![0; data.len()]);
+        borrowed.as_bytes_mut().copy_from_slice(&data);
+        check(&borrowed);
+        check(
+            &(&Sequence::from_bytes(data[..1024].to_vec())
+                + &Sequence::from_bytes(data[1024..].to_vec())),
+        );
+        check(&Sequence::from_bytes(data).map(|symbol| symbol % 3));
+
+        fn assert_send_sync_clone<T: Send + Sync + Clone>() {}
+        assert_send_sync_clone::<Sequence>();
     }
 }

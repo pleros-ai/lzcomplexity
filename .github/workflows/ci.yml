@@ -23,6 +23,24 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo build --workspace --release
       - run: cargo test --workspace --release
+      - name: Check core documentation links
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+        run: cargo doc -p lzcomplexity-core --no-deps --locked
+      - name: Check shuffle-measure implementation invariants
+        run: |
+          cargo build --release -p lzcomplexity-core --example shuffle_diagnostics --locked
+          python3 scripts/validate_shuffle.py --self-test
+          python3 scripts/validate_shuffle.py --lengths 2048 --seeds 1 --check
+
+  msrv:
+    name: Minimum supported Rust (1.85)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --workspace --all-targets --locked
 
   binaries:
     name: Standalone binaries smoke test
