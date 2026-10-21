@@ -1,10 +1,10 @@
 name: Docs
 
 # Documentation is maintained beside the current library. PRs build only;
-# the default branch publishes to GitHub Pages.
+# the permitted docs deployment branch publishes to GitHub Pages.
 on:
   push:
-    branches: ["rust-backend"]
+    branches: ["rust-backend", "docs"]
     paths:
       - "docs/**"
       - "mkdocs.yml"
@@ -56,7 +56,7 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/rust-backend'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/docs'
     runs-on: ubuntu-latest
     permissions:
       pages: write

@@ -2,7 +2,8 @@
 
 The documentation lives beside the library on `rust-backend`. The site is generated with
 MkDocs and Material for MkDocs, with a custom Pleros homepage and shared light/dark styles.
-The historical `docs` branch is not the source for this edition.
+The `docs` branch is the deployment mirror, required by the repository’s existing
+GitHub Pages environment policy.
 
 ## Preview locally
 
@@ -50,10 +51,22 @@ their original implementation; do not turn a reference figure into a new accurac
 
 ## Publishing
 
-Pull requests build and check the site without deploying it. A documentation change merged
-to `rust-backend` runs the Docs workflow and publishes its checked artifact to
-[GitHub Pages](https://pleros-ai.github.io/lzcomplexity/). The GitHub Pages environment
-restricts deployments to that branch. Check the workflow's deployment result after merging.
+Pull requests and default-branch pushes build and check the site without deploying it.
+The existing GitHub Pages environment permits the `docs` branch. After a reviewed
+change is merged, use a clean checkout matching `origin/rust-backend`:
+
+```sh
+python scripts/docs/publish-source.py --dry-run
+python scripts/docs/publish-source.py
+```
+
+The helper fetches both branches, verifies the source revision, then creates a
+commit on `docs` with the **identical source tree**, preserving both histories.
+It does not switch the checkout or force-push. That push triggers the Docs workflow,
+which rebuilds and checks the site before publishing to
+[GitHub Pages](https://pleros-ai.github.io/lzcomplexity/). Check its deployment result.
+This keeps documentation edits on the current library branch while respecting the
+existing deployment policy.
 
 The original manual is available from [the manual guide](manual.md). Its older API and
 installation instructions remain historical reference material.
