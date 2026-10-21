@@ -28,7 +28,8 @@ node scripts/docs/test-demo.cjs
 The strict build checks navigation and Markdown links. The second command also checks
 links and assets in the rendered HTML, fragment anchors and the search index. The Node
 check compares the small homepage demo with committed outputs from the native library.
-It is not a validation of the scientific measures.
+It is not a validation of the scientific measures. Local CSS and JavaScript URLs
+are versioned by content automatically, so a new deployment refreshes cached assets.
 
 For changes to Python examples, install the native package from the same source checkout
 and execute the example. State the source revision, input encoding, logarithm base and

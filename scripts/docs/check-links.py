@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Check generated HTML links/assets/anchors and the offline search index."""
+import hashlib
 import json
 import pathlib
 import sys
 from html.parser import HTMLParser
-from urllib.parse import unquote, urljoin, urlparse
+from urllib.parse import parse_qs, unquote, urljoin, urlparse
 
 ROOT = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "site").resolve()
 BASE = "https://pleros-ai.github.io/lzcomplexity/"
@@ -40,6 +41,10 @@ def check(source, href):
         failures.append(f"{source.relative_to(ROOT)}: missing {href}")
     elif url.fragment and path in pages and unquote(url.fragment) not in pages[path].ids:
         failures.append(f"{source.relative_to(ROOT)}: missing anchor {href}")
+    if path.is_file() and path.suffix in (".css", ".js") and "v" in parse_qs(url.query):
+        expected = hashlib.sha256(path.read_bytes()).hexdigest()[:12]
+        if parse_qs(url.query)["v"] != [expected]:
+            failures.append(f"{source.relative_to(ROOT)}: stale asset version {href}")
     checked += 1
 
 for source, page in pages.items():
