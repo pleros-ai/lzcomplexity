@@ -26,10 +26,19 @@ node scripts/docs/test-demo.cjs
 ```
 
 The strict build checks navigation and Markdown links. The second command also checks
-links and assets in the rendered HTML, fragment anchors and the search index. The Node
-check compares the small homepage demo with committed outputs from the native library.
-It is not a validation of the scientific measures. Local CSS and JavaScript URLs
+links and assets in the rendered HTML, fragment anchors, the search index and social
+preview metadata. The Node check compares the homepage’s factorization, h, E* and distance
+calculations with committed outputs from the native library. It also checks the exact
+random-generator stream and block swaps. This verifies implementation parity, not the
+scientific interpretation of a measure. Local CSS and JavaScript URLs
 are versioned by content automatically, so a new deployment refreshes cached assets.
+
+The playground accepts at most 256 UTF-8 bytes per sequence. Its browser engine uses a
+simple small-input factor search, with the native implementation’s counting convention,
+64-bit shuffle sampler, weighting and fitted score. The demo fixes logarithms to base 2;
+E* uses the automatic block-size cap. To refresh the native fixtures from an installed
+build of the current library, run `python scripts/docs/generate-demo-fixtures.py`.
+The RNG fixture generator is documented in `scripts/docs/generate-rng-fixtures.rs`.
 
 For changes to Python examples, install the native package from the same source checkout
 and execute the example. State the source revision, input encoding, logarithm base and
@@ -47,7 +56,8 @@ their original implementation; do not turn a reference figure into a new accurac
 | Worked applications | `docs/recipes/` |
 | Manual, citations and project information | `docs/project/` |
 | Homepage | `docs/index.md`, `overrides/home.html` |
-| Design and browser demonstration | `docs/assets/extra.css`, `docs/assets/site.js` |
+| Design and browser demonstration | `docs/assets/extra.css`, `docs/assets/site.js`, `docs/assets/measure-engine.js` |
+| Social previews | `overrides/main.html`, `docs/assets/social-card.svg`, `docs/assets/social-card.png` |
 | Navigation and toolchain | `mkdocs.yml`, `requirements-docs.txt` |
 
 ## Publishing
