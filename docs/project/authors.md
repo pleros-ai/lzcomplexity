@@ -31,6 +31,13 @@ The [journal record](https://www.revistacubanadefisica.org/index.php/rcf/article
 
 ## Record the software version too
 
+The software is archived on [Zenodo](https://zenodo.org/records/23531094).
+The all-version DOI is [10.5281/zenodo.23531093](https://zenodo.org/doi/10.5281/zenodo.23531093);
+the first archive has DOI [10.5281/zenodo.23531094](https://zenodo.org/records/23531094).
+Use an archive's own metadata when citing that deposit. The archive and your
+installed package need not identify the same build, so record the executable
+version or source commit separately.
+
 A paper citation does not uniquely identify the executable that produced a number. Record the installed version and, for a development build, its source commit and backend.
 
 ```python

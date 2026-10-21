@@ -2,9 +2,14 @@
   <h2>lzcomplexity</h2>
   <p><em>LZ76-based complexity analysis for symbolic sequences and time-series.</em></p>
 
-[![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.9+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
-[![Rust](https://img.shields.io/badge/Rust-stable-DEA584.svg?style=flat&logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![CI](https://github.com/pleros-ai/lzcomplexity/actions/workflows/ci.yml/badge.svg?branch=rust-backend)](https://github.com/pleros-ai/lzcomplexity/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/docs-online-0071e3)](https://pleros-ai.github.io/lzcomplexity/)
+[![PyPI](https://img.shields.io/pypi/v/lzcomplexity?color=0071e3)](https://pypi.org/project/lzcomplexity/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23531093.svg)](https://zenodo.org/doi/10.5281/zenodo.23531093)
+
+[![Python](https://img.shields.io/badge/Python-3.9%2B-5e6b7a?logo=python&logoColor=white)](https://pypi.org/project/lzcomplexity/)
+[![Rust](https://img.shields.io/badge/Rust-1.85%2B-5e6b7a?logo=rust&logoColor=white)](https://crates.io/crates/lzcomplexity-core)
+[![MIT](https://img.shields.io/badge/license-MIT-5e6b7a)](LICENSE)
 
 **[Documentation](https://pleros-ai.github.io/lzcomplexity/)**
 
@@ -267,6 +272,11 @@ The current C++ source includes a Rust-compatible shuffle RNG; the old descripti
 - **Ernesto Estévez Rams** — from the research lineage of the original C++ implementation.
 
 ## Citation
+
+The software is archived on [Zenodo](https://zenodo.org/records/23531094).
+Use the all-version DOI **10.5281/zenodo.23531093** to refer to the project,
+and record the version or source commit you used. The first archive's DOI is
+[10.5281/zenodo.23531094](https://zenodo.org/records/23531094).
 
 ```bibtex
 @software{lzcomplexity_2026,

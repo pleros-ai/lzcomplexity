@@ -1,92 +1,195 @@
-/* Small educational LZ76 view. Production analysis remains in the Rust library. */
-(function (scope) {
+/* Browser UI only. Native-compatible calculations live in measure-engine.js. */
+(function () {
   "use strict";
-  function analyze(text) {
-    const bytes = new TextEncoder().encode(text);
-    const n = bytes.length;
-    if (n > 128) throw new Error("Please use at most 128 UTF-8 bytes in this demonstration.");
-    let boundaries, count;
-    if (!bytes.some(value => value !== bytes[0])) {
-      boundaries = [0, 1, n]; count = 1;
-    } else {
-      boundaries = [0, 1];
-      let position = 1;
-      while (position < n) {
-        let longest = 0;
-        for (let previous = 0; previous < position; previous++) {
-          let length = 0;
-          while (position + length < n && bytes[previous + length] === bytes[position + length]) length++;
-          longest = Math.max(longest, length);
-        }
-        position += longest + 1;
-        boundaries.push(position);
-      }
-      count = boundaries.length - (boundaries[boundaries.length - 1] > n ? 2 : 1);
-    }
-    return { count, boundaries, bytes, h: n > 1 ? count * Math.log2(n) / n : 0 };
-  }
-  if (typeof module !== "undefined" && module.exports) module.exports = { analyze };
   if (typeof document === "undefined") return;
-
   function initialize() {
     const home = document.querySelector(".lz-home");
-    if (!home || home.dataset.initialized) return;
+    if (!home || home.dataset.initialized || typeof LZMeasures === "undefined") return;
     home.dataset.initialized = "true";
+    const { analyze, emc, distance } = LZMeasures;
+    const get = id => home.querySelector("#" + id);
     const fixtures = {
-      periodic: { sequence: "01".repeat(32), note: "Repeated patterns need fewer new pieces." },
-      irregular: { sequence: "0001111011111000101101011011010111001101100101000001011110000111", note: "More new pieces; finite-length entropy estimates can exceed one." }
+      periodic: { sequence: "01".repeat(32), note: "Repetition makes the next symbol easier to predict." },
+      irregular: { sequence: "0001111011111000101101011011010111001101100101000001011110000111", note: "More new information, with the same two-symbol alphabet. Short-input estimates can exceed one." }
     };
     function specimen(name) {
-      const fixture = fixtures[name], result = analyze(fixture.sequence);
-      const grid = home.querySelector("#lz-symbol-grid");
+      const fixture = fixtures[name], result = analyze(fixture.sequence), grid = get("lz-symbol-grid");
       grid.replaceChildren();
       for (const bit of fixture.sequence) {
         const tile = document.createElement("span");
         tile.textContent = bit; tile.dataset.bit = bit; grid.append(tile);
       }
-      home.querySelector("#lz-specimen-count").textContent = result.count;
-      home.querySelector("#lz-specimen-h").textContent = result.h.toFixed(3);
-      home.querySelector("#lz-specimen-note").textContent = fixture.note;
+      get("lz-specimen-count").textContent = result.count;
+      get("lz-specimen-h").textContent = result.h.toFixed(3);
+      get("lz-specimen-note").textContent = fixture.note;
       home.querySelectorAll("[data-specimen]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.specimen === name)));
     }
     home.querySelectorAll("[data-specimen]").forEach(button => button.addEventListener("click", () => specimen(button.dataset.specimen)));
     specimen("periodic");
-    const input = home.querySelector("#lz-input"), description = home.querySelector("#lz-lab-description");
-    function update() {
-      let result;
-      try { result = analyze(input.value); }
-      catch (error) { description.textContent = error.message; input.setAttribute("aria-invalid", "true"); return; }
-      input.removeAttribute("aria-invalid");
-      const parse = home.querySelector("#lz-parse");
+
+    const input = get("lz-input"), secondInput = get("lz-input-b"), error = get("lz-input-error");
+    const tabs = [...home.querySelectorAll("[data-mode]")];
+    const encoder = new TextEncoder();
+    let mode = "parse";
+    function byteCount() {
+      get("lz-byte-count").textContent = encoder.encode(input.value).length + " / 256 bytes";
+      get("lz-byte-count-b").textContent = encoder.encode(secondInput.value).length + " / 256 bytes";
+    }
+    function renderParse(result) {
+      const parse = get("lz-parse"), decoder = new TextDecoder();
       parse.replaceChildren();
-      const decoder = new TextDecoder();
       for (let i = 0; i < result.boundaries.length - 1; i++) {
         const start = result.boundaries[i], end = Math.min(result.boundaries[i + 1], result.bytes.length);
         if (end <= start) continue;
-        const tile = document.createElement("span");
-        const value = result.bytes.slice(start, end);
+        const tile = document.createElement("span"), value = result.bytes.slice(start, end);
         // Hex preserves byte boundaries when a parse splits a UTF-8 character.
-        tile.textContent = value.some(byte => byte >= 128) ? Array.from(value, byte => byte.toString(16).padStart(2, "0")).join(" ") : decoder.decode(value).replace(/ /g, "␠").replace(/\n/g, "↵");
+        tile.textContent = value.some(byte => byte >= 128) ? Array.from(value, byte => byte.toString(16).padStart(2, "0")).join(" ") : decoder.decode(value).replace(/ /g, "␠").replace(/\n/g, "↵").replace(/\t/g, "⇥");
         tile.title = "Bytes " + start + "–" + end;
         parse.append(tile);
       }
-      home.querySelector("#lz-demo-count").textContent = result.count;
-      home.querySelector("#lz-demo-h").textContent = result.h.toFixed(4);
-      if (!result.bytes.length) description.textContent = "Empty input uses the library’s legacy count of one and entropy density of zero; it is not an observed source.";
-      else if (input.value === "banana") description.textContent = "For banana, four displayed pieces give a reported count of three: the final copied tail is excluded by the library’s counting convention. Finite-length entropy estimates can exceed one.";
-      else description.textContent = "Base-two normalization, matching the current library’s counting convention. The final copied tail can be excluded from the count. Non-ASCII pieces are shown as UTF-8 byte values. This short-input demo computes no EMC-like score.";
+      get("lz-demo-count").textContent = result.count;
+      get("lz-demo-h").textContent = result.h.toFixed(4);
+      let description = "The final copied tail can be excluded from the reported count. Short-sequence estimates of h can exceed one.";
+      if (!result.bytes.length) description = "Empty input uses the library’s legacy count of one and h of zero; it is not an observed source.";
+      else if (input.value === "banana") description = "Four displayed pieces, a reported count of three: the final copied tail is excluded. Short-sequence estimates of h can exceed one.";
+      else if (result.bytes.some(value => value >= 128)) description += " Non-ASCII pieces are shown as UTF-8 byte values.";
+      get("lz-lab-description").textContent = description;
     }
-    home.querySelector("#lz-analyze").addEventListener("click", update);
-    input.addEventListener("keydown", event => { if (event.key === "Enter") update(); });
-    home.querySelectorAll("[data-sequence]").forEach(button => button.addEventListener("click", () => { input.value = button.dataset.sequence; update(); }));
+    let curveValues = [], curveWidth = 0;
+    function renderCurve(values) {
+      const chart = get("lz-e-chart"), ns = "http://www.w3.org/2000/svg";
+      curveValues = values;
+      curveWidth = Math.max(180, Math.round(chart.getBoundingClientRect().width));
+      chart.setAttribute("viewBox", "0 0 " + curveWidth + " 180");
+      chart.replaceChildren();
+      const left = 36, right = curveWidth - 10, top = 16, bottom = 146;
+      const peak = Math.max(...values, 1), last = Math.max(values.length - 1, 1);
+      function shape(tag, attributes, text) {
+        const node = document.createElementNS(ns, tag);
+        Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, String(value)));
+        if (text !== undefined) node.textContent = text;
+        chart.append(node); return node;
+      }
+      [0, .5, 1].forEach(fraction => {
+        const y = bottom - fraction * (bottom - top);
+        shape("line", { x1:left, y1:y, x2:right, y2:y, class:"lz-chart-grid" });
+        shape("text", { x:left - 8, y:y + 4, "text-anchor":"end" }, (peak * fraction).toFixed(1));
+      });
+      const points = values.map((value, index) => [left + index / last * (right - left), bottom - value / peak * (bottom - top)]);
+      const path = points.map(([x, y], index) => (index ? "L" : "M") + x.toFixed(2) + " " + y.toFixed(2)).join(" ");
+      if (points.length) {
+        shape("path", { d:path + " L" + points[points.length - 1][0] + " " + bottom + " L" + left + " " + bottom + " Z", class:"lz-chart-fill" });
+        shape("path", { d:path, class:"lz-chart-line" });
+        points.forEach(([cx, cy]) => shape("circle", {cx, cy, r:2.5}));
+      }
+      shape("text", {x:left, y:bottom + 22, "text-anchor":"middle"}, "1");
+      if (values.length > 1) shape("text", {x:right, y:bottom + 22, "text-anchor":"end"}, String(values.length));
+      shape("text", {x:(left + right) / 2, y:bottom + 22, "text-anchor":"middle"}, "Block range (bytes)");
+      chart.setAttribute("aria-label", "Fitted E score at block ranges 1 to " + values.length + ", ending at " + (values[values.length - 1] || 0).toFixed(4));
+    }
+    function update() {
+      byteCount();
+      input.removeAttribute("aria-invalid"); secondInput.removeAttribute("aria-invalid"); error.hidden = true; error.textContent = ""; get("lz-result-state").hidden = true;
+      // Hide previous output on invalid input, so an old number cannot be mistaken for a new result.
+      const panel = get("lz-panel-" + mode);
+      try {
+        const result = analyze(input.value);
+        panel.hidden = false;
+        if (mode === "parse") renderParse(result);
+        if (mode === "structure") {
+          const structure = emc(input.value);
+          get("lz-demo-e").textContent = structure.value.toFixed(4);
+          get("lz-demo-range").textContent = structure.maxBlockSize;
+          renderCurve(structure.fitted);
+          let description = "Fitted score across scales, using the library’s deterministic sampling and automatic range. Compare sequences of the same length and encoding.";
+          if (result.bytes.length <= 10) description = "At 10 bytes or fewer, the library leaves these sequences unchanged, so E* is zero. Try a longer example to explore the scale profile.";
+          else if (result.bytes.every(byte => byte === result.bytes[0])) description = "A constant sequence has a clear pattern, but rearranging identical symbols changes nothing, so this score is zero. E* does not count every kind of structure.";
+          get("lz-e-description").textContent = description;
+        }
+        if (mode === "distance") {
+          const comparison = distance(input.value, secondInput.value);
+          get("lz-demo-distance").textContent = comparison.value.toFixed(4);
+          ["a", "b", "ab", "ba"].forEach((key, index) => { get("lz-count-" + key).textContent = comparison.counts[["x", "y", "xy", "yx"][index]]; });
+        }
+        panel.hidden = false;
+        get("lz-lab-method").hidden = false;
+      } catch (failure) {
+        error.textContent = failure.message;
+        error.hidden = false;
+        get("lz-result-state").textContent = "Check the sequence length, then analyze again."; get("lz-result-state").hidden = false;
+        if (encoder.encode(input.value).length > 256) input.setAttribute("aria-invalid", "true");
+        if (mode === "distance" && encoder.encode(secondInput.value).length > 256) secondInput.setAttribute("aria-invalid", "true");
+        panel.hidden = true;
+        get("lz-lab-method").hidden = true;
+      }
+    }
+    function selectMode(next) {
+      mode = next;
+      tabs.forEach(tab => {
+        const selected = tab.dataset.mode === mode;
+        tab.setAttribute("aria-selected", String(selected)); tab.tabIndex = selected ? 0 : -1;
+        get("lz-panel-" + tab.dataset.mode).hidden = !selected;
+      });
+      get("lz-second-input").hidden = mode !== "distance";
+      get("lz-input-label").textContent = mode === "distance" ? "Sequence A" : "Your sequence";
+      get("lz-analyze").firstChild.textContent = mode === "distance" ? "Compare sequences " : "Analyze sequence ";
+      update();
+    }
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => selectMode(tab.dataset.mode));
+      tab.addEventListener("keydown", event => {
+        let next;
+        if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+        if (event.key === "ArrowLeft") next = (index + tabs.length - 1) % tabs.length;
+        if (event.key === "Home") next = 0;
+        if (event.key === "End") next = tabs.length - 1;
+        if (next !== undefined) { event.preventDefault(); tabs[next].focus(); selectMode(tabs[next].dataset.mode); }
+      });
+    });
+    function irregular(length) {
+      let state = 71423, result = "";
+      for (let i = 0; i < length; i++) {
+        state ^= state << 13; state ^= state >>> 17; state ^= state << 5;
+        result += String((state >>> 0) & 1);
+      }
+      return result;
+    }
+    const examples = {
+      banana: ["banana", "banaba", "A short example for following the LZ76 factor boundaries."],
+      periodic: ["00010111".repeat(32), "00010111".repeat(31) + "00010110", "A 256-byte sequence built from an eight-symbol repeating motif."],
+      irregular: [irregular(256), irregular(256).split("").reverse().join(""), "A fixed pseudorandom example. Irregularity alone does not imply rich organization."],
+      constant: ["0".repeat(256), "0".repeat(256), "Identical symbols: a simple pattern with no change under rearrangement."],
+      dna: ["ACGT".repeat(64), "ACGT".repeat(63) + "ACGA", "A repeating four-symbol motif, encoded as one UTF-8 byte per base."]
+    };
+    home.querySelectorAll("[data-example]").forEach(button => button.addEventListener("click", () => {
+      const [first, second, note] = examples[button.dataset.example];
+      input.value = first; secondInput.value = second; get("lz-example-note").textContent = note; update();
+    }));
+    get("lz-analyze").addEventListener("click", update);
+    [input, secondInput].forEach(field => {
+      field.addEventListener("input", () => {
+        byteCount();
+        error.hidden = true; error.textContent = ""; field.removeAttribute("aria-invalid");
+        get("lz-result-state").textContent = "Ready to analyze your new sequence."; get("lz-result-state").hidden = false;
+        get("lz-example-note").textContent = "Press " + (mode === "distance" ? "Compare sequences" : "Analyze sequence") + " to update the result. Ctrl/⌘ + Enter also works.";
+        // Avoid leaving stale results visible while a different sequence is being edited.
+        get("lz-panel-" + mode).hidden = true; get("lz-lab-method").hidden = true;
+      });
+      field.addEventListener("keydown", event => { if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) { event.preventDefault(); update(); } });
+    });
     home.querySelectorAll("[data-copy]").forEach(button => button.addEventListener("click", async () => {
       const original = button.textContent;
       try { await navigator.clipboard.writeText(button.dataset.copy); button.textContent = "Copied ✓"; }
       catch (_) { button.textContent = "Select command to copy"; }
       setTimeout(() => { if (button.isConnected) button.textContent = original; }, 1800);
     }));
+    if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => {
+      if (mode === "structure" && !get("lz-panel-structure").hidden && curveValues.length &&
+          Math.abs(get("lz-e-chart").getBoundingClientRect().width - curveWidth) > 1) renderCurve(curveValues);
+    }).observe(get("lz-e-chart"));
+    update();
   }
   if (typeof document$ !== "undefined") document$.subscribe(initialize);
   else if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initialize);
   else initialize();
-})(typeof globalThis === "undefined" ? this : globalThis);
+})();
