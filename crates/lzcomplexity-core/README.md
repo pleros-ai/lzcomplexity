@@ -8,7 +8,8 @@ The algorithmic core of [`lzcomplexity`](https://github.com/pleros-ai/lzcomplexi
 information-theoretic complexity measures for symbolic sequences, based on
 **Lempel–Ziv 76 (LZ76) factorization**.
 
-This crate has no Python or CLI dependencies. Its suffix-array dependency bundles C code, so building from source requires a C compiler. It powers the
+This crate has no Python or CLI dependencies. Its suffix-array dependency
+bundles C code, so building from source requires a C compiler. It powers the
 `lzcomplexity` Python package (via PyO3) and the `lzcomplexity` / `lzdistance`
 standalone binaries, and can be used directly as a Rust library.
 
@@ -31,7 +32,7 @@ standalone binaries, and can be used directly as a Rust library.
 
 ```toml
 [dependencies]
-lzcomplexity-core = "1.0"
+lzcomplexity-core = "2.0"
 ```
 
 ```rust
@@ -72,9 +73,8 @@ the command-line tools.
   bytes therefore use the same observed normalization.
 - The shuffle-based measure is seeded deterministically from the input, so
   results are reproducible with matched dependencies and parameters. It uses
-  one surrogate per block size and a nonnegative isotonic projection. That
-  projection is part of this measure's definition, not evidence that its
-  score is mutual information.
+  one surrogate per block size and a nonnegative isotonic projection. The
+  returned summands are fitted score increments.
 - Match sequence length, byte encoding, logarithm base and block-size cap when
   comparing scores, and check sensitivity to these choices. No calibrated
   uncertainty or general ordering by theoretical EMC is provided.

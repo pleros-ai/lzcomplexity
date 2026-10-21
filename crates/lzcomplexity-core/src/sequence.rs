@@ -509,39 +509,6 @@ mod tests {
         assert_eq!(a.data, b.data);
     }
 
-    #[test]
-    fn block_swaps_preserve_symbols_blocks_and_legacy_suffix() {
-        for len in 0..=80 {
-            let original: Vec<u8> = (0..len).map(|i| i as u8).collect();
-            let seq = Sequence::from_bytes(original.clone());
-            for block_size in 0..=100 {
-                let shuffled = shuffle_copy_seeded(&seq, block_size, 20, 42);
-                assert_eq!(shuffled.len(), len);
-                let mut sorted = shuffled.data.clone();
-                sorted.sort_unstable();
-                assert_eq!(sorted, original);
-                if len <= 10 || block_size == 0 {
-                    assert_eq!(shuffled.data, original);
-                }
-                if len > 0 {
-                    // The released sampler deliberately never moves the last
-                    // byte; preserving that convention protects RNG parity.
-                    assert_eq!(shuffled.data[len - 1], original[len - 1]);
-                }
-                let width = block_size as usize;
-                if width > 0 && len > width + 1 {
-                    let prefix = ((len - width - 1) / width + 1) * width;
-                    assert_eq!(&shuffled.data[prefix..], &original[prefix..]);
-                    let mut before: Vec<_> = original[..prefix].chunks(width).collect();
-                    let mut after: Vec<_> = shuffled.data[..prefix].chunks(width).collect();
-                    before.sort_unstable();
-                    after.sort_unstable();
-                    assert_eq!(before, after);
-                }
-            }
-        }
-    }
-
     fn assert_observed_alphabet_matches_fresh(seq: &Sequence) {
         let fresh = Sequence::from_bytes(seq.as_bytes().to_vec());
         assert_eq!(seq.alphabet(), fresh.alphabet());

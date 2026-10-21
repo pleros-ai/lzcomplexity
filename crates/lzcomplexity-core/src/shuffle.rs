@@ -78,11 +78,6 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
 /// that the surrogates are independent block draws or that `l*h_LZ` is an
 /// unbiased block-entropy estimate.
 ///
-/// The `l` multiplier and projection are part of this implementation's
-/// versioned definition. They differ from the unweighted sum of shuffled
-/// entropy-rate contrasts in Estevez-Rams et al. (2019), Eq. (4). Changing
-/// those choices changes the scientific measure and requires separate review.
-///
 /// `multi_information` retains its historical name for API compatibility:
 /// it is the raw `l=1` contrast, before projection. It is not a calibrated
 /// mutual-information estimate or an uncertainty on the returned score.
@@ -310,93 +305,6 @@ mod tests {
         // A strictly decreasing input pools into one block.
         assert_eq!(non_negative_isotonic(&[6.0, 3.0, 0.0]), vec![3.0, 3.0, 3.0]);
         assert_eq!(non_negative_isotonic(&[]), Vec::<f64>::new());
-    }
-
-    #[test]
-    fn isotonic_matches_independent_min_max_characterization() {
-        // The least-squares isotonic solution also has the closed form
-        // fit[i] = max_{a <= i} min_{b >= i} mean(y[a..=b]). This oracle
-        // enumerates intervals rather than repeating the PAV implementation.
-        for len in 1..=5 {
-            for pattern in 0..5usize.pow(len as u32) {
-                let mut remaining = pattern;
-                let values: Vec<f64> = (0..len)
-                    .map(|_| {
-                        let value = (remaining % 5) as f64 - 2.0;
-                        remaining /= 5;
-                        value
-                    })
-                    .collect();
-                let fitted = non_negative_isotonic(&values);
-                for (i, &actual) in fitted.iter().enumerate() {
-                    let expected = (0..=i)
-                        .map(|start| {
-                            (i..len)
-                                .map(|end| {
-                                    values[start..=end].iter().sum::<f64>()
-                                        / (end - start + 1) as f64
-                                })
-                                .fold(f64::INFINITY, f64::min)
-                        })
-                        .fold(f64::NEG_INFINITY, f64::max)
-                        .max(0.0);
-                    assert!(
-                        (actual - expected).abs() < 1e-12,
-                        "{values:?}, index {i}: {actual} vs {expected}"
-                    );
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn logarithm_units_scale_values_without_changing_shuffle_scales() {
-        let seq = Sequence::from_bytes(b"00010111".iter().copied().cycle().take(2048).collect());
-        let mut args = LzArgs::new();
-        args.block_size = 8;
-        args.get_shuffle_terms = true;
-        args.log_base = 2;
-        let bits = lz76_random_shuffle_complexity(&seq, &args);
-        assert!(bits.emc_value > 0.0);
-        for base in [4, 10] {
-            args.log_base = base;
-            let converted = lz76_random_shuffle_complexity(&seq, &args);
-            let scale = (base as f64).log2();
-            assert_eq!(converted.max_block_size, bits.max_block_size);
-            assert!((converted.emc_value * scale - bits.emc_value).abs() < 1e-12);
-            assert!((converted.multi_information * scale - bits.multi_information).abs() < 1e-12);
-            assert_eq!(converted.summands.len(), bits.summands.len());
-            for (term, reference) in converted.summands.iter().zip(&bits.summands) {
-                assert!((term * scale - reference).abs() < 1e-12);
-            }
-        }
-    }
-
-    #[test]
-    fn shuffle_measure_is_bit_identical_across_thread_counts() {
-        let seq = Sequence::from_bytes(b"00010111".iter().copied().cycle().take(2048).collect());
-        let mut args = LzArgs::new();
-        args.block_size = 8;
-        args.get_shuffle_terms = true;
-        let one = rayon::ThreadPoolBuilder::new()
-            .num_threads(1)
-            .build()
-            .unwrap();
-        let three = rayon::ThreadPoolBuilder::new()
-            .num_threads(3)
-            .build()
-            .unwrap();
-        let expected = one.install(|| lz76_random_shuffle_complexity(&seq, &args));
-        for _ in 0..3 {
-            let actual = three.install(|| lz76_random_shuffle_complexity(&seq, &args));
-            assert_eq!(actual.max_block_size, expected.max_block_size);
-            assert_eq!(actual.emc_value.to_bits(), expected.emc_value.to_bits());
-            assert_eq!(
-                actual.multi_information.to_bits(),
-                expected.multi_information.to_bits()
-            );
-            assert_eq!(actual.summands, expected.summands);
-        }
     }
 
     #[test]

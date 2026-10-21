@@ -15,9 +15,8 @@
 The function named `emc` computes a **shuffle-based complexity measure that is
 qualitatively similar to effective measure complexity (EMC)**. It is not an
 established numerical estimator of theoretical EMC or excess entropy. The
-historical API name is retained. The released scale-weighted, isotonic calculation
-also differs from the paper-style sum of shuffle contrasts; these definitions
-must be distinguished. See [the shuffle-measure definition and limitations](docs/shuffle-measure.md).
+historical API name is retained. See [the shuffle-measure definition and
+limitations](docs/shuffle-measure.md).
 
 The library ships **two things**:
 
@@ -110,10 +109,9 @@ Common keyword arguments:
 
 The `emc` result depends on sequence length, block-size cap, input encoding and
 surrogate draws. Compare scores using matched settings and examine their
-sensitivity. A larger score does not universally rank sources by theoretical
-EMC, and the nonnegative fitted increments do not prove an information-theoretic
-interpretation. `multi_information` is the raw one-symbol shuffle contrast,
-not a calibrated mutual-information estimate.
+sensitivity. Its summands are fitted score increments; `multi_information` is
+the raw one-symbol shuffle contrast. These are not calibrated Shannon
+information quantities.
 
 Run `help(lzcomplexity.<name>)` for full per-function docs. Type stubs (`__init__.pyi`) ship with the package.
 
