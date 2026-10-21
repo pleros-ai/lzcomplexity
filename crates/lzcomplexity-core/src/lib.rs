@@ -4,6 +4,8 @@
 //! the algorithm implementations, independent of any Python bindings.
 
 mod block_entropy;
+mod causal_states;
+mod excess_entropy;
 pub mod lpf;
 pub mod lz76;
 pub mod metrics;
@@ -11,7 +13,7 @@ pub mod sequence;
 pub mod shuffle;
 pub mod suffix_array;
 
-pub use lz76::{LempelZiv, Lz76Result, LzArgs, LzExtra, LzShuffle};
+pub use lz76::{EmcDiagnostics, LempelZiv, Lz76Result, LzArgs, LzExtra, LzShuffle};
 pub use sequence::Sequence;
 pub use suffix_array::{build_suffix_array, SuffixArray};
 

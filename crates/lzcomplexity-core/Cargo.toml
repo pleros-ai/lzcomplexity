@@ -20,3 +20,4 @@ rayon = { workspace = true }
 rand = { workspace = true }
 rand_chacha = { workspace = true }
 cdivsufsort = { workspace = true }
+statrs = { version = "0.18", default-features = false }

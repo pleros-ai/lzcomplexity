@@ -1,8 +1,8 @@
-//! Finite-window excess-entropy estimates and legacy shuffle distances.
+//! Predictive-state excess entropy and legacy shuffle distances.
 
 use rayon::prelude::*;
 
-use crate::block_entropy::{mutual_information_ladder_bits, symbol_entropy_bits};
+use crate::block_entropy::symbol_entropy_bits;
 use crate::lz76::{entropy_density_from, lz76_factorization, LzArgs, LzShuffle};
 use crate::sequence::{shuffle_copy_seeded, Sequence};
 
@@ -26,26 +26,9 @@ pub fn max_block_size(size: usize) -> usize {
     m
 }
 
-/// Conservative histogram ceiling: largest M with M * alphabet^M <= N.
-/// This is an occupancy heuristic, not an independent-sample guarantee.
-/// It depends on the alphabet cardinality, never the output logarithm base.
-/// At least one symbol is retained for nonempty input; empty input has no scales.
-fn reliable_block_size(n_symbols: usize, alphabet: u32) -> usize {
-    if n_symbols == 0 {
-        return 0;
-    }
-    let budget = n_symbols as f64;
-    let sigma = alphabet.max(2) as f64;
-    let mut size = 1usize;
-    while size < 64 && (size + 1) as f64 * sigma.powi(size as i32 + 1) <= budget {
-        size += 1;
-    }
-    size.min(n_symbols)
-}
-
 /// Legacy random-shuffle factor counts used by the shuffle-distance metrics.
 /// The auto-mode +10 is retained for compatibility with released 2.0.0.
-/// The finite-window EMC estimator below does not call this function.
+/// The predictive-state EMC estimator below does not call this function.
 pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize) {
     let mut mm: i64 = args.block_size as i64;
     if mm <= 0 {
@@ -77,54 +60,31 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
     (res, mm)
 }
 
-/// Empirical finite-window past/future mutual information.
-///
-/// The public name is retained for compatibility; this performs no shuffle.
-/// The total window length M is resolved from the alphabet-dependent occupancy
-/// ceiling, or the explicit block_size capped at the input length. The past
-/// contains floor(M/2) symbols and the future ceil(M/2). For a stationary source,
-/// their population mutual information is a lower approximation to excess
-/// entropy, approaching E as both windows grow. The empirical estimate has
-/// finite-sample bias and can miss memory beyond the chosen windows.
-///
-/// All scales use nested marginals of the same empirical maximum-window
-/// distribution. This supplies nonnegative, nondecreasing estimates directly,
-/// without rate subtraction, peak selection, or isotonic regression. See
-/// docs/emc-estimator.md for the target, sampling convention, and limitations.
+/// Estimate full excess entropy with independently evaluated bidirectional CSSR.
+/// The historical public name is retained; E estimation performs no shuffle.
+/// Unsupported, unstable, or unsynchronized fits have no numerical E value.
 pub fn lz76_random_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> LzShuffle {
     lz76_random_shuffle_complexity_with(seq, args, lz76_factorization(seq, args) as i32)
 }
 
-/// Same estimator, reusing a factor count only for the legacy
-/// multi_information diagnostic. The EMC value does not depend on that count.
+/// Reuse an LZ factor count only for the legacy multi_information diagnostic.
 pub fn lz76_random_shuffle_complexity_with(
     seq: &Sequence,
     args: &LzArgs,
     complexity: i32,
 ) -> LzShuffle {
-    let maximum = if args.block_size <= 0 {
-        reliable_block_size(seq.len(), args.resolved_alphabet(seq))
-    } else {
-        (args.block_size as usize).min(seq.len())
-    };
-    let ladder = mutual_information_ladder_bits(seq.as_bytes(), maximum);
+    let mut result = crate::excess_entropy::estimate(seq.as_bytes(), args);
     let bits_to_units = 2f64.ln() / (args.resolved_log_base(seq) as f64).ln();
-    let mut result = LzShuffle::new(
-        maximum as i32,
-        ladder[maximum] * bits_to_units,
-        symbol_entropy_bits(seq.as_bytes()) * bits_to_units
-            - entropy_density_from(complexity.max(0) as u32, seq, args),
-    );
-    if args.get_shuffle_terms {
-        result.summands = ladder
-            .windows(2)
-            .map(|pair| (pair[1] - pair[0]) * bits_to_units)
-            .collect();
+    result.emc_value = result.emc_value.map(|value| value * bits_to_units);
+    for term in &mut result.summands {
+        *term *= bits_to_units;
     }
+    result.multi_information = symbol_entropy_bits(seq.as_bytes()) * bits_to_units
+        - entropy_density_from(complexity.max(0) as u32, seq, args);
     result
 }
 
-/// Legacy paired-sequence entry point, using the same finite-window estimator.
+/// Legacy paired-sequence entry point, using the same predictive-state estimator.
 pub fn lz76_paired_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> LzShuffle {
     let mid = seq.len() / 2;
     let (past, future) = seq.split_at(mid);
@@ -172,71 +132,45 @@ mod tests {
     use super::*;
 
     #[test]
-    fn block_ceiling_tracks_the_alphabet() {
-        assert_eq!(reliable_block_size(1_000_000, 2), 15);
-        assert_eq!(reliable_block_size(1_000_000, 4), 8);
-        assert_eq!(reliable_block_size(1_000_000, 20), 4);
-        assert_eq!(reliable_block_size(0, 2), 0);
-        assert_eq!(reliable_block_size(1, 2), 1);
-        assert!((1..=64).contains(&reliable_block_size(usize::MAX, 2)));
-    }
-
-    #[test]
-    fn output_units_do_not_change_the_window_or_distribution() {
-        let seq = Sequence::from_bytes((0..100_000).map(|i| b'A' + ((i / 64) % 4) as u8).collect());
+    fn periodic_source_recovers_full_phase_and_units() {
+        let seq = Sequence::from_bytes(b"00010111".iter().copied().cycle().take(20_000).collect());
         let mut args = LzArgs::new();
         args.get_shuffle_terms = true;
         args.log_base = 2;
         let bits = lz76_random_shuffle_complexity(&seq, &args);
-        assert_eq!(bits.max_block_size, 6);
+        assert_eq!(bits.status, "estimated", "{:?}", bits.message);
+        assert!((bits.emc_value.unwrap() - 3.0).abs() < 1e-6);
+        assert_eq!(bits.summands.len(), 8);
+        assert!(bits.summands.iter().all(|&s| s >= 0.0));
+        assert!((bits.summands.iter().sum::<f64>() - bits.emc_value.unwrap()).abs() < 1e-12);
         for base in [4, 10] {
             args.log_base = base;
             let converted = lz76_random_shuffle_complexity(&seq, &args);
-            let scale = (base as f64).log2();
             assert_eq!(converted.max_block_size, bits.max_block_size);
-            assert!((converted.emc_value * scale - bits.emc_value).abs() < 1e-12);
-            for (a, b) in converted.summands.iter().zip(&bits.summands) {
-                assert!((a * scale - b).abs() < 1e-12);
-            }
+            assert!(
+                (converted.emc_value.unwrap() * (base as f64).log2() - bits.emc_value.unwrap())
+                    .abs()
+                    < 1e-12
+            );
         }
-        // Explicit alphabet changes the occupancy ceiling independently of units.
-        args.alphabet = 20;
-        assert_eq!(
-            lz76_random_shuffle_complexity(&seq, &args).max_block_size,
-            3
-        );
     }
 
     #[test]
-    fn emc_does_not_amplify_the_lz_rate_estimates_bias() {
+    fn insufficient_data_has_no_fabricated_zero() {
         let seq = Sequence::from_str("00110");
-        let mut args = LzArgs::new();
-        args.block_size = 2;
+        let args = LzArgs::new();
         let first = lz76_random_shuffle_complexity_with(&seq, &args, 1);
         let second = lz76_random_shuffle_complexity_with(&seq, &args, 100);
-        assert_eq!(first.emc_value, 0.0);
+        assert_eq!(first.status, "insufficient_data");
+        assert_eq!(first.emc_value, None);
         assert_eq!(first.emc_value, second.emc_value);
         assert_ne!(first.multi_information, second.multi_information);
     }
 
     #[test]
-    fn periodic_source_recovers_phase_and_increments_sum_to_value() {
-        let seq = Sequence::from_bytes(b"00010111".iter().copied().cycle().take(20_000).collect());
-        let mut args = LzArgs::new();
-        args.get_shuffle_terms = true;
-        let result = lz76_random_shuffle_complexity(&seq, &args);
-        assert_eq!(result.summands.len(), result.max_block_size as usize);
-        assert!((result.emc_value - 3.0).abs() < 1e-6);
-        assert_eq!(result.summands[0], 0.0);
-        assert!(result.summands.iter().all(|&s| s >= 0.0));
-        assert!((result.summands.iter().sum::<f64>() - result.emc_value).abs() < 1e-12);
-    }
-
-    #[test]
     fn repeatability_includes_thread_count() {
-        let seq = Sequence::from_str("aabcaabdaabcabcabdaabcd");
+        let seq = Sequence::from_bytes(b"001011".iter().copied().cycle().take(8192).collect());
         let mut args = LzArgs::new();
-        args.block_size = 6;
         args.get_shuffle_terms = true;
         let one = rayon::ThreadPoolBuilder::new()
             .num_threads(1)
@@ -247,29 +181,11 @@ mod tests {
             .build()
             .unwrap();
         let expected = one.install(|| lz76_random_shuffle_complexity(&seq, &args));
-        for _ in 0..20 {
+        for _ in 0..3 {
             let result = three.install(|| lz76_random_shuffle_complexity(&seq, &args));
-            assert_eq!(result.emc_value.to_bits(), expected.emc_value.to_bits());
+            assert_eq!(result.emc_value, expected.emc_value);
             assert_eq!(result.summands, expected.summands);
-            assert_eq!(
-                result.multi_information.to_bits(),
-                expected.multi_information.to_bits()
-            );
         }
-    }
-
-    #[test]
-    fn explicit_window_is_capped_at_input_length() {
-        let mut args = LzArgs::new();
-        args.block_size = 100;
-        args.get_shuffle_terms = true;
-        let result = lz76_random_shuffle_complexity(&Sequence::from_str("abcd"), &args);
-        assert_eq!(result.max_block_size, 4);
-        assert_eq!(result.emc_value, 0.0); // Only one sampled window.
-        let empty = lz76_random_shuffle_complexity(&Sequence::new(), &args);
-        assert_eq!(empty.max_block_size, 0);
-        assert_eq!(empty.emc_value, 0.0);
-        assert!(empty.summands.is_empty());
     }
 
     #[test]

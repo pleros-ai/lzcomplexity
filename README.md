@@ -2,7 +2,7 @@
   <h2>lzcomplexity</h2>
   <p><em>LZ76-based complexity analysis for symbolic sequences and time-series.</em></p>
 
-[![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT%20%2B%20BSD--3--Clause-blue)](#license)
 [![Python](https://img.shields.io/badge/Python-3.9+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![Rust](https://img.shields.io/badge/Rust-stable-DEA584.svg?style=flat&logo=rust&logoColor=white)](https://www.rust-lang.org)
 
@@ -14,7 +14,7 @@
 
 The entropy-rate estimate is `h = C(S)·log_b(n)/n`, with log base `b` controlling the units. The asymptotic LZ76 result for stationary ergodic finite-alphabet sources is stated as `limsup h_n = h_source` almost surely [2, 3]. This is not a finite-sample accuracy guarantee: estimates can be biased and can exceed the alphabet's maximum entropy.
 
-`emc` estimates the mutual information between adjacent past and future windows using their empirical joint distribution. It uses no random shuffling, Chao–Shen correction, or LZ entropy-rate subtraction. This finite-window target approaches excess entropy as the windows grow; its sample estimate can be biased, and limited windows can miss long memory. See [the estimator notes](docs/emc-estimator.md).
+`emc` estimates **excess entropy**, the mutual information between the infinite past and future, by reconstructing predictive and retrodictive causal states with CSSR and measuring their mutual information on held-out data. It uses no random shuffling, Chao–Shen correction, or LZ entropy-rate subtraction. This method assumes finite, synchronizable causal-state models in both directions; insufficient or unstable fits produce an explicit unresolved result. See [the estimator notes](docs/emc-estimator.md) for assumptions, diagnostics and migration details.
 
 The library ships **two things**:
 
@@ -71,13 +71,14 @@ complexity, factors = lz.factorization("banana")
 lz.h("01010101")
 # → 0.75
 
-# Excess-entropy estimate: the value and the increments that sum to it
-emc_value, summands = lz.emc("01001010101101010101110101010101010000100101011")
+# Excess entropy: use enough observations for state reconstruction.
+# Terms are per-forward-state contributions that sum to the estimate.
+emc_value, summands = lz.emc(b"01" * 4096, max_history=6, log_base=2)
 
 # Everything in one call (returns a dict)
 full = lz.lz76("ABRACADABRA")
 full["complexity"], full["h"], full["factors"]
-full["emc"]     # {"value", "summands", "max_block_size", "multi_information"}
+full["emc"]     # value is None when E cannot be resolved; h remains available
 full["extras"]  # {"rajski_distance", "redundancy", "fh_uncertainty", ...}
 
 # LZ76 phrase-count dissimilarity between two sequences
@@ -91,11 +92,13 @@ lz.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
 |---|---|---|
 | `lz.factorization(seq, ...)` | complexity + factor boundaries | `(int, list[int])` |
 | `lz.h(seq, ...)` | normalised entropy-rate estimate | `float` |
-| `lz.emc(seq, ...)` | finite-window excess-entropy estimate | `(float, list[float])` — `(value, summands)` |
+| `lz.emc(seq, ...)` | causal-state excess-entropy estimate | `(float, list[float])` — `(value, summands)`; raises `ValueError` if unresolved |
 | `lz.nid(seq1, seq2, ...)` | LZ76 phrase-count dissimilarity | `float` |
 | `lz.lz76(seq, ...)` | the full analysis | `dict` (see below) |
 
 `lz.lz76(...)` returns a dict with keys: `complexity`, `h`, `factors`, `emc` (a nested dict), `epsilon`, `factors_stddev`, `normal_error`, `poison_error`, `extras` (a nested dict).
+
+`lz76()["emc"]` includes a status, explanation and model diagnostics. Its `value` is `None` when the fit fails the data, model-stability or synchronization checks; the other LZ76 results remain available. A successful status is evidence from those checks, not a universal guarantee of source-model accuracy.
 
 `factors_stddev`, `normal_error`, and `poison_error` are legacy diagnostic formulas, not a standard deviation or calibrated uncertainty on `h`. The `extras` are phrase-count ratios, not Shannon mutual information or statistical correlation coefficients. Likewise, `nid` is a heuristic dissimilarity: self-distance can be nonzero and the triangle inequality can fail.
 
@@ -104,7 +107,8 @@ Common keyword arguments:
 - `partitions` (int, default 1) — reserved compatibility argument; currently ignored.
 - `alphabet` (int | None, default None) — auto-detect (distinct symbols, min 2) when None.
 - `log_base` (int | None, default None) — matches the effective alphabet when None; pass `2` for `h` in bits per byte and `emc` in bits.
-- `max_block_size` (int, default −1) — total past-plus-future window cap for `emc`/`lz76`; −1 auto-selects from length and alphabet, independently of the log base. Explicit caps are clipped to the sequence length.
+- `max_history` (int | None, default None) — maximum suffix-history depth (2–16) tested by CSSR in `emc`/`lz76`; `None` selects a data-dependent resource cap. This is a reconstruction parameter, not a cutoff on the inferred process memory.
+- `max_block_size` (int, default −1) — deprecated alias for a positive `max_history`. Supplying both with different positive values raises `ValueError`. Its meaning has changed from the released shuffle estimator.
 - `jobs` (int, default 0) — reserved; currently ignored (rayon manages its pool).
 
 Run `help(lzcomplexity.<name>)` for full per-function docs. Type stubs (`__init__.pyi`) ship with the package.
@@ -134,7 +138,7 @@ cargo build --release -p lzcomplexity-cli
 # → target/release/lzcomplexity   and   target/release/lzdistance
 ```
 
-Prebuilt binaries for Linux/macOS/Windows are attached to each [GitHub release](https://github.com/pleros-ai/lzcomplexity/releases).
+Prebuilt binaries for Linux/macOS/Windows are attached to each [GitHub release](https://github.com/pleros-ai/lzcomplexity/releases). Unzip the platform archive to obtain both executables and their license notices.
 
 ### `lzcomplexity`
 
@@ -281,4 +285,6 @@ The factorization convention descends from the C++ implementation. Entropy value
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Project code is MIT-licensed; the CSSR component includes BSD-3-Clause code
+from `sofic`. See [LICENSE](LICENSE) and the
+[third-party notice](crates/lzcomplexity-core/THIRD_PARTY_LICENSES/sofic-BSD-3-Clause.txt).

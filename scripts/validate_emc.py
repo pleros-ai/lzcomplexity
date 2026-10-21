@@ -1,28 +1,26 @@
 #!/usr/bin/env python3
-"""Reproduce finite-window EMC checks against sources with known entropies.
+"""Validate full excess entropy against independent, infinite-past/future truths.
 
-Install the current wheel first, then run, for example::
+Install the current wheel, then run::
 
-    python scripts/validate_emc.py --length 100000 --seeds 3
-    python scripts/validate_emc.py --length 20000 --seeds 1 --check
     python scripts/validate_emc.py --self-test
+    python scripts/validate_emc.py --length 100000 --seeds 1 --check --allow-unresolved "RRXOR fair"
+    python scripts/validate_emc.py --length 1000000 --seeds 3 --check --json
 
-Only the installed lzcomplexity extension and Python's standard library are
-needed. Every reported value is in bits. Seeds are the integers 0..seeds-1;
-Markov/HMM generators start in their stationary distribution. Periodic sources
-start at a uniformly drawn phase.
+Only the installed extension and Python's standard library are needed. All
+values use bits. Seeds are 0..seeds-1, and generators start stationary. Truths
+are population infinite-past/future E, never the information of a short window
+or the entropy C_mu of a predictive model's states. The separate finite-window
+oracle tests demonstrate why those substitutes are inadequate.
 
-The statistical target is I(past_a; future_b), a=floor(M/2), b=ceil(M/2), for
-the reported maximum joint-window length M. For a stationary process this is
-H(a)+H(b)-H(M). Its limit is excess entropy, but a small finite-window estimate
-need not approximate that limit. See Crutchfield and Feldman (2003),
-https://arxiv.org/abs/cond-mat/0102181 . The exact source calculations below are
-independent of the library's empirical histogram implementation.
-
-Plug-in mutual information has sampling bias, including a positive iid null.
-The --check tolerance is a reproducible smoke-test budget on the seed mean,
-not a confidence interval or a distribution-free accuracy guarantee. The script
-does not change or tune the estimator.
+The tolerance is a regression budget for each seed and its mean, not a confidence bound or
+an accuracy guarantee for arbitrary data. No source truth or source label is
+passed to the estimator. Unresolved fits must remain explicit; a finite-window
+fallback, missing status, NaN, or an unsupported fit is not a passing full-E
+result. Optional model settings can be supplied as JSON with --model-options.
+--allow-unresolved explicitly declares a known limitation; these cases are
+reported as unresolved, never as numerical accuracy passes. Any numeric value
+for an allowed source is still checked against its true E.
 """
 
 from __future__ import annotations
@@ -163,47 +161,97 @@ def periodic_truth(motif: bytes, width: int) -> tuple[float, float]:
     return finite_information(tuple(entropies), width), math.log2(period)
 
 
+ORDER2_PROBABILITIES = (0.1, 0.7, 0.4, 0.9)
+
+
+def order2_stationary() -> list[float]:
+    probabilities = [0.25] * 4
+    for _ in range(10_000):
+        following = [0.0] * 4
+        for state, p_one in enumerate(ORDER2_PROBABILITIES):
+            following[2 * (state % 2)] += probabilities[state] * (1.0 - p_one)
+            following[2 * (state % 2) + 1] += probabilities[state] * p_one
+        if max(abs(a - b) for a, b in zip(probabilities, following)) < 1e-15:
+            return following
+        probabilities = following
+    raise AssertionError("order-two stationary distribution did not converge")
+
+
+def order2_sequence(length: int, seed: int) -> bytes:
+    rng = random.Random(seed)
+    probabilities = order2_stationary()
+    residual = rng.random()
+    state = 0
+    while residual >= probabilities[state]:
+        residual -= probabilities[state]
+        state += 1
+    out = bytearray(length)
+    for i in range(length):
+        symbol = int(rng.random() < ORDER2_PROBABILITIES[state])
+        out[i] = 48 + symbol
+        state = 2 * (state % 2) + symbol
+    return bytes(out)
+
+
+def order2_excess_entropy() -> float:
+    probabilities = order2_stationary()
+    rate = math.fsum(p * binary_entropy(q) for p, q in zip(probabilities, ORDER2_PROBABILITIES))
+    # An order-R Markov source has E=H(R)-R*h; C_mu=H(R) here.
+    return entropy(probabilities) - 2.0 * rate
+
+
+def rrxor_sequence(length: int, seed: int) -> bytes:
+    """Stationary fair Random-Random-XOR triples, with a uniformly random phase.
+
+    Process definition: Riechers and Crutchfield (2018), Sec. VII,
+    https://arxiv.org/abs/1706.00883 . Both infinite halves identify the phase.
+    Conditional on it, a cut inside a triple shares one parity bit, while a
+    cut between triples shares none. Therefore E=log2(3)+2/3, not a short-window
+    approximation. This is derived independently of the fitted model.
+    """
+    rng = random.Random(seed)
+    phase = rng.randrange(3)
+    out = bytearray()
+    while len(out) < length + phase:
+        first, second = rng.randrange(2), rng.randrange(2)
+        out.extend((48 + first, 48 + second, 48 + (first ^ second)))
+    return bytes(out[phase : phase + length])
+
+
 @dataclass(frozen=True)
 class Source:
     name: str
     generate: Callable[[int, int], bytes]
-    truth: Callable[[int], tuple[float, float]]
+    infinite_excess_entropy: float
+    statistical_complexity: float | None = None
 
 
 def sources() -> list[Source]:
     result = []
     for p in (0.01, 0.1, 0.5):
+        result.append(Source(f"iid p={p:g}", lambda n, seed, p=p: iid_sequence(n, p, seed), 0.0))
+    for a, b in ((0.1, 0.4), (0.05, 0.05), (0.3, 0.4), (1.0, 0.5)):
         result.append(
             Source(
-                f"iid p={p:g}",
-                lambda n, seed, p=p: iid_sequence(n, p, seed),
-                lambda _width: (0.0, 0.0),
-            )
-        )
-    for a, b in ((0.1, 0.4), (0.05, 0.05), (0.3, 0.4)):
-        result.append(
-            Source(
-                f"Markov a={a:g},b={b:g}",
+                "golden mean" if a == 1.0 else f"Markov a={a:g},b={b:g}",
                 lambda n, seed, a=a, b=b: markov_sequence(n, a, b, seed),
-                lambda width, a=a, b=b: markov_truth(a, b, width),
+                markov_truth(a, b, 2)[1],
+                binary_entropy(a / (a + b)),
             )
         )
+    result.append(Source("order-2 Markov", order2_sequence, order2_excess_entropy(), entropy(order2_stationary())))
     for gamma in (0.1, 0.5, 0.9):
+        state_entropy = binary_entropy(gamma / (1.0 + gamma))
         result.append(
             Source(
                 f"even gamma={gamma:g}",
                 lambda n, seed, gamma=gamma: even_sequence(n, gamma, seed),
-                lambda width, gamma=gamma: even_truth(gamma, width),
+                state_entropy,
+                state_entropy,
             )
         )
-    motif = b"00010111"
-    result.append(
-        Source(
-            "period 8",
-            lambda n, seed: periodic_sequence(n, motif, seed),
-            lambda width: periodic_truth(motif, width),
-        )
-    )
+    result.append(Source("period 8", lambda n, seed: periodic_sequence(n, b"00010111", seed), 3.0, 3.0))
+    result.append(Source("RRXOR fair", rrxor_sequence, math.log2(3.0) + 2.0 / 3.0, math.log2(3.0) + 2.0 / 3.0))
     return result
 
 
@@ -256,86 +304,178 @@ class ExactSourceTests(unittest.TestCase):
         self.assertEqual(infinite, 4.0)
 
 
+    def test_golden_mean_does_not_substitute_state_entropy(self) -> None:
+        self.assertAlmostEqual(markov_truth(1.0, 0.5, 2)[1], 0.2516291673878229)
+        self.assertAlmostEqual(binary_entropy(2.0 / 3.0), 0.9182958340544896)
+
+    def test_order_two_markov_truth(self) -> None:
+        probabilities = order2_stationary()
+        self.assertAlmostEqual(math.fsum(probabilities), 1.0)
+        self.assertAlmostEqual(order2_excess_entropy(), 0.5029154036470376)
+        self.assertGreater(entropy(probabilities), order2_excess_entropy())
+
+    def test_rrxor_generator_and_truth(self) -> None:
+        self.assertAlmostEqual(math.log2(3.0) + 2.0 / 3.0, 2.2516291673878226)
+        # Five minimal predictive states: one boundary state and two states
+        # in each interior phase. Here C_mu equals E, unlike golden mean.
+        self.assertAlmostEqual(entropy([1.0 / 3.0] + [1.0 / 6.0] * 4), math.log2(3.0) + 2.0 / 3.0)
+        data = rrxor_sequence(30_000, 1)
+        self.assertTrue(any(
+            all((data[i] - 48) ^ (data[i + 1] - 48) == data[i + 2] - 48
+                for i in range(phase, len(data) - 2, 3))
+            for phase in range(3)
+        ))
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--length", type=int, default=100_000)
     parser.add_argument("--seeds", type=int, default=3, help="number of seeds, starting at 0")
-    parser.add_argument("--max-block-size", type=int, default=-1, help="total joint-window cap")
-    parser.add_argument("--check", action="store_true", help="enforce invariants and smoke budgets")
-    parser.add_argument("--tolerance", type=float, default=0.1, help="finite-target mean error budget, bits")
+    parser.add_argument("--model-options", default="{}", help="JSON keyword arguments for lz76")
+    parser.add_argument(
+        "--allow-unresolved", action="append", default=[], choices=[source.name for source in sources()],
+        help="declare one known unsupported source; repeat for additional sources",
+    )
+    parser.add_argument("--check", action="store_true", help="require an estimated full E and enforce error budgets")
+    parser.add_argument("--tolerance", type=float, default=0.05, help="per-seed and mean infinite-E error budget, bits")
     parser.add_argument("--json", action="store_true", help="emit settings and rows as JSON")
-    parser.add_argument("--self-test", action="store_true", help="test the exact source oracles only")
+    parser.add_argument("--self-test", action="store_true", help="test the independent source oracles")
     args = parser.parse_args(argv)
     if args.self_test:
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(ExactSourceTests)
         return 0 if unittest.TextTestRunner().run(suite).wasSuccessful() else 1
     if args.length < 2 or args.seeds < 1 or not math.isfinite(args.tolerance) or args.tolerance < 0:
         parser.error("length >= 2, seeds >= 1, and a finite nonnegative tolerance are required")
+    try:
+        options = json.loads(args.model_options)
+    except json.JSONDecodeError as exc:
+        parser.error(f"model-options must be JSON: {exc}")
+    if not isinstance(options, dict):
+        parser.error("model-options must be a JSON object")
+    options["log_base"] = 2
 
     import lzcomplexity as lz
 
     started = time.perf_counter()
     rows = []
     failures = []
+    allowed_unresolved = set(args.allow_unresolved)
     for source in sources():
         estimates = []
-        targets = []
-        widths = []
-        infinite = None
+        diagnostics = []
+        unresolved = []
         for seed in range(args.seeds):
-            data = source.generate(args.length, seed)
-            value, summands = lz.emc(data, log_base=2, max_block_size=args.max_block_size)
-            width = len(summands)
-            target, infinite = source.truth(width)
+            try:
+                result = lz.lz76(source.generate(args.length, seed), **options)["emc"]
+            except Exception as exc:
+                failures.append(f"{source.name}, seed={seed}: {type(exc).__name__}: {exc}")
+                continue
+            diagnostics.append(result)
+            status = result.get("status")
+            value = result.get("value")
+            if value is None:
+                message = result.get("message")
+                valid_failure = (status in ("unresolved", "insufficient_data")
+                                 and isinstance(message, str) and bool(message.strip()))
+                if status == "insufficient_data" and args.length >= 1024:
+                    valid_failure = False
+                unresolved.append({"seed": seed, "status": status, "message": message})
+                if not valid_failure:
+                    failures.append(f"{source.name}, seed={seed}: invalid unresolved status/message")
+                if source.name not in allowed_unresolved:
+                    failures.append(f"{source.name}, seed={seed}: unresolved, status={status!r}")
+                continue
+            if not math.isfinite(value) or value < 0:
+                failures.append(f"{source.name}, seed={seed}: invalid full-E value {value!r}")
+                continue
+            if args.check and status != "estimated":
+                failures.append(f"{source.name}, seed={seed}: full-E status is {status!r}, not estimated")
+            if status == "estimated":
+                detail = result.get("diagnostics")
+                required = {
+                    "forward_states", "reverse_states", "forward_history", "reverse_history",
+                    "forward_stable_depths", "reverse_stable_depths", "max_history", "predictive_horizon",
+                    "training_samples", "selection_samples", "evaluation_samples",
+                    "synchronized_samples", "synchronization_fraction",
+                }
+                if not isinstance(detail, dict) or not required.issubset(detail):
+                    failures.append(f"{source.name}, seed={seed}: missing model diagnostics")
+                else:
+                    state_count = min(detail["forward_states"], detail["reverse_states"])
+                    evaluation = detail["evaluation_samples"]
+                    # A segment of N symbols has N+1 past/future cuts.
+                    evaluation_cuts = evaluation + 1
+                    synchronized = detail["synchronized_samples"]
+                    fraction = detail["synchronization_fraction"]
+                    if state_count < 1 or value > math.log2(max(1, state_count)) + 1e-9:
+                        failures.append(f"{source.name}, seed={seed}: E exceeds the fitted state-information bound")
+                    if (not 0 < synchronized <= evaluation_cuts or not 0.99 <= fraction <= 1.0
+                            or not math.isclose(fraction, synchronized / evaluation_cuts, abs_tol=1e-12)):
+                        failures.append(f"{source.name}, seed={seed}: inconsistent synchronization diagnostics")
+                    if not (2 <= detail["max_history"] <= 16
+                            and 1 <= detail["predictive_horizon"] <= 3
+                            and 0 <= detail["forward_history"] <= detail["max_history"]
+                            and 0 <= detail["reverse_history"] <= detail["max_history"]):
+                        failures.append(f"{source.name}, seed={seed}: invalid history diagnostics")
+            method = str(result.get("method", ""))
+            if "finite" in method.lower() or "shuffle" in method.lower():
+                failures.append(f"{source.name}, seed={seed}: {method!r} is a surrogate target")
+            summands = result.get("summands", [])
+            if any(not math.isfinite(term) or term < 0 for term in summands):
+                failures.append(f"{source.name}, seed={seed}: invalid increment")
+            if summands and not math.isclose(math.fsum(summands), value, rel_tol=1e-10, abs_tol=1e-10):
+                failures.append(f"{source.name}, seed={seed}: increments do not sum to E")
+            if args.check and abs(value - source.infinite_excess_entropy) > args.tolerance:
+                failures.append(f"{source.name}, seed={seed}: numeric result has infinite-E error {value - source.infinite_excess_entropy:+.6f} bits")
             estimates.append(value)
-            targets.append(target)
-            widths.append(width)
-            if not math.isfinite(value) or value < 0 or any(not math.isfinite(s) or s < 0 for s in summands):
-                failures.append(f"{source.name}, seed={seed}: invalid value or increment")
-            if not math.isclose(math.fsum(summands), value, rel_tol=1e-11, abs_tol=1e-11):
-                failures.append(f"{source.name}, seed={seed}: increments do not sum to value")
-        mean = statistics.mean(estimates)
-        target = statistics.mean(targets)
-        error = mean - target
-        if args.check and abs(error) > args.tolerance:
-            failures.append(f"{source.name}: mean finite-target error {error:+.6f} exceeds {args.tolerance:g} bits")
-        rows.append(
-            {
-                "source": source.name,
-                "joint_window_lengths": widths,
-                "estimate_mean_bits": mean,
-                "estimate_sd_bits": statistics.stdev(estimates) if len(estimates) > 1 else 0.0,
-                "exact_finite_target_mean_bits": target,
-                "infinite_excess_entropy_bits": infinite,
-                "mean_error_bits": error,
-                "estimates_bits": estimates,
-            }
-        )
+        mean = statistics.mean(estimates) if estimates else None
+        error = mean - source.infinite_excess_entropy if mean is not None else None
+        if args.check and error is not None and abs(error) > args.tolerance:
+            failures.append(f"{source.name}: mean infinite-E error {error:+.6f} exceeds {args.tolerance:g} bits")
+        rows.append({
+            "source": source.name,
+            "estimate_mean_bits": mean,
+            "estimate_sd_bits": statistics.stdev(estimates) if len(estimates) > 1 else 0.0,
+            "infinite_excess_entropy_bits": source.infinite_excess_entropy,
+            "statistical_complexity_bits": source.statistical_complexity,
+            "mean_error_bits": error,
+            "max_absolute_error_bits": max((abs(value - source.infinite_excess_entropy) for value in estimates), default=None),
+            "estimates_bits": estimates,
+            "estimated_count": len(estimates),
+            "unresolved_count": len(unresolved),
+            "unresolved": unresolved,
+            "declared_limitation": source.name in allowed_unresolved,
+            "accuracy_status": "not_evaluated_unresolved" if not estimates else ("partial_estimates" if unresolved else "evaluated"),
+            "diagnostics": diagnostics,
+        })
     settings = {
-        "package_version": lz.__version__,
-        "length": args.length,
-        "seeds": list(range(args.seeds)),
-        "log_base": 2,
-        "max_block_size_argument": args.max_block_size,
+        "package_version": lz.__version__, "length": args.length,
+        "seeds": list(range(args.seeds)), "model_options": options,
         "elapsed_seconds": time.perf_counter() - started,
         "check_tolerance_bits": args.tolerance if args.check else None,
+        "allowed_unresolved_sources": args.allow_unresolved,
+    }
+    summary = {
+        "fully_estimated_sources": sum(row["estimated_count"] == args.seeds for row in rows),
+        "source_count": len(rows),
+        "unresolved_evaluations": sum(row["unresolved_count"] for row in rows),
     }
     if args.json:
-        print(json.dumps({"settings": settings, "rows": rows, "failures": failures}, indent=2))
+        print(json.dumps({"settings": settings, "summary": summary, "rows": rows, "failures": failures}, indent=2))
     else:
         print(f"lzcomplexity {lz.__version__}; N={args.length}; seeds=0..{args.seeds - 1}; log_base=2")
-        print("source                  M    estimate      finite E_M   infinite E   error       seed sd")
+        print("source                    estimate    infinite E     error       seed sd")
         for row in rows:
-            width = ",".join(map(str, sorted(set(row["joint_window_lengths"]))))
-            print(
-                f"{row['source']:<23} {width:>3}  {row['estimate_mean_bits']:10.6f}"
-                f"  {row['exact_finite_target_mean_bits']:10.6f}"
-                f"  {row['infinite_excess_entropy_bits']:10.6f}"
-                f"  {row['mean_error_bits']:+10.6f}  {row['estimate_sd_bits']:9.6f}"
-            )
+            if row["estimate_mean_bits"] is None:
+                print(f"{row['source']:<25} UNRESOLVED {row['unresolved_count']}/{args.seeds}; no accuracy pass")
+            else:
+                print(f"{row['source']:<25} {row['estimate_mean_bits']:10.6f}"
+                      f"  {row['infinite_excess_entropy_bits']:10.6f}"
+                      f"  {row['mean_error_bits']:+10.6f}  {row['estimate_sd_bits']:9.6f}")
+        print(f"Fully estimated sources: {summary['fully_estimated_sources']}/{summary['source_count']}; unresolved evaluations: {summary['unresolved_evaluations']}.")
         print(f"Elapsed: {settings['elapsed_seconds']:.2f}s. Seed sd is descriptive, not a confidence interval.")
         if args.check:
-            print(f"Finite-target mean error smoke budget: {args.tolerance:g} bits; not an accuracy guarantee.")
+            print(f"Per-seed and mean infinite-E regression budget: {args.tolerance:g} bits; not an accuracy guarantee.")
     for failure in failures:
         print(f"FAIL: {failure}", file=sys.stderr)
     return 1 if failures else 0

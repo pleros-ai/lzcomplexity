@@ -11,6 +11,7 @@ use crate::NO_ALPHABET;
 #[derive(Clone, Debug)]
 pub struct LzArgs {
     pub chunks: i32,
+    /// Maximum predictive-state reconstruction history (2..=16); <=0 is auto.
     pub max_context: i32,
     pub block_size: i32,
     pub get_shuffle_terms: bool,
@@ -74,29 +75,64 @@ pub struct Lz76Result {
     pub lzf: Vec<u32>,
 }
 
-/// Mirror of `LZ_Shuffle`.
+/// Diagnostics for bidirectional predictive-state excess-entropy inference.
+#[derive(Clone, Debug, Default)]
+pub struct EmcDiagnostics {
+    pub forward_states: usize,
+    pub reverse_states: usize,
+    pub forward_history: usize,
+    pub reverse_history: usize,
+    pub forward_stable_depths: usize,
+    pub reverse_stable_depths: usize,
+    pub max_history: usize,
+    /// Future word length used to distinguish predictive state distributions.
+    pub predictive_horizon: usize,
+    pub training_samples: usize,
+    pub selection_samples: usize,
+    /// Number of symbols in the evaluation segment (there are N+1 cuts).
+    pub evaluation_samples: usize,
+    pub synchronized_samples: usize,
+    pub synchronization_fraction: f64,
+}
+
+/// Excess-entropy result. Historical type/field names remain for compatibility.
 #[derive(Clone, Debug)]
 pub struct LzShuffle {
     pub max_block_size: i32,
-    pub emc_value: f64,
+    /// No numerical estimate is returned when inference is unresolved.
+    pub emc_value: Option<f64>,
     pub multi_information: f64,
     pub summands: Vec<f64>,
+    pub status: &'static str,
+    pub message: Option<String>,
+    pub diagnostics: Option<EmcDiagnostics>,
 }
 
 impl LzShuffle {
     pub fn new(max_block_size: i32, emc_value: f64, multi_information: f64) -> Self {
         Self {
             max_block_size,
-            emc_value,
+            emc_value: Some(emc_value),
             multi_information,
             summands: Vec::new(),
+            status: "estimated",
+            message: None,
+            diagnostics: None,
         }
     }
 }
 
 impl Default for LzShuffle {
     fn default() -> Self {
-        Self::new(-1, 0.0, 0.0)
+        Self {
+            max_block_size: -1,
+            emc_value: None,
+            multi_information: 0.0,
+            summands: Vec::new(),
+            status: "not_computed",
+            message: None,
+            diagnostics: None,
+        }
     }
 }
 

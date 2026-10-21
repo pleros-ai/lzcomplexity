@@ -4,7 +4,7 @@ Top-level functions
 -------------------
 - ``factorization`` — complexity (factor count) and factor boundary list.
 - ``h`` — normalized entropy density (entropy-rate estimator).
-- ``emc`` — finite-window excess-entropy estimate and its scale increments.
+- ``emc`` — causal-state excess-entropy estimate and state contributions.
 - ``nid`` — LZ76 phrase-count dissimilarity between two sequences.
 - ``lz76`` — the full analysis, returned as a dict with everything.
 
@@ -14,9 +14,12 @@ Generators and iterators are not accepted. Integer elements' decimal
 representations are concatenated: ``[0, 1, 10]`` becomes ``"0110"``.
 Prefer ``bytes`` for one symbol per category; strings use UTF-8 bytes.
 
-``emc`` uses empirical mutual information between adjacent windows, without
-random shuffling. Its finite-window target approaches excess entropy for a
-stationary source, but sample estimates can be biased and miss long memory.
+``emc`` reconstructs forward and reverse causal-state models with CSSR and
+measures their mutual information on held-out data, without random shuffling.
+It assumes finite, synchronizable state models in both directions. Unresolved
+fits raise ``ValueError``; ``lz76`` retains the other results and reports
+``emc["value"] = None`` with a status and diagnostics. A successful fit does
+not certify those source assumptions or provide a confidence interval.
 
 Use ``help(lzcomplexity.<name>)`` on any of the names above for full
 parameter docs.

@@ -10,7 +10,7 @@ members = [
 version = "2.0.0" # x-release-please-version
 edition = "2021"
 rust-version = "1.85"
-license = "MIT"
+license = "MIT AND BSD-3-Clause"
 authors = [
     "Efrén Aragón Pérez <efrenaragon96@gmail.com>",
     "Daniel Estévez Moya <kemossabee@gmail.com>",

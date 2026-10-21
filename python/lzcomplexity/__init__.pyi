@@ -59,18 +59,20 @@ def emc(
     log_base: int | None = None,
     max_block_size: int = -1,
     jobs: int = 0,
+    max_history: int | None = None,
 ) -> Tuple[float, List[float]]:
-    """Empirical mutual information between adjacent past and future windows.
+    """Estimate full excess entropy by bidirectional causal-state inference.
 
-    ``max_block_size`` caps their combined length, not each side separately.
-    The past has floor(m/2) symbols and the future ceil(m/2) at scale m.
-    Nested windows at all scales use the same observation starts and boundary.
-    Returns ``(value, increments)``; non-negative increments sum to the value.
-    ``log_base=2`` gives bits. No shuffling or LZ-rate subtraction is used.
+    CSSR reconstructs finite, synchronizable predictive and retrodictive models.
+    Their state mutual information is measured on held-out data. The returned
+    non-negative terms are per-forward-state KL contributions, summing to E.
+    ``log_base=2`` gives bits. No shuffle or LZ-rate subtraction is used.
 
-    The population target approaches excess entropy for stationary sources;
-    finite windows can miss memory and sample estimates can be biased upward.
-    Compare matched lengths, caps, alphabets and estimator versions.
+    ``max_history`` caps reconstruction suffix depth, not process memory.
+    A positive legacy ``max_block_size`` is a deprecated alias; conflicting
+    caps raise ``ValueError``. Insufficient data or unstable/unsupported fits
+    also raise ``ValueError``. A successful fit is conditional on the model
+    assumptions and is not a calibrated confidence statement.
     """
     ...
 
@@ -97,16 +99,19 @@ def lz76(
     log_base: int | None = None,
     max_block_size: int = -1,
     jobs: int = 0,
+    max_history: int | None = None,
 ) -> Dict[str, Any]:
     """Full LZ76 analysis, returned as a dict.
 
     Keys: ``complexity``, ``h``, ``factors``, ``emc`` (a dict of
-    ``value``/``summands``/``max_block_size``/``multi_information``),
+    ``value``/``summands``/``status`` plus model diagnostics),
     ``epsilon``, ``factors_stddev``, ``normal_error``, ``poison_error``,
     ``extras`` (a dict). The dispersion/error fields are legacy diagnostics,
     not calibrated statistical uncertainty. ``extras`` are phrase-count ratios.
     ``emc.multi_information`` is the separate legacy ``H_plugin(1)-h_LZ``
-    contrast, not the finite-window mutual information estimate.
+    contrast and does not enter E. Unresolved E has ``value=None``; the
+    factorization and entropy-rate results remain available. ``max_history``
+    caps CSSR reconstruction; ``max_block_size`` is its deprecated alias.
     See ``help(lzcomplexity.lz76)`` for details.
     """
     ...

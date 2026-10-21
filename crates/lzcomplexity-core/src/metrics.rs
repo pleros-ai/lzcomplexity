@@ -99,7 +99,7 @@ pub fn lz76_extras_with(seq: &Sequence, args: &LzArgs, c_lz: f64) -> LzExtra {
 /// `lz76(seq, args)` — the complete analysis.
 pub fn lz76(seq: &Sequence, args: &LzArgs) -> LempelZiv {
     // Factorize the full sequence ONCE; reuse the count for entropy, the
-    // random-shuffle stage, and the extras instead of re-factorizing 3 more times.
+    // legacy multi-information diagnostic and extras without re-factorizing.
     let res = lz76_factors(seq, args);
     let factorization = res.factorization;
     let entropy = if seq.len() <= 1 {

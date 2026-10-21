@@ -1,9 +1,8 @@
 //! `lzcomplexity` — standalone LZ76 complexity engine.
 //!
-//! A Rust port of the C++ `standalone/lzcomplexity.cpp`. Reads a sequence file
-//! (auto-detecting the format), computes LZ76 complexity, entropy density and
-//! random-shuffle effective measure complexity, and writes a JSON report whose
-//! schema matches the C++ tool's `save_data`.
+//! Reads symbolic input and reports LZ76 complexity, entropy-rate estimates,
+//! and bidirectional CSSR excess entropy. Historical JSON field names remain;
+//! unavailable estimates are null with a status, message, and diagnostics.
 
 use std::process::ExitCode;
 
@@ -35,8 +34,8 @@ struct Cli {
     #[arg(short = 'd', long = "dlz", default_value_t = false)]
     dlz: bool,
 
-    /// Random-shuffle options `v1:f:v2:v3` (block size, summand factors, line range).
-    #[arg(short = 'e', long = "rsemc-opt", value_name = "opts", num_args = 0..=1, default_missing_value = "a")]
+    /// CSSR history cap and state contributions: `history:f` (2..=16, or `a` for auto).
+    #[arg(short = 'e', long = "rsemc-opt", value_name = "opts", num_args = 0..=1, default_missing_value = "a", value_parser = validate_rsemc_options)]
     rsemc_opt: Option<String>,
 
     /// Save the factorization to this file.
@@ -114,8 +113,21 @@ fn parse_alphabet(s: &Option<String>) -> u32 {
     }
 }
 
-/// Parse `-e v1:f:v2:v3` — v1 is the max block size (or `a` = auto = 0), `f`
-/// requests the summand terms. Mirrors `parseExcessOptions`.
+fn validate_rsemc_options(opt: &str) -> Result<String, String> {
+    let first = opt.split(':').next().unwrap_or_default();
+    if !matches!(first, "" | "a" | "f") {
+        let history = first.parse::<i32>().map_err(|_| {
+            "history cap must be an integer between 2 and 16, or a for auto".to_string()
+        })?;
+        if history > 0 && !(2..=16).contains(&history) {
+            return Err("positive history cap must be between 2 and 16".into());
+        }
+    }
+    Ok(opt.to_string())
+}
+
+/// Parse `-e history:f`: `a` selects auto history and `f` emits forward-state
+/// information contributions. Legacy trailing range fields are ignored.
 fn apply_rsemc(args: &mut core::lz76::LzArgs, opt: &str) {
     let parts: Vec<&str> = opt.split(':').collect();
     if parts.is_empty() || parts[0].is_empty() {
@@ -223,19 +235,42 @@ fn run(opt: &Options) -> std::io::Result<()> {
         entry.insert("lz76Complexity".into(), json!(res.factorization));
         entry.insert("lz76EntropyDensity".into(), json!(entropy));
 
-        // The C++ `save_data` always writes the random-shuffle object. In
-        // entropy-only (-n) mode the shuffle stage is skipped, so it emits the
-        // default-constructed values (-1 / 0.0 / 0.0, summands omitted).
+        // Preserve the legacy object key, with explicit availability/status.
         let mut rsc_map = Map::new();
         if opt.entropy_only {
-            rsc_map.insert("value".into(), json!(0.0));
+            rsc_map.insert("value".into(), Value::Null);
             rsc_map.insert("max_block_size".into(), json!(-1));
             rsc_map.insert("multi_information".into(), json!(0.0));
+            rsc_map.insert("status".into(), json!("not_computed"));
+            rsc_map.insert("message".into(), Value::Null);
+            rsc_map.insert("method".into(), json!("bidirectional_cssr"));
+            rsc_map.insert("diagnostics".into(), Value::Null);
         } else {
             let rsc = core::shuffle::lz76_random_shuffle_complexity(seq, &opt.args);
             rsc_map.insert("value".into(), json!(rsc.emc_value));
             rsc_map.insert("max_block_size".into(), json!(rsc.max_block_size));
             rsc_map.insert("multi_information".into(), json!(rsc.multi_information));
+            rsc_map.insert("status".into(), json!(rsc.status));
+            rsc_map.insert("message".into(), json!(rsc.message));
+            rsc_map.insert("method".into(), json!("bidirectional_cssr"));
+            let diagnostics = rsc.diagnostics.as_ref().map(|detail| {
+                json!({
+                    "forward_states": detail.forward_states,
+                    "reverse_states": detail.reverse_states,
+                    "forward_history": detail.forward_history,
+                    "reverse_history": detail.reverse_history,
+                    "forward_stable_depths": detail.forward_stable_depths,
+                    "reverse_stable_depths": detail.reverse_stable_depths,
+                    "max_history": detail.max_history,
+                    "predictive_horizon": detail.predictive_horizon,
+                    "training_samples": detail.training_samples,
+                    "selection_samples": detail.selection_samples,
+                    "evaluation_samples": detail.evaluation_samples,
+                    "synchronized_samples": detail.synchronized_samples,
+                    "synchronization_fraction": detail.synchronization_fraction,
+                })
+            });
+            rsc_map.insert("diagnostics".into(), diagnostics.unwrap_or(Value::Null));
             if !rsc.summands.is_empty() {
                 rsc_map.insert("summands".into(), json!(rsc.summands));
             }
@@ -353,6 +388,16 @@ mod tests {
     use super::*;
 
     #[test]
+    fn cli_rejects_invalid_history_caps() {
+        for options in ["1", "17", "64:f", "garbage"] {
+            assert!(Cli::try_parse_from(["lzcomplexity", "input.txt", "-e", options]).is_err());
+        }
+        for options in ["a:f", "6:f", "16", "0"] {
+            assert!(Cli::try_parse_from(["lzcomplexity", "input.txt", "-e", options]).is_ok());
+        }
+    }
+
+    #[test]
     fn cli_report_honors_log_base_and_alphabet_defaults() {
         let unique = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -387,6 +432,9 @@ mod tests {
                 .as_f64()
                 .unwrap();
             assert!((h - expected).abs() < 1e-12, "{log_base:?}: {h}");
+            let emc = &report["sequences"][0]["lz76RandomShuffleComplexity"];
+            assert!(emc["value"].is_null());
+            assert_eq!(emc["status"], "not_computed");
         }
         std::fs::remove_dir_all(dir).unwrap();
     }

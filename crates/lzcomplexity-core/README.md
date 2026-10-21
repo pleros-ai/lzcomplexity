@@ -2,7 +2,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/lzcomplexity-core.svg)](https://crates.io/crates/lzcomplexity-core)
 [![docs.rs](https://docs.rs/lzcomplexity-core/badge.svg)](https://docs.rs/lzcomplexity-core)
-[![MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT%20%2B%20BSD--3--Clause-blue)](#license)
 
 The algorithmic core of [`lzcomplexity`](https://github.com/pleros-ai/lzcomplexity) —
 information-theoretic complexity measures for symbolic sequences, based on
@@ -24,11 +24,13 @@ standalone binaries, and can be used directly as a Rust library.
   finite-alphabet sources is stated as `limsup h_n = h_source` almost surely
   [2, 3]. The log base `b` determines the units; this relation supplies no
   finite-sample accuracy guarantee.
-- **Effective measure complexity (EMC)** — an excess-entropy estimate from
-  empirical mutual information between adjacent past and future windows,
-  without shuffling, Chao–Shen correction, or LZ-rate subtraction. This branch
-  changes the estimator from released 2.0.0; see the
-  [estimator notes](../../docs/emc-estimator.md).
+- **Effective measure complexity (EMC)** — excess entropy estimated by
+  bidirectional causal-state reconstruction (CSSR), with the mutual
+  information of inferred forward/reverse states measured on held-out data.
+  It uses no shuffling, Chao–Shen correction, or LZ-rate subtraction. The
+  method assumes finite, synchronizable state models in both directions;
+  failed checks return an explicit unresolved status. This changes the
+  released 2.0.0 estimator; see the [estimator notes](../../docs/emc-estimator.md).
 - **Normalized information distance (NID)** — an LZ76-based distance between two
   sequences, implemented as a heuristic phrase-count ratio. Self-distance can
   be nonzero and the triangle inequality can fail.
@@ -80,11 +82,13 @@ releases. Match their version to the crate or source revision being used.
 - `factors_stddev`, `lz_normal_errors`, and `lz_poison_errors` are legacy
   diagnostics, not calibrated statistical uncertainty. The `LzExtra` fields
   are phrase-count ratios rather than Shannon information measures.
-- The E estimate uses balanced windows whose combined length is capped by
-  `LzArgs::block_size`. Auto mode uses length and effective alphabet size,
-  independently of the log base. The population finite-window quantity is a
-  lower bound on excess entropy; the empirical estimate need not be. Match
-  lengths, alphabet, window cap and estimator version when comparing results.
+- `LzArgs::max_context` caps CSSR history depth. A positive `block_size` is a
+  deprecated alias for this cap on the E path; shuffle-distance metrics keep
+  their separate block-size meaning. A finite reconstruction depth can infer
+  a model with arbitrarily long observable memory. It can also miss states
+  requiring longer distinguishing suffixes. Check the status and diagnostics;
+  a successful estimate is conditional on the model assumptions, not a
+  universal accuracy certificate. E is not replaced by state entropy `C_mu`.
 
 ## References
 
@@ -105,4 +109,6 @@ releases. Match their version to the crate or source revision being used.
 
 ## License
 
-MIT — see [LICENSE](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/LICENSE).
+Project code is MIT-licensed; the CSSR component includes BSD-3-Clause code
+from `sofic`. See the project [LICENSE](../../LICENSE) and
+[third-party notice](THIRD_PARTY_LICENSES/sofic-BSD-3-Clause.txt).
