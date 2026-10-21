@@ -15,6 +15,7 @@ on:
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
+      - ".github/workflows/docs.yml"
       - "docs/**"
       - "mkdocs.yml"
       - "requirements-docs.txt"
@@ -32,6 +33,8 @@ concurrency:
 jobs:
   build:
     name: Build site
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
