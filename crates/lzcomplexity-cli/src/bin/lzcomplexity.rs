@@ -186,23 +186,10 @@ fn build_options(cli: &Cli) -> Options {
     }
 }
 
-/// Standalone entropy density — the C++ batch `lz76EntropyDensity(flags, lz)`
-/// computes `c * log_alphabet(n) / n`, where the log base cancels out (so the
-/// `-l` flag does not affect it). `alphabet` is the explicit `-a` value or the
-/// sequence's distinct-symbol count (min 2), matching the batch path.
+/// Use the core entropy estimator so `-a` and `-l` have the same meaning in
+/// Python, Rust, and the standalone report.
 fn standalone_entropy(seq: &core::Sequence, complexity: u32, args: &core::lz76::LzArgs) -> f64 {
-    let n = seq.len() as f64;
-    if n <= 1.0 {
-        return 0.0;
-    }
-    let alphabet = if args.alphabet == core::NO_ALPHABET {
-        seq.alphabet_size()
-    } else {
-        args.alphabet
-    }
-    .max(2) as f64;
-    // c / (n / log_alphabet(n)) = c * ln(n) / (n * ln(alphabet))
-    complexity as f64 * n.ln() / (n * alphabet.ln())
+    core::lz76::entropy_density_from(complexity, seq, args)
 }
 
 fn info(verbose: bool, msg: &str) {
@@ -358,5 +345,49 @@ fn main() -> ExitCode {
             eprintln!("{}", term::print_msg(term::Msg::Error, &e.to_string()));
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cli_report_honors_log_base_and_alphabet_defaults() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "lzcomplexity-units-{}-{unique}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("sequence.txt");
+        let output = dir.join("report.json");
+        std::fs::write(&input, "01010101\n").unwrap();
+
+        for (log_base, expected) in [(None, 0.375), (Some("2"), 0.75), (Some("4"), 0.375)] {
+            let mut argv = vec![
+                "lzcomplexity".to_string(),
+                input.to_string_lossy().into_owned(),
+                "-a".into(),
+                "4".into(),
+                "-n".into(),
+                "-o".into(),
+                output.to_string_lossy().into_owned(),
+            ];
+            if let Some(base) = log_base {
+                argv.extend(["-l".into(), base.into()]);
+            }
+            let cli = Cli::try_parse_from(argv).unwrap();
+            run(&build_options(&cli)).unwrap();
+            let report: Value = serde_json::from_slice(&std::fs::read(&output).unwrap()).unwrap();
+            let h = report["sequences"][0]["lz76EntropyDensity"]
+                .as_f64()
+                .unwrap();
+            assert!((h - expected).abs() < 1e-12, "{log_base:?}: {h}");
+        }
+        std::fs::remove_dir_all(dir).unwrap();
     }
 }

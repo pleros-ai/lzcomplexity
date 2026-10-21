@@ -6,10 +6,10 @@ editors and type-checkers (mypy, pyright, ruff) can show signatures and
 docstrings without loading the compiled extension.
 """
 
-from typing import Any, Dict, Iterable, List, Tuple, Union
+from typing import Any, Dict, List, Sequence, Tuple, Union
 
 # A sequence-like input accepted by every `lz76*` function.
-SeqLike = Union[str, bytes, List[int], List[str], Iterable[int]]
+SeqLike = Union[str, bytes, List[str], Sequence[int]]
 
 __version__: str
 
@@ -29,7 +29,11 @@ def factorization(
     log_base: int | None = None,
     jobs: int = 0,
 ) -> Tuple[int, List[int]]:
-    """Return ``(complexity, factor_boundary_indices)`` for ``seq``."""
+    """Return the complete-factor count and byte boundaries.
+
+    A trailing copied suffix with no additional symbol is excluded from the count.
+    The final boundary may be one past the byte length.
+    """
     ...
 
 
@@ -40,7 +44,11 @@ def h(
     log_base: int | None = None,
     jobs: int = 0,
 ) -> float:
-    """Return the LZ76-based normalized entropy density (entropy rate) of ``seq``."""
+    """LZ76 entropy-rate estimate for stationary ergodic finite-alphabet sources.
+
+    ``log_base=2`` gives bits per byte; finite-sample estimates can be biased.
+    ``partitions`` and ``jobs`` are currently ignored.
+    """
     ...
 
 
@@ -52,14 +60,17 @@ def emc(
     max_block_size: int = -1,
     jobs: int = 0,
 ) -> Tuple[float, List[float]]:
-    """Effective measure complexity via random block shuffling.
+    """Empirical mutual information between adjacent past and future windows.
 
-    Returns ``(emc_value, summands)``. Both the value and every summand are
-    non-negative, and the summands sum to the value; ``summands[l-1]``
-    estimates the scale-``l`` conditional-entropy excess ``h(l) - h``.
+    ``max_block_size`` caps their combined length, not each side separately.
+    The past has floor(m/2) symbols and the future ceil(m/2) at scale m.
+    Nested windows at all scales use the same observation starts and boundary.
+    Returns ``(value, increments)``; non-negative increments sum to the value.
+    ``log_base=2`` gives bits. No shuffling or LZ-rate subtraction is used.
 
-    Read the value as an ordinal index at fixed sequence length, not as a bit
-    count, and never compare it across lengths.
+    The population target approaches excess entropy for stationary sources;
+    finite windows can miss memory and sample estimates can be biased upward.
+    Compare matched lengths, caps, alphabets and estimator versions.
     """
     ...
 
@@ -72,7 +83,10 @@ def nid(
     log_base: int | None = None,
     jobs: int = 0,
 ) -> float:
-    """Normalized information distance (NID) between ``seq1`` and ``seq2``."""
+    """Heuristic LZ76 phrase-count dissimilarity between two sequences.
+
+    Self-distance can be nonzero and the triangle inequality can fail.
+    """
     ...
 
 
@@ -89,6 +103,10 @@ def lz76(
     Keys: ``complexity``, ``h``, ``factors``, ``emc`` (a dict of
     ``value``/``summands``/``max_block_size``/``multi_information``),
     ``epsilon``, ``factors_stddev``, ``normal_error``, ``poison_error``,
-    ``extras`` (a dict). See ``help(lzcomplexity.lz76)`` for details.
+    ``extras`` (a dict). The dispersion/error fields are legacy diagnostics,
+    not calibrated statistical uncertainty. ``extras`` are phrase-count ratios.
+    ``emc.multi_information`` is the separate legacy ``H_plugin(1)-h_LZ``
+    contrast, not the finite-window mutual information estimate.
+    See ``help(lzcomplexity.lz76)`` for details.
     """
     ...

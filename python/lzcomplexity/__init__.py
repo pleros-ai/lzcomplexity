@@ -4,14 +4,19 @@ Top-level functions
 -------------------
 - ``factorization`` — complexity (factor count) and factor boundary list.
 - ``h`` — normalized entropy density (entropy-rate estimator).
-- ``emc`` — effective measure complexity (value and its summand terms).
-- ``nid`` — normalized information distance between two sequences.
+- ``emc`` — finite-window excess-entropy estimate and its scale increments.
+- ``nid`` — LZ76 phrase-count dissimilarity between two sequences.
 - ``lz76`` — the full analysis, returned as a dict with everything.
 
-All sequence-accepting functions accept ``str``, ``bytes``, ``list[int]``,
-``list[str]``, or any iterable of ints (e.g. NumPy arrays). For
-``list[int]``, each element's decimal representation is concatenated:
-``[0, 1, 10]`` becomes the symbolic string ``"0110"``.
+All sequence-accepting functions accept ``str``, ``bytes``, ``list[str]``,
+and integer sequences (e.g. lists, tuples, or one-dimensional NumPy arrays).
+Generators and iterators are not accepted. Integer elements' decimal
+representations are concatenated: ``[0, 1, 10]`` becomes ``"0110"``.
+Prefer ``bytes`` for one symbol per category; strings use UTF-8 bytes.
+
+``emc`` uses empirical mutual information between adjacent windows, without
+random shuffling. Its finite-window target approaches excess entropy for a
+stationary source, but sample estimates can be biased and miss long memory.
 
 Use ``help(lzcomplexity.<name>)`` on any of the names above for full
 parameter docs.

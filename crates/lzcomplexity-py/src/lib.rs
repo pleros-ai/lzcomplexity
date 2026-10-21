@@ -76,25 +76,28 @@ fn build_args(
 
 /// Compute the LZ76 factorization of a sequence.
 ///
-/// Returns a tuple ``(complexity, factors)`` where ``complexity`` is the
-/// un-normalized LZ76 factor count and ``factors`` is the list of boundary
-/// indices at which the factors separate — the i-th factor spans
-/// ``[factors[i], factors[i+1])``. Returning the boundary indices (rather than
-/// the substrings) keeps the result compact.
+/// Returns ``(complexity, factors)``. For nonconstant input, ``complexity``
+/// counts complete LZ76 components; a trailing copied suffix without an additional
+/// symbol is omitted. Thus ``"banana"`` has count 3 although its textbook
+/// exhaustive history has four components. ``factors`` contains byte offsets;
+/// the last offset may be one past the sequence length. Slice each factor as
+/// ``data[factors[i]:min(factors[i+1], len(data))]`` on the encoded bytes.
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Iterable[int]
-///     The input sequence. Strings/bytes are treated as raw symbols. A
-///     ``list[int]`` (or any iterable of ints, e.g. a NumPy array) is converted
+/// seq : str | bytes | list[int] | list[str] | Sequence[int]
+///     Bytes are raw symbols; strings use UTF-8 bytes. An integer sequence
+///     (e.g. a tuple or one-dimensional NumPy array) is converted
 ///     by concatenating each element's decimal representation — so
 ///     ``[0, 1, 10] -> "0110"``. ``list[str]`` is joined directly.
+///     Generators and iterators are not accepted. Prefer ``bytes`` for
+///     categorical symbols: decimal concatenation can merge different inputs.
 /// partitions : int, default 1
-///     Number of suffix-array partitions. Performance knob; no effect on the result.
+///     Reserved compatibility parameter. Currently ignored.
 /// alphabet : int | None, default None
-///     Effective alphabet size. ``None`` auto-detects (distinct symbols, min 2).
+///     Has no effect on the returned count or boundaries.
 /// log_base : int | None, default None
-///     Logarithm base for downstream entropy. ``None`` matches the alphabet size.
+///     Has no effect on the returned count or boundaries.
 /// jobs : int, default 0
 ///     Reserved for future use. Currently ignored (rayon manages its pool).
 ///
@@ -126,22 +129,25 @@ fn factorization(
 
 /// Compute the LZ76-based normalized entropy density of a sequence.
 ///
-/// Estimates the entropy rate as ``h ~= c(S) * log_k(n) / n``, where ``c(S)``
-/// is the LZ76 factor count and ``k`` is the alphabet size. This is the
-/// *normalized* complexity (entropy-rate estimator): it converges to the true
-/// entropy rate for ergodic sources as ``n -> infinity``.
+/// Computes ``h = C(S) * log_b(n) / n``, where ``C(S)`` is the library's
+/// complete-factor count and ``b`` is the resolved log base. The asymptotic
+/// LZ76 result for stationary ergodic finite-alphabet sources is stated as
+/// ``limsup h_n = h_source`` almost surely (Ziv 1978; Estevez-Rams et al.
+/// 2013, Eq. 4). At finite length the estimate can be biased and can exceed
+/// the alphabet's maximum entropy; no accuracy bound is supplied.
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Iterable[int]
+/// seq : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Number of suffix-array partitions. Performance knob.
+///     Reserved compatibility parameter. Currently ignored.
 /// alphabet : int | None, default None
-///     Effective alphabet size used in the entropy formula. ``None`` auto-detects.
+///     Effective alphabet size; the default log base follows this value.
+///     ``None`` auto-detects distinct bytes, with a minimum of 2.
 /// log_base : int | None, default None
-///     Logarithm base. ``None`` matches the alphabet size (the normalized form);
-///     pass ``2`` for entropy in bits.
+///     Logarithm base. ``None`` matches the effective alphabet size;
+///     pass ``2`` for bits per input byte.
 /// jobs : int, default 0
 ///     Reserved for future use.
 ///
@@ -170,62 +176,57 @@ fn h(
     Ok(core::lz76::lz76_entropy_density(&s, &args))
 }
 
-/// Effective measure complexity (EMC) via random block shuffling.
+/// Estimate excess entropy from adjacent past and future windows.
 ///
-/// Compares the LZ76 complexity of the original sequence against shuffled
-/// versions at several block sizes to estimate the non-random information
-/// content. Higher values mean more structure than random noise of the same
-/// length and alphabet.
+/// At total window length ``m``, estimate ``I(past; future)`` with a past of
+/// length ``floor(m/2)`` and a future of length ``ceil(m/2)``. Joint counts
+/// and both marginal counts come from the same observations. All scales use
+/// the same ``n - M + 1`` starts and a common past/future boundary, where
+/// ``M`` is the resolved maximum window length. The smaller windows are
+/// nested, so their empirical mutual informations are non-negative and
+/// non-decreasing, apart from floating point roundoff. The returned terms
+/// are their successive increments, beginning with zero at ``m = 1``.
 ///
-/// For each block size ``l = 1 ... max_block_size`` the sequence is shuffled in
-/// blocks of length ``l`` and re-factorized, which gives one estimate of the
-/// *excess entropy accumulated up to scale l*. Excess entropy is a mutual
-/// information between the past and the future, so that ladder must be
-/// non-negative and non-decreasing in ``l``; the raw estimates are not, because
-/// each rests on its own surrogate draw. They are projected onto that shape
-/// (non-negative isotonic regression) before the terms are read off, so
-/// **every returned value is non-negative** and every block size informs the
-/// total.
-///
-/// The shuffle is seeded deterministically from the sequence content, so
-/// repeated calls on the same input produce identical results.
+/// This path uses empirical counts, with no random shuffle, Chao-Shen
+/// correction, LZ-rate subtraction, peak selection, or isotonic projection.
+/// With ``log_base=2`` the value is in bits, not bits per symbol.
 ///
 /// .. warning::
 ///
-///    Treat the value as an **ordinal index at fixed sequence length**, not as
-///    a bit count. It is biased upward (roughly 2-3x the analytic excess
-///    entropy for order-1 Markov sources) and it scales with
-///    ``max_block_size``, which itself grows with length -- so never compare
-///    values across sequences of different length. Report it alongside
-///    :func:`h`.
+///    The population finite-window mutual information approaches excess
+///    entropy for a stationary source and is a lower bound on it. The sample
+///    estimate is not a lower bound: plug-in mutual information has finite-
+///    sample bias, while limited windows can miss long memory. Compare at
+///    matched lengths, window caps, alphabets and estimator versions, and
+///    calibrate against suitable null data. No confidence interval is returned.
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Iterable[int]
+/// seq : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Number of suffix-array partitions. Performance knob.
+///     Reserved compatibility parameter. Currently ignored.
 /// alphabet : int | None, default None
-///     Effective alphabet size. ``None`` auto-detects from the sequence.
+///     Effective alphabet size for the default log base and auto window cap.
+///     ``None`` auto-detects distinct bytes, with a minimum of 2.
 /// log_base : int | None, default None
-///     Logarithm base for the entropy formula. ``None`` matches the alphabet size.
+///     Output log base. ``None`` matches the effective alphabet size; ``2``
+///     gives bits. Changing units does not change the selected window cap.
 /// max_block_size : int, default -1
-///     Maximum shuffle block size. ``-1`` picks a value based on length.
+///     Maximum total past-plus-future window length. Auto mode (``<= 0``)
+///     chooses the largest ``M`` with ``M * alphabet**M <= n`` (minimum 1).
+///     An explicit positive value is clipped to the input length.
 /// jobs : int, default 0
 ///     Reserved for future use.
 ///
 /// Returns
 /// -------
 /// tuple[float, list[float]]
-///     ``(emc_value, summands)``. ``emc_value`` is the effective measure
-///     complexity, always ``>= 0.0``. ``summands`` has one entry per block
-///     size, ``summands[l-1]`` estimating the scale-``l`` conditional-entropy
-///     excess ``h(l) - h``; every entry is ``>= 0.0`` and they sum to
-///     ``emc_value``. Their running sum is the excess entropy captured up to
-///     each scale, so a profile that keeps climbing past the first few entries
-///     indicates long-range or hierarchical correlation. Zero entries mean
-///     neighbouring scales were pooled by the projection, not that the scale
-///     was skipped.
+///     ``(emc_value, summands)``. The value is the empirical mutual
+///     information at the resolved cap ``M``. ``summands[m-1]`` is the
+///     increment from total length ``m-1`` to ``m``; it is not the conditional-
+///     entropy excess ``h(m)-h`` used by earlier versions. The non-negative
+///     increments sum to the value. Empty input returns zero and no terms.
 ///
 /// Examples
 /// --------
@@ -250,23 +251,24 @@ fn emc(
 
 /// Run the full LZ76 analysis on a sequence.
 ///
-/// The "give me everything" call: computes the factor count, the normalized
-/// entropy density, the factor boundaries, the random-shuffle EMC (with its
-/// summand terms), the error estimates, and the extra pairwise measures in a
-/// single pass.
+/// Computes the complete-factor count, entropy-rate estimate, byte boundaries,
+/// EMC estimate and scale increments, and legacy diagnostic ratios. Whole-
+/// sequence factorization is reused across these calculations.
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Iterable[int]
+/// seq : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Number of suffix-array partitions. Performance knob.
+///     Reserved compatibility parameter. Currently ignored.
 /// alphabet : int | None, default None
-///     Effective alphabet size. ``None`` auto-detects from the sequence.
+///     Effective alphabet size for the default log base and auto window cap.
+///     ``None`` auto-detects distinct bytes, with a minimum of 2.
 /// log_base : int | None, default None
-///     Logarithm base. ``None`` matches the alphabet size (normalized entropy).
+///     Output log base. ``None`` matches the effective alphabet size;
+///     ``2`` gives ``h`` in bits per byte and ``emc.value`` in bits.
 /// max_block_size : int, default -1
-///     Maximum shuffle block size for the EMC stage. ``-1`` auto-selects.
+///     Maximum total past-plus-future window length. See :func:`emc`.
 /// jobs : int, default 0
 ///     Reserved for future use.
 ///
@@ -275,16 +277,23 @@ fn emc(
 /// dict
 ///     A dictionary with keys:
 ///
-///     - ``complexity`` (int): LZ76 factor count.
-///     - ``entropy_density`` (float): normalized entropy density.
-///     - ``factors`` (list[int]): factor boundary indices.
+///     - ``complexity`` (int): complete LZ76 factor count.
+///     - ``h`` (float): entropy-rate estimate in the requested log base.
+///     - ``factors`` (list[int]): byte boundaries; the last may be ``n+1``.
 ///     - ``emc`` (dict): ``{"value", "summands", "max_block_size",
-///       "multi_information"}`` from the random-shuffle analysis.
+///       "multi_information"}``; see :func:`emc` for estimator details.
+///       ``multi_information`` is the separate legacy contrast
+///       ``H_plugin(1) - h_LZ`` over the whole input. It may be negative and
+///       does not enter the finite-window mutual information estimate.
 ///     - ``epsilon`` (float): finite-size correction term.
-///     - ``factors_stddev`` (float): standard deviation of factor lengths.
-///     - ``normal_error`` / ``poison_error`` (float): error estimators.
+///     - ``factors_stddev`` (float): legacy dispersion formula, not a standard
+///       deviation (it divides by the longest factor length).
+///     - ``normal_error`` / ``poison_error`` (float): legacy diagnostics, not
+///       calibrated standard errors or confidence intervals.
 ///     - ``extras`` (dict): ``{"rajski_distance", "redundancy",
 ///       "fh_uncertainty", "lh_uncertainty", "pearson_coefficient"}``.
+///       These compare phrase counts of the sequence's two halves; they are
+///       not Shannon mutual information or statistical correlation estimates.
 #[pyfunction]
 #[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, max_block_size=-1, jobs=0))]
 fn lz76(
@@ -335,21 +344,21 @@ fn lz76(
 /// Normalized information distance (NID) between two sequences.
 ///
 /// Computes ``max(C(XY) - C(X), C(YX) - C(Y)) / max(C(X), C(Y))``, an
-/// LZ76-based, conditional-entropy-flavoured normalized distance. The result
-/// lies in ``[0, 1]`` for well-behaved inputs — 0 means the two sequences
-/// carry the same information, 1 means they are maximally distinct.
+/// LZ76 phrase-count dissimilarity. This is a heuristic surrogate, not the
+/// uncomputable Kolmogorov normalized information distance. Self-distance may
+/// be nonzero, different strings can have distance zero, and the triangle
+/// inequality can fail. A value of 1 is not proof of source independence.
 ///
 /// Parameters
 /// ----------
-/// seq1, seq2 : str | bytes | list[int] | list[str] | Iterable[int]
+/// seq1, seq2 : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The two input sequences. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Number of suffix-array partitions.
+///     Reserved compatibility parameter. Currently ignored.
 /// alphabet : int | None, default None
-///     Effective alphabet size. ``None`` auto-detects from the sequence.
+///     Does not affect this ratio of factor counts.
 /// log_base : int | None, default None
-///     Logarithm base. ``None`` matches the alphabet size. (Does not affect the
-///     ratio of factor counts; present for signature symmetry.)
+///     Does not affect this ratio of factor counts.
 /// jobs : int, default 0
 ///     Reserved for future use.
 ///

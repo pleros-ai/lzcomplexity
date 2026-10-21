@@ -6,11 +6,15 @@
 [![Python](https://img.shields.io/badge/Python-3.9+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![Rust](https://img.shields.io/badge/Rust-stable-DEA584.svg?style=flat&logo=rust&logoColor=white)](https://www.rust-lang.org)
 
-**[Documentation](https://pleros-ai.github.io/lzcomplexity/)**
+**[Released documentation](https://pleros-ai.github.io/lzcomplexity/)**
 
 </div>
 
-`lzcomplexity` computes information-theoretic measures of symbolic sequences using **Lempel–Ziv 76 (LZ76) factorization** [1]. The LZ76 complexity `c(S)` is the minimum number of factors needed to represent a sequence, where each factor is either a new symbol or the longest previously-seen substring. From `c(S)` you get a non-parametric entropy-rate estimator — `h ≈ c(S)·log_k(n)/n` — that converges to the true entropy rate of ergodic sources [2].
+`lzcomplexity` analyses symbolic byte sequences using **Lempel–Ziv 76 (LZ76) factorization** [1]. Each complete factor extends the longest match starting earlier in the sequence by one additional symbol; the match may overlap the current factor. For nonconstant input, the returned count `C(S)` counts complete factors only, omitting a trailing copied suffix with no additional symbol. For example, `"banana"` returns 3 although its full exhaustive history has four components: `b | a | n | ana`.
+
+The entropy-rate estimate is `h = C(S)·log_b(n)/n`, with log base `b` controlling the units. The asymptotic LZ76 result for stationary ergodic finite-alphabet sources is stated as `limsup h_n = h_source` almost surely [2, 3]. This is not a finite-sample accuracy guarantee: estimates can be biased and can exceed the alphabet's maximum entropy.
+
+`emc` estimates the mutual information between adjacent past and future windows using their empirical joint distribution. It uses no random shuffling, Chao–Shen correction, or LZ entropy-rate subtraction. This finite-window target approaches excess entropy as the windows grow; its sample estimate can be biased, and limited windows can miss long memory. See [the estimator notes](docs/emc-estimator.md).
 
 The library ships **two things**:
 
@@ -19,7 +23,7 @@ The library ships **two things**:
 
 The core is implemented in Rust; the two front-ends share it. Common applications: neuroscience time-series, DNA analysis, anomaly detection, structural pattern analysis.
 
-> This is the **Rust implementation**, the current production backend. The original C++/nanobind implementation lives on the `main` branch. Numerical outputs are equivalent up to deterministic shuffle seeding (see [Differences from the C++ version](#differences-from-the-c-version)).
+> This is the **Rust implementation**. The original C++/nanobind implementation lives on `main`. This branch changes the E estimator from released 2.0.0; the separately maintained website describes the released shuffle estimator. See [the estimator and migration notes](docs/emc-estimator.md) for this branch's method and limitations.
 >
 > **Spectral analysis** (`psd`, spectral `entropy`, `semc`) has been **removed** from this library and now lives in a separate package.
 
@@ -35,13 +39,13 @@ You need **Python ≥ 3.9**. From PyPI:
 pip install lzcomplexity
 ```
 
-Or from a clone of this repository (requires a [Rust toolchain](https://rustup.rs)):
+Or from a clone of this repository (requires a [Rust toolchain](https://rustup.rs) and a C compiler for the bundled suffix-array dependency):
 
 ```bash
 pip install .
 ```
 
-`pip` invokes [maturin](https://www.maturin.rs/), which compiles the Rust workspace, produces a wheel, and installs it. No CMake, no submodules, no C++ toolchain.
+`pip` invokes [maturin](https://www.maturin.rs/), which compiles the workspace, produces a wheel, and installs it.
 
 #### Development install
 
@@ -59,7 +63,7 @@ Re-run `maturin develop --release` after Rust changes.
 ```python
 import lzcomplexity as lz
 
-# Complexity + factor boundaries — factor i spans [factors[i], factors[i+1])
+# Complete-factor count + boundaries (byte offsets; final boundary may be n+1)
 complexity, factors = lz.factorization("banana")
 # → (3, [0, 1, 2, 3, 7])
 
@@ -67,7 +71,7 @@ complexity, factors = lz.factorization("banana")
 lz.h("01010101")
 # → 0.75
 
-# Effective measure complexity: the value and the terms that sum to it
+# Excess-entropy estimate: the value and the increments that sum to it
 emc_value, summands = lz.emc("01001010101101010101110101010101010000100101011")
 
 # Everything in one call (returns a dict)
@@ -76,7 +80,7 @@ full["complexity"], full["h"], full["factors"]
 full["emc"]     # {"value", "summands", "max_block_size", "multi_information"}
 full["extras"]  # {"rajski_distance", "redundancy", "fh_uncertainty", ...}
 
-# Normalized information distance (NID) between two sequences
+# LZ76 phrase-count dissimilarity between two sequences
 lz.nid("ABRACADABRA", "ABRACADABRZ")     # → small, similar
 lz.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
 ```
@@ -86,19 +90,21 @@ lz.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
 | Symbol | Signature | Returns |
 |---|---|---|
 | `lz.factorization(seq, ...)` | complexity + factor boundaries | `(int, list[int])` |
-| `lz.h(seq, ...)` | normalised entropy density (entropy rate) | `float` |
-| `lz.emc(seq, ...)` | effective measure complexity | `(float, list[float])` — `(value, summands)` |
-| `lz.nid(seq1, seq2, ...)` | normalised information distance | `float` |
+| `lz.h(seq, ...)` | normalised entropy-rate estimate | `float` |
+| `lz.emc(seq, ...)` | finite-window excess-entropy estimate | `(float, list[float])` — `(value, summands)` |
+| `lz.nid(seq1, seq2, ...)` | LZ76 phrase-count dissimilarity | `float` |
 | `lz.lz76(seq, ...)` | the full analysis | `dict` (see below) |
 
 `lz.lz76(...)` returns a dict with keys: `complexity`, `h`, `factors`, `emc` (a nested dict), `epsilon`, `factors_stddev`, `normal_error`, `poison_error`, `extras` (a nested dict).
 
+`factors_stddev`, `normal_error`, and `poison_error` are legacy diagnostic formulas, not a standard deviation or calibrated uncertainty on `h`. The `extras` are phrase-count ratios, not Shannon mutual information or statistical correlation coefficients. Likewise, `nid` is a heuristic dissimilarity: self-distance can be nonzero and the triangle inequality can fail.
+
 Common keyword arguments:
 
-- `partitions` (int, default 1) — suffix-array partition count; performance knob, no effect on results.
+- `partitions` (int, default 1) — reserved compatibility argument; currently ignored.
 - `alphabet` (int | None, default None) — auto-detect (distinct symbols, min 2) when None.
-- `log_base` (int | None, default None) — matches `alphabet` when None (normalised entropy in units of symbols); pass `2` for bits.
-- `max_block_size` (int, default −1) — shuffle block-size cap for `emc`/`lz76`; −1 auto-selects.
+- `log_base` (int | None, default None) — matches the effective alphabet when None; pass `2` for `h` in bits per byte and `emc` in bits.
+- `max_block_size` (int, default −1) — total past-plus-future window cap for `emc`/`lz76`; −1 auto-selects from length and alphabet, independently of the log base. Explicit caps are clipped to the sequence length.
 - `jobs` (int, default 0) — reserved; currently ignored (rayon manages its pool).
 
 Run `help(lzcomplexity.<name>)` for full per-function docs. Type stubs (`__init__.pyi`) ship with the package.
@@ -111,7 +117,9 @@ Every sequence-accepting function accepts any of:
 - `bytes` — raw byte sequence.
 - `list[str]` — concatenated as-is (e.g. `["A","C","G","T"]`).
 - `list[int]` — each element becomes its decimal string, concatenated, so `[0, 1, 10]` → `"0110"`.
-- Any iterable of ints — covers NumPy arrays; same conversion as `list[int]`.
+- Integer sequences such as tuples, ranges, and one-dimensional NumPy arrays — same conversion as `list[int]`. Generators and iterators are not accepted.
+
+For categorical data, prefer `bytes` with one byte per symbol. Decimal concatenation is ambiguous: `[1, 23]` and `[12, 3]` both become `"123"`. Python strings use UTF-8 bytes, so non-ASCII characters can span several symbols.
 
 ---
 
@@ -122,7 +130,7 @@ Two command-line tools are built from the same Rust core.
 Build them from a clone:
 
 ```bash
-cargo build --release
+cargo build --release -p lzcomplexity-cli
 # → target/release/lzcomplexity   and   target/release/lzdistance
 ```
 
@@ -130,7 +138,7 @@ Prebuilt binaries for Linux/macOS/Windows are attached to each [GitHub release](
 
 ### `lzcomplexity`
 
-Reads a sequence file and writes a JSON report with the LZ76 complexity, entropy density, and random-shuffle effective measure complexity.
+Reads a sequence file and writes a JSON report with the complete LZ76 factor count, entropy density, and effective measure complexity estimate.
 
 ```bash
 lzcomplexity input.txt                 # → input.lz76.json
@@ -168,15 +176,16 @@ This repo uses **[Conventional Commits](https://www.conventionalcommits.org/)** 
 
 Prefix every commit **title** with a type:
 
-| Prefix | Use for | Version effect (the project is 1.x) |
+| Prefix | Use for | Version effect (after 1.0) |
 |---|---|---|
 | `feat:` | a new feature | bumps the **minor** (`1.0.0 → 1.1.0`) |
 | `fix:` | a bug fix | bumps the **patch** (`1.0.0 → 1.0.1`) |
 | `perf:` | a performance improvement | patch |
-| `refactor:`, `docs:`, `build:`, `ci:`, `test:`, `chore:` | everything else | no release on its own |
+| `refactor:`, `docs:`, `build:`, `ci:` | maintenance with a visible changelog section | patch |
+| `test:`, `chore:` | other maintenance | no release on its own |
 
 Add `!` after the type (e.g. `feat!:`) or a `BREAKING CHANGE:` footer to force a **major** bump
-(`1.x → 2.0.0`). Before 1.0 a breaking change only bumped the minor; that is no longer the case.
+(`2.x → 3.0.0`, for example).
 
 > Keep commit messages **ASCII-only**. release-please failed to parse a message containing Unicode
 > maths symbols and silently dropped it from the changelog.
@@ -234,18 +243,19 @@ pyproject.toml           Maturin build config.
 | Build system | CMake + nanobind | Cargo + maturin |
 | Suffix array | CaPS (custom parallel) | comparison sort below 2048 bytes, `cdivsufsort` above, + Kasai LCP |
 | Parallelism | OpenMP / TBB / Cilk | rayon |
-| Shuffle RNG | `std::mt19937` (time-seeded) | `ChaCha8` (seeded from input → **deterministic**) |
+| Shuffle RNG | content-seeded ChaCha8 compatibility implementation | content-seeded `ChaCha8` for shuffle-distance metrics |
 | Spectral analysis | included (`psd`, `entropy`, `semc`) | **removed** (moved to a separate package) |
 | Python surface | many names, `nid`/`rid`, class exports | `factorization`, `h`, `emc`, `nid`, `lz76` |
 
-Same input ⇒ same outputs across Rust and C++ within float tolerance for the deterministic measures (factorization, factors, entropy density, information distance) — verified by differential testing. Shuffle-based metrics (`emc`) differ only in that Rust is reproducible run-to-run.
+The factorization convention descends from the C++ implementation. Entropy values require matching log bases. This branch changes the E estimator, so its values must not be mixed with the C++ or released 2.0.0 shuffle estimator. Historical parity measurements do not establish parity for a changed algorithm.
 
 ---
 
 ## References
 
 1. Lempel, A., & Ziv, J. (1976). On the complexity of finite sequences. *IEEE Transactions on Information Theory*, 22(1), 75–81.
-2. Kontoyiannis, I., Algoet, P. H., Suhov, Y. M., & Wyner, A. J. (1998). Nonparametric entropy estimation for stationary processes and random fields. *IEEE Transactions on Information Theory*, 44(3), 1319–1327.
+2. Ziv, J. (1978). Coding theorems for individual sequences. *IEEE Transactions on Information Theory*, 24(4), 405–412. [doi:10.1109/TIT.1978.1055911](https://doi.org/10.1109/TIT.1978.1055911).
+3. Estevez-Rams, E., et al. (2013). On the non-randomness of maximum Lempel Ziv complexity sequences of finite size. *Chaos*, 23, 023118. [Author preprint, Eq. (4)](https://arxiv.org/abs/1311.0546).
 
 ## Authors
 
@@ -264,7 +274,7 @@ Same input ⇒ same outputs across Rust and C++ within float tolerance for the d
              Est{\'e}vez Moya, Daniel and
              Est{\'e}vez Rams, Ernesto},
   url     = {https://github.com/pleros-ai/lzcomplexity},
-  version = {1.0.0},
+  version = {2.0.0},
   year    = {2026}
 }
 ```

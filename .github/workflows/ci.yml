@@ -24,6 +24,15 @@ jobs:
       - run: cargo build --workspace --release
       - run: cargo test --workspace --release
 
+  msrv:
+    name: Minimum supported Rust (1.85)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --workspace --all-targets --locked
+
   binaries:
     name: Standalone binaries smoke test
     runs-on: ubuntu-latest
@@ -73,6 +82,10 @@ jobs:
           c, f = lz.factorization("banana")
           assert (c, f) == (3, [0, 1, 2, 3, 7]), (c, f)
           assert abs(lz.h("01010101") - 0.75) < 1e-12
+          # The default log base follows an explicitly supplied alphabet.
+          assert abs(lz.h("01010101", alphabet=4) - 0.375) < 1e-12
+          assert abs(lz.h("01010101", alphabet=4, log_base=2) - 0.75) < 1e-12
+          assert abs(lz.lz76("01010101", alphabet=4)["h"] - 0.375) < 1e-12
           val, summ = lz.emc("01001010101101010101110101010101010000100101011")
           assert isinstance(summ, list) and len(summ) >= 1
           full = lz.lz76("ABRACADABRA")
@@ -84,3 +97,7 @@ jobs:
           assert not hasattr(lz, "entropy_density"), "entropy_density was renamed to h"
           print("Python API OK")
           PY
+      - name: Validate finite-window EMC against analytic sources
+        run: |
+          python scripts/validate_emc.py --self-test
+          python scripts/validate_emc.py --length 20000 --seeds 1 --check

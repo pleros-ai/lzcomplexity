@@ -29,6 +29,25 @@ impl LzArgs {
             log_base: NO_ALPHABET,
         }
     }
+
+    /// Effective alphabet cardinality, using the observed alphabet when unset.
+    /// A minimum of two keeps entropy normalization defined for constant inputs.
+    pub fn resolved_alphabet(&self, seq: &Sequence) -> u32 {
+        if self.alphabet == NO_ALPHABET {
+            seq.alphabet_size().max(2)
+        } else {
+            self.alphabet.max(2)
+        }
+    }
+
+    /// Entropy logarithm base, defaulting to the effective alphabet cardinality.
+    pub fn resolved_log_base(&self, seq: &Sequence) -> u32 {
+        if self.log_base == NO_ALPHABET {
+            self.resolved_alphabet(seq)
+        } else {
+            self.log_base.max(2)
+        }
+    }
 }
 
 impl Default for LzArgs {
@@ -116,19 +135,8 @@ pub fn factorize(seq: &Sequence, args: &LzArgs) -> (u32, f64, Vec<u32>, f64) {
     }
 
     let sa = build_sa_lcp(seq.as_bytes());
-    let log_base = if args.log_base == NO_ALPHABET {
-        seq.alphabet_size()
-    } else {
-        args.log_base
-    };
-    let alphabet = if args.alphabet == NO_ALPHABET {
-        seq.alphabet_size()
-    } else {
-        args.alphabet
-    };
-
-    let alphabet_f = alphabet.max(2) as f64;
-    let log_base_f = log_base.max(2) as f64;
+    let alphabet_f = args.resolved_alphabet(seq) as f64;
+    let log_base_f = args.resolved_log_base(seq) as f64;
     let logn = log_base_f.ln();
     let n_f = n as f64;
     let epsilon = 2.0 * (1.0 + ((alphabet_f * n_f).ln() / logn).ln() / logn) / (n_f.ln() / logn);
@@ -223,11 +231,7 @@ pub fn lz76_factors(seq: &Sequence, args: &LzArgs) -> Lz76Result {
 /// Normalized entropy density from an already-computed factor count. Lets
 /// callers that already have the complexity avoid re-factorizing.
 pub fn entropy_density_from(count: u32, seq: &Sequence, args: &LzArgs) -> f64 {
-    let log_base = if args.log_base == NO_ALPHABET {
-        seq.alphabet_size().max(2)
-    } else {
-        args.log_base.max(2)
-    } as f64;
+    let log_base = args.resolved_log_base(seq) as f64;
     let n = seq.len() as f64;
     if n <= 1.0 {
         return 0.0;
@@ -239,4 +243,28 @@ pub fn entropy_density_from(count: u32, seq: &Sequence, args: &LzArgs) -> f64 {
 /// Compute the normalized LZ76 entropy density.
 pub fn lz76_entropy_density(seq: &Sequence, args: &LzArgs) -> f64 {
     entropy_density_from(lz76_factorization(seq, args), seq, args)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_log_base_follows_the_explicit_alphabet() {
+        let seq = Sequence::from_str("01010101");
+        let mut args = LzArgs::new();
+        assert_eq!(args.resolved_alphabet(&seq), 2);
+        assert_eq!(args.resolved_log_base(&seq), 2);
+        assert!((lz76_entropy_density(&seq, &args) - 0.75).abs() < 1e-12);
+
+        args.alphabet = 4;
+        assert_eq!(args.resolved_alphabet(&seq), 4);
+        assert_eq!(args.resolved_log_base(&seq), 4);
+        assert!((lz76_entropy_density(&seq, &args) - 0.375).abs() < 1e-12);
+
+        args.log_base = 2;
+        assert_eq!(args.resolved_alphabet(&seq), 4);
+        assert_eq!(args.resolved_log_base(&seq), 2);
+        assert!((lz76_entropy_density(&seq, &args) - 0.75).abs() < 1e-12);
+    }
 }
