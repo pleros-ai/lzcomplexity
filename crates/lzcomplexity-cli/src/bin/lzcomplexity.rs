@@ -2,7 +2,7 @@
 //!
 //! A Rust port of the C++ `standalone/lzcomplexity.cpp`. Reads a sequence file
 //! (auto-detecting the format), computes LZ76 complexity, entropy density and
-//! random-shuffle effective measure complexity, and writes a JSON report whose
+//! random-shuffle EMC-like complexity measure, and writes a JSON report whose
 //! schema matches the C++ tool's `save_data`.
 
 use std::process::ExitCode;
@@ -72,7 +72,7 @@ struct Cli {
     #[arg(short = 'o', long = "output", value_name = "file_name")]
     output: Option<String>,
 
-    /// Number of partitions for the parallel suffix array.
+    /// Compatibility option; ignored by the current Rust implementation.
     #[arg(
         short = 'p',
         long = "partitions",
@@ -186,23 +186,25 @@ fn build_options(cli: &Cli) -> Options {
     }
 }
 
-/// Standalone entropy density — the C++ batch `lz76EntropyDensity(flags, lz)`
-/// computes `c * log_alphabet(n) / n`, where the log base cancels out (so the
-/// `-l` flag does not affect it). `alphabet` is the explicit `-a` value or the
-/// sequence's distinct-symbol count (min 2), matching the batch path.
+/// Entropy density in the requested logarithm units. Keep the legacy alphabet
+/// default and arithmetic order, while honoring an explicit `-l` consistently
+/// with the shuffle score and the core entropy-density function.
 fn standalone_entropy(seq: &core::Sequence, complexity: u32, args: &core::lz76::LzArgs) -> f64 {
     let n = seq.len() as f64;
     if n <= 1.0 {
         return 0.0;
     }
-    let alphabet = if args.alphabet == core::NO_ALPHABET {
-        seq.alphabet_size()
+    let log_base = if args.log_base == core::NO_ALPHABET {
+        if args.alphabet == core::NO_ALPHABET {
+            seq.alphabet_size()
+        } else {
+            args.alphabet
+        }
     } else {
-        args.alphabet
+        args.log_base
     }
     .max(2) as f64;
-    // c / (n / log_alphabet(n)) = c * ln(n) / (n * ln(alphabet))
-    complexity as f64 * n.ln() / (n * alphabet.ln())
+    complexity as f64 * n.ln() / (n * log_base.ln())
 }
 
 fn info(verbose: bool, msg: &str) {
@@ -357,6 +359,33 @@ fn main() -> ExitCode {
         Err(e) => {
             eprintln!("{}", term::print_msg(term::Msg::Error, &e.to_string()));
             ExitCode::FAILURE
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn entropy_report_honors_requested_units_and_keeps_legacy_defaults() {
+        let seq = core::Sequence::from_str("01010101");
+        for (flags, expected) in [
+            (vec![], 0.75),
+            (vec!["-l", "4"], 0.375),
+            (vec!["-a", "4"], 0.375),
+            (vec!["-a", "4", "-l", "2"], 0.75),
+        ] {
+            let mut command = vec!["lzcomplexity", "input.txt"];
+            command.extend(flags);
+            let options = build_options(&Cli::parse_from(command));
+            let count = core::lz76::lz76_factorization(&seq, &options.args);
+            let report = standalone_entropy(&seq, count, &options.args);
+            assert!((report - expected).abs() < 1e-12);
+            assert!(
+                (report - core::lz76::entropy_density_from(count, &seq, &options.args)).abs()
+                    < 1e-12
+            );
         }
     }
 }

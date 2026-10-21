@@ -1,20 +1,27 @@
 name: Docs
 
-# The documentation site lives on the `docs` branch and is published to GitHub
-# Pages from there. Pull requests build the site but never deploy.
+# Documentation is maintained beside the current library. PRs build only;
+# the permitted docs deployment branch publishes to GitHub Pages.
 on:
   push:
-    branches: ["docs"]
+    branches: ["rust-backend", "docs"]
     paths:
       - "docs/**"
       - "mkdocs.yml"
       - "requirements-docs.txt"
+      - "overrides/**"
+      - "scripts/docs/**"
+      - "tests/docs/**"
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
+      - ".github/workflows/docs.yml"
       - "docs/**"
       - "mkdocs.yml"
       - "requirements-docs.txt"
+      - "overrides/**"
+      - "scripts/docs/**"
+      - "tests/docs/**"
   workflow_dispatch:
 
 permissions: {}
@@ -26,6 +33,8 @@ concurrency:
 jobs:
   build:
     name: Build site
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +46,12 @@ jobs:
       - run: pip install -r requirements-docs.txt
       # `--strict` turns broken internal links and bad nav entries into build
       # failures, so a typo can never ship silently.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/docs/test-demo.cjs
       - run: mkdocs build --strict
+      - run: python scripts/docs/check-links.py site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
@@ -45,7 +59,7 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/docs'
     runs-on: ubuntu-latest
     permissions:
       pages: write

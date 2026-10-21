@@ -8,19 +8,23 @@ The algorithmic core of [`lzcomplexity`](https://github.com/pleros-ai/lzcomplexi
 information-theoretic complexity measures for symbolic sequences, based on
 **Lempel–Ziv 76 (LZ76) factorization**.
 
-This is pure Rust with no Python or CLI dependencies. It powers the
+This crate has no Python or CLI dependencies. Its suffix-array dependency
+bundles C code, so building from source requires a C compiler. It powers the
 `lzcomplexity` Python package (via PyO3) and the `lzcomplexity` / `lzdistance`
 standalone binaries, and can be used directly as a Rust library.
 
 ## What it computes
 
 - **LZ76 factorization** — the complexity `c(S)` (factor count) and the factor
-  boundaries, via a linear-time suffix array + longest-previous-factor.
+  boundaries, via a suffix array + longest-previous-factor table.
 - **Entropy density** — the normalized entropy-rate estimator
   `h ≈ c(S)·log_k(n)/n`, which converges to the true entropy rate of ergodic
   sources.
-- **Effective measure complexity (EMC)** — a block-entropy (excess-entropy)
-  estimator via random block shuffling.
+- **Shuffle-based EMC-like measure** — a multiscale contrast of LZ76 factor
+  counts before and after random aligned block swaps. It is qualitatively
+  similar to effective measure complexity; it is not an established estimator
+  of theoretical EMC or excess entropy. The historical `emc` names remain
+  for compatibility. See the [definition and limitations](../../docs/shuffle-measure.md).
 - **Normalized information distance (NID)** — an LZ76-based distance between two
   sequences.
 
@@ -28,7 +32,7 @@ standalone binaries, and can be used directly as a Rust library.
 
 ```toml
 [dependencies]
-lzcomplexity-core = "1.0"
+lzcomplexity-core = "2.0"
 ```
 
 ```rust
@@ -62,8 +66,22 @@ the command-line tools.
 
 - Inputs are raw byte sequences (`Sequence::from_str` / `Sequence::from_bytes`),
   so any alphabet works, including non-UTF-8 bytes.
-- The shuffle-based EMC is seeded deterministically from the input, so results
-  are reproducible run-to-run.
+- Symbol-changing mutations invalidate the observed alphabet cache. Explicit
+  size declarations from `set_alphabet_size` or `with_alphabet_size` persist
+  until `determine_alphabet` or `clear`; constructor hints retain their legacy
+  behavior. Incrementally built and freshly constructed copies of the same
+  bytes therefore use the same observed normalization.
+- The shuffle-based measure is seeded deterministically from the input, so
+  results are reproducible with matched dependencies and parameters. It uses
+  one surrogate per block size and a nonnegative isotonic projection. The
+  returned summands are fitted score increments.
+- Match sequence length, byte encoding, logarithm base and block-size cap when
+  comparing scores, and check sensitivity to these choices. No calibrated
+  uncertainty or general ordering by theoretical EMC is provided.
+- The automatic block-size cap uses the existing base-2 length heuristic,
+  plus 10 for inputs longer than 50 bytes. It is a scale-selection convention,
+  not a sample-coverage certificate. `log_base` defaults to the observed
+  alphabet (floored at 2), independently of an explicit `alphabet` argument.
 
 ## References
 

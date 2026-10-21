@@ -1,6 +1,6 @@
 //! Longest Previous Factor — port of `lz::utils::LPF` from modules/core/src/lpf.cpp.
 //!
-//! For each position i in the sequence, lpf[i] is the length of the longest
+//! For each position i in the sequence, `lpf[i]` is the length of the longest
 //! factor starting at i that also occurs earlier in the sequence. The C++
 //! implementation operates on the SA / LCP arrays via a stack of (len, pos).
 

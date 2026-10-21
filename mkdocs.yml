@@ -1,24 +1,22 @@
 site_name: lzcomplexity
-site_description: LZ76 complexity, entropy rate and information distance for symbolic sequences.
+site_description: Find the structure in symbolic sequences with LZ76, entropy-rate estimation, shuffle-based complexity and information distance. Built by Pleros.
 site_url: https://pleros-ai.github.io/lzcomplexity/
 repo_url: https://github.com/pleros-ai/lzcomplexity
 repo_name: pleros-ai/lzcomplexity
-# The documentation lives on the `docs` branch, so "edit this page" points there.
-edit_uri: edit/docs/docs/
-copyright: MIT &middot; Lempel&ndash;Ziv 76
+edit_uri: edit/rust-backend/docs/
+copyright: © Pleros Group · MIT licensed
 
 theme:
   name: material
+  custom_dir: overrides
+  logo: assets/logo.svg
 
-  # No Google Fonts request — every stack resolves from the OS. The site makes
-  # no external network requests at all, so it works offline and behind a
-  # firewall.
+  # Typography uses local system fonts; no Google Fonts dependency.
   font: false
 
   language: en
   icon:
     repo: fontawesome/brands/github
-    logo: material/pulse
   favicon: assets/favicon.svg
 
   palette:
@@ -35,7 +33,7 @@ theme:
         icon: material/brightness-7
         name: Switch to dark
 
-    # Dark is the canonical look; the palette is defined in assets/extra.css.
+    # Both color schemes share the paper-and-ink design.
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: custom
@@ -65,6 +63,9 @@ theme:
 
 extra_css:
   - assets/extra.css
+
+extra_javascript:
+  - assets/site.js
 
 extra:
   social:
@@ -124,15 +125,18 @@ nav:
           - Install: guide/install.md
           - Your first factorization: guide/first-factorization.md
           - Reading the numbers: guide/reading-the-numbers.md
+          - Troubleshooting: guide/troubleshooting.md
       - Concepts:
           - LZ76 factorization: concepts/lz76.md
           - Entropy density (h): concepts/entropy-density.md
-          - Effective measure complexity: concepts/emc.md
+          - EMC-like shuffle measure: concepts/emc.md
           - Information distance (NID): concepts/nid.md
           - Alphabets and log bases: concepts/alphabets.md
           - Sequence length and convergence: concepts/convergence.md
+          - Inside the implementation: concepts/implementation.md
+          - Shuffle definition: shuffle-measure.md
       - Recipes:
-          - EEG and neural time-series: recipes/neuro.md
+          - Neural time-series: recipes/neuro.md
           - DNA and FASTA: recipes/genomics.md
           - The route to chaos: recipes/dynamical-systems.md
           - Comparing many sequences: recipes/batch-distance.md
@@ -149,9 +153,11 @@ nav:
       - Input formats: cli/formats.md
 
   - Project:
+      - Authors and citation: project/authors.md
       - Performance: project/performance.md
       - Determinism: project/determinism.md
       - Rust vs C++: project/cpp-parity.md
       - Releases: project/releases.md
-      - Authors and citation: project/authors.md
+      - Original manual: project/manual.md
       - References: project/references.md
+      - Contributing: project/contributing.md

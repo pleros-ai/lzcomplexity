@@ -1,257 +1,85 @@
 ---
+template: home.html
+title: lzcomplexity
+description: Explore symbolic sequences with LZ76 factorization, entropy-rate estimation, shuffle-based complexity and information distance. A Rust core, Python API and two command-line tools from Pleros.
+search:
+  exclude: true
 hide:
   - navigation
   - toc
 ---
 
-<section class="lz-hero" markdown>
-
-<p class="lz-eyebrow">Lempel–Ziv 76 · Rust core · v1.0</p>
-
-<h1 class="lz-hero__title">
-  Measure the structure<br><span>in the noise.</span>
-</h1>
-
-<p class="lz-hero__sub">
-  <code>lzcomplexity</code> factorises any symbolic sequence with Lempel–Ziv 76 and returns
-  complexity, entropy rate, effective measure complexity and information distance. A Rust core, a
-  Python API of five functions, and two command-line tools — linear-time and reproducible run to run.
-</p>
-
-<p class="lz-hero__cta">
-  <a class="lz-btn lz-btn--primary" href="guide/install/">Get started <span aria-hidden="true">→</span></a>
-  <a class="lz-btn lz-btn--ghost" href="api/python/">API reference</a>
-  <a class="lz-btn lz-btn--bare" href="https://github.com/pleros-ai/lzcomplexity">GitHub</a>
-</p>
-
-<div class="lz-cmd"><span class="lz-cmd__dollar">$</span><code>pip install lzcomplexity</code></div>
-
-<div class="lz-band-scroll">
-  <svg class="lz-band" viewBox="0 0 1160 250" role="img"
-       aria-labelledby="lzband-t lzband-d" preserveAspectRatio="xMidYMid meet">
-    <title id="lzband-t">LZ76 factorization of a 72-symbol binary sequence</title>
-    <desc id="lzband-d">A sequence that begins perfectly periodic and ends random. LZ76 cuts it
-      into 10 factors: long factors of 20 and 18 symbols on the ordered left side, then
-      progressively shorter factors of 8, 3, 5, 9 and 5 symbols as the sequence becomes random.
-      Complexity c(S) = 10, entropy density h = 0.857.</desc>
-
-    <defs>
-      <linearGradient id="lz-ramp" gradientUnits="userSpaceOnUse" x1="40" y1="0" x2="1120" y2="0">
-        <stop offset="0"    style="stop-color: var(--lz-viz-1)"/>
-        <stop offset="0.30" style="stop-color: var(--lz-viz-2)"/>
-        <stop offset="0.62" style="stop-color: var(--lz-viz-3)"/>
-        <stop offset="1"    style="stop-color: var(--lz-viz-4)"/>
-      </linearGradient>
-    </defs>
-
-    <g class="lz-band__grid" stroke="var(--lz-border)" stroke-width="1">
-      <path d="M40 18V214M160 18V214M280 18V214M400 18V214"/>
-      <path d="M517 18V214M604 18V214M651 18V214M728 18V214M769 18V214M851 18V214
-               M887 18V214M962 18V214M1001 18V214M1043 18V214M1090 18V214"/>
-    </g>
-
-    <rect x="40" y="24" width="1080" height="8" rx="4" fill="url(#lz-ramp)" opacity="0.85"/>
-    <text class="lz-band__cap" x="40"   y="16">ordered</text>
-    <text class="lz-band__cap lz-band__cap--end" x="1120" y="16">random</text>
-
-    <g class="lz-band__stream" fill="var(--lz-text)">
-      <text class="lz-f lz-f1"  x="43"   y="86" textLength="15"  lengthAdjust="spacing">0</text>
-      <text class="lz-f lz-f2"  x="58"   y="86" textLength="15"  lengthAdjust="spacing">1</text>
-      <text class="lz-f lz-f3"  x="73"   y="86" textLength="300" lengthAdjust="spacing">01010101010101010100</text>
-      <text class="lz-f lz-f4"  x="373"  y="86" textLength="30"  lengthAdjust="spacing">11</text>
-      <text class="lz-f lz-f5"  x="403"  y="86" textLength="270" lengthAdjust="spacing">001100110011001101</text>
-      <text class="lz-f lz-f6"  x="673"  y="86" textLength="120" lengthAdjust="spacing">10100111</text>
-      <text class="lz-f lz-f7"  x="793"  y="86" textLength="45"  lengthAdjust="spacing">000</text>
-      <text class="lz-f lz-f8"  x="838"  y="86" textLength="75"  lengthAdjust="spacing">10111</text>
-      <text class="lz-f lz-f9"  x="913"  y="86" textLength="135" lengthAdjust="spacing">010011101</text>
-      <text class="lz-f lz-f10" x="1048" y="86" textLength="75"  lengthAdjust="spacing">10010</text>
-    </g>
-
-    <g class="lz-band__brackets" fill="none" stroke="url(#lz-ramp)" stroke-width="2"
-       stroke-linecap="square">
-      <path class="lz-b lz-b1"  pathLength="1" d="M42 108V120H53V108"/>
-      <path class="lz-b lz-b2"  pathLength="1" d="M57 108V120H68V108"/>
-      <path class="lz-b lz-b3"  pathLength="1" d="M72 108V120H368V108"/>
-      <path class="lz-b lz-b4"  pathLength="1" d="M372 108V120H398V108"/>
-      <path class="lz-b lz-b5"  pathLength="1" d="M402 108V120H668V108"/>
-      <path class="lz-b lz-b6"  pathLength="1" d="M672 108V120H788V108"/>
-      <path class="lz-b lz-b7"  pathLength="1" d="M792 108V120H833V108"/>
-      <path class="lz-b lz-b8"  pathLength="1" d="M837 108V120H908V108"/>
-      <path class="lz-b lz-b9"  pathLength="1" d="M912 108V120H1043V108"/>
-      <path class="lz-b lz-b10" pathLength="1" d="M1047 108V120H1118V108"/>
-    </g>
-
-    <g class="lz-band__idx" fill="url(#lz-ramp)">
-      <text class="lz-l lz-l1"  x="47"   y="140">1</text>
-      <text class="lz-l lz-l2"  x="62"   y="140">2</text>
-      <text class="lz-l lz-l3"  x="220"  y="140">3 · 20 symbols</text>
-      <text class="lz-l lz-l4"  x="385"  y="140">4</text>
-      <text class="lz-l lz-l5"  x="535"  y="140">5 · 18 symbols</text>
-      <text class="lz-l lz-l6"  x="730"  y="140">6 · 8</text>
-      <text class="lz-l lz-l7"  x="812"  y="140">7</text>
-      <text class="lz-l lz-l8"  x="872"  y="140">8</text>
-      <text class="lz-l lz-l9"  x="977"  y="140">9</text>
-      <text class="lz-l lz-l10" x="1082" y="140">10</text>
-    </g>
-
-    <g class="lz-band__axis" stroke="var(--lz-border-strong)" stroke-width="1">
-      <path d="M40 176H1120"/>
-      <path d="M40 176v6M400 176v6M760 176v6M1120 176v6"/>
-    </g>
-    <g class="lz-band__cap" fill="var(--lz-muted)">
-      <text x="40"   y="198">n = 0</text>
-      <text x="400"  y="198">24</text>
-      <text x="760"  y="198">48</text>
-      <text class="lz-band__cap--end" x="1120" y="198">72</text>
-    </g>
-  </svg>
+<div class="lz-home">
+<section class="lz-hero">
+<div class="lz-hero-copy">
+<p class="lz-eyebrow"><span class="lz-status"></span> PLEROS · SCIENTIFIC COMPUTING</p>
+<h1>Find the structure.<br><em>Understand<br class="lz-mobile-break"> the noise.</em></h1>
+<p class="lz-hero-lead">A sequence is more than its symbols. Explore what repeats, what surprises, and what changes when you shuffle it.</p>
+<p class="lz-hero-description"><strong>lzcomplexity</strong> brings Lempel–Ziv 76 analysis to Python, Rust and the command line.</p>
+<div class="lz-actions"><a class="lz-button lz-button-primary" href="guide/install/">Start exploring <span aria-hidden="true">↗</span></a><a class="lz-text-link" href="api/python/">Read the API <span aria-hidden="true">→</span></a></div>
+<div class="lz-install"><code>pip install lzcomplexity</code><button type="button" data-copy="pip install lzcomplexity" aria-label="Copy installation command">Copy <span aria-hidden="true">⧉</span></button></div>
+<p class="lz-tiny">Open source · MIT licensed · Built by the Pleros Group</p>
 </div>
-
-<div class="lz-readout">
-  <div class="lz-readout__item">
-    <span class="lz-readout__k">c(S)</span>
-    <span class="lz-readout__v">10</span>
-    <span class="lz-pips" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-    <span class="lz-readout__note">LZ76 factors</span>
-  </div>
-  <div class="lz-readout__item">
-    <span class="lz-readout__k">h</span>
-    <span class="lz-readout__v">0.857</span>
-    <span class="lz-meter" aria-hidden="true"><i style="--v:85.7%"></i></span>
-    <span class="lz-readout__note">entropy density</span>
-  </div>
-  <div class="lz-readout__item">
-    <span class="lz-readout__k">n</span>
-    <span class="lz-readout__v">72</span>
-    <span class="lz-readout__note">symbols, alphabet 2</span>
-  </div>
+<div class="lz-specimen" aria-label="Interactive view of a symbolic sequence">
+<div class="lz-specimen-head"><span><i></i> A CLOSER LOOK</span><span>64 SYMBOLS</span></div>
+<div class="lz-specimen-tabs" role="group" aria-label="Choose a sequence"><button type="button" data-specimen="periodic" aria-pressed="true">Repeating</button><button type="button" data-specimen="irregular" aria-pressed="false">Irregular</button></div>
+<div class="lz-symbol-grid" id="lz-symbol-grid" aria-hidden="true"></div>
+<div class="lz-specimen-readout"><div><span class="lz-metric-label">LZ76 COUNT</span><strong id="lz-specimen-count">2</strong></div><div><span class="lz-metric-label">ENTROPY DENSITY</span><strong id="lz-specimen-h">0.188<span> / byte</span></strong></div></div>
+<p class="lz-specimen-note" id="lz-specimen-note">Repeated patterns need fewer new pieces.</p>
+<div class="lz-specimen-foot"><span>log base 2 · finite-length estimate</span><a href="concepts/lz76/" aria-label="Learn how LZ76 works">How it works ↗</a></div>
+<noscript><p>For the repeating sequence <code>01</code> × 32, the library reports LZ76 count 2 and entropy density 0.1875 with base-two logarithms.</p></noscript>
 </div>
-
 </section>
 
-<div class="lz-tickrule"></div>
+<div class="lz-proof-strip"><span>ONE RUST CORE</span><span>Python <span aria-hidden="true">↗</span></span><span>Command line <span aria-hidden="true">↗</span></span><span>Native Rust <span aria-hidden="true">↗</span></span><span class="lz-proof-end">Your data. Your questions.</span></div>
 
-## Four measures, one factorization
-
-<div class="lz-cards" markdown>
-
-<div class="lz-card" markdown>
-### Complexity
-
-The number of LZ76 factors — how many distinct "new" pieces it takes to build the sequence from its
-own past. Computed from a suffix array and a longest-previous-factor table, so the answer is an exact
-integer, not a sample.
-
-<p class="lz-card__api"><code>lz.factorization(seq)</code></p>
+<section class="lz-section lz-measures" id="explore">
+<div class="lz-section-heading"><p class="lz-eyebrow">01 / THE MEASURES</p><h2>Different questions.<br><em>A common foundation.</em></h2><p>Start with the LZ76 factor count. Use it to explore unpredictability, the response to shuffling, or the difference between two sequences.</p></div>
+<div class="lz-measure-list">
+<a class="lz-measure" href="concepts/entropy-density/"><span class="lz-measure-symbol">h</span><div><h3>How unpredictable is it?</h3><p>Estimate entropy density from the sequence’s LZ76 factor count and length. Order matters, not just symbol frequencies.</p></div><span class="lz-measure-arrow" aria-hidden="true">↗</span></a>
+<a class="lz-measure" href="concepts/emc/"><span class="lz-measure-symbol">E<span>*</span></span><div><h3>What does shuffling reveal?</h3><p>Compare the original with block-shuffled copies at different scales. An EMC-like measure of organization, with its own definition and limits.</p></div><span class="lz-measure-arrow" aria-hidden="true">↗</span></a>
+<a class="lz-measure" href="concepts/nid/"><span class="lz-measure-symbol">d</span><div><h3>How different are they?</h3><p>Compare two symbolic sequences using LZ76 counts of each sequence and their concatenations.</p></div><span class="lz-measure-arrow" aria-hidden="true">↗</span></a>
 </div>
+</section>
 
-<div class="lz-card" markdown>
-### Entropy rate
-
-A non-parametric estimator of the source's entropy rate. No model, no bin count, no window — the
-factor count and the length are enough. Converges for stationary ergodic sources.
-
-<p class="lz-card__api"><code>lz.h(seq)</code></p>
+<section class="lz-lab" id="try-it">
+<div class="lz-lab-intro"><p class="lz-eyebrow">02 / THE SEQUENCE LAB</p><h2>See the pieces.<br><em>Make the connection.</em></h2><p>LZ76 walks through a sequence and identifies pieces using what appeared earlier. Try a short sequence and inspect the boundaries.</p><a class="lz-text-link" href="guide/first-factorization/">Walk through a complete example →</a></div>
+<div class="lz-lab-workbench">
+<label for="lz-input">YOUR SEQUENCE <span>up to 128 UTF-8 bytes</span></label>
+<div class="lz-input-row"><input id="lz-input" value="banana" maxlength="128" spellcheck="false" autocomplete="off" aria-describedby="lz-lab-description"><button type="button" id="lz-analyze" aria-label="Analyze sequence">Analyze ↗</button></div>
+<div class="lz-presets" role="group" aria-label="Example sequences"><span>TRY</span><button type="button" data-sequence="banana">banana</button><button type="button" data-sequence="0101010101010101">Repeating</button><button type="button" data-sequence="1001110110101000">Binary</button><button type="button" data-sequence="ACGTACGTACGT">DNA alphabet</button></div>
+<div class="lz-parse" id="lz-parse" aria-label="Pieces of the sequence"><span>b</span><span>a</span><span>n</span><span>ana</span></div>
+<div class="lz-lab-results" aria-live="polite" aria-atomic="true"><p><strong id="lz-demo-count">3</strong> <span>reported LZ76 count</span></p><p><strong id="lz-demo-h">1.2925</strong> <span>entropy density · base 2</span></p></div>
+<p class="lz-lab-description" id="lz-lab-description">For <code>banana</code>, four displayed pieces give a reported count of three: the final copied tail is excluded by the library’s counting convention. Finite-length entropy estimates can exceed one.</p>
+<noscript><p>Install the Python library to run your own sequences. The first-factorization guide explains this example step by step.</p></noscript>
 </div>
+</section>
 
-<div class="lz-card" markdown>
-### Effective measure complexity
+<section class="lz-section lz-get-started">
+<div class="lz-start-copy"><p class="lz-eyebrow">03 / FROM QUESTION TO CODE</p><h2>A small API.<br><em>Room to explore.</em></h2><p>Five Python functions cover factorization, entropy density, the shuffle-based score, sequence distance and a complete analysis.</p><div class="lz-interface-links"><a href="api/python/">Python reference <span>↗</span></a><a href="cli/">Command-line tools <span>↗</span></a><a href="api/rust/">Rust core <span>↗</span></a></div></div>
+<div class="lz-code-window"><div class="lz-code-head"><span><i></i><i></i><i></i></span><span>analysis.py</span><button type="button" data-copy="import lzcomplexity as lz&#10;&#10;sequence = &quot;00010111&quot; * 256&#10;result = lz.lz76(sequence, log_base=2, max_block_size=16)&#10;&#10;print(result[&quot;h&quot;])&#10;print(result[&quot;emc&quot;][&quot;value&quot;])" aria-label="Copy Python example">Copy ⧉</button></div><pre><code><span class="lz-code-purple">import</span> lzcomplexity <span class="lz-code-purple">as</span> lz
 
-Structure that is neither periodic nor random. Compares the sequence against block-shuffled versions
-of itself at a ladder of scales, and reports the excess over the entropy rate.
+<span class="lz-code-comment"># One symbolic sequence, several perspectives.</span>
+sequence = <span class="lz-code-yellow">"00010111"</span> * <span class="lz-code-orange">256</span>
+result = lz.<span class="lz-code-green">lz76</span>(
+    sequence,
+    log_base=<span class="lz-code-orange">2</span>,
+    max_block_size=<span class="lz-code-orange">16</span>,
+)
 
-<p class="lz-card__api"><code>lz.emc(seq)</code></p>
+<span class="lz-code-green">print</span>(result[<span class="lz-code-yellow">"h"</span>])
+<span class="lz-code-green">print</span>(result[<span class="lz-code-yellow">"emc"</span>][<span class="lz-code-yellow">"value"</span>])</code></pre><div class="lz-code-bottom">Explicit units. Explicit scales. Reproducible analysis.</div></div>
+</section>
+
+<section class="lz-applications">
+<div class="lz-section-heading"><p class="lz-eyebrow">04 / FOLLOW YOUR CURIOSITY</p><h2>Different data.<br><em>Shared questions.</em></h2><p>Begin with a symbolic representation, then make the measurement choices explicit. These worked recipes show the path from data to analysis.</p></div>
+<div class="lz-recipe-grid">
+<a class="lz-recipe" href="recipes/neuro/"><svg viewBox="0 0 300 100" aria-hidden="true"><path d="M0 51H24L30 42 36 62 42 21 48 82 54 40 60 56 66 48H104L110 39 116 70 122 18 128 79 134 39 140 56 146 49H185L191 44 197 64 203 25 209 75 215 40 221 56 227 51H300"/></svg><span class="lz-eyebrow">SIGNALS → SYMBOLS</span><h3>Neural time series</h3><p>Choose a threshold, build a binary sequence and compare matched windows.</p><span class="lz-text-link">Explore the recipe ↗</span></a>
+<a class="lz-recipe" href="recipes/genomics/"><div class="lz-dna-art" aria-hidden="true">A C <i>G</i> T A C G <i>T</i><br>T <i>G</i> C A T G <i>C</i> A<br>G C A <i>T</i> G <i>C</i> A T</div><span class="lz-eyebrow">BASES → PATTERNS</span><h3>Genomic sequences</h3><p>Read FASTA explicitly, handle ambiguous bases and preserve the chosen encoding.</p><span class="lz-text-link">Explore the recipe ↗</span></a>
+<a class="lz-recipe" href="recipes/dynamical-systems/"><svg viewBox="0 0 300 100" aria-hidden="true"><path d="M12 85Q30 15 48 75T84 60 120 68 156 30 192 65 228 12 264 73 300 29"/><path d="M12 85Q45 10 78 56T144 38 210 54 276 20" opacity=".3"/></svg><span class="lz-eyebrow">DYNAMICS → ORGANIZATION</span><h3>Dynamical systems</h3><p>Symbolize a trajectory and examine length, transients and scale sensitivity.</p><span class="lz-text-link">Explore the recipe ↗</span></a>
 </div>
+</section>
 
-<div class="lz-card" markdown>
-### Information distance
-
-How much of one sequence you still need after you already have the other. A compression-based
-distance in the normalized-information-distance family — no alignment, no feature engineering.
-
-<p class="lz-card__api"><code>lz.nid(a, b)</code></p>
-</div>
-
-</div>
-
-<div class="lz-formula">
-  <p class="lz-math"><i>h</i> ≈ <i>c</i>(<i>S</i>) · log<sub><i>k</i></sub>&thinsp;<i>n</i> ⁄ <i>n</i></p>
-  <dl class="lz-formula__key">
-    <dt><i>c</i>(<i>S</i>)</dt><dd>number of LZ76 factors</dd>
-    <dt><i>n</i></dt><dd>sequence length, in bytes</dd>
-    <dt><i>k</i></dt><dd>alphabet size, auto-detected, minimum 2</dd>
-  </dl>
-  <p class="lz-formula__cite">Converges to the entropy rate of a stationary ergodic source — Ziv &amp; Lempel (1978), Kontoyiannis et al. (1998).</p>
-</div>
-
-## Thirty seconds
-
-```python
-import lzcomplexity as lz
-
-lz.factorization("banana")
-# (3, [0, 1, 2, 3, 7])          complexity, then factor boundaries
-
-lz.h("01010101")
-# 0.75                           normalised entropy density
-
-lz.nid("ABRACADABRA", "ABRACADABRZ")
-# 0.3333333333333333             one symbol apart, so most information is shared
-
-lz.lz76("ABRACADABRA")["emc"]["value"]
-# 0.5417804008745377             effective measure complexity
-```
-
-Every function takes `str`, `bytes`, `list[str]`, `list[int]`, or any iterable of ints. Read
-[Input types](api/inputs.md) before you feed it numeric data — the conversion rule surprises people.
-
-<div class="lz-stats" markdown>
-<div class="lz-stat"><span class="lz-stat__v">5</span><span class="lz-stat__k">Python functions</span></div>
-<div class="lz-stat"><span class="lz-stat__v">O(n)</span><span class="lz-stat__k">factorization</span></div>
-<div class="lz-stat"><span class="lz-stat__v">12 MB/s</span><span class="lz-stat__k">incompressible data</span></div>
-<div class="lz-stat"><span class="lz-stat__v">2</span><span class="lz-stat__k">CLI tools</span></div>
-<div class="lz-stat"><span class="lz-stat__v">7</span><span class="lz-stat__k">input formats</span></div>
-<div class="lz-stat"><span class="lz-stat__v">MIT</span><span class="lz-stat__k">licence</span></div>
-</div>
-
-Measured scaling is `t ∝ n^1.01` on random binary input, from 10³ to 10⁶ symbols. See
-[Performance](project/performance.md) for the full table and the methodology.
-
-<div class="lz-tickrule"></div>
-
-## Where to go next
-
-<div class="lz-cards" markdown>
-
-<div class="lz-card" markdown>
-### I have data and want a number
-
-Start at [Install](guide/install.md), then
-[Your first factorization](guide/first-factorization.md). Read
-[Reading the numbers](guide/reading-the-numbers.md) before you interpret anything.
-</div>
-
-<div class="lz-card" markdown>
-### I want to know what it computes
-
-[LZ76 factorization](concepts/lz76.md) defines the measure,
-[Entropy density](concepts/entropy-density.md) and [EMC](concepts/emc.md) build on it, and
-[Sequence length and convergence](concepts/convergence.md) tells you when to trust the result.
-</div>
-
-<div class="lz-card" markdown>
-### I work with EEG, DNA, or time-series
-
-The recipes are written for you: [EEG and neural time-series](recipes/neuro.md),
-[DNA and FASTA](recipes/genomics.md), [the route to chaos](recipes/dynamical-systems.md),
-and [comparing many sequences](recipes/batch-distance.md).
-</div>
-
-<div class="lz-card" markdown>
-### I want the reference
-
-[Python API](api/python.md), the [Rust crate](api/rust.md), and the two command-line tools
-[`lzcomplexity`](cli/lzcomplexity.md) and [`lzdistance`](cli/lzdistance.md).
-</div>
-
+<section class="lz-documentation-banner"><div><p class="lz-eyebrow">THE DETAILS MATTER</p><h2>Go from intuition<br><em>to a reproducible method.</em></h2><p>Concepts, implementation, every parameter and the original manual—connected in one documentation library.</p></div><div class="lz-documentation-links"><a href="concepts/implementation/">Inside the implementation <span>↗</span></a><a href="guide/reading-the-numbers/">Interpret the results <span>↗</span></a><a href="project/manual/">The original manual <span>↗</span></a><a href="project/references/">Papers &amp; references <span>↗</span></a></div></section>
+<footer class="lz-home-footer"><span><strong>lzcomplexity</strong> <span class="lz-muted">/ by Pleros</span></span><p>Explore structure. Report your assumptions.</p><a href="https://github.com/pleros-ai/lzcomplexity">View on GitHub ↗</a></footer>
 </div>

@@ -1,557 +1,263 @@
 # Rust crate
 
-*`lzcomplexity-core` is the algorithm crate. The Python package and both CLI tools are skins over it.*
-
-Everything the Python API returns is computed by `lzcomplexity-core`. Depending on it directly
-removes the PyO3 layer and hands you the result structs — including fields the Python dict never
-surfaces.
+`lzcomplexity-core` exposes the same algorithmic core used by Python and the
+two command-line tools. Inputs are owned byte sequences; results are ordinary
+Rust structs. The crate requires Rust 1.85 or newer and a C compiler for its
+bundled suffix-array dependency.
 
 ```toml
 [dependencies]
-lzcomplexity-core = "1.0"
+lzcomplexity-core = "2.0"
 ```
 
-Or `cargo add lzcomplexity-core`. Only this crate is published to crates.io; `lzcomplexity-py`
-ships inside the wheel and `lzcomplexity-cli` ships as GitHub release binaries.
-
-<div class="lz-stats" markdown>
-<div class="lz-stat"><span class="lz-stat__v">1.75</span><span class="lz-stat__k">MSRV</span></div>
-<div class="lz-stat"><span class="lz-stat__v">2021</span><span class="lz-stat__k">edition</span></div>
-<div class="lz-stat"><span class="lz-stat__v">0</span><span class="lz-stat__k">cargo features</span></div>
-<div class="lz-stat"><span class="lz-stat__v">4</span><span class="lz-stat__k">direct dependencies</span></div>
-<div class="lz-stat"><span class="lz-stat__v">MIT</span><span class="lz-stat__k">licence</span></div>
-</div>
-
-| | |
-|---|---|
-| Crate name | `lzcomplexity-core` |
-| Library name (what you `use`) | `lzcomplexity_core` |
-| Crate type | rlib |
-| Direct dependencies | `rayon 1.10`, `rand 0.8`, `rand_chacha 0.3`, `cdivsufsort 2.0` |
-| Generated API docs | [docs.rs/lzcomplexity-core](https://docs.rs/lzcomplexity-core) |
-| Registry | [crates.io/crates/lzcomplexity-core](https://crates.io/crates/lzcomplexity-core) |
-
-## Cargo features
-
-There are none. The manifest has no `[features]` table, so there is no way to opt out of any
-dependency — in particular `rayon` is unconditional and there is no serial-only build. To run
-single-threaded, size the thread pool instead ([Threads](#threads-and-the-rayon-pool)).
-
-!!! warning "A source build fails without a C compiler, not only a Rust toolchain"
-
-    `cargo build` stops with a `cc` error on a machine that has rustc but no C compiler.
-    `cdivsufsort` is a Rust binding that compiles Yuta Mori's vendored C `libdivsufsort` sources
-    through a `cc` build dependency. On Windows that means the MSVC build tools. The repository
-    README's "no C++ toolchain" line is true as written — but a **C** toolchain is required.
-
-!!! note "The MSRV is declared, not tested"
-
-    `rust-version = "1.75"` is recorded in the workspace manifest and on crates.io for every
-    published version. CI builds with `dtolnay/rust-toolchain@stable` only — there is no 1.75
-    job, so an accidental MSRV bump would not be caught. Treat 1.75 as a claim, not as a
-    guarantee backed by a build.
-
-<div class="lz-tickrule"></div>
-
-## Module map
-
-Six public modules. The pipeline: `sequence` holds the bytes, `suffix_array` and `lpf` build the
-index, `lz76` walks it, and `shuffle` and `metrics` build the derived measures on top. The table
-is ordered by how often you will reach for each one, not by pipeline order.
-
-| Module | Contains | Reach for it when you want |
-|---|---|---|
-| `sequence` | `Sequence`, `shuffle_in_place`, `shuffle_copy`, `shuffle_copy_seeded` | to construct input, or to slice / shift / concatenate bytes |
-| `lz76` | `factorize`, `lz76_factorization`, `lz76_factors`, `lz76_entropy_density`, `entropy_density_from`, and every result struct | complexity, factor boundaries, entropy density |
-| `lpf` | `lpf` — the Crochemore–Ilie longest-previous-factor pass | nothing, unless you are reimplementing the parse |
-| `suffix_array` | `build`, `build_suffix_array`, `build_lcp`, `SuffixArray` | a suffix array or LCP array for your own purposes |
-| `shuffle` | `lz76_random_shuffle_complexity`, `shuffle_factorization`, `max_block_size`, `merge_sequences` | EMC and the block-shuffle ladder |
-| `metrics` | `lz76_information_distance`, `lz76`, `lz76_extras`, `mutual_information`, and the `_z` variants | NID, the full `LempelZiv` bundle, the extras |
-
-The crate root re-exports the types you need most, but **not the functions**:
+## Start with the high-level functions
 
 ```rust
-pub use lz76::{LempelZiv, Lz76Result, LzArgs, LzExtra, LzShuffle};
-pub use sequence::Sequence;
-pub use suffix_array::{build_suffix_array, SuffixArray};
+use lzcomplexity_core::{lz76, metrics, shuffle, LzArgs, Sequence};
 
-pub const NO_ALPHABET: u32 = u32::MAX;
-pub const ALPHABET_SIZE: u32 = 2;
+fn main() {
+    let seq = Sequence::from_str("banana");
+    let mut args = LzArgs::new();
+    args.log_base = 2;
+    args.block_size = 8;
+    args.get_shuffle_terms = true;
+
+    let factors = lz76::lz76_factors(&seq, &args);
+    assert_eq!(factors.factorization, 3);
+    assert_eq!(factors.lzf, vec![0, 1, 2, 3, 7]);
+
+    let h = lz76::lz76_entropy_density(&seq, &args);
+    let score = shuffle::lz76_random_shuffle_complexity(&seq, &args);
+    let full = metrics::lz76(&seq, &args);
+    assert_eq!(h, full.entropy_density);
+    assert_eq!(score.emc_value, full.random_shuffle_complexity.emc_value);
+}
 ```
 
-So `LzArgs` and `Sequence` come from the crate root, while `lz76_entropy_density` and
-`lz76_information_distance` have to be reached through `lz76::` and `metrics::`.
+| Function | Return | Use |
+|---|---|---|
+| `lz76::lz76_factorization(seq, args)` | `u32` | Factor count only. |
+| `lz76::lz76_factors(seq, args)` | `Lz76Result` | Count, `epsilon` and boundaries. |
+| `lz76::lz76_entropy_density(seq, args)` | `f64` | Count-normalized entropy estimate. |
+| `lz76::entropy_density_from(count, seq, args)` | `f64` | Reuse a count already computed for exactly these bytes. |
+| `shuffle::lz76_random_shuffle_complexity(seq, args)` | `LzShuffle` | EMC-like shuffle score. |
+| `shuffle::lz76_random_shuffle_complexity_with(seq, args, count)` | `LzShuffle` | Same score, reusing the original count (`i32`). |
+| `metrics::lz76_information_distance(first, second, args)` | `f64` | LZ-based pairwise distance. |
+| `metrics::lz76(seq, args)` | `LempelZiv` | Complete analysis; original factorization reused. |
+| `metrics::lz76_extras(seq, args)` | `LzExtra` | Half-sequence count ratios. |
+| `metrics::lz76_extras_with(seq, args, count)` | `LzExtra` | Same ratios, reusing an original `f64` count. |
 
-<div class="lz-tickrule"></div>
+The `seq` arguments above are `&Sequence`; configuration is `&LzArgs`.
+Reused-count functions trust the supplied value. They do not verify that it
+belongs to the sequence or configuration.
 
-## Building a `Sequence`
+## `LzArgs`
 
-`Sequence` is a byte vector plus a cached alphabet. Three constructors matter:
+```rust
+use lzcomplexity_core::{LzArgs, NO_ALPHABET};
+
+let args = LzArgs::default();
+assert_eq!(args.alphabet, NO_ALPHABET);
+assert_eq!(args.log_base, NO_ALPHABET);
+assert_eq!(args.block_size, -1);
+assert!(!args.get_shuffle_terms);
+```
+
+| Field | Type | Default | Effect |
+|---|---|---|---|
+| `chunks` | `i32` | `0` | Compatibility field; not used by the current factorization. |
+| `max_context` | `i32` | `0` | Compatibility field; not used by the current factorization. |
+| `block_size` | `i32` | `-1` | Positive shuffle cap; nonpositive selects the automatic cap. |
+| `get_shuffle_terms` | `bool` | `false` | Populate shuffle `summands`. |
+| `alphabet` | `u32` | `NO_ALPHABET` | Alphabet parameter in `epsilon`; auto uses sequence metadata. |
+| `log_base` | `u32` | `NO_ALPHABET` | Entropy/score units; auto uses sequence alphabet size. |
+
+`NO_ALPHABET` is `u32::MAX`. Normalization floors explicit bases below two to
+two. Setting `args.alphabet` does not set `args.log_base`; specify both when
+that is the intended convention. `ALPHABET_SIZE` is the default floor, two.
+
+The current `PartialEq` implementation compares `chunks`, `max_context`,
+`block_size`, `get_shuffle_terms` and `alphabet`, **omitting `log_base`**.
+Compare units explicitly when constructing a cache key or determining whether
+measurements used identical settings.
+
+Use a Rayon pool when you need explicit worker control:
+
+```rust
+// With rayon also listed in your application's dependencies:
+use lzcomplexity_core::{metrics, LzArgs, Sequence};
+
+fn main() -> Result<(), rayon::ThreadPoolBuildError> {
+    let seq = Sequence::from_str("0001011100010111");
+    let args = LzArgs::default();
+    let pool = rayon::ThreadPoolBuilder::new().num_threads(4).build()?;
+    let result = pool.install(|| metrics::lz76(&seq, &args));
+    println!("{}", result.entropy_density);
+    Ok(())
+}
+```
+
+## Result structures
+
+All fields below are public. Structs implement `Clone` and `Debug`.
+
+| Struct | Fields |
+|---|---|
+| `Lz76Result` | `factorization: u32`, `epsilon: f64`, `lzf: Vec<u32>` |
+| `LzShuffle` | `max_block_size: i32`, `emc_value: f64`, `multi_information: f64`, `summands: Vec<f64>` |
+| `LempelZiv` | `complexity`, `entropy_density`, `random_shuffle_complexity`, `paired_shuffle_complexity`, `lz_normal_errors`, `lz_poison_errors`, `epsilon`, `factors_stddev`, `factors`, `extras` |
+| `LzExtra` | `lz_rajski_distance`, `redundancy`, `fh_uncertainty`, `lh_uncertainty`, `lz_pearson_coefficient` (all `f64`) |
+
+Within `LempelZiv`, `complexity` is `u32`, `factors` is `Vec<u32>`, the shuffle
+fields are `LzShuffle`, `extras` is `LzExtra`, and the remaining scalars are
+`f64`. The full driver leaves `paired_shuffle_complexity` at its default; it
+does not compute that optional analysis.
+
+`LzShuffle::default()` has `max_block_size = -1`, zero scalars and an empty
+summand vector. A negative default cap therefore means *uncomputed* in a
+result, while a negative cap in `LzArgs` means *select automatically*.
+
+The [Python reference](python.md) explains output meanings, legacy diagnostic
+fields and boundary conventions. High-level count functions return one for
+empty and constant inputs. The lower-level `lz76::factorize` instead returns
+`(0, 0.0, Vec::new(), 0.0)` for empty input; choose an entry point deliberately.
+
+## `Sequence`
+
+A `Sequence` owns a `Vec<u8>` and cached alphabet information. It is `Clone`,
+`Send` and `Sync`, compares and orders by its data, and accepts every byte
+value. String construction uses UTF-8 bytes.
+
+### Construction and access
+
+| Method | Behavior |
+|---|---|
+| `new()`, `default()` | Empty sequence; automatic alphabet metadata. |
+| `with_capacity(n)` | Empty sequence with reserved data capacity. |
+| `from_str(text)` | Copy UTF-8 bytes. |
+| `from_bytes(data)` | Own the byte vector and determine its alphabet. |
+| `from_bytes_with_alphabet(data, size)` | Legacy constructor hint: a mismatch is replaced by the observed size (floored at two). An exact zero/one-symbol hint is retained. |
+| `with_alphabet_size(size)` | Empty sequence with an explicit size declaration. |
+| `as_bytes()`, `as_bytes_mut()` | Borrow the bytes immutably or mutably. |
+| `to_string_lossy()` | Return text with invalid UTF-8 replaced. |
+| `len()`, `is_empty()` | Byte length and emptiness. |
+| `get(i)`, `first()`, `last()` | Return `Option<u8>` rather than indexing exceptions. |
+| `min_byte()`, `max_byte()` | Extremes as `Option<u8>`. |
+| `min_range(start, end)`, `max_range(start, end)` | Extremes in `[start, end)`; invalid/empty ranges return `None`. |
+| `char_density()` | Sorted byte-to-count `BTreeMap<u8, u32>`. |
+
+### Alphabet metadata and mutation
+
+| Method | Behavior |
+|---|---|
+| `alphabet()` | Observed distinct bytes, sorted descending. |
+| `alphabet_size()` | Explicit declaration if present; otherwise cached observed size, normally floored at two. |
+| `set_alphabet_size(size)` | Declare a normalization size without changing bytes or the observed symbol list. |
+| `determine_alphabet()` | Rescan, replace an explicit declaration with observed metadata, and return the alphabet. |
+| `push(byte)`, `pop()` | Append/remove a byte; return the resulting length. `pop()` on empty data stays empty. |
+| `extend_from_slice(bytes)` | Append bytes. |
+| `clear()` | Empty data, remove a declaration and restore automatic metadata. |
+| `map(function)` | New sequence with each byte transformed. |
+| `xor_with(other)` | Set zero where corresponding bytes agree, one where they differ; error `SequenceNoMatchSize` on unequal lengths. |
+
+Symbol-changing operations invalidate the observed cache; the next metadata
+query rebuilds it. Explicit declarations survive mutation until
+`determine_alphabet()` or `clear()`. Borrowing mutable bytes invalidates the
+cache before the borrow, so edits cannot leave stale observed metadata.
 
 ```rust
 use lzcomplexity_core::Sequence;
 
-let a = Sequence::from_str("banana");                          // &str, bytes copied
-let b = Sequence::from_bytes(vec![0u8, 1, 0, 1, 1, 0, 0, 1]);  // raw bytes, any values
-let c = Sequence::from_bytes_with_alphabet(vec![0, 1, 2], 3);  // bytes + a proposed alphabet size
+let mut seq = Sequence::new();
+seq.extend_from_slice(b"ACGT");
+assert_eq!(seq.alphabet_size(), 4);
+seq.as_bytes_mut().fill(b'A');
+assert_eq!(seq.alphabet_size(), 2); // observed size floored at two
+seq.set_alphabet_size(4);
+seq.push(b'C');
+assert_eq!(seq.alphabet_size(), 4); // explicit declaration retained
 ```
 
-All three run `determine_alphabet()`, which scans the bytes, counts distinct values and floors
-the result at 2. A constant string therefore reports `alphabet_size() == 2`, not 1.
-
-```rust
-assert_eq!(Sequence::from_str("aaaa").alphabet_size(), 2);
-assert_eq!(Sequence::from_bytes(vec![0, 1, 0, 1, 1, 0, 0, 1]).alphabet_size(), 2);
-```
-
-!!! warning "`from_bytes_with_alphabet` proposes an alphabet size; the scan overrules it"
-
-    `determine_alphabet()` keeps the value you passed only when it already equals the distinct-byte
-    count, and otherwise replaces it with `max(2, distinct)`. So
-    `from_bytes_with_alphabet(vec![0, 1], 10).alphabet_size()` is `2`, not `10`. To override the
-    alphabet for a measurement, set `LzArgs::alphabet` — that value is not re-derived — or call
-    `set_alphabet_size` after construction.
-
-`from_str` is an inherent method, not the `FromStr` trait — it is infallible, so there is no
-`Result` to unwrap and no `.parse()` form.
-
-!!! warning "A non-ASCII `&str` becomes more symbols than it has characters"
-
-    `Sequence::from_str("héllo")` has `len() == 6` and `alphabet_size() == 5`, because `é` is two
-    UTF-8 bytes and each byte is a separate symbol. Every measure in this crate operates on
-    bytes. If your alphabet has more than 256 members, or you want one symbol per Unicode scalar,
-    map it to bytes yourself before constructing the `Sequence`. See
-    [Alphabets and log bases](../concepts/alphabets.md).
-
-Beyond the constructors: `as_bytes`, `len`, `take(l)`, `drop(l)`, `split_at(l)`, `reverse_copy`,
-`right_shift` / `left_shift`, `granularity(gr)`, `char_density`, `map(f)`, `xor_with`, and
-`&a + &b` for concatenation.
-
-<div class="lz-tickrule"></div>
-
-## `LzArgs` — every field
-
-Every measure entry point takes `&LzArgs` — the `lz76*` functions in `lz76`, `shuffle` and
-`metrics`. `LzArgs::new()` and `LzArgs::default()` are the same thing and are what you want unless
-you are deliberately overriding the alphabet, the log base or the EMC block-size ceiling.
-
-<div class="lz-api" id="lz-lzargs">
-  <p class="lz-api__sig"><b>LzArgs</b> { chunks, max_context, block_size, get_shuffle_terms, alphabet, log_base } <span class="lz-api__badge lz-api__badge--stable">stable</span></p>
-  <p class="lz-api__lede">Configuration for every <code>lz76*</code> entry point. Derives <code>Clone</code> and <code>Debug</code>; the hand-written <code>PartialEq</code> compares five of the six fields — <code>log_base</code> is not part of the equality.</p>
-  <dl class="lz-api__params">
-    <dt>chunks</dt><dd><code>i32</code>, default <code>0</code> — <b>inert</b>. Never read by any algorithm in the workspace.</dd>
-    <dt>max_context</dt><dd><code>i32</code>, default <code>0</code> — <b>inert</b>. Never read anywhere.</dd>
-    <dt>block_size</dt><dd><code>i32</code>, default <code>-1</code> — the EMC block-size ceiling <i>mm</i>. Any value <code>&lt;= 0</code> means auto-select. Read by <code>shuffle::shuffle_factorization</code> only.</dd>
-    <dt>get_shuffle_terms</dt><dd><code>bool</code>, default <code>false</code> — populate <code>LzShuffle::summands</code> with the per-scale terms. Off by default in Rust; the Python <code>emc()</code> and <code>lz76()</code> bindings hard-code it to <code>true</code>.</dd>
-    <dt>alphabet</dt><dd><code>u32</code>, default <code>NO_ALPHABET</code> — the effective alphabet size. Feeds <code>epsilon</code> and nothing else. Clamped to a floor of 2.</dd>
-    <dt>log_base</dt><dd><code>u32</code>, default <code>NO_ALPHABET</code> — the logarithm base for entropy density and <code>epsilon</code>. Clamped to a floor of 2; pass <code>2</code> for bits.</dd>
-  </dl>
-</div>
-
-### The `NO_ALPHABET` sentinel
-
-`alphabet` and `log_base` are `u32`, so there is no `Option` to hold "unset". The crate uses a
-sentinel instead:
-
-```rust
-pub const NO_ALPHABET: u32 = u32::MAX;   // 4294967295
-```
-
-A field equal to `NO_ALPHABET` means "take it from the sequence" — `factorize` substitutes
-`seq.alphabet_size()`. Any other value overrides the auto-detection, and is then clamped upward
-to 2, so `0` and `1` are silently equivalent to `2`.
-
-```rust
-use lzcomplexity_core::{lz76, LzArgs, Sequence};
-
-let seq = Sequence::from_str("banana");
-
-let auto = LzArgs::new();                     // alphabet = log_base = NO_ALPHABET -> 3
-assert_eq!(lz76::lz76_entropy_density(&seq, &auto), 0.8154648767857287);
-
-let mut bits = LzArgs::new();
-bits.log_base = 2;                            // report h in bits instead
-assert_eq!(lz76::lz76_entropy_density(&seq, &bits), 1.292481250360578);
-```
-
-!!! warning "Two of the six fields do nothing, and do it silently"
-
-    Setting `chunks` or `max_context` changes no returned value. Neither field is read by any
-    code path in the workspace. `chunks` is what the CLI's `--partitions` flag and the Python
-    `partitions=` argument write to, so a caller who "tunes" it gets identical numbers *and*
-    identical timings. They exist because the struct mirrors the C++ `LZ_Args`; treat them as
-    reserved.
-
-!!! note "`alphabet` moves `epsilon` only"
-
-    Inside `factorize`, `alphabet` and `log_base` feed only the `epsilon` expression. The factor
-    count, the boundary vector and `factors_stddev` depend on neither. `log_base` re-enters
-    downstream in `entropy_density_from`, which applies its own independent floor-of-2 clamp;
-    `alphabet` does not re-enter at all.
-
-<div class="lz-tickrule"></div>
-
-## Worked examples
-
-One program, four entry points. These are the same values the Python API returns for the same
-inputs — the binding does not round, rescale or reorder anything.
-
-```rust title="src/main.rs"
-use lzcomplexity_core::{lz76, metrics, shuffle, LzArgs, Sequence};
-
-fn main() {
-    let args = LzArgs::new();
-
-    // 1 — complexity and factor boundaries
-    let r = lz76::lz76_factors(&Sequence::from_str("banana"), &args);
-    println!("c = {}  factors = {:?}", r.factorization, r.lzf);
-
-    // 2 — normalised entropy density
-    let h = lz76::lz76_entropy_density(&Sequence::from_str("01010101"), &args);
-    println!("h = {h}");
-
-    // 3 — normalised information distance
-    let d = metrics::lz76_information_distance(
-        &Sequence::from_str("abcd"),
-        &Sequence::from_str("abce"),
-        &args,
-    );
-    println!("nid = {d}");
-
-    // 4 — effective measure complexity (ask for the per-scale terms)
-    let mut emc_args = LzArgs::new();
-    emc_args.get_shuffle_terms = true;
-    let s = shuffle::lz76_random_shuffle_complexity(
-        &Sequence::from_str(&"01".repeat(64)),
-        &emc_args,
-    );
-    println!("emc = {}  mm = {}", s.emc_value, s.max_block_size);
-    println!("summands = {:?}", s.summands);
-}
-```
-
-<div class="lz-run" markdown>
-
-```text
-$ cargo run --release
-c = 3  factors = [0, 1, 2, 3, 7]
-h = 0.75
-nid = 0.25
-emc = 2.4609375  mm = 15
-summands = [0.51953125, 0.0, 0.13671875, 0.0, 0.1640625, 0.0, 0.13671875, 0.0,
-            0.02734375, 0.0, 0.478515625, 0.0, 0.0, 0.0, 0.998046875]
-```
-
-</div>
-
-The same four calls from Python:
-
-<div class="lz-scroll lz-compare" markdown>
-
-| Rust | Python | Value |
-|---|---|---|
-| `lz76::lz76_factors(&s, &args)` → `.factorization`, `.lzf` | `lz.factorization("banana")` | `(3, [0, 1, 2, 3, 7])` |
-| `lz76::lz76_entropy_density(&s, &args)` | `lz.h("01010101")` | `0.75` |
-| `metrics::lz76_information_distance(&a, &b, &args)` | `lz.nid("abcd", "abce")` | `0.25` |
-| `shuffle::lz76_random_shuffle_complexity(&s, &args)` | `lz.emc("01" * 64)` | `2.4609375` and 15 summands |
-| `metrics::lz76(&s, &args)` | `lz.lz76(seq)` | the full bundle |
-
-</div>
-
-!!! tip "Set `get_shuffle_terms` if you want the summands — Rust leaves it off"
-
-    `LzArgs::new()` leaves `get_shuffle_terms = false`, so `LzShuffle::summands` comes back empty
-    and `summands.len() == 0`. The Python `emc()` and `lz76()` bindings force it to `true`, which
-    is why `len(summands) == max_block_size` always holds from Python and not from Rust.
-    `emc_value` is identical either way — `2.4609375` for `"01" * 64` with the flag on and with it
-    off — so the flag costs nothing but the allocation.
-
-### Cheaper variants when you already have the count
-
-Three functions take a pre-computed complexity so you do not pay for a second factorization:
-
-| Function | Signature | Saves |
-|---|---|---|
-| `lz76::entropy_density_from` | `(count: u32, &Sequence, &LzArgs) -> f64` | one `factorize` |
-| `shuffle::lz76_random_shuffle_complexity_with` | `(&Sequence, &LzArgs, complexity: i32) -> LzShuffle` | one `factorize` |
-| `metrics::lz76_extras_with` | `(&Sequence, &LzArgs, c_lz: f64) -> LzExtra` | one `factorize` |
-
-`metrics::lz76` uses all three internally: it factorizes the sequence once and threads the count
-through the entropy, EMC and extras stages.
-
-<div class="lz-tickrule"></div>
-
-## Result structs
-
-### `Lz76Result` — from `lz76_factors`
-
-| Field | Type | Meaning |
-|---|---|---|
-| `factorization` | `u32` | the complexity `c(S)` — complete LZ76 components only |
-| `epsilon` | `f64` | the Lempel–Ziv finite-size correction term |
-| `lzf` | `Vec<u32>` | half-open factor boundaries; factor *k* is `S[lzf[k-1] .. min(lzf[k], n)]` |
-
-### `LzShuffle` — from `lz76_random_shuffle_complexity`
-
-| Field | Type | Meaning |
-|---|---|---|
-| `max_block_size` | `i32` | the block-size ceiling *mm* actually used |
-| `emc_value` | `f64` | the effective measure complexity — the top of the projected ladder, always `>= 0.0` |
-| `multi_information` | `f64` | the **raw**, unprojected `l = 1` rung `H_1 − ĥ`, kept separately. May be slightly negative |
-| `summands` | `Vec<f64>` | the *mm* per-scale terms, all `>= 0.0`, summing to `emc_value` — **empty unless `get_shuffle_terms` is set** |
-
-### `LzExtra` — from `lz76_extras`
-
-Five ratios computed by splitting **one** sequence at `len() / 2` and comparing the two halves.
-They are not a comparison of two inputs.
-
-| Field | Type | Formula |
-|---|---|---|
-| `lz_rajski_distance` | `f64` | `2 − (fh + lh) / c` |
-| `redundancy` | `f64` | `mi / (fh + lh)` |
-| `fh_uncertainty` | `f64` | `mi / fh` |
-| `lh_uncertainty` | `f64` | `mi / lh` |
-| `lz_pearson_coefficient` | `f64` | `mi / sqrt(fh · lh)` |
-
-`fh` and `lh` are the complexities of the first and second half, and `mi = fh + lh − c`. For odd
-lengths `mid = len() / 2` rounds down, so the second half is one symbol longer.
-
-### `LempelZiv` — from `metrics::lz76`
-
-| Field | Type | Notes |
-|---|---|---|
-| `complexity` | `u32` | |
-| `entropy_density` | `f64` | `0.0` for `len() <= 1` |
-| `random_shuffle_complexity` | `LzShuffle` | the EMC bundle |
-| `paired_shuffle_complexity` | `LzShuffle` | **always `Default::default()`** — hard-wired, never populated |
-| `lz_normal_errors` | `f64` | `sqrt(h³) · factors_stddev / sqrt(n / log_b n)` |
-| `lz_poison_errors` | `f64` | `h / n` |
-| `epsilon` | `f64` | |
-| `factors_stddev` | `f64` | see below |
-| `factors` | `Vec<u32>` | the boundary vector |
-| `extras` | `LzExtra` | |
-
-!!! danger "`factors_stddev` is not a standard deviation, and `lz_normal_errors` inherits that"
-
-    Reading `lz_normal_errors` as an error bar will misstate your uncertainty. `factors_stddev`
-    divides the sum of squares by the **largest factor length** instead of the sample count, and
-    centres on `(lzf.last() − 1) / lzf.len()` instead of the mean factor length. It is non-zero
-    even for a perfectly uniform factorization: `"abc"` gives `0.8660254037844386` where a
-    genuine σ would be `0`. Both it and `lz_normal_errors` are heuristic dispersion indicators
-    with no sampling interpretation.
-
-!!! warning "`paired_shuffle_complexity` is always zero"
-
-    Reading it gives `LzShuffle::default()` — `max_block_size: -1`, `emc_value: 0.0`,
-    `multi_information: 0.0`, empty `summands` — for every input. `metrics::lz76` assigns
-    `Default::default()` to it unconditionally. The function that would fill it,
-    `shuffle::lz76_paired_shuffle_complexity`, exists and works; nothing calls it. Call it
-    yourself if you want the value.
-
-<div class="lz-tickrule"></div>
-
-## Threads and the rayon pool
-
-The crate uses `rayon` in three places, and **`factorize` is not one of them**.
-
-| Entry point | Parallelism | Shape |
-|---|---|---|
-| `lz76::factorize`, `lz76_factorization`, `lz76_factors`, `lz76_entropy_density` | **none** | single-threaded end to end: suffix array, LCP, LPF, factor walk |
-| `metrics::lz76_information_distance` | nested `rayon::join` | the 4 independent factorizations `C(X)`, `C(Y)`, `C(XY)`, `C(YX)` |
-| `metrics::lz76_extras_with` | `rayon::join` | the 2 half-sequence factorizations |
-| `shuffle::shuffle_factorization` | `into_par_iter` | the *mm* block-shuffle factorizations of the EMC ladder |
-
-A single `lz76_factors` or `lz76_entropy_density` call therefore saturates exactly one core no
-matter how large the pool is — the throughput figures on
-[Performance](../project/performance.md) are single-core figures for that reason. EMC and NID
-are where the pool earns its keep.
-
-The crate never builds its own pool; it inherits rayon's global one. Three ways to control it:
-
-```rust
-// 1. Environment, no code change:  RAYON_NUM_THREADS=2 cargo run --release
-
-// 2. Size the global pool once, before any parallel call.
-rayon::ThreadPoolBuilder::new().num_threads(4).build_global().unwrap();
-
-// 3. Scope a pool to one call site — composes with other libraries in the process.
-let pool = rayon::ThreadPoolBuilder::new().num_threads(4).build().unwrap();
-let s = pool.install(|| shuffle::lz76_random_shuffle_complexity(&seq, &args));
-```
-
-<div class="lz-run" markdown>
-
-```text
-$ cargo run --release --bin threads
-default pool = 16
-in 4-thread pool: emc = 2.4609375
-pool threads = 4
-
-$ RAYON_NUM_THREADS=2 cargo run --release --bin threads
-default pool = 2
-in 4-thread pool: emc = 2.4609375
-pool threads = 4
-```
-
-</div>
-
-Thread count changes timing and nothing else. Every parallel section computes independent pure
-functions and reduces them in a fixed order, so results are bit-identical across pool sizes —
-including the EMC value above, unchanged at 16, 4 and 2 threads. See
-[Determinism](../project/determinism.md).
-
-<div class="lz-tickrule"></div>
-
-## Two conventions that will bite you
-
-### `complexity` counts complete components only
-
-The greedy parse advances `i += LPF[i] + 1`, so the final boundary is always exactly `n` or
-`n + 1`. When it is `n + 1` the last production ran past the end of the sequence — its
-innovation symbol is not there — and the crate does **not** count it. The textbook
-exhaustive-history count — the Kaspar–Schuster loop that `antropy` and NeuroKit2 implement — does
-count it, so it is `0` or `+1` above this crate's number.
-
-The conversion is exact for any sequence with at least two distinct symbols. Re-checked against a
-naive O(n³) reference implementation of the exhaustive history over a 4000-string sweep
-(n = 2…60, alphabets `01`, `012`, `ACGT`): of the 3955 non-constant cases, the boundary vectors
-matched with zero mismatches and the converted count matched the reference in all 3955. The 45
-constant cases are the exception below.
-
-<div class="lz-formula">
-  <p class="lz-math"><i>c</i><sub>textbook</sub> = <i>c</i> + [ lzf.last() &gt; <i>n</i> ]</p>
-  <dl class="lz-formula__key">
-    <dt><i>c</i></dt><dd><code>Lz76Result::factorization</code> as returned by this crate</dd>
-    <dt>lzf.last()</dt><dd>the final entry of <code>Lz76Result::lzf</code>, always <i>n</i> or <i>n</i> + 1</dd>
-    <dt><i>n</i></dt><dd><code>seq.len()</code></dd>
-  </dl>
-</div>
-
-```rust
-let r = lz76::lz76_factors(&seq, &args);
-let overshoot = (*r.lzf.last().unwrap() as usize) > seq.len();
-let c_textbook = r.factorization + overshoot as u32;
-```
-
-| Sequence | `factorization` | `lzf.last()` | `n` | textbook |
-|---|---|---|---|---|
-| `banana` | 3 | 7 | 6 | **4** |
-| `1011010100010` | 5 | 14 | 13 | **6** |
-| `1001111011000010` | 6 | 16 | 16 | 6 |
-| `010101010101` | 2 | 13 | 12 | **3** |
-
-!!! warning "The conversion does not hold for a constant sequence"
-
-    `lz76_factorization` and `lz76_factors` short-circuit when the input has fewer than two
-    distinct symbols: they return `factorization = 1`, `epsilon = 0.0` and a fabricated
-    `lzf = [0, 1, n]` without running the parse at all. Because that vector never overshoots, the
-    formula returns `1` — but the exhaustive history of `"aaaa"` is `a | aaa`, so the textbook
-    count is `2`. The empty sequence takes the same branch and yields `lzf = [0, 1, 0]`, a
-    descending vector. Guard on "fewer than two distinct bytes" before converting. Background:
-    [LZ76 factorization](../concepts/lz76.md).
-
-!!! danger "`lzf.len() - 1` is not the complexity, and `lzf.last()` can index past the end"
-
-    Slicing with the raw boundary vector reads out of bounds and panics. `lzf.len() - 1` is the
-    number of *parsed* factors, which exceeds `factorization` by one whenever the parse
-    overshoots — the common case. Clamp every span: factor *k* is
-    `&seq.as_bytes()[lzf[k-1] as usize .. (lzf[k] as usize).min(n)]`. Python slicing happens to
-    clamp for you; Rust does not.
-
-### The EMC ladder is projected, not summed
-
-`shuffle_entropy_calculation` builds one rung per block size and then projects the ladder:
-
-<div class="lz-formula">
-  <p class="lz-math"><i>Ê</i>(<i>l</i>) = <i>l</i> · <i>g</i> · ( C<sub>LZ</sub>(<i>u</i><sup>RS(<i>l</i>)</sup>) − C<sub>LZ</sub>(<i>u</i>) ), &nbsp; <i>g</i> = log<sub><i>k</i></sub>(<i>N</i>) ⁄ <i>N</i></p>
-  <p class="lz-math"><i>Ê</i><sub>fit</sub> = non_negative_isotonic( <i>Ê</i>(1), …, <i>Ê</i>(<i>mm</i>) ) &emsp;·&emsp; summands[<i>l</i>−1] = <i>Ê</i><sub>fit</sub>(<i>l</i>) − <i>Ê</i><sub>fit</sub>(<i>l</i>−1) &emsp;·&emsp; <code>emc_value</code> = <i>Ê</i><sub>fit</sub>(<i>mm</i>)</p>
-  <dl class="lz-formula__key">
-    <dt><i>mm</i></dt><dd><code>LzShuffle::max_block_size</code> — the largest block size in the ladder</dd>
-    <dt><i>u</i><sup>RS(<i>l</i>)</sup></dt><dd>the sequence block-shuffled at scale <i>l</i></dd>
-    <dt><i>k</i></dt><dd>the log base: the detected alphabet size, or <code>LzArgs::log_base</code></dd>
-    <dt><i>N</i></dt><dd><code>seq.len()</code></dd>
-  </dl>
-  <p class="lz-formula__cite">Every block size reaches the total. <code>non_negative_isotonic</code> is pool-adjacent-violators plus a positive-part clamp — the least-squares projection onto {0 ≤ v₁ ≤ … ≤ v<sub>mm</sub>}, which is the shape Crutchfield &amp; Feldman's Lemma 1 guarantees for the true finite-scale excess entropy.</p>
-</div>
-
-The projection is the identity on a ladder that is already non-negative and non-decreasing, so in
-that case `emc_value` is just the top rung. `"01" * 64` is one: `N = 128`, `k = 2`, `mm = 15`,
-`C_LZ(u) = 2`, and `C_LZ` of the scale-15 shuffle is `5`, so
-`15 · (7/128) · (5 − 2) = 2.4609375` — exactly the `emc_value` printed above, bit for bit. Do not
-read that as a general closed form: the top rung survives unpooled here only because the rung below
-it is lower. When the top rungs pool, `emc_value` is their mean and the closed form is wrong.
-
-!!! tip "Every summand is non-negative, and they sum to `emc_value`"
-
-    `summands` holds the increments of the fitted ladder, so `summands[l-1] >= 0.0` for every `l`,
-    the running sums climb monotonically, and the total equals `emc_value` to floating-point
-    rounding. A `0.0` entry means scales `l−1` and `l` were pooled into one block by the projection
-    — the surrogate at scale `l` was still computed. The `mm` surrogate factorizations happen
-    regardless of `get_shuffle_terms`.
-
-    Up to 1.0.2 this vector held the raw first differences and its signs alternated
-    (`[+1.0390625, −1.0390625, +1.3125, −1.3125, …]` for `"01" * 64`), because the sum telescoped:
-    `Σ_l [(H_l − H_{l−1}) − ĥ]` collapses to `Ê(mm)` and the intermediate scales cancelled out of
-    the total. They no longer do.
-
-!!! note "An `emc_value` of `0.0` means the whole ladder sat at or below zero"
-
-    Zero is now a single, readable outcome: no scale showed a monotone rise, which is what
-    structureless input looks like. It is no longer produced by *resonance* between the block grid
-    and the source period — under 1.0.2, `"0011" * 128` returned `0.0` and `"01" * 1000` returned
-    `-4.440892098500626e-16` purely because the scale-`mm` shuffle happened to be the identity;
-    they now return `2.70263671875` and `1.040835691685843`. A 512-symbol pseudorandom binary string
-    (`random.Random(3)`, `random.choice("01")`) returned `-0.28125` and now returns `0.205078125`.
-
-    `emc_value` can never be negative. If you are comparing against a value from 1.0.2 or earlier,
-    see [Releases](../project/releases.md).
-
-The derivation, the two remaining biases and the surrogate-quality caveats are on
-[Effective measure complexity](../concepts/emc.md).
-
-<div class="lz-tickrule"></div>
-
-## Where to go next
-
-<div class="lz-cards" markdown>
-<div class="lz-card" markdown>
-
-### Generated API reference
-
-Every signature, field and module, rendered from the source doc-comments and versioned per
-release on [docs.rs](https://docs.rs/lzcomplexity-core).
-
-<p class="lz-card__api"><code>docs.rs/lzcomplexity-core</code></p>
-
-</div>
-<div class="lz-card" markdown>
-
-### Performance numbers
-
-Wall-clock timings, scaling exponents, throughput and the EMC cost model, all measured on the
-core entry points documented here: [Performance](../project/performance.md).
-
-<p class="lz-card__api"><code>~12 MB/s on incompressible data</code></p>
-
-</div>
-<div class="lz-card" markdown>
-
-### The Python surface
-
-Five functions mapping onto the calls above, with the coercion rules for non-`str` inputs:
-[Python API](python.md) and [Input types](inputs.md).
-
-<p class="lz-card__api"><code>import lzcomplexity as lz</code></p>
-
-</div>
-<div class="lz-card" markdown>
-
-### Rust vs C++
-
-What the port changed, what it kept bit-identical and where the two libraries diverge:
-[Rust vs C++](../project/cpp-parity.md).
-
-<p class="lz-card__api"><code>289/289 differential sweep</code></p>
-
-</div>
-</div>
+### Substrings and permutations
+
+| Method/operator | Behavior |
+|---|---|
+| `take(n)` | First `n` bytes, clamped to length. |
+| `drop(n)` | Bytes after the first `n`; empty when `n >= len`. |
+| `split_at(n)` | Pair of prefix/suffix sequences, split position clamped. |
+| `reverse()` | Reverse in place and return `&mut Self`. |
+| `reverse_copy()` | Reversed clone. |
+| `right_shift(n)`, `left_shift(n)` | Circular byte rotation, returning `&mut Self`. |
+| `pi()` | Remove the last byte and return `&mut Self`. |
+| `&first + &second` | New concatenated sequence. |
+| `granularity(group_size)` | Wrapping byte sum for each complete group; discard an incomplete trailing group. Zero group size returns empty. |
+
+Subsequence constructors use the legacy alphabet-hint rules; do not assume
+an explicit declaration propagates unchanged through every derived sequence.
+`granularity` is not a collision-free encoding of byte tuples: distinct groups
+can have the same sum. Define your scientific coarse-graining independently
+when distinct states must stay distinct.
+
+## Extra measures
+
+Let `C` be the original count, `F` the first-half count, `L` the second-half
+count, and `I = F + L - C`. The current formulas are:
+
+| Rust field | Formula |
+|---|---|
+| `lz_rajski_distance` | `2 - (F + L) / C` |
+| `redundancy` | `I / (F + L)` |
+| `fh_uncertainty` | `I / F` |
+| `lh_uncertainty` | `I / L` |
+| `lz_pearson_coefficient` | `I / sqrt(F * L)` |
+
+They are count-based diagnostics. The names do not establish Shannon
+information identities or a Pearson correlation of the original observations.
+If any required count is zero, the implementation returns default zero extras.
+
+## Advanced shuffle routines
+
+`sequence::shuffle_in_place` performs one aligned-block swap using a supplied
+`ChaCha8Rng`. `sequence::shuffle_copy` repeats swaps on a clone with a
+content-derived seed; `shuffle_copy_seeded` accepts an explicit seed. The
+standalone copy helper and the EMC-like pipeline use different seed-derivation
+helpers; a bare `shuffle_copy` call is not a promise of the same surrogate as
+the measurement pipeline.
+
+`shuffle::shuffle_factorization` returns `(counts, M)`, where indices `1..=M`
+hold surrogate counts and index zero is unused; storage has `M + 3` entries.
+`shuffle_entropy_calculation` consumes those counts and the original count.
+The public `shuffle::max_block_size(N)` helper does not itself include the
+additional ten scales applied by the automatic measurement pipeline for
+`N > 50`.
+
+`metrics::mutual_information` and `lz76_random_shuffle_distance` operate on
+concatenation. Their `_z` variants use `shuffle::merge_sequences` to pair
+corresponding positions; pairing stops at the shorter input. The paired
+shuffle-complexity routine splits one sequence into halves before pairing.
+These historical names denote operational shuffle contrasts, not calibrated
+Shannon mutual information. Pair labels are encoded as bytes with wrapping,
+so the helper does not preserve an arbitrary large alphabet of distinct pairs.
+Use it only after validating that representation for the intended inputs.
+
+## Suffix arrays and lower-level building blocks
+
+| Item | Purpose |
+|---|---|
+| `build_suffix_array(bytes)` | Sorted suffix starting indices as `Vec<u32>`; no sentinel suffix. |
+| `suffix_array::build_lcp(bytes, sa)` | LCP array for a matching suffix array. |
+| `suffix_array::build(bytes)` | `SuffixArray { sa, lcp, n }`. |
+| `SuffixArray::new()`, `clear()` | Empty/default arrays and length. |
+| `lpf::lpf(output, sa, lcp, n)` | Populate an existing longest-previous-factor buffer, consuming SA/LCP vectors. |
+| `lz76::factorize(seq, args)` | Low-level tuple `(count, epsilon, boundaries, dispersion)`. |
+
+Small suffix arrays use comparison sorting; larger ones use the bundled
+`cdivsufsort` dependency, with Kasai LCP construction. This Rust crate does not
+expose the historical C++ `CaPS_SA` class. Low-level routines expect matching
+lengths and arrays; prefer high-level functions unless maintaining an
+algorithm implementation.
+
+Generate the complete item-level documentation from this checkout with
+`cargo doc -p lzcomplexity-core --no-deps --open`.
+
+Source: [core modules](https://github.com/pleros-ai/lzcomplexity/tree/rust-backend/crates/lzcomplexity-core/src).
