@@ -1,5 +1,5 @@
 [build-system]
-requires = ["maturin>=1.9.3,<2"]
+requires = ["maturin>=1.7,<2"]
 build-backend = "maturin"
 
 [project]
@@ -11,8 +11,7 @@ authors = [
     { name = "Daniel Estévez Moya", email = "kemossabee@gmail.com" },
     { name = "Ernesto Estévez Rams", email = "estevez@fisica.uh.cu" },
 ]
-license = "MIT AND BSD-3-Clause"
-license-files = ["LICENSE", "crates/lzcomplexity-core/THIRD_PARTY_LICENSES/*.txt"]
+license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [

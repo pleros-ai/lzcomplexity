@@ -12,7 +12,7 @@
 // types. It is macro noise, not our code.
 #![allow(clippy::useless_conversion)]
 
-use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyBytes, PyDict, PyList};
 
@@ -72,92 +72,29 @@ fn build_args(
     a
 }
 
-fn build_emc_args(
-    partitions: i32,
-    alphabet: Option<u32>,
-    log_base: Option<u32>,
-    max_block_size: i32,
-    max_history: Option<i32>,
-) -> PyResult<core::lz76::LzArgs> {
-    let legacy_history = (max_block_size > 0).then_some(max_block_size);
-    if let (Some(legacy), Some(history)) = (legacy_history, max_history) {
-        if legacy != history {
-            return Err(PyValueError::new_err(
-                "max_block_size and max_history specify conflicting history limits",
-            ));
-        }
-    }
-    let history = max_history.or(legacy_history);
-    if history.is_some_and(|value| !(2..=16).contains(&value)) {
-        return Err(PyValueError::new_err(
-            "max_history (or positive max_block_size) must be between 2 and 16",
-        ));
-    }
-    let mut args = build_args(partitions, alphabet, log_base, max_block_size, true);
-    args.max_context = history.unwrap_or(0);
-    Ok(args)
-}
-
-fn emc_result_to_py(py: Python<'_>, result: &core::lz76::LzShuffle) -> PyResult<PyObject> {
-    let out = PyDict::new_bound(py);
-    out.set_item("value", result.emc_value)?;
-    out.set_item("summands", &result.summands)?;
-    out.set_item("max_block_size", result.max_block_size)?;
-    out.set_item("multi_information", result.multi_information)?;
-    out.set_item("status", result.status)?;
-    out.set_item("message", result.message.as_deref())?;
-    out.set_item("method", "bidirectional_cssr")?;
-    if let Some(diagnostics) = result.diagnostics.as_ref() {
-        let detail = PyDict::new_bound(py);
-        detail.set_item("forward_states", diagnostics.forward_states)?;
-        detail.set_item("reverse_states", diagnostics.reverse_states)?;
-        detail.set_item("forward_history", diagnostics.forward_history)?;
-        detail.set_item("reverse_history", diagnostics.reverse_history)?;
-        detail.set_item("forward_stable_depths", diagnostics.forward_stable_depths)?;
-        detail.set_item("reverse_stable_depths", diagnostics.reverse_stable_depths)?;
-        detail.set_item("max_history", diagnostics.max_history)?;
-        detail.set_item("predictive_horizon", diagnostics.predictive_horizon)?;
-        detail.set_item("training_samples", diagnostics.training_samples)?;
-        detail.set_item("selection_samples", diagnostics.selection_samples)?;
-        detail.set_item("evaluation_samples", diagnostics.evaluation_samples)?;
-        detail.set_item("synchronized_samples", diagnostics.synchronized_samples)?;
-        detail.set_item(
-            "synchronization_fraction",
-            diagnostics.synchronization_fraction,
-        )?;
-        out.set_item("diagnostics", detail)?;
-    } else {
-        out.set_item("diagnostics", py.None())?;
-    }
-    Ok(out.to_object(py))
-}
-
 // ── Top-level functions ─────────────────────────────────────────────────────
 
 /// Compute the LZ76 factorization of a sequence.
 ///
-/// Returns ``(complexity, factors)``. For nonconstant input, ``complexity``
-/// counts complete LZ76 components; a trailing copied suffix without an additional
-/// symbol is omitted. Thus ``"banana"`` has count 3 although its textbook
-/// exhaustive history has four components. ``factors`` contains byte offsets;
-/// the last offset may be one past the sequence length. Slice each factor as
-/// ``data[factors[i]:min(factors[i+1], len(data))]`` on the encoded bytes.
+/// Returns a tuple ``(complexity, factors)`` where ``complexity`` is the
+/// un-normalized LZ76 factor count and ``factors`` is the list of boundary
+/// indices at which the factors separate — the i-th factor spans
+/// ``[factors[i], factors[i+1])``. Returning the boundary indices (rather than
+/// the substrings) keeps the result compact.
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Sequence[int]
-///     Bytes are raw symbols; strings use UTF-8 bytes. An integer sequence
-///     (e.g. a tuple or one-dimensional NumPy array) is converted
+/// seq : str | bytes | list[int] | list[str] | Iterable[int]
+///     The input sequence. Strings/bytes are treated as raw symbols. A
+///     ``list[int]`` (or any iterable of ints, e.g. a NumPy array) is converted
 ///     by concatenating each element's decimal representation — so
 ///     ``[0, 1, 10] -> "0110"``. ``list[str]`` is joined directly.
-///     Generators and iterators are not accepted. Prefer ``bytes`` for
-///     categorical symbols: decimal concatenation can merge different inputs.
 /// partitions : int, default 1
-///     Reserved compatibility parameter. Currently ignored.
+///     Number of suffix-array partitions. Performance knob; no effect on the result.
 /// alphabet : int | None, default None
-///     Has no effect on the returned count or boundaries.
+///     Effective alphabet size. ``None`` auto-detects (distinct symbols, min 2).
 /// log_base : int | None, default None
-///     Has no effect on the returned count or boundaries.
+///     Logarithm base for downstream entropy. ``None`` matches the alphabet size.
 /// jobs : int, default 0
 ///     Reserved for future use. Currently ignored (rayon manages its pool).
 ///
@@ -189,25 +126,22 @@ fn factorization(
 
 /// Compute the LZ76-based normalized entropy density of a sequence.
 ///
-/// Computes ``h = C(S) * log_b(n) / n``, where ``C(S)`` is the library's
-/// complete-factor count and ``b`` is the resolved log base. The asymptotic
-/// LZ76 result for stationary ergodic finite-alphabet sources is stated as
-/// ``limsup h_n = h_source`` almost surely (Ziv 1978; Estevez-Rams et al.
-/// 2013, Eq. 4). At finite length the estimate can be biased and can exceed
-/// the alphabet's maximum entropy; no accuracy bound is supplied.
+/// Estimates the entropy rate as ``h ~= c(S) * log_k(n) / n``, where ``c(S)``
+/// is the LZ76 factor count and ``k`` is the alphabet size. This is the
+/// *normalized* complexity (entropy-rate estimator): it converges to the true
+/// entropy rate for ergodic sources as ``n -> infinity``.
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Sequence[int]
+/// seq : str | bytes | list[int] | list[str] | Iterable[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Reserved compatibility parameter. Currently ignored.
+///     Number of suffix-array partitions. Performance knob.
 /// alphabet : int | None, default None
-///     Effective alphabet size; the default log base follows this value.
-///     ``None`` auto-detects distinct bytes, with a minimum of 2.
+///     Effective alphabet size used in the entropy formula. ``None`` auto-detects.
 /// log_base : int | None, default None
-///     Logarithm base. ``None`` matches the effective alphabet size;
-///     pass ``2`` for bits per input byte.
+///     Logarithm base. ``None`` matches the alphabet size (the normalized form);
+///     pass ``2`` for entropy in bits.
 /// jobs : int, default 0
 ///     Reserved for future use.
 ///
@@ -236,75 +170,69 @@ fn h(
     Ok(core::lz76::lz76_entropy_density(&s, &args))
 }
 
-/// Estimate excess entropy by bidirectional causal-state reconstruction.
+/// Effective measure complexity (EMC) via random block shuffling.
 ///
-/// For a stationary source, excess entropy is the mutual information between
-/// the infinite past and future. It also equals ``I(S+; S-)``, where ``S+``
-/// and ``S-`` are predictive and retrodictive causal states. CSSR infers a
-/// model in each direction; state-pair counts on held-out evaluation data
-/// give the estimate. State entropy ``C_mu`` is not substituted for E.
+/// Compares the LZ76 complexity of the original sequence against shuffled
+/// versions at several block sizes to estimate the non-random information
+/// content. Higher values mean more structure than random noise of the same
+/// length and alphabet.
 ///
-/// The input is split into training (50%), model selection (25%), and
-/// evaluation (25%) segments. Candidate history depths are selected by
-/// penalized held-out predictive loss and checked for topology stability,
-/// supported transitions and joint state synchronization. This path uses no
-/// random shuffle, Chao-Shen correction or LZ-rate subtraction.
-/// Morph comparisons look up to three symbols ahead, with a smaller horizon
-/// for wider alphabets to bound the predictive-word alphabet.
-/// With ``log_base=2`` the value is in bits, not bits per symbol.
+/// For each block size ``l = 1 ... max_block_size`` the sequence is shuffled in
+/// blocks of length ``l`` and re-factorized, which gives one estimate of the
+/// *excess entropy accumulated up to scale l*. Excess entropy is a mutual
+/// information between the past and the future, so that ladder must be
+/// non-negative and non-decreasing in ``l``; the raw estimates are not, because
+/// each rests on its own surrogate draw. They are projected onto that shape
+/// (non-negative isotonic regression) before the terms are read off, so
+/// **every returned value is non-negative** and every block size informs the
+/// total.
+///
+/// The shuffle is seeded deterministically from the sequence content, so
+/// repeated calls on the same input produce identical results.
 ///
 /// .. warning::
 ///
-///    Reconstruction assumes finitely many causal states and finite
-///    synchronizing suffixes in both directions. A finite history cap can
-///    recover a model with unbounded observable memory, but can also miss
-///    states requiring longer distinguishing histories. Passing diagnostics
-///    does not prove the source assumptions or remove finite-sample bias.
-///    No calibrated confidence interval is returned. Use :func:`lz76` to
-///    inspect the status and diagnostics when E cannot be resolved.
+///    Treat the value as an **ordinal index at fixed sequence length**, not as
+///    a bit count. It is biased upward (roughly 2-3x the analytic excess
+///    entropy for order-1 Markov sources) and it scales with
+///    ``max_block_size``, which itself grows with length -- so never compare
+///    values across sequences of different length. Report it alongside
+///    :func:`h`.
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Sequence[int]
+/// seq : str | bytes | list[int] | list[str] | Iterable[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Reserved compatibility parameter. Currently ignored.
+///     Number of suffix-array partitions. Performance knob.
 /// alphabet : int | None, default None
-///     Effective alphabet size for the default log base.
-///     ``None`` auto-detects distinct bytes, with a minimum of 2.
+///     Effective alphabet size. ``None`` auto-detects from the sequence.
 /// log_base : int | None, default None
-///     Output log base. ``None`` matches the effective alphabet size; ``2``
-///     gives bits. Changing units does not change the reconstruction.
+///     Logarithm base for the entropy formula. ``None`` matches the alphabet size.
 /// max_block_size : int, default -1
-///     Deprecated alias: a positive value supplies the CSSR history cap.
-///     Its meaning differs from the released shuffle estimator.
+///     Maximum shuffle block size. ``-1`` picks a value based on length.
 /// jobs : int, default 0
 ///     Reserved for future use.
-/// max_history : int | None, default None
-///     Maximum tested suffix-history depth (2 through 16). ``None`` uses a
-///     data-dependent resource cap. This is not a bound on process memory.
-///     Conflicting positive ``max_block_size`` and ``max_history`` values
-///     raise ``ValueError``.
 ///
 /// Returns
 /// -------
 /// tuple[float, list[float]]
-///     ``(emc_value, summands)``. Each term is a forward-state contribution
-///     ``P(s+) * KL(P(S- | s+) || P(S-))``. These non-negative terms sum to
-///     the estimate; they are not the old ``h(m)-h`` summands.
-///
-/// Raises
-/// ------
-/// ValueError
-///     If data are insufficient, reconstruction checks fail, or the history
-///     arguments are invalid. Short inputs do not produce a successful zero.
+///     ``(emc_value, summands)``. ``emc_value`` is the effective measure
+///     complexity, always ``>= 0.0``. ``summands`` has one entry per block
+///     size, ``summands[l-1]`` estimating the scale-``l`` conditional-entropy
+///     excess ``h(l) - h``; every entry is ``>= 0.0`` and they sum to
+///     ``emc_value``. Their running sum is the excess entropy captured up to
+///     each scale, so a profile that keeps climbing past the first few entries
+///     indicates long-range or hierarchical correlation. Zero entries mean
+///     neighbouring scales were pooled by the projection, not that the scale
+///     was skipped.
 ///
 /// Examples
 /// --------
 /// >>> import lzcomplexity as lz
-/// >>> emc_value, summands = lz.emc(b"01" * 4096, max_history=6, log_base=2)
+/// >>> emc_value, summands = lz.emc("01001010101101010101110101010101010000100101011")
 #[pyfunction]
-#[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, max_block_size=-1, jobs=0, max_history=None))]
+#[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, max_block_size=-1, jobs=0))]
 fn emc(
     seq: &Bound<'_, PyAny>,
     partitions: i32,
@@ -312,77 +240,53 @@ fn emc(
     log_base: Option<u32>,
     max_block_size: i32,
     jobs: u32,
-    max_history: Option<i32>,
 ) -> PyResult<PyObject> {
     let _ = jobs;
-    let args = build_emc_args(partitions, alphabet, log_base, max_block_size, max_history)?;
     let s = coerce_sequence(seq)?;
+    let args = build_args(partitions, alphabet, log_base, max_block_size, true);
     let r = core::shuffle::lz76_random_shuffle_complexity(&s, &args);
-    let value = r.emc_value.ok_or_else(|| {
-        PyValueError::new_err(format!(
-            "{}: {}",
-            r.status,
-            r.message
-                .as_deref()
-                .unwrap_or("excess-entropy inference did not produce an estimate")
-        ))
-    })?;
-    Python::with_gil(|py| Ok((value, r.summands).to_object(py)))
+    Python::with_gil(|py| Ok((r.emc_value, r.summands).to_object(py)))
 }
 
 /// Run the full LZ76 analysis on a sequence.
 ///
-/// Computes the complete-factor count, entropy-rate estimate, byte boundaries,
-/// EMC estimate and state contributions, and legacy diagnostic ratios. Whole-
-/// sequence factorization is reused across these calculations.
+/// The "give me everything" call: computes the factor count, the normalized
+/// entropy density, the factor boundaries, the random-shuffle EMC (with its
+/// summand terms), the error estimates, and the extra pairwise measures in a
+/// single pass.
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Sequence[int]
+/// seq : str | bytes | list[int] | list[str] | Iterable[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Reserved compatibility parameter. Currently ignored.
+///     Number of suffix-array partitions. Performance knob.
 /// alphabet : int | None, default None
-///     Effective alphabet size for the default log base.
-///     ``None`` auto-detects distinct bytes, with a minimum of 2.
+///     Effective alphabet size. ``None`` auto-detects from the sequence.
 /// log_base : int | None, default None
-///     Output log base. ``None`` matches the effective alphabet size;
-///     ``2`` gives ``h`` in bits per byte and ``emc.value`` in bits.
+///     Logarithm base. ``None`` matches the alphabet size (normalized entropy).
 /// max_block_size : int, default -1
-///     Deprecated alias for the CSSR history cap. See :func:`emc`.
+///     Maximum shuffle block size for the EMC stage. ``-1`` auto-selects.
 /// jobs : int, default 0
 ///     Reserved for future use.
-/// max_history : int | None, default None
-///     Maximum tested CSSR suffix-history depth. See :func:`emc`.
 ///
 /// Returns
 /// -------
 /// dict
 ///     A dictionary with keys:
 ///
-///     - ``complexity`` (int): complete LZ76 factor count.
-///     - ``h`` (float): entropy-rate estimate in the requested log base.
-///     - ``factors`` (list[int]): byte boundaries; the last may be ``n+1``.
-///     - ``emc`` (dict): ``value``, ``summands``, ``status``, ``message``,
-///       ``method``, ``diagnostics``, ``max_block_size`` and ``multi_information``.
-///       Unresolved E has ``value=None`` and empty summands; the other
-///       analysis results remain available. ``status="estimated"`` means
-///       the reconstruction checks passed, not a universal accuracy guarantee.
-///       See :func:`emc` for assumptions and estimator details.
-///       ``multi_information`` is the separate legacy contrast
-///       ``H_plugin(1) - h_LZ`` over the whole input. It may be negative and
-///       does not enter the causal-state mutual information estimate.
+///     - ``complexity`` (int): LZ76 factor count.
+///     - ``entropy_density`` (float): normalized entropy density.
+///     - ``factors`` (list[int]): factor boundary indices.
+///     - ``emc`` (dict): ``{"value", "summands", "max_block_size",
+///       "multi_information"}`` from the random-shuffle analysis.
 ///     - ``epsilon`` (float): finite-size correction term.
-///     - ``factors_stddev`` (float): legacy dispersion formula, not a standard
-///       deviation (it divides by the longest factor length).
-///     - ``normal_error`` / ``poison_error`` (float): legacy diagnostics, not
-///       calibrated standard errors or confidence intervals.
+///     - ``factors_stddev`` (float): standard deviation of factor lengths.
+///     - ``normal_error`` / ``poison_error`` (float): error estimators.
 ///     - ``extras`` (dict): ``{"rajski_distance", "redundancy",
 ///       "fh_uncertainty", "lh_uncertainty", "pearson_coefficient"}``.
-///       These compare phrase counts of the sequence's two halves; they are
-///       not Shannon mutual information or statistical correlation estimates.
 #[pyfunction]
-#[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, max_block_size=-1, jobs=0, max_history=None))]
+#[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, max_block_size=-1, jobs=0))]
 fn lz76(
     seq: &Bound<'_, PyAny>,
     partitions: i32,
@@ -390,14 +294,20 @@ fn lz76(
     log_base: Option<u32>,
     max_block_size: i32,
     jobs: u32,
-    max_history: Option<i32>,
 ) -> PyResult<PyObject> {
     let _ = jobs;
-    let args = build_emc_args(partitions, alphabet, log_base, max_block_size, max_history)?;
     let s = coerce_sequence(seq)?;
+    let args = build_args(partitions, alphabet, log_base, max_block_size, true);
     let r = core::metrics::lz76(&s, &args);
     Python::with_gil(|py| {
-        let emc = emc_result_to_py(py, &r.random_shuffle_complexity)?;
+        let emc = PyDict::new_bound(py);
+        emc.set_item("value", r.random_shuffle_complexity.emc_value)?;
+        emc.set_item("summands", r.random_shuffle_complexity.summands.clone())?;
+        emc.set_item("max_block_size", r.random_shuffle_complexity.max_block_size)?;
+        emc.set_item(
+            "multi_information",
+            r.random_shuffle_complexity.multi_information,
+        )?;
 
         let extras = PyDict::new_bound(py);
         extras.set_item("rajski_distance", r.extras.lz_rajski_distance)?;
@@ -425,21 +335,21 @@ fn lz76(
 /// Normalized information distance (NID) between two sequences.
 ///
 /// Computes ``max(C(XY) - C(X), C(YX) - C(Y)) / max(C(X), C(Y))``, an
-/// LZ76 phrase-count dissimilarity. This is a heuristic surrogate, not the
-/// uncomputable Kolmogorov normalized information distance. Self-distance may
-/// be nonzero, different strings can have distance zero, and the triangle
-/// inequality can fail. A value of 1 is not proof of source independence.
+/// LZ76-based, conditional-entropy-flavoured normalized distance. The result
+/// lies in ``[0, 1]`` for well-behaved inputs — 0 means the two sequences
+/// carry the same information, 1 means they are maximally distinct.
 ///
 /// Parameters
 /// ----------
-/// seq1, seq2 : str | bytes | list[int] | list[str] | Sequence[int]
+/// seq1, seq2 : str | bytes | list[int] | list[str] | Iterable[int]
 ///     The two input sequences. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Reserved compatibility parameter. Currently ignored.
+///     Number of suffix-array partitions.
 /// alphabet : int | None, default None
-///     Does not affect this ratio of factor counts.
+///     Effective alphabet size. ``None`` auto-detects from the sequence.
 /// log_base : int | None, default None
-///     Does not affect this ratio of factor counts.
+///     Logarithm base. ``None`` matches the alphabet size. (Does not affect the
+///     ratio of factor counts; present for signature symmetry.)
 /// jobs : int, default 0
 ///     Reserved for future use.
 ///

@@ -6,10 +6,10 @@ editors and type-checkers (mypy, pyright, ruff) can show signatures and
 docstrings without loading the compiled extension.
 """
 
-from typing import Any, Dict, List, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Tuple, Union
 
 # A sequence-like input accepted by every `lz76*` function.
-SeqLike = Union[str, bytes, List[str], Sequence[int]]
+SeqLike = Union[str, bytes, List[int], List[str], Iterable[int]]
 
 __version__: str
 
@@ -29,11 +29,7 @@ def factorization(
     log_base: int | None = None,
     jobs: int = 0,
 ) -> Tuple[int, List[int]]:
-    """Return the complete-factor count and byte boundaries.
-
-    A trailing copied suffix with no additional symbol is excluded from the count.
-    The final boundary may be one past the byte length.
-    """
+    """Return ``(complexity, factor_boundary_indices)`` for ``seq``."""
     ...
 
 
@@ -44,11 +40,7 @@ def h(
     log_base: int | None = None,
     jobs: int = 0,
 ) -> float:
-    """LZ76 entropy-rate estimate for stationary ergodic finite-alphabet sources.
-
-    ``log_base=2`` gives bits per byte; finite-sample estimates can be biased.
-    ``partitions`` and ``jobs`` are currently ignored.
-    """
+    """Return the LZ76-based normalized entropy density (entropy rate) of ``seq``."""
     ...
 
 
@@ -59,20 +51,15 @@ def emc(
     log_base: int | None = None,
     max_block_size: int = -1,
     jobs: int = 0,
-    max_history: int | None = None,
 ) -> Tuple[float, List[float]]:
-    """Estimate full excess entropy by bidirectional causal-state inference.
+    """Effective measure complexity via random block shuffling.
 
-    CSSR reconstructs finite, synchronizable predictive and retrodictive models.
-    Their state mutual information is measured on held-out data. The returned
-    non-negative terms are per-forward-state KL contributions, summing to E.
-    ``log_base=2`` gives bits. No shuffle or LZ-rate subtraction is used.
+    Returns ``(emc_value, summands)``. Both the value and every summand are
+    non-negative, and the summands sum to the value; ``summands[l-1]``
+    estimates the scale-``l`` conditional-entropy excess ``h(l) - h``.
 
-    ``max_history`` caps reconstruction suffix depth, not process memory.
-    A positive legacy ``max_block_size`` is a deprecated alias; conflicting
-    caps raise ``ValueError``. Insufficient data or unstable/unsupported fits
-    also raise ``ValueError``. A successful fit is conditional on the model
-    assumptions and is not a calibrated confidence statement.
+    Read the value as an ordinal index at fixed sequence length, not as a bit
+    count, and never compare it across lengths.
     """
     ...
 
@@ -85,10 +72,7 @@ def nid(
     log_base: int | None = None,
     jobs: int = 0,
 ) -> float:
-    """Heuristic LZ76 phrase-count dissimilarity between two sequences.
-
-    Self-distance can be nonzero and the triangle inequality can fail.
-    """
+    """Normalized information distance (NID) between ``seq1`` and ``seq2``."""
     ...
 
 
@@ -99,19 +83,12 @@ def lz76(
     log_base: int | None = None,
     max_block_size: int = -1,
     jobs: int = 0,
-    max_history: int | None = None,
 ) -> Dict[str, Any]:
     """Full LZ76 analysis, returned as a dict.
 
     Keys: ``complexity``, ``h``, ``factors``, ``emc`` (a dict of
-    ``value``/``summands``/``status`` plus model diagnostics),
+    ``value``/``summands``/``max_block_size``/``multi_information``),
     ``epsilon``, ``factors_stddev``, ``normal_error``, ``poison_error``,
-    ``extras`` (a dict). The dispersion/error fields are legacy diagnostics,
-    not calibrated statistical uncertainty. ``extras`` are phrase-count ratios.
-    ``emc.multi_information`` is the separate legacy ``H_plugin(1)-h_LZ``
-    contrast and does not enter E. Unresolved E has ``value=None``; the
-    factorization and entropy-rate results remain available. ``max_history``
-    caps CSSR reconstruction; ``max_block_size`` is its deprecated alias.
-    See ``help(lzcomplexity.lz76)`` for details.
+    ``extras`` (a dict). See ``help(lzcomplexity.lz76)`` for details.
     """
     ...

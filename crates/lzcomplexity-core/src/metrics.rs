@@ -6,6 +6,7 @@ use crate::lz76::{
 };
 use crate::sequence::Sequence;
 use crate::shuffle::{lz76_random_shuffle_complexity_with, merge_sequences, shuffle_factorization};
+use crate::NO_ALPHABET;
 
 /// `lz76InformationDistance(T1, T2, args)` from the C++.
 ///
@@ -99,7 +100,7 @@ pub fn lz76_extras_with(seq: &Sequence, args: &LzArgs, c_lz: f64) -> LzExtra {
 /// `lz76(seq, args)` — the complete analysis.
 pub fn lz76(seq: &Sequence, args: &LzArgs) -> LempelZiv {
     // Factorize the full sequence ONCE; reuse the count for entropy, the
-    // legacy multi-information diagnostic and extras without re-factorizing.
+    // random-shuffle stage, and the extras instead of re-factorizing 3 more times.
     let res = lz76_factors(seq, args);
     let factorization = res.factorization;
     let entropy = if seq.len() <= 1 {
@@ -111,7 +112,11 @@ pub fn lz76(seq: &Sequence, args: &LzArgs) -> LempelZiv {
     let extras = lz76_extras_with(seq, args, factorization as f64);
     let stddev = factor_stddev_of(&res.lzf); // computed once, used twice below
 
-    let log_base = args.resolved_log_base(seq) as f64;
+    let log_base = if args.log_base == NO_ALPHABET {
+        seq.alphabet_size().max(2)
+    } else {
+        args.log_base.max(2)
+    } as f64;
     let n = seq.len() as f64;
     let (normal_error, poison_error) = if n > 1.0 {
         let log_n = n.ln() / log_base.ln();
@@ -157,26 +162,5 @@ fn factor_stddev_of(lzf: &[u32]) -> f64 {
         0.0
     } else {
         (sq_sum / max_factor_size as f64).sqrt()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn full_analysis_resolves_entropy_units_consistently() {
-        let seq = Sequence::from_str("01010101");
-        let mut args = LzArgs::new();
-        args.alphabet = 4;
-        let automatic = lz76(&seq, &args);
-        args.log_base = 4;
-        let explicit = lz76(&seq, &args);
-
-        assert!((automatic.entropy_density - 0.375).abs() < 1e-12);
-        assert_eq!(automatic.entropy_density, explicit.entropy_density);
-        assert_eq!(automatic.epsilon, explicit.epsilon);
-        assert_eq!(automatic.lz_normal_errors, explicit.lz_normal_errors);
-        assert_eq!(automatic.lz_poison_errors, explicit.lz_poison_errors);
     }
 }

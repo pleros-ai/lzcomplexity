@@ -4,22 +4,14 @@ Top-level functions
 -------------------
 - ``factorization`` — complexity (factor count) and factor boundary list.
 - ``h`` — normalized entropy density (entropy-rate estimator).
-- ``emc`` — causal-state excess-entropy estimate and state contributions.
-- ``nid`` — LZ76 phrase-count dissimilarity between two sequences.
+- ``emc`` — effective measure complexity (value and its summand terms).
+- ``nid`` — normalized information distance between two sequences.
 - ``lz76`` — the full analysis, returned as a dict with everything.
 
-All sequence-accepting functions accept ``str``, ``bytes``, ``list[str]``,
-and integer sequences (e.g. lists, tuples, or one-dimensional NumPy arrays).
-Generators and iterators are not accepted. Integer elements' decimal
-representations are concatenated: ``[0, 1, 10]`` becomes ``"0110"``.
-Prefer ``bytes`` for one symbol per category; strings use UTF-8 bytes.
-
-``emc`` reconstructs forward and reverse causal-state models with CSSR and
-measures their mutual information on held-out data, without random shuffling.
-It assumes finite, synchronizable state models in both directions. Unresolved
-fits raise ``ValueError``; ``lz76`` retains the other results and reports
-``emc["value"] = None`` with a status and diagnostics. A successful fit does
-not certify those source assumptions or provide a confidence interval.
+All sequence-accepting functions accept ``str``, ``bytes``, ``list[int]``,
+``list[str]``, or any iterable of ints (e.g. NumPy arrays). For
+``list[int]``, each element's decimal representation is concatenated:
+``[0, 1, 10]`` becomes the symbolic string ``"0110"``.
 
 Use ``help(lzcomplexity.<name>)`` on any of the names above for full
 parameter docs.

@@ -143,9 +143,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
       - run: cargo build --release -p lzcomplexity-cli --target ${{ matrix.target }}
       - name: Package binaries
         shell: bash
@@ -158,18 +155,11 @@ jobs:
           fi
           [ -z "$tag" ] && tag="dev"
           echo "TAG=$tag" >> "$GITHUB_ENV"
-          mkdir -p out binary-package
+          mkdir -p out
           bindir="target/${{ matrix.target }}/release"
           for b in lzcomplexity lzdistance; do
-            cp "$bindir/$b${{ matrix.ext }}" "binary-package/$b${{ matrix.ext }}"
+            cp "$bindir/$b${{ matrix.ext }}" "out/$b-$tag-${{ matrix.suffix }}${{ matrix.ext }}"
           done
-          cp LICENSE binary-package/LICENSE-MIT.txt
-          cp crates/lzcomplexity-core/THIRD_PARTY_LICENSES/sofic-BSD-3-Clause.txt binary-package/NOTICE-sofic-BSD-3-Clause.txt
-          python - "out/lzcomplexity-$tag-${{ matrix.suffix }}" <<'PY'
-          import shutil
-          import sys
-          shutil.make_archive(sys.argv[1], "zip", root_dir="binary-package")
-          PY
       # Binaries are always published as workflow artifacts (retained per repo
       # policy) so they are available regardless of release immutability.
       - uses: actions/upload-artifact@v4

@@ -59,15 +59,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "approx"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cab112f0a86d568ea0e627cc1d6be74a1e9cd55214684db5561995f6dad897c6"
-dependencies = [
- "num-traits",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -247,7 +238,7 @@ checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
 name = "lzcomplexity-cli"
-version = "2.0.0"
+version = "1.0.2"
 dependencies = [
  "clap",
  "flate2",
@@ -259,18 +250,17 @@ dependencies = [
 
 [[package]]
 name = "lzcomplexity-core"
-version = "2.0.0"
+version = "1.0.2"
 dependencies = [
  "cdivsufsort",
  "rand",
  "rand_chacha",
  "rayon",
- "statrs",
 ]
 
 [[package]]
 name = "lzcomplexity-py"
-version = "2.0.0"
+version = "1.0.2"
 dependencies = [
  "lzcomplexity-core",
  "pyo3",
@@ -537,16 +527,6 @@ name = "simd-adler32"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
-
-[[package]]
-name = "statrs"
-version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a3fe7c28c6512e766b0874335db33c94ad7b8f9054228ae1c2abd47ce7d335e"
-dependencies = [
- "approx",
- "num-traits",
-]
 
 [[package]]
 name = "strsim"
