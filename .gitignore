@@ -18,3 +18,8 @@ venv/
 .idea/
 *.swp
 .DS_Store
+
+# Generated documentation
+/site/
+
+.venv-docs/

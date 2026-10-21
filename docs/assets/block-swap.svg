@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 270" role="img" aria-labelledby="title desc">
+<title id="title">One aligned block swap at width three</title>
+<desc id="desc">Two complete three-byte blocks exchange places. All other blocks retain their order, and the last three-byte block remains fixed under the legacy boundary rule.</desc>
+<rect width="720" height="270" rx="8" fill="#fffefa"/>
+<g font-family="Arial, sans-serif" fill="#354333"><text x="28" y="30" font-size="14" font-weight="600">Original sequence · block width 3</text><text x="28" y="164" font-size="14" font-weight="600">After one permitted swap</text></g>
+<rect x="28" y="48" width="76" height="44" rx="4" fill="#45634b" stroke="#aeb8a5"/>
+<text x="66" y="76" text-anchor="middle" font-family="monospace" font-size="19" fill="#fffefa">010</text>
+<rect x="112" y="48" width="76" height="44" rx="4" fill="#dfe5d6" stroke="#aeb8a5"/>
+<text x="150" y="76" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">101</text>
+<rect x="196" y="48" width="76" height="44" rx="4" fill="#dfe5d6" stroke="#aeb8a5"/>
+<text x="234" y="76" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">001</text>
+<rect x="280" y="48" width="76" height="44" rx="4" fill="#dfe5d6" stroke="#aeb8a5"/>
+<text x="318" y="76" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">111</text>
+<rect x="364" y="48" width="76" height="44" rx="4" fill="#b7472b" stroke="#aeb8a5"/>
+<text x="402" y="76" text-anchor="middle" font-family="monospace" font-size="19" fill="#fffefa">000</text>
+<rect x="448" y="48" width="76" height="44" rx="4" fill="#dfe5d6" stroke="#aeb8a5"/>
+<text x="486" y="76" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">100</text>
+<rect x="532" y="48" width="76" height="44" rx="4" fill="#dfe5d6" stroke="#aeb8a5"/>
+<text x="570" y="76" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">011</text>
+<rect x="616" y="48" width="76" height="44" rx="4" fill="#ecece4" stroke="#aeb8a5"/>
+<text x="654" y="76" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">110</text>
+<rect x="28" y="182" width="76" height="44" rx="4" fill="#b7472b" stroke="#aeb8a5"/>
+<text x="66" y="210" text-anchor="middle" font-family="monospace" font-size="19" fill="#fffefa">000</text>
+<rect x="112" y="182" width="76" height="44" rx="4" fill="#dfe5d6" stroke="#aeb8a5"/>
+<text x="150" y="210" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">101</text>
+<rect x="196" y="182" width="76" height="44" rx="4" fill="#dfe5d6" stroke="#aeb8a5"/>
+<text x="234" y="210" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">001</text>
+<rect x="280" y="182" width="76" height="44" rx="4" fill="#dfe5d6" stroke="#aeb8a5"/>
+<text x="318" y="210" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">111</text>
+<rect x="364" y="182" width="76" height="44" rx="4" fill="#45634b" stroke="#aeb8a5"/>
+<text x="402" y="210" text-anchor="middle" font-family="monospace" font-size="19" fill="#fffefa">010</text>
+<rect x="448" y="182" width="76" height="44" rx="4" fill="#dfe5d6" stroke="#aeb8a5"/>
+<text x="486" y="210" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">100</text>
+<rect x="532" y="182" width="76" height="44" rx="4" fill="#dfe5d6" stroke="#aeb8a5"/>
+<text x="570" y="210" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">011</text>
+<rect x="616" y="182" width="76" height="44" rx="4" fill="#ecece4" stroke="#aeb8a5"/>
+<text x="654" y="210" text-anchor="middle" font-family="monospace" font-size="19" fill="#354333">110</text>
+<path d="M66 98v15h336v57M402 98v25H66v47" fill="none" stroke="#77876d" stroke-width="1.5"/>
+<g font-family="Arial,sans-serif" fill="#596652" font-size="12"><text x="198" y="141">Internal symbol order is preserved</text><text x="650" y="247" text-anchor="middle">fixed suffix</text></g>
+<path d="M650 230v6" stroke="#788570"/>
+</svg>

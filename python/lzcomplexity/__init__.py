@@ -9,7 +9,8 @@ Top-level functions
 - ``lz76`` — the full analysis, returned as a dict with everything.
 
 All sequence-accepting functions accept ``str``, ``bytes``, ``list[int]``,
-``list[str]``, or any iterable of ints (e.g. NumPy arrays). For
+``list[str]``, or integer sequences such as tuples and compatible NumPy arrays.
+Materialize generators with ``list(...)`` or ``bytes(...)`` first. For
 ``list[int]``, each element's decimal representation is concatenated:
 ``[0, 1, 10]`` becomes the symbolic string ``"0110"``.
 

@@ -10,7 +10,7 @@
 
 </div>
 
-`lzcomplexity` computes information-theoretic measures of symbolic sequences using **Lempel–Ziv 76 (LZ76) factorization** [1]. The LZ76 complexity `c(S)` is the minimum number of factors needed to represent a sequence, where each factor is either a new symbol or the longest previously-seen substring. From `c(S)` you get a non-parametric entropy-rate estimator — `h ≈ c(S)·log_k(n)/n` — that converges to the true entropy rate of ergodic sources [2].
+`lzcomplexity` computes information-theoretic measures of symbolic sequences using **Lempel–Ziv 76 (LZ76) factorization** [1]. The LZ76 complexity `c(S)` is the parsing count returned under the implementation’s LZ76 convention; the documentation explains how the final copied tail is handled. From `c(S)` you get a non-parametric entropy-rate estimator — `h ≈ c(S)·log_k(n)/n` — that converges to the true entropy rate of ergodic sources [2].
 
 The function named `emc` computes a **shuffle-based complexity measure that is
 qualitatively similar to effective measure complexity (EMC)**. It is not an
@@ -101,7 +101,7 @@ lz.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
 
 Common keyword arguments:
 
-- `partitions` (int, default 1) — suffix-array partition count; performance knob, no effect on results.
+- `partitions` (int, default 1) — retained for compatibility; currently ignored by the Rust implementation.
 - `alphabet` (int | None, default None) — alphabet parameter for the finite-size `epsilon` diagnostic; auto-detect (distinct input bytes, min 2) when None. An explicit value does not change the default logarithm base.
 - `log_base` (int | None, default None) — defaults to the observed input alphabet size, floored at 2. Pass `2` explicitly for base-2 normalization (`h` in bits per input byte); the EMC-like score is not a calibrated bit count.
 - `max_block_size` (int, default −1) — shuffle block-size cap for `emc`/`lz76`; nonpositive values auto-select using the existing length-based heuristic, including its `+10` for inputs longer than 50 bytes.
@@ -123,7 +123,7 @@ Every sequence-accepting function accepts any of:
 - `bytes` — raw byte sequence.
 - `list[str]` — concatenated as-is (e.g. `["A","C","G","T"]`).
 - `list[int]` — each element becomes its decimal string, concatenated, so `[0, 1, 10]` → `"0110"`.
-- Any iterable of ints — covers NumPy arrays; same conversion as `list[int]`.
+- Integer sequences such as tuples and compatible NumPy arrays — same decimal-string conversion as `list[int]`. Materialize generators with `list(...)`, or use `bytes(...)` for raw byte symbols.
 
 ---
 
@@ -276,7 +276,7 @@ The current C++ source includes a Rust-compatible shuffle RNG; the old descripti
              Est{\'e}vez Moya, Daniel and
              Est{\'e}vez Rams, Ernesto},
   url     = {https://github.com/pleros-ai/lzcomplexity},
-  version = {1.0.0},
+  version = {2.0.0},
   year    = {2026}
 }
 ```
