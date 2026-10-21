@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">lzcomplexity · Pleros</title>
+  <desc id="description">Entropy, structure and information distance. A sequence motif connects the three measures h, E and d. Python, Rust and command-line tools.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#eaf1fb"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" x2="1">
+      <stop stop-color="#c5d9f9"/>
+      <stop offset=".45" stop-color="#4285ed"/>
+      <stop offset="1" stop-color="#c5d9f9"/>
+    </linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f6f9ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="200%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#284773" flood-opacity=".08"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#background)"/>
+  <circle cx="1100" cy="90" r="330" fill="#dceafe" opacity=".35"/>
+  <circle cx="1150" cy="50" r="230" fill="#eaf2fe" opacity=".8"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif">
+    <g transform="translate(72 56)">
+      <rect width="38" height="38" rx="11" fill="#1670e9"/>
+      <path d="M11 10v17h9m0-17h8l-8 17h8" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="52" y="25" font-size="17" font-weight="600" fill="#32445d" letter-spacing="2">PLEROS</text>
+      <text x="164" y="25" font-size="15" fill="#67758b" letter-spacing="1.6">/ SCIENTIFIC COMPUTING</text>
+    </g>
+    <text x="69" y="212" font-size="91" font-weight="650" fill="#16243b" letter-spacing="-5">lzcomplexity</text>
+    <text x="73" y="270" font-size="31" font-weight="400" fill="#52657e" letter-spacing="-.6">Entropy, structure &amp; information distance</text>
+    <g transform="translate(73 325)" font-family="'SFMono-Regular', Menlo, Consolas, monospace" font-size="20" font-weight="500" text-anchor="middle">
+      <path d="M0 46H1050" fill="none" stroke="#d6e0ef" stroke-width="1"/>
+      <path d="M29 46C29 0 198 0 198 46M198 46C198 135 450 135 450 46M450 46C450-6 710-6 710 46M710 46C710 143 1020 143 1020 46" fill="none" stroke="url(#line)" stroke-width="2"/>
+      <g fill="url(#tile)" stroke="#dce5f1" filter="url(#shadow)">
+        <rect x="0" y="23" width="58" height="46" rx="12"/>
+        <rect x="70" y="23" width="58" height="46" rx="12"/>
+        <rect x="140" y="23" width="116" height="46" rx="12"/>
+        <rect x="268" y="23" width="58" height="46" rx="12"/>
+        <rect x="338" y="23" width="224" height="46" rx="12"/>
+        <rect x="574" y="23" width="58" height="46" rx="12"/>
+        <rect x="644" y="23" width="132" height="46" rx="12"/>
+        <rect x="788" y="23" width="58" height="46" rx="12"/>
+        <rect x="858" y="23" width="192" height="46" rx="12"/>
+      </g>
+      <g fill="#526b90">
+        <text x="29" y="54">0</text><text x="99" y="54">1</text><text x="198" y="54">01</text>
+        <text x="297" y="54">1</text><text x="450" y="54">01001</text><text x="603" y="54">0</text>
+        <text x="710" y="54">101</text><text x="817" y="54">1</text><text x="954" y="54">01010</text>
+      </g>
+    </g>
+    <g transform="translate(74 514)">
+      <text x="0" y="0" font-size="19" fill="#52657e">Python</text>
+      <circle cx="85" cy="-6" r="2.5" fill="#8ea3be"/>
+      <text x="105" y="0" font-size="19" fill="#52657e">Rust</text>
+      <circle cx="166" cy="-6" r="2.5" fill="#8ea3be"/>
+      <text x="186" y="0" font-size="19" fill="#52657e">Command line</text>
+      <text x="0" y="47" font-size="17" fill="#72829a">pleros-ai.github.io/lzcomplexity</text>
+    </g>
+    <g transform="translate(882 505)" font-size="29" font-weight="500" text-anchor="middle">
+      <g fill="#f8fbff" stroke="#d7e3f3"><circle cx="0" cy="0" r="28"/><circle cx="76" cy="0" r="28"/><circle cx="152" cy="0" r="28"/></g>
+      <g fill="#3678d6"><text x="0" y="10" font-style="italic">h</text><text x="76" y="10">E</text><text x="152" y="10" font-style="italic">d</text></g>
+    </g>
+  </g>
+</svg>

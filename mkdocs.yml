@@ -1,5 +1,5 @@
 site_name: lzcomplexity
-site_description: Find the structure in symbolic sequences with LZ76, entropy-rate estimation, shuffle-based complexity and information distance. Built by Pleros.
+site_description: Measure randomness, structure across scales and similarity in symbolic sequences. LZ76 analysis for Python, Rust and the command line, from Pleros.
 site_url: https://pleros-ai.github.io/lzcomplexity/
 repo_url: https://github.com/pleros-ai/lzcomplexity
 repo_name: pleros-ai/lzcomplexity
@@ -33,7 +33,7 @@ theme:
         icon: material/brightness-7
         name: Switch to dark
 
-    # Both color schemes share the paper-and-ink design.
+    # Cool neutral surfaces and blue accents in both color schemes.
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: custom
@@ -43,8 +43,6 @@ theme:
         name: Switch to light
 
   features:
-    - navigation.instant
-    - navigation.instant.progress
     - navigation.tracking
     - navigation.tabs
     - navigation.tabs.sticky
@@ -65,6 +63,7 @@ extra_css:
   - assets/extra.css
 
 extra_javascript:
+  - assets/measure-engine.js
   - assets/site.js
 
 extra:
@@ -123,7 +122,7 @@ plugins:
 nav:
   - Home: index.md
 
-  - Guide:
+  - Documentation:
       - Getting started:
           - Install: guide/install.md
           - Your first factorization: guide/first-factorization.md
@@ -144,12 +143,12 @@ nav:
           - The route to chaos: recipes/dynamical-systems.md
           - Comparing many sequences: recipes/batch-distance.md
 
-  - API:
+  - API reference:
       - Python: api/python.md
       - Input types: api/inputs.md
       - Rust crate: api/rust.md
 
-  - CLI:
+  - Command line:
       - Overview: cli/index.md
       - lzcomplexity: cli/lzcomplexity.md
       - lzdistance: cli/lzdistance.md
