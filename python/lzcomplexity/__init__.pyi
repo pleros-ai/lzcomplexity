@@ -52,14 +52,17 @@ def emc(
     max_block_size: int = -1,
     jobs: int = 0,
 ) -> Tuple[float, List[float]]:
-    """Effective measure complexity via random block shuffling.
+    """Shuffle-based complexity measure qualitatively similar to EMC.
 
-    Returns ``(emc_value, summands)``. Both the value and every summand are
-    non-negative, and the summands sum to the value; ``summands[l-1]``
-    estimates the scale-``l`` conditional-entropy excess ``h(l) - h``.
+    The historical name is retained; the score is not an established estimate
+    of theoretical EMC, excess entropy, or a calibrated information bit count.
+    Returns ``(value, summands)``. Each summand is an increment of the
+    nonnegative isotonic fit of the raw block-shuffle contrasts, and they sum
+    to the score. The projection does not validate an entropy interpretation.
 
-    Read the value as an ordinal index at fixed sequence length, not as a bit
-    count, and never compare it across lengths.
+    Compare matched lengths, encodings, log bases and block-size caps, and
+    check sensitivity. ``log_base=None`` follows the observed input alphabet
+    (floored at 2), independently of an explicit ``alphabet`` argument.
     """
     ...
 
@@ -89,6 +92,9 @@ def lz76(
     Keys: ``complexity``, ``h``, ``factors``, ``emc`` (a dict of
     ``value``/``summands``/``max_block_size``/``multi_information``),
     ``epsilon``, ``factors_stddev``, ``normal_error``, ``poison_error``,
-    ``extras`` (a dict). See ``help(lzcomplexity.lz76)`` for details.
+    ``extras`` (a dict). ``emc`` is the EMC-like shuffle score; its
+    ``multi_information`` is the raw one-symbol shuffle contrast. The error
+    fields are legacy diagnostics, not uncertainty on that score. See
+    ``help(lzcomplexity.lz76)`` for details.
     """
     ...

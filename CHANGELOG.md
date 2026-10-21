@@ -1,5 +1,9 @@
 # Changelog
 
+The historical `emc` entries below describe a shuffle-based magnitude
+qualitatively similar to EMC, not exact EMC or excess entropy. See the
+[current method description](docs/shuffle-measure.md) for its definition.
+
 ## [2.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v1.0.2...v2.0.0) (2026-07-26)
 
 

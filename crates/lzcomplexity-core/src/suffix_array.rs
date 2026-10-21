@@ -1,10 +1,10 @@
 //! Suffix array + LCP construction.
 //!
 //! The C++ library has its own CaPS algorithm (a parallel SA construction).
-//! We build the suffix array in linear time with `cdivsufsort` (a byte-level
-//! divsufsort) and compute LCP with Kasai's algorithm. The suffix array of a
-//! string is unique, so this produces the same order as a comparison sort would
-//! — bit-identical downstream results — but in O(n) instead of O(n² log n).
+//! We build larger suffix arrays with `cdivsufsort` (a byte-level divsufsort)
+//! and compute LCP with Kasai's algorithm. Small inputs use comparison sorting.
+//! The suffix array of a string is unique, so both construction paths produce
+//! the same suffix order and downstream results.
 
 /// Suffix array + LCP array for a text of length `n`.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -36,9 +36,8 @@ pub fn build_suffix_array(text: &[u8]) -> Vec<u32> {
     }
     // Both paths produce the (unique) suffix array, so results are identical.
     // For tiny inputs a plain suffix sort has a much lower constant than
-    // divsufsort's setup, and even its worst case is sub-millisecond at this
-    // size; above the cutoff we switch to the byte-level linear-time divsufsort
-    // so repetitive/large inputs never hit the O(n² log n) sort.
+    // divsufsort's setup; above the cutoff we switch to byte-level divsufsort
+    // so repetitive/large inputs never hit the comparison-based suffix sort.
     const SORT_CUTOFF: usize = 2048;
     if text.len() < SORT_CUTOFF {
         sort_based_sa(text)

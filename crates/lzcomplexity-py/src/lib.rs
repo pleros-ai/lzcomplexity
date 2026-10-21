@@ -94,7 +94,8 @@ fn build_args(
 /// alphabet : int | None, default None
 ///     Effective alphabet size. ``None`` auto-detects (distinct symbols, min 2).
 /// log_base : int | None, default None
-///     Logarithm base for downstream entropy. ``None`` matches the alphabet size.
+///     Logarithm base for downstream entropy. ``None`` uses the observed input
+///     alphabet size, floored at two, even if ``alphabet`` is explicit.
 /// jobs : int, default 0
 ///     Reserved for future use. Currently ignored (rayon manages its pool).
 ///
@@ -138,10 +139,12 @@ fn factorization(
 /// partitions : int, default 1
 ///     Number of suffix-array partitions. Performance knob.
 /// alphabet : int | None, default None
-///     Effective alphabet size used in the entropy formula. ``None`` auto-detects.
+///     Alphabet parameter for the finite-size ``epsilon`` diagnostic.
+///     ``None`` auto-detects. This does not set the default logarithm base.
 /// log_base : int | None, default None
-///     Logarithm base. ``None`` matches the alphabet size (the normalized form);
-///     pass ``2`` for entropy in bits.
+///     Logarithm base. ``None`` uses the observed input alphabet, floored at
+///     two, independently of an explicit ``alphabet``. Pass ``2`` for bits
+///     per input byte.
 /// jobs : int, default 0
 ///     Reserved for future use.
 ///
@@ -170,34 +173,32 @@ fn h(
     Ok(core::lz76::lz76_entropy_density(&s, &args))
 }
 
-/// Effective measure complexity (EMC) via random block shuffling.
+/// Shuffle-based complexity measure qualitatively similar to EMC.
 ///
-/// Compares the LZ76 complexity of the original sequence against shuffled
-/// versions at several block sizes to estimate the non-random information
-/// content. Higher values mean more structure than random noise of the same
-/// length and alphabet.
+/// The historical function name is retained. This is not an established
+/// numerical estimator of theoretical effective measure complexity (EMC),
+/// excess entropy, or past/future mutual information.
 ///
-/// For each block size ``l = 1 ... max_block_size`` the sequence is shuffled in
-/// blocks of length ``l`` and re-factorized, which gives one estimate of the
-/// *excess entropy accumulated up to scale l*. Excess entropy is a mutual
-/// information between the past and the future, so that ladder must be
-/// non-negative and non-decreasing in ``l``; the raw estimates are not, because
-/// each rests on its own surrogate draw. They are projected onto that shape
-/// (non-negative isotonic regression) before the terms are read off, so
-/// **every returned value is non-negative** and every block size informs the
-/// total.
+/// For each block size ``l``, the original input is copied and subjected to
+/// ``floor(N/2)`` aligned block-swap iterations using a content-derived seed.
+/// LZ76 supplies the original factor count ``C`` and surrogate count ``C_l``.
+/// The raw scale contrast is ``r_l = l * log_b(N)/N * (C_l - C)``.
+/// A nonnegative isotonic fit of those contrasts supplies the returned score
+/// and its increments. That projection is an operational convention; it does
+/// not establish an entropy or mutual-information interpretation.
 ///
-/// The shuffle is seeded deterministically from the sequence content, so
-/// repeated calls on the same input produce identical results.
+/// The RNG is deterministic, with one surrogate per scale. Repeated calls
+/// with the same input and parameters are reproducible. This is not a uniform
+/// permutation of all observations; the legacy boundary rule leaves a suffix
+/// fixed, and inputs of at most ten bytes are not shuffled.
 ///
 /// .. warning::
 ///
-///    Treat the value as an **ordinal index at fixed sequence length**, not as
-///    a bit count. It is biased upward (roughly 2-3x the analytic excess
-///    entropy for order-1 Markov sources) and it scales with
-///    ``max_block_size``, which itself grows with length -- so never compare
-///    values across sequences of different length. Report it alongside
-///    :func:`h`.
+///    The score depends on sequence length, encoding, shuffle cap and surrogate
+///    draws. Compare matched settings and examine sensitivity. A larger score
+///    does not universally imply larger theoretical EMC. No calibrated error
+///    bar or confidence interval is supplied. ``log_base=2`` chooses base-2
+///    normalization, not a calibrated shared-information bit count.
 ///
 /// Parameters
 /// ----------
@@ -206,31 +207,31 @@ fn h(
 /// partitions : int, default 1
 ///     Number of suffix-array partitions. Performance knob.
 /// alphabet : int | None, default None
-///     Effective alphabet size. ``None`` auto-detects from the sequence.
+///     Alphabet parameter for the finite-size ``epsilon`` diagnostic.
+///     ``None`` uses the observed input alphabet, floored at two. An explicit
+///     value does not change the default logarithm base.
 /// log_base : int | None, default None
-///     Logarithm base for the entropy formula. ``None`` matches the alphabet size.
+///     Logarithm base for normalization. ``None`` uses the observed input
+///     alphabet size, floored at two, independently of ``alphabet``.
 /// max_block_size : int, default -1
-///     Maximum shuffle block size. ``-1`` picks a value based on length.
+///     Maximum shuffle block size. Nonpositive values use the existing
+///     length-based heuristic, with ten added when ``N > 50``.
 /// jobs : int, default 0
 ///     Reserved for future use.
 ///
 /// Returns
 /// -------
 /// tuple[float, list[float]]
-///     ``(emc_value, summands)``. ``emc_value`` is the effective measure
-///     complexity, always ``>= 0.0``. ``summands`` has one entry per block
-///     size, ``summands[l-1]`` estimating the scale-``l`` conditional-entropy
-///     excess ``h(l) - h``; every entry is ``>= 0.0`` and they sum to
-///     ``emc_value``. Their running sum is the excess entropy captured up to
-///     each scale, so a profile that keeps climbing past the first few entries
-///     indicates long-range or hierarchical correlation. Zero entries mean
-///     neighbouring scales were pooled by the projection, not that the scale
-///     was skipped.
+///     ``(value, summands)``. The score and fitted increments are nonnegative,
+///     and the increments sum to the score. ``summands[l-1]`` is the fitted
+///     increase from scale ``l-1`` to ``l``, not an estimate of a theoretical
+///     conditional-entropy difference. Zero increments can arise from pooling
+///     or clipping by the projection.
 ///
 /// Examples
 /// --------
 /// >>> import lzcomplexity as lz
-/// >>> emc_value, summands = lz.emc("01001010101101010101110101010101010000100101011")
+/// >>> value, summands = lz.emc("01001010101101010101110101010101010000100101011", log_base=2)
 #[pyfunction]
 #[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, max_block_size=-1, jobs=0))]
 fn emc(
@@ -251,9 +252,11 @@ fn emc(
 /// Run the full LZ76 analysis on a sequence.
 ///
 /// The "give me everything" call: computes the factor count, the normalized
-/// entropy density, the factor boundaries, the random-shuffle EMC (with its
-/// summand terms), the error estimates, and the extra pairwise measures in a
-/// single pass.
+/// entropy density, the factor boundaries, the shuffle-based EMC-like score
+/// and fitted increments, and the legacy diagnostics. The score does not
+/// estimate theoretical EMC or excess entropy. The error fields are not
+/// calibrated uncertainty on this score. The full-sequence factor count is
+/// reused; surrogate and half-sequence factorizations are additional work.
 ///
 /// Parameters
 /// ----------
@@ -264,9 +267,11 @@ fn emc(
 /// alphabet : int | None, default None
 ///     Effective alphabet size. ``None`` auto-detects from the sequence.
 /// log_base : int | None, default None
-///     Logarithm base. ``None`` matches the alphabet size (normalized entropy).
+///     Logarithm base. ``None`` uses the observed input alphabet, floored at
+///     two, independently of an explicit ``alphabet``.
 /// max_block_size : int, default -1
-///     Maximum shuffle block size for the EMC stage. ``-1`` auto-selects.
+///     Maximum shuffle block size for the EMC-like score. Nonpositive values
+///     auto-select, including the existing ``+10`` when ``N > 50``.
 /// jobs : int, default 0
 ///     Reserved for future use.
 ///
@@ -276,13 +281,16 @@ fn emc(
 ///     A dictionary with keys:
 ///
 ///     - ``complexity`` (int): LZ76 factor count.
-///     - ``entropy_density`` (float): normalized entropy density.
+///     - ``h`` (float): normalized entropy density.
 ///     - ``factors`` (list[int]): factor boundary indices.
 ///     - ``emc`` (dict): ``{"value", "summands", "max_block_size",
-///       "multi_information"}`` from the random-shuffle analysis.
+///       "multi_information"}`` from the random-shuffle analysis. The legacy
+///       ``multi_information`` field is the raw one-symbol shuffle contrast,
+///       not calibrated mutual information.
 ///     - ``epsilon`` (float): finite-size correction term.
-///     - ``factors_stddev`` (float): standard deviation of factor lengths.
-///     - ``normal_error`` / ``poison_error`` (float): error estimators.
+///     - ``factors_stddev`` (float): legacy factor-dispersion diagnostic.
+///     - ``normal_error`` / ``poison_error`` (float): legacy formulas, not
+///       calibrated confidence intervals or uncertainty on the shuffle score.
 ///     - ``extras`` (dict): ``{"rajski_distance", "redundancy",
 ///       "fh_uncertainty", "lh_uncertainty", "pearson_coefficient"}``.
 #[pyfunction]
@@ -388,7 +396,7 @@ fn nid(
 /// -------------------
 /// - :func:`factorization` — complexity + factor boundaries.
 /// - :func:`h` — normalized entropy density (entropy-rate estimator).
-/// - :func:`emc` — effective measure complexity (value + summand terms).
+/// - :func:`emc` — shuffle-based EMC-like measure (score + fitted increments).
 /// - :func:`nid` — normalized information distance between two sequences.
 /// - :func:`lz76` — the full analysis (everything, as a dict).
 ///

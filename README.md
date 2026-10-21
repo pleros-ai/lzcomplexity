@@ -12,6 +12,12 @@
 
 `lzcomplexity` computes information-theoretic measures of symbolic sequences using **Lempel–Ziv 76 (LZ76) factorization** [1]. The LZ76 complexity `c(S)` is the minimum number of factors needed to represent a sequence, where each factor is either a new symbol or the longest previously-seen substring. From `c(S)` you get a non-parametric entropy-rate estimator — `h ≈ c(S)·log_k(n)/n` — that converges to the true entropy rate of ergodic sources [2].
 
+The function named `emc` computes a **shuffle-based complexity measure that is
+qualitatively similar to effective measure complexity (EMC)**. It is not an
+established numerical estimator of theoretical EMC or excess entropy. The
+historical API name is retained. See [the shuffle-measure definition and
+limitations](docs/shuffle-measure.md).
+
 The library ships **two things**:
 
 1. A **Python library** (`import lzcomplexity`) built on a Rust core via [PyO3](https://pyo3.rs/).
@@ -19,7 +25,7 @@ The library ships **two things**:
 
 The core is implemented in Rust; the two front-ends share it. Common applications: neuroscience time-series, DNA analysis, anomaly detection, structural pattern analysis.
 
-> This is the **Rust implementation**, the current production backend. The original C++/nanobind implementation lives on the `main` branch. Numerical outputs are equivalent up to deterministic shuffle seeding (see [Differences from the C++ version](#differences-from-the-c-version)).
+> This is the **Rust implementation**, the current production backend. The original C++/nanobind implementation lives on the `main` branch. Compare backend results only with matched versions, input encodings and parameters (see [Differences from the C++ version](#differences-from-the-c-version)).
 >
 > **Spectral analysis** (`psd`, spectral `entropy`, `semc`) has been **removed** from this library and now lives in a separate package.
 
@@ -35,13 +41,13 @@ You need **Python ≥ 3.9**. From PyPI:
 pip install lzcomplexity
 ```
 
-Or from a clone of this repository (requires a [Rust toolchain](https://rustup.rs)):
+Or from a clone of this repository (requires [Rust 1.85 or newer](https://rustup.rs)):
 
 ```bash
 pip install .
 ```
 
-`pip` invokes [maturin](https://www.maturin.rs/), which compiles the Rust workspace, produces a wheel, and installs it. No CMake, no submodules, no C++ toolchain.
+`pip` invokes [maturin](https://www.maturin.rs/), which compiles the Rust workspace, produces a wheel, and installs it. A C compiler is also needed by the bundled suffix-array dependency. No CMake, no submodules, no C++ toolchain.
 
 #### Development install
 
@@ -67,7 +73,7 @@ complexity, factors = lz.factorization("banana")
 lz.h("01010101")
 # → 0.75
 
-# Effective measure complexity: the value and the terms that sum to it
+# Shuffle-based EMC-like measure: the score and its fitted increments
 emc_value, summands = lz.emc("01001010101101010101110101010101010000100101011")
 
 # Everything in one call (returns a dict)
@@ -87,7 +93,7 @@ lz.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
 |---|---|---|
 | `lz.factorization(seq, ...)` | complexity + factor boundaries | `(int, list[int])` |
 | `lz.h(seq, ...)` | normalised entropy density (entropy rate) | `float` |
-| `lz.emc(seq, ...)` | effective measure complexity | `(float, list[float])` — `(value, summands)` |
+| `lz.emc(seq, ...)` | shuffle-based EMC-like measure | `(float, list[float])` — `(value, summands)` |
 | `lz.nid(seq1, seq2, ...)` | normalised information distance | `float` |
 | `lz.lz76(seq, ...)` | the full analysis | `dict` (see below) |
 
@@ -96,10 +102,16 @@ lz.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
 Common keyword arguments:
 
 - `partitions` (int, default 1) — suffix-array partition count; performance knob, no effect on results.
-- `alphabet` (int | None, default None) — auto-detect (distinct symbols, min 2) when None.
-- `log_base` (int | None, default None) — matches `alphabet` when None (normalised entropy in units of symbols); pass `2` for bits.
-- `max_block_size` (int, default −1) — shuffle block-size cap for `emc`/`lz76`; −1 auto-selects.
+- `alphabet` (int | None, default None) — alphabet parameter for the finite-size `epsilon` diagnostic; auto-detect (distinct input bytes, min 2) when None. An explicit value does not change the default logarithm base.
+- `log_base` (int | None, default None) — defaults to the observed input alphabet size, floored at 2. Pass `2` explicitly for base-2 normalization (`h` in bits per input byte); the EMC-like score is not a calibrated bit count.
+- `max_block_size` (int, default −1) — shuffle block-size cap for `emc`/`lz76`; nonpositive values auto-select using the existing length-based heuristic, including its `+10` for inputs longer than 50 bytes.
 - `jobs` (int, default 0) — reserved; currently ignored (rayon manages its pool).
+
+The `emc` result depends on sequence length, block-size cap, input encoding and
+surrogate draws. Compare scores using matched settings and examine their
+sensitivity. Its summands are fitted score increments; `multi_information` is
+the raw one-symbol shuffle contrast. These are not calibrated Shannon
+information quantities.
 
 Run `help(lzcomplexity.<name>)` for full per-function docs. Type stubs (`__init__.pyi`) ship with the package.
 
@@ -130,7 +142,7 @@ Prebuilt binaries for Linux/macOS/Windows are attached to each [GitHub release](
 
 ### `lzcomplexity`
 
-Reads a sequence file and writes a JSON report with the LZ76 complexity, entropy density, and random-shuffle effective measure complexity.
+Reads a sequence file and writes a JSON report with the LZ76 complexity, entropy density, and shuffle-based EMC-like score.
 
 ```bash
 lzcomplexity input.txt                 # → input.lz76.json
@@ -234,11 +246,11 @@ pyproject.toml           Maturin build config.
 | Build system | CMake + nanobind | Cargo + maturin |
 | Suffix array | CaPS (custom parallel) | comparison sort below 2048 bytes, `cdivsufsort` above, + Kasai LCP |
 | Parallelism | OpenMP / TBB / Cilk | rayon |
-| Shuffle RNG | `std::mt19937` (time-seeded) | `ChaCha8` (seeded from input → **deterministic**) |
+| Shuffle RNG | Rust-compatible `ChaCha8` implementation in the current C++ source | pinned `ChaCha8` (seeded from input → **deterministic**) |
 | Spectral analysis | included (`psd`, `entropy`, `semc`) | **removed** (moved to a separate package) |
 | Python surface | many names, `nid`/`rid`, class exports | `factorization`, `h`, `emc`, `nid`, `lz76` |
 
-Same input ⇒ same outputs across Rust and C++ within float tolerance for the deterministic measures (factorization, factors, entropy density, information distance) — verified by differential testing. Shuffle-based metrics (`emc`) differ only in that Rust is reproducible run-to-run.
+The current C++ source includes a Rust-compatible shuffle RNG; the old description of a time-seeded C++ shuffle is stale. Backend comparisons must match the source revisions, RNG behavior, input bytes, block-size cap and logarithm base. The CI listed above checks this Rust workspace and its front-ends; it does not establish blanket numerical parity with every C++ revision.
 
 ---
 
