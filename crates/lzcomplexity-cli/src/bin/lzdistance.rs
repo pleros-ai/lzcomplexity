@@ -85,7 +85,7 @@ struct Cli {
     /// Output filename. Default: `<first source>.lzdist.json`.
     #[arg(short = 'o', long = "output", value_name = "file_name")]
     output: Option<String>,
-    /// Number of partitions for the parallel suffix array.
+    /// Compatibility option; ignored by the current Rust implementation.
     #[arg(
         short = 'p',
         long = "partitions",

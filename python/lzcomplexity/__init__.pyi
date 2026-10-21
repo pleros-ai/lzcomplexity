@@ -6,10 +6,10 @@ editors and type-checkers (mypy, pyright, ruff) can show signatures and
 docstrings without loading the compiled extension.
 """
 
-from typing import Any, Dict, Iterable, List, Tuple, Union
+from typing import Any, Dict, List, Sequence, Tuple, Union
 
 # A sequence-like input accepted by every `lz76*` function.
-SeqLike = Union[str, bytes, List[int], List[str], Iterable[int]]
+SeqLike = Union[str, bytes, List[int], List[str], Sequence[int]]
 
 __version__: str
 

@@ -25,6 +25,7 @@ classifiers = [
 ]
 
 [project.urls]
+Documentation = "https://pleros-ai.github.io/lzcomplexity/"
 Homepage = "https://github.com/pleros-ai/lzcomplexity"
 Repository = "https://github.com/pleros-ai/lzcomplexity"
 Changelog = "https://github.com/pleros-ai/lzcomplexity/releases"

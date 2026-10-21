@@ -21,7 +21,7 @@ use lzcomplexity_core as core;
 // ── Input coercion ──────────────────────────────────────────────────────────
 //
 // Accept the same forms the C++ binding accepted: `str`, `bytes`,
-// `list[int]`, `list[str]`, or any iterable of ints (covers `numpy.ndarray`,
+// `list[int]`, `list[str]`, or compatible integer sequences (e.g. `numpy.ndarray`,
 // `array.array`, etc.). `list[int]` follows the documented C++ rule of
 // concatenating decimal representations of each element.
 
@@ -84,13 +84,13 @@ fn build_args(
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Iterable[int]
+/// seq : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The input sequence. Strings/bytes are treated as raw symbols. A
-///     ``list[int]`` (or any iterable of ints, e.g. a NumPy array) is converted
+///     ``list[int]`` (or a compatible integer sequence, e.g. a NumPy array) is converted
 ///     by concatenating each element's decimal representation — so
 ///     ``[0, 1, 10] -> "0110"``. ``list[str]`` is joined directly.
 /// partitions : int, default 1
-///     Number of suffix-array partitions. Performance knob; no effect on the result.
+///     Retained for compatibility; currently ignored by the Rust implementation.
 /// alphabet : int | None, default None
 ///     Effective alphabet size. ``None`` auto-detects (distinct symbols, min 2).
 /// log_base : int | None, default None
@@ -134,10 +134,10 @@ fn factorization(
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Iterable[int]
+/// seq : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Number of suffix-array partitions. Performance knob.
+///     Retained for compatibility; currently ignored by the Rust implementation.
 /// alphabet : int | None, default None
 ///     Alphabet parameter for the finite-size ``epsilon`` diagnostic.
 ///     ``None`` auto-detects. This does not set the default logarithm base.
@@ -202,10 +202,10 @@ fn h(
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Iterable[int]
+/// seq : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Number of suffix-array partitions. Performance knob.
+///     Retained for compatibility; currently ignored by the Rust implementation.
 /// alphabet : int | None, default None
 ///     Alphabet parameter for the finite-size ``epsilon`` diagnostic.
 ///     ``None`` uses the observed input alphabet, floored at two. An explicit
@@ -260,10 +260,10 @@ fn emc(
 ///
 /// Parameters
 /// ----------
-/// seq : str | bytes | list[int] | list[str] | Iterable[int]
+/// seq : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Number of suffix-array partitions. Performance knob.
+///     Retained for compatibility; currently ignored by the Rust implementation.
 /// alphabet : int | None, default None
 ///     Effective alphabet size. ``None`` auto-detects from the sequence.
 /// log_base : int | None, default None
@@ -349,10 +349,10 @@ fn lz76(
 ///
 /// Parameters
 /// ----------
-/// seq1, seq2 : str | bytes | list[int] | list[str] | Iterable[int]
+/// seq1, seq2 : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The two input sequences. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Number of suffix-array partitions.
+///     Retained for compatibility; currently ignored by the Rust implementation.
 /// alphabet : int | None, default None
 ///     Effective alphabet size. ``None`` auto-detects from the sequence.
 /// log_base : int | None, default None
@@ -401,7 +401,8 @@ fn nid(
 /// - :func:`lz76` — the full analysis (everything, as a dict).
 ///
 /// All sequence-accepting functions accept ``str``, ``bytes``, ``list[int]``,
-/// ``list[str]``, or any iterable of ints (e.g. NumPy arrays). For
+/// ``list[str]``, or compatible integer sequences (e.g. NumPy arrays).
+/// Materialize generators with ``list(...)`` or ``bytes(...)`` first. For
 /// ``list[int]``, each element's decimal representation is concatenated:
 /// ``[0, 1, 10]`` becomes the symbolic string ``"0110"``.
 #[pymodule]
