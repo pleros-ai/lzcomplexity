@@ -115,7 +115,7 @@ to correlations across different ranges of a sequence.
 `value` is the final level of the fitted scale profile. `summands[l - 1]` is
 the increase between fitted levels `l-1` and `l`, and the increments sum to
 `value`. See [E](../concepts/emc.md) for interpretation and the
-[calculation reference](../shuffle-measure.md) for the algorithm.
+[calculation reference](../concepts/implementation.md#6-structural-complexity-e) for the algorithm.
 
 ```python
 import math

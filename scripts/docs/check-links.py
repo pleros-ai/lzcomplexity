@@ -27,6 +27,9 @@ class Page(HTMLParser):
         for key in ("href", "src"):
             if attrs.get(key):
                 self.links.append(attrs[key])
+        for candidate in attrs.get("srcset", "").split(","):
+            if candidate.strip():
+                self.links.append(candidate.strip().split()[0])
         if tag == "meta":
             name = attrs.get("property", attrs.get("name", ""))
             self.metadata.setdefault(name, []).append(attrs.get("content", ""))

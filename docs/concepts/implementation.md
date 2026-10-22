@@ -64,9 +64,28 @@ The extras split the sequence at `N // 2`, factorize both halves, and form ratio
 
 ## 6. Structural complexity E
 
-Each requested block size gets a fresh copy of the original. The core hashes the bytes once, derives a different seed per scale, performs aligned block swaps, and factorizes each surrogate. Different scales can run independently through Rayon.
+Let `N` be the input byte length, `C` its factor count, `b` the logarithm base and `M` the maximum range. For each range `l = 1, …, M`, the core rearranges a fresh copy of the original and computes its factor count `C_l`:
 
-The count differences are weighted by block range and combined through a nonnegative isotonic fit. [Calculating E](../shuffle-measure.md) gives the formula, sampling boundaries and automatic range selection.
+```text
+g   = log_b(N) / N
+r_l = l · (C_l · g − C · g)
+```
+
+For `N ≤ 1`, `g` is zero. The raw profile is fitted by least-squares isotonic regression using the pool-adjacent-violators algorithm, then negative fitted values are clipped to zero. This gives a nonnegative, nondecreasing profile `f_1, …, f_M`. With `f_0 = 0`:
+
+```text
+E                 = f_M
+summands[l − 1]    = f_l − f_(l−1)
+multi_information = r_1
+```
+
+The increments sum to E. `multi_information` stores the raw first-range difference and can be negative.
+
+At each range, the copy undergoes `floor(N/2)` swaps between distinct, aligned blocks of `l` bytes. Order within each block is preserved. The suffix starting at `floor((N − 1)/l) · l` stays fixed; this includes the last byte and, when the length is divisible by `l`, the entire final block. Inputs of at most ten bytes, and ranges with fewer than two eligible blocks, remain unchanged.
+
+There is one sampled copy per range. The sampler uses ChaCha8 with a seed derived from the input's FNV-1a hash and the range. Pinned random-number dependencies make the copies reproducible. Different ranges can run independently through Rayon.
+
+A positive `max_block_size` selects `M` directly. Otherwise, the length-based helper approximates `N = M · 2^M` and adds ten when `N > 50`. Python and Rust default to the observed byte alphabet size, floored at two, for the logarithm base. The CLI uses a declared alphabet as its default base when supplied. Set `log_base=2` in Python and `-l 2` in the CLI for matching base-two normalization.
 
 ## Work reuse and concurrency
 

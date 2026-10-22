@@ -32,6 +32,10 @@ hide:
 
 <nav class="lz-section-nav" aria-label="On this page"><span>Explore lzcomplexity</span><a href="#measures">The measures</a><a href="#try-it">Playground</a><a href="#applications">Applications</a><a href="#documentation">Documentation <span aria-hidden="true">↗</span></a></nav>
 
+<section class="lz-workflow" aria-label="From a sequence to its patterns">
+<figure><picture><source media="(max-width: 600px)" srcset="assets/sequence-workflow-mobile.svg"><img src="assets/sequence-workflow.svg" alt="ABRACADABRA! is parsed into six LZ76 factors: A, B, R, AC, AD and ABRA!. Arrows connect phrases to the earlier patterns they reuse. The analysis measures randomness h, structure E and information distance d." width="1120" height="560" loading="lazy"></picture><figcaption><span>Follow the repeated patterns, then explore your own sequence.</span><a class="lz-text-link" href="#try-it">Open the playground <span aria-hidden="true">↓</span></a></figcaption></figure>
+</section>
+
 <section class="lz-section lz-measures" id="measures">
 <div class="lz-section-heading"><p class="lz-eyebrow">THE MEASURES</p><h2>Randomness, structure<br>and similarity.</h2><p>Use h to study the production of new information, E to examine organization across ranges, and d to compare sequences.</p><a class="lz-text-link" href="guide/reading-the-numbers/">Learn to interpret the results <span aria-hidden="true">→</span></a></div>
 <div class="lz-measure-list">
@@ -81,7 +85,7 @@ hide:
 </section>
 
 <section class="lz-section lz-get-started">
-<div class="lz-start-copy"><p class="lz-eyebrow">PYTHON, RUST AND THE COMMAND LINE</p><h2>Five functions.<br>A complete analysis.</h2><p>Factor a sequence, estimate its entropy density, explore structural complexity and compare it with another sequence. One Rust core powers all three interfaces.</p><div class="lz-interface-links"><a href="api/python/">Python reference <span>↗</span></a><a href="cli/">Command-line tools <span>↗</span></a><a href="api/rust/">Rust core <span>↗</span></a></div></div>
+<div class="lz-start-copy"><p class="lz-eyebrow">PYTHON, RUST AND THE COMMAND LINE</p><h2>Five functions.<br>A complete analysis.</h2><p>Factor a sequence, estimate its entropy density, explore structural complexity and compare it with another sequence. One Rust core powers all three interfaces.</p><div class="lz-interface-links"><a href="guide/quick-reference/">Python cheatsheet <span>↗</span></a><a href="cli/quick-reference/">Standalone binaries cheatsheet <span>↗</span></a><a href="api/rust/">Rust core <span>↗</span></a></div></div>
 <div class="lz-code-window"><div class="lz-code-head"><span><i></i><i></i><i></i></span><span>analysis.py</span><button type="button" data-copy="import lzcomplexity as lz&#10;&#10;sequence = &quot;00010111&quot; * 256&#10;result = lz.lz76(sequence, log_base=2, max_block_size=16)&#10;&#10;print(result[&quot;h&quot;])&#10;print(result[&quot;emc&quot;][&quot;value&quot;])&#10;print(lz.nid(sequence, &quot;01010101&quot; * 256))" aria-label="Copy Python example">Copy ⧉</button></div><pre><code><span class="lz-code-purple">import</span> lzcomplexity <span class="lz-code-purple">as</span> lz
 
 sequence = <span class="lz-code-yellow">"00010111"</span> * <span class="lz-code-orange">256</span>
@@ -106,6 +110,6 @@ result = lz.<span class="lz-code-green">lz76</span>(
 <div class="lz-research-note"><span>THE RESEARCH</span><p>Explore <a href="https://doi.org/10.1371/journal.pone.0214863">organization in written language</a>, <a href="https://doi.org/10.1063/1.5062364">computation at the edge of chaos</a> and <a href="https://doi.org/10.1103/PhysRevE.107.044212">complexity in coupled oscillators</a>.</p><a href="project/references/">All references ↗</a></div>
 </section>
 
-<section class="lz-documentation-banner" id="documentation"><div><p class="lz-eyebrow">DOCUMENTATION</p><h2>From your first sequence<br>to every implementation detail.</h2><p>Step-by-step guides, worked examples, API references and the original manual.</p></div><div class="lz-documentation-links"><a href="guide/install/">Install &amp; get started <span>→</span></a><a href="guide/reading-the-numbers/">Interpret the results <span>→</span></a><a href="concepts/implementation/">Inside the implementation <span>→</span></a><a href="project/manual/">Read the original manual <span>→</span></a></div></section>
+<section class="lz-documentation-banner" id="documentation"><div><p class="lz-eyebrow">DOCUMENTATION</p><h2>From your first sequence<br>to every implementation detail.</h2><p>Quick references, worked examples, complete API documentation and the original manual.</p></div><div class="lz-documentation-links"><a href="guide/quick-reference/">Python cheatsheet <span>→</span></a><a href="cli/quick-reference/">Standalone binaries cheatsheet <span>→</span></a><a href="guide/reading-the-numbers/">Interpret the results <span>→</span></a><a href="project/manual/">Read the original manual <span>→</span></a></div></section>
 <footer class="lz-home-footer"><span><strong>lzcomplexity</strong> <span class="lz-muted">by Pleros</span></span><a href="project/authors/">Authors &amp; citation</a><a href="https://github.com/pleros-ai/lzcomplexity">GitHub <span aria-hidden="true">↗</span></a></footer>
 </div>

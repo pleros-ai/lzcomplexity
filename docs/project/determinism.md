@@ -9,7 +9,7 @@ of worker scheduling.
 Keep sequence length, encoding, logarithm base and `max_block_size` consistent
 when comparing E. Changing the byte labels, cyclic alignment or preprocessing
 can change the sampled sequence variants and the resulting value. The
-[calculation reference](../shuffle-measure.md) gives the seed and sampling rules.
+[calculation reference](../concepts/implementation.md#6-structural-complexity-e) gives the seed and sampling rules.
 
 For studies involving generated data, save the data-generation seed separately
 from the analysis settings. Use independent realizations or windows when the

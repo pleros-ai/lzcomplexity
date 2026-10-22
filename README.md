@@ -1,181 +1,94 @@
 <div align="center">
   <h2>lzcomplexity</h2>
-  <p><em>LZ76-based complexity analysis for symbolic sequences and time-series.</em></p>
+  <p>Randomness, structure and similarity in symbolic sequences.</p>
 
 [![CI](https://github.com/pleros-ai/lzcomplexity/actions/workflows/ci.yml/badge.svg?branch=rust-backend)](https://github.com/pleros-ai/lzcomplexity/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/badge/docs-online-0071e3)](https://pleros-ai.github.io/lzcomplexity/)
 [![PyPI](https://img.shields.io/pypi/v/lzcomplexity?color=0071e3)](https://pypi.org/project/lzcomplexity/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23531093.svg)](https://zenodo.org/doi/10.5281/zenodo.23531093)
-
 [![Python](https://img.shields.io/badge/Python-3.9%2B-5e6b7a?logo=python&logoColor=white)](https://pypi.org/project/lzcomplexity/)
-[![Rust](https://img.shields.io/badge/Rust-1.85%2B-5e6b7a?logo=rust&logoColor=white)](https://crates.io/crates/lzcomplexity-core)
 [![MIT](https://img.shields.io/badge/license-MIT-5e6b7a)](LICENSE)
 
-**[Documentation](https://pleros-ai.github.io/lzcomplexity/)**
+**[Documentation & playground](https://pleros-ai.github.io/lzcomplexity/)** ·
+**[Python cheatsheet](https://pleros-ai.github.io/lzcomplexity/guide/quick-reference/)** ·
+**[CLI cheatsheet](https://pleros-ai.github.io/lzcomplexity/cli/quick-reference/)**
 
 </div>
 
-`lzcomplexity` measures randomness, structure across ranges and similarity in
-symbolic sequences using Lempel–Ziv 76 factorization. A Rust core powers the
-Python library and two command-line tools.
+Explore how a sequence balances unpredictability and organization, or compare
+the patterns shared by different sequences. `lzcomplexity` brings Lempel–Ziv
+analysis to Python and standalone command-line tools, powered by a Rust core.
 
-| Measure | What it captures | Python function |
-|---|---|---|
-| Entropy density **h** | Unpredictability and the production of new information | `lz.h(sequence)` |
-| Structural complexity **E** | Correlations across different ranges of a sequence | `lz.emc(sequence)` |
-| Information distance **d** | Differences in recurring patterns between sequences | `lz.nid(first, second)` |
+![An example sequence is parsed into LZ76 factors, then analyzed for randomness h, structure E and distance d.](docs/assets/sequence-workflow.svg)
 
-Applications include neural time series, written language, genomic sequences
-and nonlinear dynamics. Read the [documentation](https://pleros-ai.github.io/lzcomplexity/)
-for concepts, worked examples and complete API references.
+| Measure | What you can explore |
+|---|---|
+| Entropy density **h** | Unpredictability, the production of new information and freedom of choice within a sequence. |
+| Structural complexity **E** | Organization and correlations across different ranges of a sequence. |
+| Information distance **d** | Similarity between sequences through the patterns they share. |
 
-## Python library
+Use h and E together to distinguish changes in randomness from changes in
+organization. Use d to compare recordings, texts or symbolic trajectories.
 
-### Install
-
-Requires Python 3.9 or newer:
+## Start in Python
 
 ```sh
 pip install lzcomplexity
 ```
 
-To build from source, install Rust 1.85 or newer and a C compiler, then run
-`pip install .` from the repository. The build uses [maturin](https://www.maturin.rs/).
-
-### Quick start
-
 ```python
 import lzcomplexity as lz
 
-# LZ76 count and factor boundaries
-count, boundaries = lz.factorization("banana")
-# (3, [0, 1, 2, 3, 7])
-
-# Entropy density, with base-two logarithms
-h = lz.h("01010101", log_base=2)
-# 0.75
-
-# Structural complexity E and its increments across ranges
 sequence = "00010111" * 256
-E, increments = lz.emc(sequence, log_base=2, max_block_size=16)
+other = "01010101" * 256
 
-# Information distance between two sequences
-d = lz.nid(sequence, "01010101" * 256)
-
-# Complete analysis in one call
-result = lz.lz76(sequence, log_base=2, max_block_size=16)
-print(result["complexity"], result["h"], result["emc"]["value"])
+h = lz.h(sequence, log_base=2)                       # Randomness
+E, increments = lz.emc(sequence, max_block_size=16)  # Structure across ranges
+d = lz.nid(sequence, other)                         # Distance between sequences
 ```
 
-### Public API
+Pass text or bytes directly. For categorical data, assign one byte to each
+symbol; for continuous signals, first choose a symbolic representation.
+The [Python cheatsheet](https://pleros-ai.github.io/lzcomplexity/guide/quick-reference/)
+covers input types, parameters and complete-analysis calls.
 
-| Function | Returns |
+## From the terminal
+
+Download the standalone tools from [GitHub Releases](https://github.com/pleros-ai/lzcomplexity/releases).
+
+```sh
+lzcomplexity recording.txt -F text -l 2  # Analyze a sequence; write a JSON report
+lzdistance sequences.txt -I TXT        # Compare one sequence per line
+```
+
+The [CLI cheatsheet](https://pleros-ai.github.io/lzcomplexity/cli/quick-reference/)
+includes file formats, batch analysis and distance matrices.
+
+## Research applications
+
+These studies show the kinds of scientific questions that entropy, structure
+and distance can help investigate:
+
+| Application | Explore |
 |---|---|
-| `factorization(seq, ...)` | LZ76 count and byte boundaries: `(int, list[int])` |
-| `h(seq, ...)` | Entropy density: `float` |
-| `emc(seq, ...)` | E and fitted increments: `(float, list[float])` |
-| `nid(seq1, seq2, ...)` | Normalized information distance: `float` |
-| `lz76(seq, ...)` | Complete result dictionary |
+| **Nonlinear dynamics** | Transitions between collective patterns and chaos in [coupled Adler-type oscillators](https://doi.org/10.1103/PhysRevE.107.044212) (*Physical Review E*, 2023). |
+| **Brain activity** | Patterns and connectivity across brain regions during cognitive tasks in [task-based fMRI](https://arxiv.org/abs/2507.04442) (arXiv preprint, 2025). |
+| **Written language** | The balance between innovation and context at [different levels of text organization](https://doi.org/10.1371/journal.pone.0214863) (*PLOS ONE*, 2019). |
 
-Strings are analyzed as UTF-8 bytes. Pass `bytes` to preserve one byte per
-symbol; integer sequences are joined as decimal text. For example,
-`bytes([0, 1, 10])` contains three symbols, while `[0, 1, 10]` becomes `"0110"`.
-See [input types](https://pleros-ai.github.io/lzcomplexity/api/inputs/) for
-NumPy arrays and categorical codebooks.
+See the [worked examples](https://pleros-ai.github.io/lzcomplexity/recipes/dynamical-systems/)
+and [research references](https://pleros-ai.github.io/lzcomplexity/project/references/)
+to develop an analysis for your own data.
 
-Set `log_base=2` for h in bits per input byte. The default base is the observed
-alphabet size, with a minimum of two. `max_block_size` controls the maximum
-range used for E; nonpositive values select it automatically. Compare E with
-matched lengths, encodings and parameters.
+## Authors & citation
 
-The [Python reference](https://pleros-ai.github.io/lzcomplexity/api/python/)
-documents every parameter and result field. Type stubs and runtime help ship
-with the package.
-
-## Command-line tools
-
-Prebuilt binaries are available from [GitHub Releases](https://github.com/pleros-ai/lzcomplexity/releases).
-To build them locally:
-
-```sh
-cargo build --release -p lzcomplexity-cli --bins
-```
-
-### Analyze a file
-
-```sh
-lzcomplexity input.txt -F text -l 2
-lzcomplexity sequences.txt -F text -m -d
-lzcomplexity input.txt -F text -n
-```
-
-`lzcomplexity` writes a JSON report containing the LZ76 count, h and E.
-Use `-m` for one sequence per line, `-d` to add consecutive-sequence distances,
-or `-n` for entropy density alone.
-
-### Compare sequences
-
-```sh
-lzdistance sequences.txt
-lzdistance first.txt second.txt
-```
-
-`lzdistance` computes pairwise distance matrices from files or directories.
-The [CLI reference](https://pleros-ai.github.io/lzcomplexity/cli/) covers
-selection ranges, transformations, input formats and output schemas.
-
-## Development
-
-For an editable Python extension build:
-
-```sh
-python3 -m venv .venv
-source .venv/bin/activate
-pip install maturin
-maturin develop --release
-```
-
-Rebuild with `maturin develop --release` after changing Rust source.
-
-```sh
-cargo test --workspace
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-```
-
-Use Conventional Commit titles such as `feat:`, `fix:` and `docs:`. Release
-versions and changelogs are managed by release-please. CI tests the Rust
-workspace, standalone tools and Python wheels on Linux, macOS and Windows.
-See [documentation contributions](https://pleros-ai.github.io/lzcomplexity/project/contributing/)
-for local site previews and checks.
-
-## Repository layout
-
-```text
-crates/lzcomplexity-core/   Algorithms and Rust API
-crates/lzcomplexity-py/     PyO3 bindings
-crates/lzcomplexity-cli/    Command-line tools
-python/lzcomplexity/       Python package and type stubs
-docs/                     Documentation and browser playground
-```
-
-## Authors
-
-- **Efrén Aragón Pérez** — creator and principal author of the library.
+- **Efrén Aragón Pérez** — creator and principal author.
 - **Daniel Estévez Moya** — Rust implementation.
 - **Ernesto Estévez Rams** — scientific foundations.
 
-## Citation
-
 Aragón-Pérez, E., & Estevez-Rams, E. (2025). **Lzcomplexity: Entropy Measurement
 Library.** *Revista Cubana de Física*, **42**(2), 80–86.
-[Article and citation](https://www.revistacubanadefisica.org/index.php/rcf/article/view/31).
+[Article](https://www.revistacubanadefisica.org/index.php/rcf/article/view/31) ·
+[Software DOI](https://zenodo.org/doi/10.5281/zenodo.23531093) ·
+[BibTeX](https://pleros-ai.github.io/lzcomplexity/project/authors/)
 
-Software DOI: [10.5281/zenodo.23531093](https://zenodo.org/doi/10.5281/zenodo.23531093).
-See [authors and citation](https://pleros-ai.github.io/lzcomplexity/project/authors/)
-for BibTeX and the [references](https://pleros-ai.github.io/lzcomplexity/project/references/)
-for the research behind the measures.
-
-## License
-
-[MIT](LICENSE).
+Released under the [MIT license](LICENSE).
