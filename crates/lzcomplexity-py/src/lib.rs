@@ -85,19 +85,19 @@ fn build_args(
 /// Parameters
 /// ----------
 /// seq : str | bytes | list[int] | list[str] | Sequence[int]
-///     The input sequence. Strings/bytes are treated as raw symbols. A
+///     The input sequence. Strings use UTF-8 bytes; bytes are unchanged. A
 ///     ``list[int]`` (or a compatible integer sequence, e.g. a NumPy array) is converted
 ///     by concatenating each element's decimal representation — so
 ///     ``[0, 1, 10] -> "0110"``. ``list[str]`` is joined directly.
 /// partitions : int, default 1
-///     Retained for compatibility; currently ignored by the Rust implementation.
+///     Unused.
 /// alphabet : int | None, default None
-///     Effective alphabet size. ``None`` auto-detects (distinct symbols, min 2).
+///     Alphabet parameter for finite-size diagnostics. ``None`` auto-detects.
 /// log_base : int | None, default None
 ///     Logarithm base for downstream entropy. ``None`` uses the observed input
 ///     alphabet size, floored at two, even if ``alphabet`` is explicit.
 /// jobs : int, default 0
-///     Reserved for future use. Currently ignored (rayon manages its pool).
+///     Unused. Rayon manages native parallelism.
 ///
 /// Returns
 /// -------
@@ -127,17 +127,17 @@ fn factorization(
 
 /// Compute the LZ76-based normalized entropy density of a sequence.
 ///
-/// Estimates the entropy rate as ``h ~= c(S) * log_k(n) / n``, where ``c(S)``
-/// is the LZ76 factor count and ``k`` is the alphabet size. This is the
-/// *normalized* complexity (entropy-rate estimator): it converges to the true
-/// entropy rate for ergodic sources as ``n -> infinity``.
+/// Estimates entropy density as ``h = c(S) * log_b(n) / n``, where ``c(S)``
+/// is the LZ76 factor count, ``n`` is the byte length, and ``b`` is the
+/// logarithm base. This captures the production of new information along
+/// the sequence.
 ///
 /// Parameters
 /// ----------
 /// seq : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Retained for compatibility; currently ignored by the Rust implementation.
+///     Unused.
 /// alphabet : int | None, default None
 ///     Alphabet parameter for the finite-size ``epsilon`` diagnostic.
 ///     ``None`` auto-detects. This does not set the default logarithm base.
@@ -146,7 +146,7 @@ fn factorization(
 ///     two, independently of an explicit ``alphabet``. Pass ``2`` for bits
 ///     per input byte.
 /// jobs : int, default 0
-///     Reserved for future use.
+///     Unused. Rayon manages native parallelism.
 ///
 /// Returns
 /// -------
@@ -173,39 +173,19 @@ fn h(
     Ok(core::lz76::lz76_entropy_density(&s, &args))
 }
 
-/// Shuffle-based complexity measure qualitatively similar to EMC.
+/// Compute structural complexity E, which is sensitive to correlations across
+/// different ranges of a sequence.
 ///
-/// The historical function name is retained. This is not an established
-/// numerical estimator of theoretical effective measure complexity (EMC),
-/// excess entropy, or past/future mutual information.
-///
-/// For each block size ``l``, the original input is copied and subjected to
-/// ``floor(N/2)`` aligned block-swap iterations using a content-derived seed.
-/// LZ76 supplies the original factor count ``C`` and surrogate count ``C_l``.
-/// The raw scale contrast is ``r_l = l * log_b(N)/N * (C_l - C)``.
-/// A nonnegative isotonic fit of those contrasts supplies the returned score
-/// and its increments. That projection is an operational convention; it does
-/// not establish an entropy or mutual-information interpretation.
-///
-/// The RNG is deterministic, with one surrogate per scale. Repeated calls
-/// with the same input and parameters are reproducible. This is not a uniform
-/// permutation of all observations; the legacy boundary rule leaves a suffix
-/// fixed, and inputs of at most ten bytes are not shuffled.
-///
-/// .. warning::
-///
-///    The score depends on sequence length, encoding, shuffle cap and surrogate
-///    draws. Compare matched settings and examine sensitivity. A larger score
-///    does not universally imply larger theoretical EMC. No calibrated error
-///    bar or confidence interval is supplied. ``log_base=2`` chooses base-2
-///    normalization, not a calibrated shared-information bit count.
+/// Returns the final level of the fitted scale profile and its nonnegative
+/// increments. Identical input bytes and parameters give the same result.
+/// Compare sequences with matched lengths, encodings, log bases and ranges.
 ///
 /// Parameters
 /// ----------
 /// seq : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Retained for compatibility; currently ignored by the Rust implementation.
+///     Unused.
 /// alphabet : int | None, default None
 ///     Alphabet parameter for the finite-size ``epsilon`` diagnostic.
 ///     ``None`` uses the observed input alphabet, floored at two. An explicit
@@ -214,19 +194,16 @@ fn h(
 ///     Logarithm base for normalization. ``None`` uses the observed input
 ///     alphabet size, floored at two, independently of ``alphabet``.
 /// max_block_size : int, default -1
-///     Maximum shuffle block size. Nonpositive values use the existing
-///     length-based heuristic, with ten added when ``N > 50``.
+///     Maximum block range in bytes. Nonpositive values select it automatically.
 /// jobs : int, default 0
-///     Reserved for future use.
+///     Unused. Rayon manages native parallelism.
 ///
 /// Returns
 /// -------
 /// tuple[float, list[float]]
 ///     ``(value, summands)``. The score and fitted increments are nonnegative,
 ///     and the increments sum to the score. ``summands[l-1]`` is the fitted
-///     increase from scale ``l-1`` to ``l``, not an estimate of a theoretical
-///     conditional-entropy difference. Zero increments can arise from pooling
-///     or clipping by the projection.
+///     increase from scale ``l-1`` to ``l``.
 ///
 /// Examples
 /// --------
@@ -251,29 +228,25 @@ fn emc(
 
 /// Run the full LZ76 analysis on a sequence.
 ///
-/// The "give me everything" call: computes the factor count, the normalized
-/// entropy density, the factor boundaries, the shuffle-based EMC-like score
-/// and fitted increments, and the legacy diagnostics. The score does not
-/// estimate theoretical EMC or excess entropy. The error fields are not
-/// calibrated uncertainty on this score. The full-sequence factor count is
-/// reused; surrogate and half-sequence factorizations are additional work.
+/// Computes the factor count, entropy density h, factor boundaries,
+/// structural complexity E, fitted increments and diagnostic fields.
+/// The original factorization is shared by the calculations.
 ///
 /// Parameters
 /// ----------
 /// seq : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The input sequence. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Retained for compatibility; currently ignored by the Rust implementation.
+///     Unused.
 /// alphabet : int | None, default None
-///     Effective alphabet size. ``None`` auto-detects from the sequence.
+///     Alphabet parameter for finite-size diagnostics. ``None`` auto-detects.
 /// log_base : int | None, default None
 ///     Logarithm base. ``None`` uses the observed input alphabet, floored at
 ///     two, independently of an explicit ``alphabet``.
 /// max_block_size : int, default -1
-///     Maximum shuffle block size for the EMC-like score. Nonpositive values
-///     auto-select, including the existing ``+10`` when ``N > 50``.
+///     Maximum block range for E. Nonpositive values select it automatically.
 /// jobs : int, default 0
-///     Reserved for future use.
+///     Unused. Rayon manages native parallelism.
 ///
 /// Returns
 /// -------
@@ -284,13 +257,12 @@ fn emc(
 ///     - ``h`` (float): normalized entropy density.
 ///     - ``factors`` (list[int]): factor boundary indices.
 ///     - ``emc`` (dict): ``{"value", "summands", "max_block_size",
-///       "multi_information"}`` from the random-shuffle analysis. The legacy
-///       ``multi_information`` field is the raw one-symbol shuffle contrast,
-///       not calibrated mutual information.
-///     - ``epsilon`` (float): finite-size correction term.
-///     - ``factors_stddev`` (float): legacy factor-dispersion diagnostic.
-///     - ``normal_error`` / ``poison_error`` (float): legacy formulas, not
-///       calibrated confidence intervals or uncertainty on the shuffle score.
+///       "multi_information"}`` for E. The ``multi_information`` field is the
+///       raw first-range contrast before fitting.
+///     - ``epsilon`` (float): finite-size diagnostic.
+///     - ``factors_stddev`` (float): factor-dispersion diagnostic.
+///     - ``normal_error`` / ``poison_error`` (float): diagnostic formulas based
+///       on h, sequence length and factor dispersion.
 ///     - ``extras`` (dict): ``{"rajski_distance", "redundancy",
 ///       "fh_uncertainty", "lh_uncertainty", "pearson_coefficient"}``.
 #[pyfunction]
@@ -343,23 +315,21 @@ fn lz76(
 /// Normalized information distance (NID) between two sequences.
 ///
 /// Computes ``max(C(XY) - C(X), C(YX) - C(Y)) / max(C(X), C(Y))``, an
-/// LZ76-based, conditional-entropy-flavoured normalized distance. The result
-/// lies in ``[0, 1]`` for well-behaved inputs — 0 means the two sequences
-/// carry the same information, 1 means they are maximally distinct.
+/// LZ76-based normalized distance. Lower values indicate more shared patterns.
+/// For finite sequences, self-distance can be nonzero.
 ///
 /// Parameters
 /// ----------
 /// seq1, seq2 : str | bytes | list[int] | list[str] | Sequence[int]
 ///     The two input sequences. See :func:`factorization` for the conversion rules.
 /// partitions : int, default 1
-///     Retained for compatibility; currently ignored by the Rust implementation.
+///     Unused.
 /// alphabet : int | None, default None
-///     Effective alphabet size. ``None`` auto-detects from the sequence.
+///     Alphabet parameter for finite-size diagnostics. ``None`` auto-detects.
 /// log_base : int | None, default None
-///     Logarithm base. ``None`` matches the alphabet size. (Does not affect the
-///     ratio of factor counts; present for signature symmetry.)
+///     Logarithm base; unused by this ratio of factor counts.
 /// jobs : int, default 0
-///     Reserved for future use.
+///     Unused. Rayon manages native parallelism.
 ///
 /// Returns
 /// -------
@@ -396,7 +366,7 @@ fn nid(
 /// -------------------
 /// - :func:`factorization` — complexity + factor boundaries.
 /// - :func:`h` — normalized entropy density (entropy-rate estimator).
-/// - :func:`emc` — shuffle-based EMC-like measure (score + fitted increments).
+/// - :func:`emc` — structural complexity E (value + fitted increments).
 /// - :func:`nid` — normalized information distance between two sequences.
 /// - :func:`lz76` — the full analysis (everything, as a dict).
 ///

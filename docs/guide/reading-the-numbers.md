@@ -1,6 +1,6 @@
 # Reading the numbers
 
-`lz76()` returns a dictionary containing several kinds of result. The factor count, entropy-rate estimate, shuffle contrast and legacy diagnostics answer different questions. This page gives the actual field meanings and formulas.
+`lz76()` returns the factor count, entropy density h, structural complexity E and additional diagnostics. This page explains the returned fields and their formulas.
 
 ```python
 import lzcomplexity as lz
@@ -15,39 +15,39 @@ result = lz.lz76("00010111" * 256, log_base=2, max_block_size=8)
 | `complexity` | LZ76 count `C` | Integer count under this implementation's final-phrase convention |
 | `factors` | Parser boundary positions | Byte offsets; the final position can exceed the input length |
 | `h` | `C · log_b(N) / N` | Finite entropy-rate estimate, in the chosen log-base units per byte symbol |
-| `emc` | Shuffle analysis dictionary | Operational EMC-like score, its fitted profile increments and raw first-scale contrast |
-| `epsilon` | Finite-size formula | A legacy normalization diagnostic, not a measured uncertainty |
-| `factors_stddev` | Factor-dispersion formula | A legacy formula whose normalization differs from ordinary sample standard deviation |
-| `normal_error` | Formula using `h` and factor dispersion | Not a calibrated confidence interval |
-| `poison_error` | `h / N` for `N > 1` | Historical spelling; not a calibrated Poisson error bar |
+| `emc` | Structural complexity E | E, its fitted profile increments and first-range contrast |
+| `epsilon` | Finite-size diagnostic | Calculated from sequence length, alphabet and logarithm base |
+| `factors_stddev` | Factor-dispersion diagnostic | The interval-based formula defined below |
+| `normal_error` | Formula using h and factor dispersion | A descriptive error field; see its definition below |
+| `poison_error` | `h / N` for `N > 1` | A length-dependent diagnostic |
 | `extras` | Five count-based ratios | Comparisons between the two halves of this one sequence |
 
-The current key is `h`, not `entropy_density`. The [Python API](../api/python.md) lists signatures and return types; the [CLI](../cli/lzcomplexity.md) uses a different JSON naming scheme.
+The [Python API](../api/python.md) lists signatures and return types. The [CLI reference](../cli/lzcomplexity.md) documents JSON field names.
 
 ## Factor count and boundaries
 
 For `banana`, the result is count `3` with boundaries `[0, 1, 2, 3, 7]`. The input has six bytes. The final attempted phrase goes beyond its end and is excluded from the completed count. Do not infer the count from the vector length alone or use the last boundary as the input length.
 
-Empty and constant inputs take a special path with count one. An empty input's `[0, 1, 0]` vector is a legacy sentinel-like result, not an ordered partition. See [the full convention](../concepts/lz76.md).
+Empty and constant inputs return count one. Empty input returns the boundary vector `[0, 1, 0]`; handle it separately when displaying pieces. See [LZ76 factorization](../concepts/lz76.md).
 
 ## Entropy density
 
 For `N > 1`, `h` is `C · log_b(N) / N`; otherwise it is zero. The base defaults to observed alphabet size, floored at two. It is an estimator, so finite-string values need not lie inside the limiting entropy bounds. [Entropy density](../concepts/entropy-density.md) explains the source assumptions and units.
 
-## The `emc` dictionary
+## Structural complexity E { #the-emc-dictionary }
 
 | Key | Definition |
 |---|---|
-| `value` | Final level of the fitted nonnegative, nondecreasing shuffle-contrast profile |
+| `value` | E: the final level of the fitted nonnegative, nondecreasing range profile |
 | `summands` | Successive fitted increments; nonnegative and summing to `value` |
-| `max_block_size` | Number of included block-size scales, `M` |
-| `multi_information` | Raw first-scale contrast `r_1`, before fitting |
+| `max_block_size` | Maximum range included in the calculation, `M` |
+| `multi_information` | First-range contrast `r_1`, before fitting |
 
-The historical `emc` name denotes a magnitude qualitatively similar to EMC. `multi_information` is not calibrated Shannon mutual information. Neither the fitted score nor its increments are established measurements of an exact number of shared-information bits. Its [method page](../concepts/emc.md) gives the complete calculation.
+These fields are returned under `result["emc"]`. Read [structural complexity E](../concepts/emc.md) for the meaning of the range profile and its increments.
 
-## Legacy finite-size and error fields
+## Finite-size and error diagnostics { #legacy-finite-size-and-error-fields }
 
-These fields are useful for inspecting implementation output and reproducing earlier analyses. Their names do not establish statistical calibration.
+The following fields describe properties of the finite sequence and its factorization. To estimate sampling uncertainty, use repeated observations or a resampling procedure suited to your data.
 
 ### `epsilon`
 
@@ -57,7 +57,7 @@ For an ordinary input containing at least two distinct bytes, define `k` as the 
 epsilon = 2 · (1 + log_b(log_b(k · N))) / log_b(N)
 ```
 
-The empty/constant short path reports zero. `epsilon` is calculated from length and parameters, not estimated from resampling the recording. The implementation does not subtract it from `h`, use it to correct the shuffle score, or return it as a confidence interval.
+`epsilon` is reported separately from h and E. Empty and constant inputs return zero.
 
 ### `factors_stddev`
 
@@ -68,7 +68,7 @@ mu = (last_boundary - 1) / q
 s  = sqrt(sum_i((d_i - mu)^2) / max_i(d_i))
 ```
 
-If no positive difference exists, it returns zero. The denominator is the **largest interval**, and `mu` is derived as shown rather than as the ordinary mean of the intervals. Therefore this historical field should not be interpreted as the conventional population or sample standard deviation of the visible factors. An overshooting final boundary also enters the formula.
+The denominator is the **largest interval**. This normalization differs from a conventional sample standard deviation. An overshooting final boundary enters the formula; if all intervals are zero, the result is zero.
 
 ### `normal_error` and `poison_error`
 
@@ -79,7 +79,7 @@ normal_error = h^(3/2) · s / sqrt(N / log_b(N))
 poison_error = h / N
 ```
 
-Both are zero for `N ≤ 1`. These arithmetic formulas are retained for compatibility. They do not provide a validated confidence level, establish normal/Poisson sampling of your data, or quantify uncertainty in the EMC-like score.
+Both fields are zero for `N ≤ 1`. They are descriptive formulas, so use a separate sampling analysis when you need confidence intervals.
 
 ## The five `extras`
 
@@ -104,7 +104,7 @@ The returned fields are:
 
 A zero whole/half count produces default zero extras in the Rust function. The public factorization short path normally gives count one for empty and constant data, so even these degenerate inputs can produce nonzero extras.
 
-These are analogies formed by substituting factor counts into information-style ratios. Factor counts are not Shannon entropies; textbook entropy bounds and correlation interpretations need not hold. In particular, `pearson_coefficient` is **not** a sample Pearson correlation of numeric time series.
+These ratios compare the factor counts of the two halves with the whole. `pearson_coefficient` uses the count-based formula above rather than sample covariance between numeric observations.
 
 ### `banana`, worked through
 
@@ -117,9 +117,9 @@ C = C("banana") = 3
 Q = 3 + 2 - 3 = 2
 ```
 
-The extras are approximately `0.333333` (Rajski), `0.4` (redundancy), `0.666667` and `1.0` (the two uncertainty fields), and `0.816497` (the legacy coefficient).
+The extras are approximately `0.333333` (Rajski), `0.4` (redundancy), `0.666667` and `1.0` (the two uncertainty fields), and `0.816497` (the count-based coefficient).
 
-Some low-complexity inputs leave the textbook ranges suggested by these names. For example:
+The ratios can extend beyond zero to one. For example:
 
 ```python
 extra = lz.lz76("aaaabaaaabaaaaba")["extras"]
@@ -127,10 +127,8 @@ assert extra["rajski_distance"] == -1.0
 assert extra["fh_uncertainty"] == 2.0
 ```
 
-Do not clip or reinterpret such results as ordinary correlations. They are the output of the factor-count formulas above. Passing `X + Y` also does not compare the original datasets unless the midpoint happens to coincide with their join.
+Keep the values returned by these formulas when plotting or comparing results. To compare two separate sequences, use `nid(X, Y)`; the midpoint split above is intended for one sequence.
 
-## Report the result you actually measured
+## Record your analysis settings { #report-the-result-you-actually-measured }
 
-A useful result record contains input encoding, byte length, preprocessing, explicit log base, actual shuffle cap and package/source revision. Report whether a plotted quantity is `h`, the EMC-like score, a fitted increment, `nid`, the CLI shuffle matrix, or an extra ratio.
-
-For scientific uncertainty, use a study-specific sampling analysis and suitable controls; these legacy fields do not replace one. [Length and convergence](../concepts/convergence.md) explains practical sensitivity checks.
+Keep the input encoding, byte length, preprocessing, logarithm base, maximum range and package version with your results. Label plots with the quantity shown: h, E, a profile increment, NID or an additional diagnostic. [Length and convergence](../concepts/convergence.md) explains how to check sensitivity to sample size.

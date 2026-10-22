@@ -1,9 +1,7 @@
 # Contributing to the documentation
 
-The documentation lives beside the library on `rust-backend`. The site is generated with
-MkDocs and Material for MkDocs, with a custom Pleros homepage and shared light/dark styles.
-The `docs` branch is the deployment mirror, required by the repository’s existing
-GitHub Pages environment policy.
+The site uses MkDocs and Material for MkDocs. Documentation sources, examples,
+styles and browser calculations live in this repository.
 
 ## Preview locally
 
@@ -25,33 +23,23 @@ python scripts/docs/check-links.py site
 node scripts/docs/test-demo.cjs
 ```
 
-The strict build checks navigation and Markdown links. The second command also checks
-links and assets in the rendered HTML, fragment anchors, the search index and social
-preview metadata. The Node check compares the homepage’s factorization, h, E* and distance
-calculations with committed outputs from the native library. It also checks the exact
-random-generator stream and block swaps. This verifies implementation parity, not the
-scientific interpretation of a measure. Local CSS and JavaScript URLs
-are versioned by content automatically, so a new deployment refreshes cached assets.
+These commands check navigation, links, assets, search entries, social preview
+metadata and the browser engine's agreement with native results. The parity
+fixtures cover factorization, h, E, distance, random draws and block swaps.
+Run Python examples against an installed build of the library before submitting
+changes to them.
 
-The playground accepts at most 256 UTF-8 bytes per sequence. Its browser engine uses a
-simple small-input factor search, with the native implementation’s counting convention,
-64-bit shuffle sampler, weighting and fitted score. The demo fixes logarithms to base 2;
-E* uses the automatic block-size cap. To refresh the native fixtures from an installed
-build of the current library, run `python scripts/docs/generate-demo-fixtures.py`.
-The RNG fixture generator is documented in `scripts/docs/generate-rng-fixtures.rs`.
-
-For changes to Python examples, install the native package from the same source checkout
-and execute the example. State the source revision, input encoding, logarithm base and
-block-size cap when publishing numerical results. Keep historical results labelled with
-their original implementation; do not turn a reference figure into a new accuracy claim.
+To regenerate the numerical fixtures, run
+`python scripts/docs/generate-demo-fixtures.py`. Instructions for regenerating
+the random-generator fixtures appear in `scripts/docs/generate-rng-fixtures.rs`.
 
 ## Where things live
 
 | Content | Location |
 |---|---|
 | First steps and result interpretation | `docs/guide/` |
-| Mathematical and implementation explanations | `docs/concepts/` |
-| Python and Rust reference | `docs/api/` |
+| Concepts and calculations | `docs/concepts/` |
+| Python and Rust references | `docs/api/` |
 | Command-line tools and input formats | `docs/cli/` |
 | Worked applications | `docs/recipes/` |
 | Manual, citations and project information | `docs/project/` |
@@ -60,24 +48,20 @@ their original implementation; do not turn a reference figure into a new accurac
 | Social previews | `overrides/main.html`, `docs/assets/social-card.svg`, `docs/assets/social-card.png` |
 | Navigation and toolchain | `mkdocs.yml`, `requirements-docs.txt` |
 
+The browser playground accepts 256 UTF-8 bytes per sequence, uses base-two
+logarithms and selects the E range automatically. Asset URLs are versioned by
+content so published changes refresh cached CSS and JavaScript.
+
 ## Publishing
 
-Pull requests and default-branch pushes build and check the site without deploying it.
-The existing GitHub Pages environment permits the `docs` branch. After a reviewed
-change is merged, use a clean checkout matching `origin/rust-backend`:
+After merging a documentation change, publish from a clean checkout matching
+`origin/rust-backend`:
 
 ```sh
 python scripts/docs/publish-source.py --dry-run
 python scripts/docs/publish-source.py
 ```
 
-The helper fetches both branches, verifies the source revision, then creates a
-commit on `docs` with the **identical source tree**, preserving both histories.
-It does not switch the checkout or force-push. That push triggers the Docs workflow,
-which rebuilds and checks the site before publishing to
-[GitHub Pages](https://pleros-ai.github.io/lzcomplexity/). Check its deployment result.
-This keeps documentation edits on the current library branch while respecting the
-existing deployment policy.
-
-The original manual is available from [the manual guide](manual.md). Its older API and
-installation instructions remain historical reference material.
+The helper mirrors the source tree to the deployment branch. The Docs workflow
+then builds, checks and publishes it to [GitHub Pages](https://pleros-ai.github.io/lzcomplexity/).
+Check the workflow's deployment result before announcing the update.

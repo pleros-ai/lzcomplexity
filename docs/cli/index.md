@@ -6,7 +6,7 @@ Both tools use the same Rust core as the Python library.
 
 | Tool | Input | Output |
 |---|---|---|
-| [`lzcomplexity`](lzcomplexity.md) | One sequence file | Per-sequence LZ76 count, entropy density and EMC-like shuffle score; optionally consecutive distances. |
+| [`lzcomplexity`](lzcomplexity.md) | One sequence file | Per-sequence LZ76 count, entropy density h and structural complexity E; optionally consecutive distances. |
 | [`lzdistance`](lzdistance.md) | One or two files/directories | All-pairs information-distance and shuffle-distance matrices. |
 
 ## First analysis
@@ -17,8 +17,7 @@ lzcomplexity sample.txt -F TXT -l 2 -o result.json
 python -m json.tool result.json
 ```
 
-Pass `-F TXT` when you know the input is text. The automatic detector is a
-legacy heuristic; a short first line or unexpected punctuation can send a
+Pass `-F TXT` when you know the input is text. The automatic detector uses a content heuristic; a short first line or unexpected punctuation can send a
 file through the binary reader. See [input formats](formats.md) before
 processing real data.
 
@@ -34,8 +33,7 @@ lzdistance trials.txt -I TXT -o distances.json
 distances between neighboring sequences and implies `-m`. `lzdistance` reads
 file sources as multiple sequences automatically and computes every pair.
 
-Use `-n` with `lzcomplexity` to skip the more expensive shuffle stage when
-only factor counts and entropy density are required. `lzdistance` always
+Use `-n` with `lzcomplexity` when you only need factor counts and entropy density; this skips the E calculation. `lzdistance` always
 computes both of its distance matrices.
 
 ## Threads and versions
@@ -51,6 +49,4 @@ lzdistance --version
 `lzcomplexity -v` means **verbose**, while `lzdistance -v` means **version**.
 Use `lzdistance -L` for verbose logs.
 
-Build/install instructions are on the [installation page](../guide/install.md).
-The 0.9 manual's package-manager and CMake instructions describe the older
-C++ distribution; they are not prerequisites for the current Rust binaries.
+Build and installation instructions are on the [installation page](../guide/install.md).

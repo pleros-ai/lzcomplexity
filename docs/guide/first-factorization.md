@@ -1,8 +1,8 @@
 # Your first factorization
 
-Start with a sequence you can inspect by eye, then move to a longer example. You will obtain a factor count, an entropy-rate estimate and a shuffle-based view of organization from the same core.
+Start with a short sequence you can inspect by eye, then explore entropy density, structural complexity E and information distance.
 
-Install the package using the [installation guide](install.md). These examples use the current Python API.
+Install the package using the [installation guide](install.md).
 
 ## 1. Inspect a short sequence
 
@@ -15,9 +15,9 @@ print(count)       # 3
 print(boundaries)  # [0, 1, 2, 3, 7]
 ```
 
-`count` is the LZ76 complexity reported by the implementation. `boundaries` contains parser positions in the input bytes. The final value can exceed the input length: the parser attempted to extend a repeated suffix into a new phrase. That unfinished phrase stays visible in the boundary vector but is excluded from the count.
+`count` is the LZ76 complexity. The boundary positions mark the start and end of each phrase in the input bytes. A repeated suffix may end at a position beyond the input length; that unfinished phrase appears in the boundary vector but is excluded from the count.
 
-For a display of the pieces actually present:
+To display the pieces present in the sequence:
 
 ```python
 pieces = [
@@ -27,7 +27,7 @@ pieces = [
 assert pieces == ["b", "a", "n", "ana"]
 ```
 
-The count of completed phrases is three, even though four pieces are visible. Read [LZ76 factorization](../concepts/lz76.md) before comparing counts with another implementation. For non-ASCII strings, encode to bytes before slicing by the returned positions.
+Here three phrases are complete and the final `ana` is a copied tail. [LZ76 factorization](../concepts/lz76.md) walks through this convention. For non-ASCII strings, encode to bytes before slicing by the returned positions.
 
 ## 2. Choose the entropy units
 
@@ -38,11 +38,11 @@ print(round(h_normalized, 6))  # 0.815465
 print(round(h_bits, 6))        # 1.292481
 ```
 
-The default base is the observed alphabet size, three for `banana`. Base two expresses the estimate in bits per input byte symbol. These are two units for the same normalized factor-count calculation, not two different source models.
+The default base is the observed alphabet size, three for `banana`. Base two expresses the estimate in bits per input byte. Both values describe the same sequence in different units.
 
-A six-byte word is useful for understanding the API. It is far too short to establish the entropy rate of a language.
+Short examples help explain the calculation; use longer samples to study a source's entropy rate.
 
-## 3. Analyze a longer periodic example
+## 3. Measure a periodic sequence
 
 ```python
 sequence = "00010111" * 256
@@ -54,19 +54,19 @@ print(result["emc"]["value"])    # 3.2105712890625
 print(result["emc"]["max_block_size"])  # 8
 ```
 
-The periodic string introduces little new material as it grows, giving a small entropy-density estimate. Block swaps at some scales disturb its organization, giving a positive shuffle-based score. The score is **qualitatively similar to EMC**; it is not a calibrated number of past/future information bits.
+The repeated motif introduces little new information as the string grows, giving a small h. E describes organization across the ranges examined by the calculation. Its value is returned in `result["emc"]["value"]`.
 
-Inspect the fitted increments if you need the scale profile:
+You can also inspect E's profile increments:
 
 ```python
-score = result["emc"]["value"]
+E = result["emc"]["value"]
 terms = result["emc"]["summands"]
 assert len(terms) == 8
 assert all(term >= 0 for term in terms)
-assert abs(sum(terms) - score) < 1e-12
+assert abs(sum(terms) - E) < 1e-12
 ```
 
-These increments come from the fitted shuffle-contrast curve. They are not independent estimates of conditional entropies. [The shuffle explanation](../concepts/emc.md) follows the calculation step by step.
+The increments sum to E. See [structural complexity E](../concepts/emc.md) for their interpretation and the calculation.
 
 ## 4. Compare two sequences
 
@@ -74,7 +74,7 @@ These increments come from the fitted shuffle-contrast curve. They are not indep
 assert lz.nid("abcd", "abce") == 0.25
 ```
 
-`nid` uses the factor counts of each input and both concatenation orders. It is a finite LZ-based dissimilarity. Even identical inputs can have nonzero self-distance, so inspect the [distance conventions](../concepts/nid.md) before passing a matrix into a method requiring an exact metric.
+`nid` compares recurring patterns using the factor counts of each sequence and both concatenation orders. Lower values indicate greater similarity under this measure. For finite sequences, self-distance can be nonzero; see [information distance](../concepts/nid.md) when using the results in clustering or other downstream methods.
 
 ## 5. Keep the measurement settings
 
@@ -86,10 +86,10 @@ record = {
     "max_block_size": 8,
     "complexity": result["complexity"],
     "h": result["h"],
-    "shuffle_score": result["emc"]["value"],
+    "E": result["emc"]["value"],
 }
 ```
 
-For real data, also record how the sequence was produced: thresholds or bins, sampling and windowing, missing-data rules and source identifiers. Repeated identical calls are reproducible; they do not generate independent shuffle samples.
+For real data, record how the sequence was produced: thresholds or bins, sampling, windowing, missing-data handling and record identifiers. Identical inputs and settings give reproducible results.
 
 **Continue with:** [reading the numbers](reading-the-numbers.md), [input encoding](../api/inputs.md), or a [neural time-series example](../recipes/neuro.md).

@@ -1,5 +1,18 @@
 {% extends "base.html" %}
 
+{% block content %}
+  {% if page and not page.is_homepage %}
+    <nav class="lz-breadcrumbs" aria-label="Breadcrumb">
+      <a href="{{ nav.homepage.url | url }}">Home</a>
+      {% for ancestor in page.ancestors | reverse %}
+        <span aria-hidden="true">/</span><span>{{ ancestor.title }}</span>
+      {% endfor %}
+      <span aria-hidden="true">/</span><span aria-current="page">{{ page.title }}</span>
+    </nav>
+  {% endif %}
+  {{ super() }}
+{% endblock %}
+
 {% block extrahead %}
   {{ super() }}
   {# Static, absolute URLs let social crawlers render cards without JavaScript. #}

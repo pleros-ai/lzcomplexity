@@ -5,9 +5,8 @@ use crate::sequence::Sequence;
 use crate::suffix_array::build as build_sa_lcp;
 use crate::NO_ALPHABET;
 
-/// Mirror of `LZ_Args` in the C++ — configuration knobs for all `lz76*`
-/// functions. Defaults match the C++ no-arg constructor (which uses the
-/// `NO_ALPHABET` sentinel for auto-detection).
+/// Configuration for LZ76 calculations. `NO_ALPHABET` selects automatic
+/// alphabet metadata and logarithm-base selection.
 #[derive(Clone, Debug)]
 pub struct LzArgs {
     pub chunks: i32,
@@ -47,7 +46,7 @@ impl PartialEq for LzArgs {
     }
 }
 
-/// Mirror of `LZ_Result`.
+/// LZ76 factor count, finite-size diagnostic and byte boundaries.
 #[derive(Clone, Debug, Default)]
 pub struct Lz76Result {
     pub factorization: u32,
@@ -55,7 +54,7 @@ pub struct Lz76Result {
     pub lzf: Vec<u32>,
 }
 
-/// Mirror of `LZ_Shuffle`.
+/// Structural complexity E, its range limit and fitted increments.
 #[derive(Clone, Debug)]
 pub struct LzShuffle {
     pub max_block_size: i32,
@@ -81,7 +80,7 @@ impl Default for LzShuffle {
     }
 }
 
-/// Mirror of `LZ_Extra`.
+/// Additional ratios formed from the whole- and half-sequence factor counts.
 #[derive(Clone, Debug, Default)]
 pub struct LzExtra {
     pub lz_rajski_distance: f64,
@@ -91,7 +90,7 @@ pub struct LzExtra {
     pub lz_pearson_coefficient: f64,
 }
 
-/// Mirror of `LempelZiv` — the rich result returned by `lz76(seq, args)`.
+/// Complete analysis returned by `metrics::lz76(seq, args)`.
 #[derive(Clone, Debug, Default)]
 pub struct LempelZiv {
     pub complexity: u32,
@@ -106,7 +105,7 @@ pub struct LempelZiv {
     pub extras: LzExtra,
 }
 
-/// Core: factorize a sequence into LZ76 factors. Mirrors `LempelZiv76::Factorize`.
+/// Factorize a byte sequence into LZ76 phrases.
 ///
 /// Returns `(factorization_count, epsilon, factor_boundaries, factor_length_stddev)`.
 pub fn factorize(seq: &Sequence, args: &LzArgs) -> (u32, f64, Vec<u32>, f64) {

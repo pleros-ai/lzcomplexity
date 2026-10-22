@@ -1,4 +1,4 @@
-//! Shuffle-based complexity measures.
+//! Structural complexity E and its scale profile.
 
 use rayon::prelude::*;
 
@@ -6,7 +6,7 @@ use crate::lz76::{lz76_factorization, LzArgs, LzShuffle};
 use crate::sequence::{shuffle_copy_seeded, Sequence};
 use crate::NO_ALPHABET;
 
-/// Estimate the "naive M" satisfying `N = M * 2^M`, mirroring `max_block_size` in C++.
+/// Estimate the block-range limit `M` satisfying `N = M * 2^M`.
 pub fn max_block_size(size: usize) -> usize {
     if size < 10 {
         return 1;
@@ -26,8 +26,7 @@ pub fn max_block_size(size: usize) -> usize {
     m
 }
 
-/// Compute the random-shuffle factorization vector and `mm`. Mirrors
-/// `ShuffleFactorization` from the C++.
+/// Compute the sampled factor counts at block ranges `1..=mm`.
 pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize) {
     let mut mm: i64 = args.block_size as i64;
     if mm <= 0 {
@@ -59,28 +58,18 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
     (res, mm)
 }
 
-/// Shuffle-based EMC-like complexity score, retaining the released formula.
+/// Calculate structural complexity E from the original and sampled counts.
 ///
-/// For each block size `l`, `h_rand[l]` is the LZ76 factor count of a
-/// separately content-seeded, block-shuffled copy. With `g = log_b(N)/N`,
-/// the operational raw score at that scale is
+/// For each block size `l`, `h_rand[l]` contains a sampled LZ76 count. With
+/// `g = log_b(N)/N`, the raw scale profile is
 ///
 /// ```text
-/// D(l) = l * g * (C_LZ(shuffled_l) - C_LZ(original)).
+/// D(l) = l * g * (C_LZ(sampled_l) - C_LZ(original)).
 /// ```
 ///
-/// The existing reporting convention projects these scores onto nonnegative,
-/// nondecreasing sequences using `non_negative_isotonic`. The returned
-/// scalar is the final fitted score; `summands` are its successive increments.
-/// These properties follow from the projection, not from a proof that the
-/// score equals Shannon excess entropy, mutual information, or exact EMC.
-/// Fixed-length block swaps and finite-sequence LZ counts do not establish
-/// that the surrogates are independent block draws or that `l*h_LZ` is an
-/// unbiased block-entropy estimate.
-///
-/// `multi_information` retains its historical name for API compatibility:
-/// it is the raw `l=1` contrast, before projection. It is not a calibrated
-/// mutual-information estimate or an uncertainty on the returned score.
+/// A nonnegative isotonic fit produces a nondecreasing profile. E is the
+/// final fitted level; `summands` contains the successive increments.
+/// `multi_information` is the raw `l=1` contrast before fitting.
 pub fn shuffle_entropy_calculation(
     seq: &Sequence,
     args: &LzArgs,

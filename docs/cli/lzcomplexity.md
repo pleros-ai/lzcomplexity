@@ -1,8 +1,7 @@
 # `lzcomplexity`
 
 Analyse one file and write per-sequence results as JSON. By default each
-reported sequence gets a factor count, entropy density and the EMC-like
-shuffle score.
+reported sequence gets a factor count, entropy density h and structural complexity E.
 
 ```text
 lzcomplexity [OPTIONS] [file]
@@ -20,18 +19,18 @@ lzcomplexity trials.txt -F TXT -m -l 2 -e 8:f -o trials.json
 | positional `file` | path | required for analysis | Input sequence file. |
 | `-a`, `--alphabet` | integer or `auto` | `auto` | Alphabet parameter; also selects the default log base when explicitly supplied. |
 | `-d`, `--dlz` | flag | off | Add distance between consecutive sequences; implies multiline. |
-| `-e`, `--rsemc-opt` | optional option string | automatic cap | Set shuffle cap and request fitted increments; see below. |
+| `-e`, `--rsemc-opt` | optional option string | automatic cap | Set the maximum range for E and request profile increments; see below. |
 | `-f`, `--factors` | path | none | Write an additional factor-boundary JSON file. |
 | `-F`, `--format` | format name | `AUTO` | Override [input interpretation](formats.md). |
 | `-j`, `--jobs` | unsigned integer | Rayon default | Positive values set the native worker count; zero leaves the default. |
-| `-l`, `--log-base` | unsigned integer | explicit `-a`, otherwise observed alphabet | Units for entropy density and shuffle score; use `2` for base-two normalization. |
+| `-l`, `--log-base` | unsigned integer | explicit `-a`, otherwise observed alphabet | Logarithm units for h and E; use `2` for base-two normalization. |
 | `-m`, `--multi-line` | flag | off | Treat lines/columns/records/image rows as separate sequences. |
-| `-n`, `--entropy-density` | flag | off | Skip shuffle analysis; retain factor count and entropy density. |
+| `-n`, `--entropy-density` | flag | off | Skip E; retain factor count and entropy density. |
 | `-o`, `--output` | path | `<stem>.lz76.json` | Result file; replaces the input's final extension. |
-| `-p`, `--partitions` | signed integer | `0` | Compatibility option; current Rust factorization ignores it. |
+| `-p`, `--partitions` | signed integer | `0` | Accepted; no effect. |
 | `-v`, `--verbose` | flag | off | Print sequence count and output path. |
 | `-V`, `--version` | flag | off | Print package version and exit. |
-| `-w`, `--warn-out` | flag | off | Accepted for compatibility; the current implementation does not use it. |
+| `-w`, `--warn-out` | flag | off | Accepted; no effect. |
 | `-h`, `--help` | flag | — | Show help and exit. |
 
 Unsigned bases below two are floored at two by normalization. The CLI's
@@ -60,10 +59,10 @@ A plain text file is **not concatenated** without `-m`; subsequent lines are
 ignored. A `#` line is an ordinary text sequence, not a comment. Header rows
 in CSV are also data. See [formats](formats.md) for exact parser behavior.
 
-## Shuffle options: `-e`
+## E options: `-e` { #shuffle-options-e }
 
 The accepted syntax is `cap:f:start:end`. Only the cap and `f` fields are
-implemented in this Rust CLI:
+used:
 
 | Example | Effect |
 |---|---|
@@ -77,18 +76,15 @@ For a negative value, use the equals form, such as `-e=-1:f`, to avoid
 option parsing ambiguity. Put a bare `-e` after the positional file or use
 `-e=a`, so the optional argument does not consume your file path.
 
-The historical `start:end` slots are ignored. They do not restrict which
-lines receive shuffle analysis. An empty first field, such as `-e=:f`,
+The `start:end` slots are ignored. They do not restrict which
+lines receive E analysis. An empty first field, such as `-e=:f`,
 changes nothing. For a selected subset, prepare the input file yourself.
 
-The automatic cap uses the existing length heuristic and adds ten when
-`N > 50`. The actual cap is recorded in the result. The score is a
-[shuffle-based magnitude qualitatively similar to EMC](../concepts/emc.md),
-not a calibrated shared-information bit count.
+The automatic cap depends on sequence length and adds ten for inputs longer than 50 bytes. The result records the cap used. See [structural complexity E](../concepts/emc.md) for the range profile and its interpretation.
 
 ## JSON result
 
-This complete small example uses explicit text mode and skips shuffling:
+This example requests factor counts and h in text mode:
 
 ```sh
 printf '01010101\n' > sample.txt
@@ -130,22 +126,21 @@ Pretty-printed `result.json`:
 | `alphabet_size` | Observed alphabet size, normally floored at two. |
 | `lz76Complexity` | Library LZ76 factor count. |
 | `lz76EntropyDensity` | Entropy-density estimate in requested logarithm units. |
-| `lz76RandomShuffleComplexity` | `value`, actual cap, raw first-scale contrast and optional fitted `summands`. |
+| `lz76RandomShuffleComplexity` | E in `value`, the maximum range, first-range contrast and optional profile `summands`. |
 | `lz76Distance.InformationDistance` | Present with `-d`; neighboring-sequence distance values. |
 
 !!! note "Skipped analysis has a sentinel"
 
-    Under `-n`, the shuffle object remains in JSON with `max_block_size=-1`,
+    Under `-n`, the E object remains in JSON with `max_block_size=-1`,
     zero scalars and no `summands`. This means **uncomputed**, not a measured
     score of zero. A computed result records its actual positive cap.
 
-The current key is `lz76EntropyDensity`; the old manual contains a spelling
-error in one schema example. The CLI writes compact JSON. Use
+The CLI writes compact JSON. Use
 `python -m json.tool result.json` to inspect it; consumers should not depend
 on object-key order.
 
 With `-d`, the distance list has `n - 1` entries for `n > 1`. For zero or one
-read sequence it retains the legacy `[0.0]` convention.
+read sequence it contains `[0.0]`.
 
 ## Factor-boundary file
 
@@ -155,7 +150,7 @@ lzcomplexity trials.txt -F TXT -m -f factors.json -o trials.json
 
 The additional file has `filename`, numeric `format`, `size` and `factors`.
 Each element of `factors` is the boundary list for one read sequence. Unlike
-the main report, `format` is the legacy enum ordinal: `TXT=7`, raw binary
+the main report, `format` is a numeric code: `TXT=7`, raw binary
 `=8`, `CSV=9`, `TCSV=10`, `DNA=11`, `RNA=12`, `FASTA=13`, `AUTO=14`;
 PNM P1–P7 use zero through six.
 

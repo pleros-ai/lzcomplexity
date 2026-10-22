@@ -15,282 +15,167 @@
 
 </div>
 
-`lzcomplexity` computes information-theoretic measures of symbolic sequences using **Lempel–Ziv 76 (LZ76) factorization** [1]. The LZ76 complexity `c(S)` is the parsing count returned under the implementation’s LZ76 convention; the documentation explains how the final copied tail is handled. From `c(S)` you get a non-parametric entropy-rate estimator — `h ≈ c(S)·log_k(n)/n` — that converges to the true entropy rate of ergodic sources [2].
+`lzcomplexity` measures randomness, structure across ranges and similarity in
+symbolic sequences using Lempel–Ziv 76 factorization. A Rust core powers the
+Python library and two command-line tools.
 
-The function named `emc` computes a **shuffle-based complexity measure that is
-qualitatively similar to effective measure complexity (EMC)**. It is not an
-established numerical estimator of theoretical EMC or excess entropy. The
-historical API name is retained. See [the shuffle-measure definition and
-limitations](docs/shuffle-measure.md).
+| Measure | What it captures | Python function |
+|---|---|---|
+| Entropy density **h** | Unpredictability and the production of new information | `lz.h(sequence)` |
+| Structural complexity **E** | Correlations across different ranges of a sequence | `lz.emc(sequence)` |
+| Information distance **d** | Differences in recurring patterns between sequences | `lz.nid(first, second)` |
 
-The library ships **two things**:
-
-1. A **Python library** (`import lzcomplexity`) built on a Rust core via [PyO3](https://pyo3.rs/).
-2. Two **standalone command-line tools** — `lzcomplexity` and `lzdistance`.
-
-The core is implemented in Rust; the two front-ends share it. Common applications: neuroscience time-series, DNA analysis, anomaly detection, structural pattern analysis.
-
-> This is the **Rust implementation**, the current production backend. The original C++/nanobind implementation lives on the `main` branch. Compare backend results only with matched versions, input encodings and parameters (see [Differences from the C++ version](#differences-from-the-c-version)).
->
-> **Spectral analysis** (`psd`, spectral `entropy`, `semc`) has been **removed** from this library and now lives in a separate package.
-
----
+Applications include neural time series, written language, genomic sequences
+and nonlinear dynamics. Read the [documentation](https://pleros-ai.github.io/lzcomplexity/)
+for concepts, worked examples and complete API references.
 
 ## Python library
 
 ### Install
 
-You need **Python ≥ 3.9**. From PyPI:
+Requires Python 3.9 or newer:
 
-```bash
+```sh
 pip install lzcomplexity
 ```
 
-Or from a clone of this repository (requires [Rust 1.85 or newer](https://rustup.rs)):
-
-```bash
-pip install .
-```
-
-`pip` invokes [maturin](https://www.maturin.rs/), which compiles the Rust workspace, produces a wheel, and installs it. A C compiler is also needed by the bundled suffix-array dependency. No CMake, no submodules, no C++ toolchain.
-
-#### Development install
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install maturin
-maturin develop --release
-```
-
-Re-run `maturin develop --release` after Rust changes.
+To build from source, install Rust 1.85 or newer and a C compiler, then run
+`pip install .` from the repository. The build uses [maturin](https://www.maturin.rs/).
 
 ### Quick start
 
 ```python
 import lzcomplexity as lz
 
-# Complexity + factor boundaries — factor i spans [factors[i], factors[i+1])
-complexity, factors = lz.factorization("banana")
-# → (3, [0, 1, 2, 3, 7])
+# LZ76 count and factor boundaries
+count, boundaries = lz.factorization("banana")
+# (3, [0, 1, 2, 3, 7])
 
-# Normalised entropy density / entropy-rate estimator — `h`
-lz.h("01010101")
-# → 0.75
+# Entropy density, with base-two logarithms
+h = lz.h("01010101", log_base=2)
+# 0.75
 
-# Shuffle-based EMC-like measure: the score and its fitted increments
-emc_value, summands = lz.emc("01001010101101010101110101010101010000100101011")
+# Structural complexity E and its increments across ranges
+sequence = "00010111" * 256
+E, increments = lz.emc(sequence, log_base=2, max_block_size=16)
 
-# Everything in one call (returns a dict)
-full = lz.lz76("ABRACADABRA")
-full["complexity"], full["h"], full["factors"]
-full["emc"]     # {"value", "summands", "max_block_size", "multi_information"}
-full["extras"]  # {"rajski_distance", "redundancy", "fh_uncertainty", ...}
+# Information distance between two sequences
+d = lz.nid(sequence, "01010101" * 256)
 
-# Normalized information distance (NID) between two sequences
-lz.nid("ABRACADABRA", "ABRACADABRZ")     # → small, similar
-lz.nid("ABRACADABRA", "ZYXWVUTSRQP")     # → large, dissimilar
+# Complete analysis in one call
+result = lz.lz76(sequence, log_base=2, max_block_size=16)
+print(result["complexity"], result["h"], result["emc"]["value"])
 ```
 
 ### Public API
 
-| Symbol | Signature | Returns |
-|---|---|---|
-| `lz.factorization(seq, ...)` | complexity + factor boundaries | `(int, list[int])` |
-| `lz.h(seq, ...)` | normalised entropy density (entropy rate) | `float` |
-| `lz.emc(seq, ...)` | shuffle-based EMC-like measure | `(float, list[float])` — `(value, summands)` |
-| `lz.nid(seq1, seq2, ...)` | normalised information distance | `float` |
-| `lz.lz76(seq, ...)` | the full analysis | `dict` (see below) |
+| Function | Returns |
+|---|---|
+| `factorization(seq, ...)` | LZ76 count and byte boundaries: `(int, list[int])` |
+| `h(seq, ...)` | Entropy density: `float` |
+| `emc(seq, ...)` | E and fitted increments: `(float, list[float])` |
+| `nid(seq1, seq2, ...)` | Normalized information distance: `float` |
+| `lz76(seq, ...)` | Complete result dictionary |
 
-`lz.lz76(...)` returns a dict with keys: `complexity`, `h`, `factors`, `emc` (a nested dict), `epsilon`, `factors_stddev`, `normal_error`, `poison_error`, `extras` (a nested dict).
+Strings are analyzed as UTF-8 bytes. Pass `bytes` to preserve one byte per
+symbol; integer sequences are joined as decimal text. For example,
+`bytes([0, 1, 10])` contains three symbols, while `[0, 1, 10]` becomes `"0110"`.
+See [input types](https://pleros-ai.github.io/lzcomplexity/api/inputs/) for
+NumPy arrays and categorical codebooks.
 
-Common keyword arguments:
+Set `log_base=2` for h in bits per input byte. The default base is the observed
+alphabet size, with a minimum of two. `max_block_size` controls the maximum
+range used for E; nonpositive values select it automatically. Compare E with
+matched lengths, encodings and parameters.
 
-- `partitions` (int, default 1) — retained for compatibility; currently ignored by the Rust implementation.
-- `alphabet` (int | None, default None) — alphabet parameter for the finite-size `epsilon` diagnostic; auto-detect (distinct input bytes, min 2) when None. An explicit value does not change the default logarithm base.
-- `log_base` (int | None, default None) — defaults to the observed input alphabet size, floored at 2. Pass `2` explicitly for base-2 normalization (`h` in bits per input byte); the EMC-like score is not a calibrated bit count.
-- `max_block_size` (int, default −1) — shuffle block-size cap for `emc`/`lz76`; nonpositive values auto-select using the existing length-based heuristic, including its `+10` for inputs longer than 50 bytes.
-- `jobs` (int, default 0) — reserved; currently ignored (rayon manages its pool).
+The [Python reference](https://pleros-ai.github.io/lzcomplexity/api/python/)
+documents every parameter and result field. Type stubs and runtime help ship
+with the package.
 
-The `emc` result depends on sequence length, block-size cap, input encoding and
-surrogate draws. Compare scores using matched settings and examine their
-sensitivity. Its summands are fitted score increments; `multi_information` is
-the raw one-symbol shuffle contrast. These are not calibrated Shannon
-information quantities.
+## Command-line tools
 
-Run `help(lzcomplexity.<name>)` for full per-function docs. Type stubs (`__init__.pyi`) ship with the package.
+Prebuilt binaries are available from [GitHub Releases](https://github.com/pleros-ai/lzcomplexity/releases).
+To build them locally:
 
-### Accepted input types
-
-Every sequence-accepting function accepts any of:
-
-- `str` — symbols taken from the string bytes directly.
-- `bytes` — raw byte sequence.
-- `list[str]` — concatenated as-is (e.g. `["A","C","G","T"]`).
-- `list[int]` — each element becomes its decimal string, concatenated, so `[0, 1, 10]` → `"0110"`.
-- Integer sequences such as tuples and compatible NumPy arrays — same decimal-string conversion as `list[int]`. Materialize generators with `list(...)`, or use `bytes(...)` for raw byte symbols.
-
----
-
-## Standalone binaries
-
-Two command-line tools are built from the same Rust core.
-
-Build them from a clone:
-
-```bash
-cargo build --release
-# → target/release/lzcomplexity   and   target/release/lzdistance
+```sh
+cargo build --release -p lzcomplexity-cli --bins
 ```
 
-Prebuilt binaries for Linux/macOS/Windows are attached to each [GitHub release](https://github.com/pleros-ai/lzcomplexity/releases).
+### Analyze a file
 
-### `lzcomplexity`
-
-Reads a sequence file and writes a JSON report with the LZ76 complexity, entropy density, and shuffle-based EMC-like score.
-
-```bash
-lzcomplexity input.txt                 # → input.lz76.json
-lzcomplexity input.txt -m -d           # multi-line + distance between consecutive lines
-lzcomplexity input.txt -n              # entropy density only
-lzcomplexity input.txt -a 4 -l 2       # explicit alphabet / log base
+```sh
+lzcomplexity input.txt -F text -l 2
+lzcomplexity sequences.txt -F text -m -d
+lzcomplexity input.txt -F text -n
 ```
 
-Key flags: `-a/--alphabet`, `-l/--log-base`, `-p/--partitions`, `-m/--multi-line`, `-d/--dlz`, `-n/--entropy-density`, `-f/--factors <file>`, `-F/--format <fmt>`, `-o/--output`, `-v/--verbose`, `-V/--version`.
+`lzcomplexity` writes a JSON report containing the LZ76 count, h and E.
+Use `-m` for one sequence per line, `-d` to add consecutive-sequence distances,
+or `-n` for entropy density alone.
 
-### `lzdistance`
+### Compare sequences
 
-Computes pairwise information-distance and shuffle-distance matrices between one or two data sources (files or directories).
-
-```bash
-lzdistance sequences.txt               # self-distance matrix (first_dim × first_dim)
-lzdistance A.txt B.txt                  # cross matrix
-lzdistance genomes/ -a                  # a directory of files, DNA complement-aware
-lzdistance A.txt B.txt -g 5             # also emit the directed graph
+```sh
+lzdistance sequences.txt
+lzdistance first.txt second.txt
 ```
 
-Key flags: `-a/--adn` (DNA), `-b/--binary`, `-r/--reverse`, `-y/--trajectory`, `-g/--get-direction [threshold]`, `-I/--first-format`, `-S/--second-format`, `-i/--first #:#`, `-s/--second #:#`, `-p/--partitions`, `-o/--output`, `-L/--logs`, `-v/--version`.
+`lzdistance` computes pairwise distance matrices from files or directories.
+The [CLI reference](https://pleros-ai.github.io/lzcomplexity/cli/) covers
+selection ranges, transformations, input formats and output schemas.
 
-### Input formats
+## Development
 
-Both tools auto-detect the format (or accept `-F`/`-I`/`-S`): raw **text** and **binary**, **CSV**/**TSV**, **PBM/PGM** images (P1/P2/P4/P5), and **FASTA/DNA/RNA** (including `.gz`). Use `-m` (or a directory) to treat each line/file as a separate sequence.
+For an editable Python extension build:
 
----
-
-## Contributing & releases
-
-This repo uses **[Conventional Commits](https://www.conventionalcommits.org/)** together with **[release-please](https://github.com/googleapis/release-please)** so that versioning and PyPI publishing happen **automatically** — you never bump a version or push a tag by hand.
-
-### How to commit
-
-Prefix every commit **title** with a type:
-
-| Prefix | Use for | Version effect (the project is 1.x) |
-|---|---|---|
-| `feat:` | a new feature | bumps the **minor** (`1.0.0 → 1.1.0`) |
-| `fix:` | a bug fix | bumps the **patch** (`1.0.0 → 1.0.1`) |
-| `perf:` | a performance improvement | patch |
-| `refactor:`, `docs:`, `build:`, `ci:`, `test:`, `chore:` | everything else | no release on its own |
-
-Add `!` after the type (e.g. `feat!:`) or a `BREAKING CHANGE:` footer to force a **major** bump
-(`1.x → 2.0.0`). Before 1.0 a breaking change only bumped the minor; that is no longer the case.
-
-> Keep commit messages **ASCII-only**. release-please failed to parse a message containing Unicode
-> maths symbols and silently dropped it from the changelog.
-
-```
-feat: add spectral-free NID batch mode
-fix: correct off-by-one in PGM reader
-docs: document the lzdistance directed graph
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install maturin
+maturin develop --release
 ```
 
-### What happens automatically
+Rebuild with `maturin develop --release` after changing Rust source.
 
-The Python package is released from the **`rust-backend`** branch; the C++ `main`
-branch is kept only as a verification reference and is not published.
+```sh
+cargo test --workspace
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings
+```
 
-1. You merge conventional commits into `rust-backend`.
-2. **release-please** opens (and keeps updating) a "release PR" that bumps the version in `Cargo.toml` **and** `pyproject.toml`, and updates `CHANGELOG.md`.
-3. When you merge that release PR, release-please tags the release (`vX.Y.Z`) and creates a GitHub release.
-4. The [`Release`](.github/workflows/release.yml) workflow then builds the wheels with maturin, **publishes them to PyPI** via OIDC trusted publishing (no token needed), and attaches the standalone binaries to the GitHub release.
-
-So the entire flow is: **write conventional commits → merge the release PR → PyPI updates itself.**
-
-> One-time setup on PyPI: the *trusted publisher* for the `lzcomplexity` project
-> (Settings → Publishing) is keyed on the repository and the **workflow filename**
-> (plus an optional environment) — **not** on a branch. Point its *Workflow name*
-> at **`release.yml`** (the previous C++ setup used `wheels.yml`). No API token
-> or secret is stored in the repo.
-
-### CI
-
-Every push and PR runs [`CI`](.github/workflows/ci.yml): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, a smoke test of both standalone binaries, and a wheel build + Python API smoke test on Linux/macOS/Windows.
-
----
+Use Conventional Commit titles such as `feat:`, `fix:` and `docs:`. Release
+versions and changelogs are managed by release-please. CI tests the Rust
+workspace, standalone tools and Python wheels on Linux, macOS and Windows.
+See [documentation contributions](https://pleros-ai.github.io/lzcomplexity/project/contributing/)
+for local site previews and checks.
 
 ## Repository layout
 
+```text
+crates/lzcomplexity-core/   Algorithms and Rust API
+crates/lzcomplexity-py/     PyO3 bindings
+crates/lzcomplexity-cli/    Command-line tools
+python/lzcomplexity/       Python package and type stubs
+docs/                     Documentation and browser playground
 ```
-crates/
-├── lzcomplexity-core/   Rust crate: algorithms (LZ76, suffix array, LPF,
-│                        shuffle, metrics). No Python or CLI types.
-├── lzcomplexity-py/     PyO3 bindings → the `lzcomplexity` Python extension.
-└── lzcomplexity-cli/    The `lzcomplexity` and `lzdistance` binaries.
-python/lzcomplexity/     Python package skin: __init__.py, __init__.pyi, py.typed.
-pyproject.toml           Maturin build config.
-```
-
-`cargo test --workspace` exercises the algorithmic core.
-
----
-
-## Differences from the C++ version
-
-| Aspect | C++ (`main` branch) | Rust (this branch) |
-|---|---|---|
-| Build system | CMake + nanobind | Cargo + maturin |
-| Suffix array | CaPS (custom parallel) | comparison sort below 2048 bytes, `cdivsufsort` above, + Kasai LCP |
-| Parallelism | OpenMP / TBB / Cilk | rayon |
-| Shuffle RNG | Rust-compatible `ChaCha8` implementation in the current C++ source | pinned `ChaCha8` (seeded from input → **deterministic**) |
-| Spectral analysis | included (`psd`, `entropy`, `semc`) | **removed** (moved to a separate package) |
-| Python surface | many names, `nid`/`rid`, class exports | `factorization`, `h`, `emc`, `nid`, `lz76` |
-
-The current C++ source includes a Rust-compatible shuffle RNG; the old description of a time-seeded C++ shuffle is stale. Backend comparisons must match the source revisions, RNG behavior, input bytes, block-size cap and logarithm base. The CI listed above checks this Rust workspace and its front-ends; it does not establish blanket numerical parity with every C++ revision.
-
----
-
-## References
-
-1. Lempel, A., & Ziv, J. (1976). On the complexity of finite sequences. *IEEE Transactions on Information Theory*, 22(1), 75–81.
-2. Kontoyiannis, I., Algoet, P. H., Suhov, Y. M., & Wyner, A. J. (1998). Nonparametric entropy estimation for stationary processes and random fields. *IEEE Transactions on Information Theory*, 44(3), 1319–1327.
 
 ## Authors
 
-- **Efrén Aragón Pérez** — principal author and creator of `lzcomplexity`. The library exists
-  because of him; he wrote the original implementation this work descends from.
-- **Daniel Estévez Moya** — the Rust rewrite that is the current production backend.
-- **Ernesto Estévez Rams** — from the research lineage of the original C++ implementation.
+- **Efrén Aragón Pérez** — creator and principal author of the library.
+- **Daniel Estévez Moya** — Rust implementation.
+- **Ernesto Estévez Rams** — scientific foundations.
 
 ## Citation
 
-The software is archived on [Zenodo](https://zenodo.org/records/23531094).
-Use the all-version DOI **10.5281/zenodo.23531093** to refer to the project,
-and record the version or source commit you used. The first archive's DOI is
-[10.5281/zenodo.23531094](https://zenodo.org/records/23531094).
+Aragón-Pérez, E., & Estevez-Rams, E. (2025). **Lzcomplexity: Entropy Measurement
+Library.** *Revista Cubana de Física*, **42**(2), 80–86.
+[Article and citation](https://www.revistacubanadefisica.org/index.php/rcf/article/view/31).
 
-```bibtex
-@software{lzcomplexity_2026,
-  title   = {lzcomplexity: LZ76 complexity, entropy rate and information distance
-             for symbolic sequences},
-  author  = {Arag{\'o}n P{\'e}rez, Efr{\'e}n and
-             Est{\'e}vez Moya, Daniel and
-             Est{\'e}vez Rams, Ernesto},
-  url     = {https://github.com/pleros-ai/lzcomplexity},
-  version = {2.0.0},
-  year    = {2026}
-}
-```
+Software DOI: [10.5281/zenodo.23531093](https://zenodo.org/doi/10.5281/zenodo.23531093).
+See [authors and citation](https://pleros-ai.github.io/lzcomplexity/project/authors/)
+for BibTeX and the [references](https://pleros-ai.github.io/lzcomplexity/project/references/)
+for the research behind the measures.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+[MIT](LICENSE).

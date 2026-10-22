@@ -1,8 +1,8 @@
 # DNA, RNA and FASTA
 
-A genome is already symbolic, but the file around it is not: headers, line wrapping, lowercase letters and ambiguity codes can all change the bytes presented to LZ76. Decide what counts as one sequence before measuring it.
+Prepare each genomic region as one sequence of bases before analysis. FASTA headers, line wrapping, case and ambiguity codes need consistent handling.
 
-For example, `ACGT`, `acgt` and `ACGTN` are different byte alphabets. `N` is a symbol, not an instruction to skip an unknown base. An explicit `alphabet=4` does not remove ambiguity codes or convert them to four states.
+For example, `ACGT`, `acgt` and `ACGTN` use different byte alphabets. Keep `N` as an additional symbol or handle ambiguous regions before analysis; `alphabet=4` controls a calculation parameter rather than preprocessing the sequence.
 
 ## Read FASTA records explicitly in Python
 
@@ -54,9 +54,9 @@ Deleting ambiguous bases connects neighbors that were separated in the original 
 
 ## Match windows and conventions
 
-Use the same sequence length, alphabet policy, case normalization, strand convention, logarithm base and block-size cap when comparing scores. A different region length changes both finite-sample LZ behavior and an automatic shuffle cutoff. Explicit fixed caps make that parameter visible; they do not remove all length dependence.
+Use the same sequence length, alphabet policy, case normalization, strand convention, logarithm base and block-size cap when comparing scores. Length affects both the factorization and automatic range selection. Use explicit caps when comparing the same ranges across regions.
 
-LZ-based information distance compares the supplied strings through their literal patterns. It is not an alignment, an edit distance or a phylogenetic model. A low value does not establish common ancestry or a shared biological mechanism.
+Information distance summarizes shared literal patterns between the supplied sequences. Use it alongside alignment or phylogenetic methods when those are part of your biological question.
 
 ## Reverse complements
 
@@ -80,12 +80,12 @@ print(d_same_orientation, d_reverse_complement, d_orientation_free)
 
 This minimum defines your orientation-handling convention. Keep it consistent across every pair.
 
-!!! note "The CLI's `-a` is a legacy transformation strategy"
+!!! note "CLI DNA transformations"
 
     `lzdistance -a` tests the original second operand, its reversal, a partial `A↔T` substitution and its reversal, and a separate partial `C↔G` substitution and its reversal. The partial substitutions also lowercase the changed bases. They are not combined into a full reverse complement. Use the explicit Python construction above when that is what your analysis requires. See the [strategy reference](../cli/lzdistance.md).
 
 ## Native FASTA input
 
-Both CLI tools have FASTA-related readers; `lzdistance` also recognizes common FASTA suffixes. The current reader's record joining, multiline and normalization conventions are documented in [input formats](../cli/formats.md). Check those rules before treating one file as a collection of biological records.
+Both CLI tools have FASTA-related readers; `lzdistance` also recognizes common FASTA suffixes. The readers' record joining, multiline and normalization conventions are documented in [input formats](../cli/formats.md). Check those rules before treating one file as a collection of biological records.
 
 For the most explicit batch workflow, preprocess to one record per file, preserving a sorted manifest of record names. Then use [`lzdistance`](batch-distance.md) or the Python pairwise loop. Keep analysis outputs outside the input directory so a later run cannot accidentally ingest them.

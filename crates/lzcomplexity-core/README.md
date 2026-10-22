@@ -20,11 +20,8 @@ standalone binaries, and can be used directly as a Rust library.
 - **Entropy density** — the normalized entropy-rate estimator
   `h ≈ c(S)·log_k(n)/n`, which converges to the true entropy rate of ergodic
   sources.
-- **Shuffle-based EMC-like measure** — a multiscale contrast of LZ76 factor
-  counts before and after random aligned block swaps. It is qualitatively
-  similar to effective measure complexity; it is not an established estimator
-  of theoretical EMC or excess entropy. The historical `emc` names remain
-  for compatibility. See the [definition and limitations](../../docs/shuffle-measure.md).
+- **Structural complexity E** — sensitivity to correlations across different
+  ranges of a sequence. See the [calculation reference](https://pleros-ai.github.io/lzcomplexity/shuffle-measure/).
 - **Normalized information distance (NID)** — an LZ76-based distance between two
   sequences.
 
@@ -66,22 +63,13 @@ the command-line tools.
 
 - Inputs are raw byte sequences (`Sequence::from_str` / `Sequence::from_bytes`),
   so any alphabet works, including non-UTF-8 bytes.
-- Symbol-changing mutations invalidate the observed alphabet cache. Explicit
-  size declarations from `set_alphabet_size` or `with_alphabet_size` persist
-  until `determine_alphabet` or `clear`; constructor hints retain their legacy
-  behavior. Incrementally built and freshly constructed copies of the same
-  bytes therefore use the same observed normalization.
-- The shuffle-based measure is seeded deterministically from the input, so
-  results are reproducible with matched dependencies and parameters. It uses
-  one surrogate per block size and a nonnegative isotonic projection. The
-  returned summands are fitted score increments.
-- Match sequence length, byte encoding, logarithm base and block-size cap when
-  comparing scores, and check sensitivity to these choices. No calibrated
-  uncertainty or general ordering by theoretical EMC is provided.
-- The automatic block-size cap uses the existing base-2 length heuristic,
-  plus 10 for inputs longer than 50 bytes. It is a scale-selection convention,
-  not a sample-coverage certificate. `log_base` defaults to the observed
-  alphabet (floored at 2), independently of an explicit `alphabet` argument.
+- Symbol-changing mutations refresh observed alphabet information. Explicit
+  declarations persist until `determine_alphabet` or `clear`.
+- E is deterministic for identical input bytes and parameters. Its returned
+  summands are fitted profile increments, which sum to the final value.
+- Compare E with matched sequence lengths, encodings, log bases and range limits.
+- `log_base` defaults to the observed alphabet size, with a minimum of two,
+  independently of an explicit `alphabet` argument.
 
 ## References
 
@@ -94,7 +82,7 @@ the command-line tools.
 
 - **Efrén Aragón Pérez** — principal author and creator of `lzcomplexity`.
 - **Daniel Estévez Moya** — the Rust rewrite.
-- **Ernesto Estévez Rams** — research lineage of the original C++ implementation.
+- **Ernesto Estévez Rams** — scientific foundations.
 
 ## License
 
