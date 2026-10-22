@@ -29,7 +29,7 @@ print(result["emc"]["summands"])
 
 The calculation examines block ranges from one byte up to `max_block_size`. Its fitted profile accumulates the response across those ranges, and E is the final value. The returned `summands` describe how much the fitted profile rises at each step.
 
-For example, fitted values `[2.5, 2.5, 4]` have increments `[2.5, 0, 1.5]` and E equal to `4`. A flat part of the profile can result from fitting neighboring ranges together. The [calculation reference](../shuffle-measure.md) explains the formula and fitting procedure.
+For example, fitted values `[2.5, 2.5, 4]` have increments `[2.5, 0, 1.5]` and E equal to `4`. A flat part of the profile can result from fitting neighboring ranges together. The [calculation reference](implementation.md#6-structural-complexity-e) explains the formula and fitting procedure.
 
 ## Choose the range
 
@@ -47,4 +47,4 @@ For useful comparisons, keep the input length, encoding, logarithm base and maxi
 
 The [language study](https://doi.org/10.1371/journal.pone.0214863) explores entropy and complexity across levels of organization in text. The [dynamical-systems recipe](../recipes/dynamical-systems.md) applies the same perspective to symbolic trajectories.
 
-**Continue with:** [calculating E](../shuffle-measure.md), [sequence length](convergence.md), or the [Python reference](../api/python.md).
+**Continue with:** [implementation of E](implementation.md#6-structural-complexity-e), [sequence length](convergence.md), or the [Python reference](../api/python.md).
