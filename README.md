@@ -20,7 +20,9 @@ Explore how a sequence balances unpredictability and organization, or compare
 the patterns shared by different sequences. `lzcomplexity` brings Lempel–Ziv
 analysis to Python and standalone command-line tools, powered by a Rust core.
 
-![Binary LZ76 factorization: 1·0·001·1001·1101. Curved arrows span each factor; the highlighted prefix 100 crosses earlier factor boundaries.](docs/assets/sequence-workflow.svg)
+<p align="center">
+  <img src="docs/assets/sequence-workflow.svg" width="600" alt="Binary LZ76 factorization: 1·0·001·1001·1101. Curved arrows span each factor; the highlighted prefix 100 crosses earlier factor boundaries.">
+</p>
 
 | Measure | What you can explore |
 |---|---|
