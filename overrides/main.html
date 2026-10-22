@@ -20,7 +20,7 @@
   {% set share_description = page.meta.description if page and page.meta and page.meta.description else config.site_description %}
   {% set share_url = page.canonical_url if page and page.canonical_url else config.site_url %}
   {% set share_image = config.site_url ~ "assets/social-card.png?v=" ~ config.extra.social_card_version %}
-  {% set share_image_alt = "lzcomplexity by Pleros. LZ76 factors of ABRACADABRA!: A, B, R, AC, AD, ABRA!. Entropy, effective measure complexity and information distance." %}
+  {% set share_image_alt = "lzcomplexity by Pleros. Binary LZ76 factors: 1·0·001·1001·1101, with alternating curved arrows and a match across earlier factor boundaries. Entropy, effective measure complexity and information distance." %}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ config.site_name | e }} · Pleros">
   <meta property="og:locale" content="en_US">

@@ -19,8 +19,8 @@ hide:
 <div class="lz-install"><code>pip install lzcomplexity</code><button type="button" data-copy="pip install lzcomplexity" aria-label="Copy installation command">Copy <span aria-hidden="true">⧉</span></button></div>
 <p class="lz-tiny">Open source · MIT licensed · Python + Rust</p>
 </div>
-<figure class="lz-hero-figure" aria-label="LZ76 factorization of ABRACADABRA!">
-<picture><source media="(max-width: 600px)" srcset="assets/sequence-workflow-mobile.svg"><img src="assets/sequence-workflow.svg" alt="LZ76 factorization of ABRACADABRA!: A, B, R, AC, AD, ABRA!. Each row shows the earlier text, the matched prefix and the next symbol that completes the factor." width="600" height="410" fetchpriority="high"></picture>
+<figure class="lz-hero-figure" aria-label="LZ76 factorization of a binary sequence">
+<picture><source media="(max-width: 600px)" srcset="assets/sequence-workflow-mobile.svg"><img src="assets/sequence-workflow.svg" alt="Binary LZ76 factors: 1·0·001·1001·1101. Curved arrows alternate above and below each factor. The highlighted prefix 100 crosses earlier factor boundaries; 1001 is new." width="600" height="410" fetchpriority="high"></picture>
 <figcaption><a href="guide/first-factorization/">Read the factorization example <span aria-hidden="true">↗</span></a></figcaption>
 </figure>
 </section>
