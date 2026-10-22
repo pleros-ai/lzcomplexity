@@ -1,54 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
-  <title id="title">lzcomplexity · Pleros</title>
-  <desc id="description">Entropy, Effective measure complexity and information distance. LZ76 factorization splits ABRACADABRA! into six factors: A, B, R, AC, AD and ABRA!. Blue marks the matching prefixes A and ABRA; teal marks their following symbols C, D and the exclamation mark. Arrows join earlier text to the corresponding later prefix. Python, Rust and command-line tools.</desc>
-  <defs>
-    <linearGradient id="paper" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".6" stop-color="#f6f9fd"/><stop offset="1" stop-color="#edf6f6"/></linearGradient>
-    <linearGradient id="tile" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#fafcff"/></linearGradient>
-    <filter id="shadow" x="-30%" y="-40%" width="160%" height="200%"><feDropShadow dx="0" dy="7" stdDeviation="12" flood-color="#2b4b73" flood-opacity=".045"/></filter>
-    <marker id="arrow" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 4 3-4 3" fill="none" stroke="#8da9d1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker>
-  </defs>
-  <rect width="1200" height="630" fill="url(#paper)"/>
-  <circle cx="1110" cy="10" r="290" fill="#e7ecfb" opacity=".45"/>
-  <g font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" fill="#25344d">
-    <g transform="translate(74 48)">
-      <rect width="36" height="36" rx="10" fill="#4779c5"/>
-      <path d="M10 9v17h9m0-17h8l-8 17h8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="50" y="24" font-size="17" font-weight="600" letter-spacing="2">PLEROS</text>
-      <text x="164" y="24" font-size="14" fill="#6e7e92" letter-spacing="1.5">/ SCIENTIFIC COMPUTING</text>
-    </g>
-    <text x="69" y="187" font-size="90" font-weight="650" letter-spacing="-5">lzcomplexity</text>
-    <text x="74" y="239" font-size="27" fill="#5c6d85" letter-spacing="-.5">Entropy · Effective measure complexity · Information distance</text>
-    <text x="74" y="309" font-size="17" fill="#6e7e92">Input</text>
-    <rect x="214" y="273" width="910" height="60" rx="14" fill="#fff" stroke="#dfe7ef"/>
-    <rect x="240" y="285" width="112" height="36" rx="8" fill="#eaf1fd"/>
-    <g font-family="'SFMono-Regular', Menlo, Consolas, monospace" font-size="26" font-weight="500" text-anchor="middle">
-      <text x="254" y="312">A</text><text x="282" y="312">B</text><text x="310" y="312">R</text><text x="338" y="312">A</text><text x="366" y="312">C</text><text x="394" y="312">A</text><text x="422" y="312">D</text><text x="450" y="312">A</text><text x="478" y="312">B</text><text x="506" y="312">R</text><text x="534" y="312">A</text><text x="562" y="312">!</text>
-    </g>
-    <path d="M296 335C296 363 879 350 879 375" fill="none" stroke="#8da9d1" stroke-width="1.8" marker-end="url(#arrow)"/>
-    <text x="74" y="424" font-size="17" fill="#6e7e92">Factors</text>
-    <g fill="url(#tile)" stroke="#dce4ef" filter="url(#shadow)">
-      <rect x="214" y="387" width="70" height="61" rx="13"/>
-      <rect x="302" y="387" width="70" height="61" rx="13"/>
-      <rect x="390" y="387" width="70" height="61" rx="13"/>
-      <rect x="478" y="387" width="114" height="61" rx="13"/>
-      <rect x="610" y="387" width="114" height="61" rx="13"/>
-      <rect x="742" y="387" width="290" height="61" rx="13"/>
-    </g>
-    <g font-family="'SFMono-Regular', Menlo, Consolas, monospace" font-size="28" font-weight="500" text-anchor="middle">
-      <text x="249" y="428">A</text><text x="337" y="428">B</text><text x="425" y="428">R</text>
-      <text x="535" y="428"><tspan fill="#4779c5">A</tspan><tspan fill="#208a80">C</tspan></text>
-      <text x="667" y="428"><tspan fill="#4779c5">A</tspan><tspan fill="#208a80">D</tspan></text>
-      <text x="887" y="428"><tspan fill="#4779c5">ABRA</tspan><tspan fill="#208a80">!</tspan></text>
-    </g>
-    <g text-anchor="middle" fill="#7665ac"><text x="1088" y="408" font-size="14">LZ76</text><text x="1088" y="433" font-size="19" font-weight="500">C = 6</text></g>
-    <path d="M249 451C249 496 527 496 527 457" fill="none" stroke="#8da9d1" stroke-width="1.8" marker-end="url(#arrow)"/>
-    <g transform="translate(74 553)" fill="#5c6d85" font-size="19">
-      <text>Python</text><circle cx="85" cy="-6" r="2.5" fill="#9aaabe"/><text x="105">Rust</text><circle cx="166" cy="-6" r="2.5" fill="#9aaabe"/><text x="186">Command line</text>
-      <text y="40" font-size="17" fill="#7a899d">pleros-ai.github.io/lzcomplexity</text>
-    </g>
-    <g transform="translate(924 551)" font-size="28" font-weight="500" text-anchor="middle">
-      <circle r="27" fill="#eef3fc"/><circle cx="75" r="27" fill="#f0edf9"/><circle cx="150" r="27" fill="#eaf5f2"/>
-      <text y="10" font-style="italic" fill="#4779c5">h</text><text x="75" y="10" fill="#7665ac">E</text><text x="150" y="10" font-style="italic" fill="#208a80">d</text>
-    </g>
-  </g>
+<title id="title">lzcomplexity · Pleros</title>
+<desc id="description">ABRACADABRA! has six factors: A, B, R, AC, AD, ABRA!. Every factor ends with a teal symbol. At position eight, earlier text ABRACAD contains the blue matching prefix ABRA; appending the next symbol ! gives ABRA!. Entropy, Effective measure complexity and information distance for Python, Rust and the command line.</desc>
+<defs><linearGradient id="paper" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#f2f7fa"/></linearGradient></defs>
+<rect x="0" y="0" width="1200" height="630" rx="0" fill="url(#paper)" stroke="none"/>
+<circle cx="1130" cy="0" r="290" fill="#e7ecfb" opacity=".45"/>
+<rect x="74" y="43" width="36" height="36" rx="10" fill="#4779c5" stroke="none"/>
+<path d="M84 52v17h9m0-17h8l-8 17h8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="124" y="67" font-size="17" fill="#25344d" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" font-weight="600">PLEROS</text>
+<text x="238" y="67" font-size="14" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">/ SCIENTIFIC COMPUTING</text>
+<text x="69" y="178" font-size="87" fill="#25344d" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" font-weight="600">lzcomplexity</text>
+<text x="74" y="229" font-size="27" fill="#5c6d85" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Entropy · Effective measure complexity · Information distance</text>
+<text x="74" y="283" font-size="16" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Input</text>
+<text x="169" y="283" font-size="27" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="input" data-value="ABRACADABRA!">ABRACADABRA!</text>
+<rect x="74" y="307" width="88" height="60" rx="13" fill="#fff" stroke="#dfe7ef"/>
+<text x="118.0" y="347" font-size="28" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="1" data-value="A" text-anchor="middle"><tspan fill="#4779c5"></tspan><tspan fill="#208a80">A</tspan></text>
+<rect x="178" y="307" width="88" height="60" rx="13" fill="#fff" stroke="#dfe7ef"/>
+<text x="222.0" y="347" font-size="28" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="2" data-value="B" text-anchor="middle"><tspan fill="#4779c5"></tspan><tspan fill="#208a80">B</tspan></text>
+<rect x="282" y="307" width="88" height="60" rx="13" fill="#fff" stroke="#dfe7ef"/>
+<text x="326.0" y="347" font-size="28" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="3" data-value="R" text-anchor="middle"><tspan fill="#4779c5"></tspan><tspan fill="#208a80">R</tspan></text>
+<rect x="386" y="307" width="136" height="60" rx="13" fill="#fff" stroke="#dfe7ef"/>
+<text x="454.0" y="347" font-size="28" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="4" data-value="AC" text-anchor="middle"><tspan fill="#4779c5">A</tspan><tspan fill="#208a80">C</tspan></text>
+<rect x="538" y="307" width="136" height="60" rx="13" fill="#fff" stroke="#dfe7ef"/>
+<text x="606.0" y="347" font-size="28" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="6" data-value="AD" text-anchor="middle"><tspan fill="#4779c5">A</tspan><tspan fill="#208a80">D</tspan></text>
+<rect x="690" y="307" width="280" height="60" rx="13" fill="#fff" stroke="#dfe7ef"/>
+<text x="830.0" y="347" font-size="28" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="8" data-value="ABRA!" text-anchor="middle"><tspan fill="#4779c5">ABRA</tspan><tspan fill="#208a80">!</tspan></text>
+<text x="1084" y="331" font-size="13" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">LZ76 factorization</text>
+<text x="1084" y="356" font-size="20" fill="#7665ac" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">C = 6</text>
+<rect x="74" y="402" width="1052" height="110" rx="15" fill="#fff" stroke="#dfe7ef"/>
+<text x="94" y="426" font-size="12" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Position 8</text>
+<text x="94" y="453" font-size="13" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Earlier text</text>
+<text x="94" y="489" font-size="27" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="history" data-start="8" data-value="ABRACAD"><tspan fill="#25344d"></tspan><tspan fill="#4779c5">ABRA</tspan><tspan fill="#25344d">CAD</tspan></text>
+<text x="503" y="453" font-size="13" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Match + next</text>
+<text x="503" y="489" font-size="27" fill="#4779c5" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="match" data-start="8" data-value="ABRA">ABRA</text>
+<text x="584" y="489" font-size="27" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace">+</text>
+<text x="618" y="489" font-size="27" fill="#208a80" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="new" data-start="8" data-value="!">!</text>
+<text x="731" y="489" font-size="32" fill="#97a7ba" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">→</text>
+<text x="837" y="453" font-size="13" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Factor</text>
+<text x="837" y="489" font-size="27" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor-detail" data-start="8" data-value="ABRA!"><tspan fill="#4779c5">ABRA</tspan><tspan fill="#208a80">!</tspan></text>
+<text x="74" y="561" font-size="19" fill="#5c6d85" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Python · Rust · Command line</text>
+<text x="74" y="599" font-size="17" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">pleros-ai.github.io/lzcomplexity</text>
 </svg>

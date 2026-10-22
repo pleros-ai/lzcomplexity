@@ -370,7 +370,7 @@ div.arithmatex math { font-size:1.15em; min-width:max-content; }
   .lz-hero { padding:1rem 0 1.6rem; gap:1.3rem; }
   .lz-hero h1 { font-size:clamp(1.75rem,9.7vw,2rem); margin:.6rem 0 .8rem; }
   .lz-hero-lead { font-size:.9rem; }.lz-home .lz-hero-figure figcaption { font-size:.53rem; }
-  .lz-hero-figure img { aspect-ratio:360 / 350; }
+  .lz-hero-figure img { aspect-ratio:360 / 440; }
   .lz-section-nav { border-radius:8px; padding:.8rem .3rem; font-size:.53rem; gap:.6rem; }
   .lz-measures { padding:2.4rem 0; }.lz-measures .lz-measure h3 { font-size:1rem; }
   .lz-recipe { padding:.9rem; }.lz-home h2 { font-size:1.65rem; }

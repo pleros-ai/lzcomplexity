@@ -1,0 +1,44 @@
+{
+  "sequence": "ABRACADABRA!",
+  "boundaries": [0, 1, 2, 3, 5, 7, 12],
+  "count": 6,
+  "positions": "one-based",
+  "trace": [
+    {"start": 1, "history": "", "match": "", "match_start": null, "new": "A", "factor": "A"},
+    {"start": 2, "history": "A", "match": "", "match_start": null, "new": "B", "factor": "B"},
+    {"start": 3, "history": "AB", "match": "", "match_start": null, "new": "R", "factor": "R"},
+    {"start": 4, "history": "ABR", "match": "A", "match_start": 1, "new": "C", "factor": "AC"},
+    {"start": 6, "history": "ABRAC", "match": "A", "match_start": 1, "new": "D", "factor": "AD"},
+    {"start": 8, "history": "ABRACAD", "match": "ABRA", "match_start": 1, "new": "!", "factor": "ABRA!"}
+  ],
+  "labels": {
+    "title": "LZ76 factorization",
+    "count_template": "C = {count}",
+    "input": "Input",
+    "position": "Position",
+    "position_mobile": "Pos.",
+    "history": "Earlier text",
+    "match_new": "Match + next",
+    "factor": "Factor",
+    "factors": "Factors",
+    "matched_prefix": "Matched prefix",
+    "next_symbol": "Next symbol",
+    "empty_history": "∅",
+    "empty_match": "—",
+    "plus": "+",
+    "arrow": "→",
+    "position_template": "Position {start}",
+    "brand": "PLEROS",
+    "brand_context": "/ SCIENTIFIC COMPUTING",
+    "product": "lzcomplexity",
+    "subtitle": "Entropy · Effective measure complexity · Information distance",
+    "languages": "Python · Rust · Command line",
+    "url": "pleros-ai.github.io/lzcomplexity"
+  },
+  "accessibility": {
+    "title": "LZ76 factorization of ABRACADABRA!",
+    "description": "Each row shows the text available before the factor begins, the longest matching prefix, the following symbol, and the resulting factor. Positions are one-based. Empty history is shown as ∅ and an empty match as a dash. Blue marks the chosen earlier match; teal marks every following symbol, including A, B and R in the first three factors.",
+    "social_title": "lzcomplexity · Pleros",
+    "social_description": "ABRACADABRA! has six factors: A, B, R, AC, AD, ABRA!. Every factor ends with a teal symbol. At position eight, earlier text ABRACAD contains the blue matching prefix ABRA; appending the next symbol ! gives ABRA!. Entropy, Effective measure complexity and information distance for Python, Rust and the command line."
+  }
+}

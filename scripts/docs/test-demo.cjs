@@ -3,6 +3,10 @@ const { analyze, emc, distance, _testing } = require('../../docs/assets/measure-
 const { cases: parseCases } = require('../../tests/docs/demo-cases.json');
 const { cases: measureCases, distances } = require('../../tests/docs/measure-cases.json');
 const rngCase = require('../../tests/docs/rng-cases.json');
+const visual = require('../../tests/docs/factorization-visual.json');
+const visualParse = analyze(visual.sequence);
+assert.equal(visualParse.count, visual.count, 'illustrated factor count');
+assert.deepEqual(visualParse.boundaries, visual.boundaries, 'illustrated factor boundaries');
 function close(actual, expected, label) {
   assert.ok(Math.abs(actual - expected) < 1e-12, `${label}: ${actual} != ${expected}`);
 }

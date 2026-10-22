@@ -20,6 +20,7 @@
   {% set share_description = page.meta.description if page and page.meta and page.meta.description else config.site_description %}
   {% set share_url = page.canonical_url if page and page.canonical_url else config.site_url %}
   {% set share_image = config.site_url ~ "assets/social-card.png?v=" ~ config.extra.social_card_version %}
+  {% set share_image_alt = "lzcomplexity by Pleros. LZ76 factors of ABRACADABRA!: A, B, R, AC, AD, ABRA!. Entropy, effective measure complexity and information distance." %}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ config.site_name | e }} · Pleros">
   <meta property="og:locale" content="en_US">
@@ -31,10 +32,10 @@
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="lzcomplexity by Pleros. Entropy, structure and information distance. Python, Rust and command-line tools.">
+  <meta property="og:image:alt" content="{{ share_image_alt | e }}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{{ share_title | striptags | e }}">
   <meta name="twitter:description" content="{{ share_description | e }}">
   <meta name="twitter:image" content="{{ share_image | e }}">
-  <meta name="twitter:image:alt" content="lzcomplexity by Pleros. Entropy, structure and information distance. Python, Rust and command-line tools.">
+  <meta name="twitter:image:alt" content="{{ share_image_alt | e }}">
 {% endblock %}
