@@ -20,7 +20,7 @@ hide:
 <p class="lz-tiny">Open source · MIT licensed · Python + Rust</p>
 </div>
 <figure class="lz-hero-figure" aria-label="LZ76 factorization of ABRACADABRA!">
-<picture><source media="(max-width: 600px)" srcset="assets/sequence-workflow-mobile.svg"><img src="assets/sequence-workflow.svg" alt="LZ76 factorization of ABRACADABRA!: A, B, R, AC, AD, ABRA!. Arrows identify earlier matching patterns; the final character of each factor introduces new material." width="600" height="410" fetchpriority="high"></picture>
+<picture><source media="(max-width: 600px)" srcset="assets/sequence-workflow-mobile.svg"><img src="assets/sequence-workflow.svg" alt="LZ76 factorization of ABRACADABRA!: A, B, R, AC, AD, ABRA!. Each row shows the earlier text, the matched prefix and the next symbol that completes the factor." width="600" height="410" fetchpriority="high"></picture>
 <figcaption><a href="guide/first-factorization/">Read the factorization example <span aria-hidden="true">↗</span></a></figcaption>
 </figure>
 </section>
