@@ -6,8 +6,8 @@ Both tools use the same Rust core as the Python library.
 
 | Tool | Input | Output |
 |---|---|---|
-| [`lzcomplexity`](lzcomplexity.md) | One sequence file | Per-sequence LZ76 count, entropy density h and structural complexity E; optionally consecutive distances. |
-| [`lzdistance`](lzdistance.md) | One or two files/directories | All-pairs information-distance and shuffle-distance matrices. |
+| [`lzcomplexity`](lzcomplexity.md) | One sequence file | Per-sequence LZ76 count, entropy density h and effective measure complexity E; optionally consecutive distances. |
+| [`lzdistance`](lzdistance.md) | One or two files/directories | Pairwise information-distance matrices and additional diagnostics. |
 
 ## First analysis
 

@@ -114,8 +114,7 @@ distance = lz.nid(a, b)
 
 Keep the codebook with the results. Independent codebooks can assign the
 same byte to different events, making a distance comparison misleading.
-Changing byte labels changes the sampling seed for E, so keep one encoding
-across a comparison.
+Use one encoding across a comparison of E values as well.
 
 There is no general wide-alphabet mode. Encoding a single category as a
 multi-byte token changes the measured sequence and introduces internal token
@@ -169,7 +168,7 @@ empty-input results.
 
 The byte representation itself uses one byte per symbol, but factorization
 also needs suffix-array, LCP and longest-previous-factor storage and temporary
-buffers. Parallel shuffle scales can multiply the working set. Input
+buffers. Examining several ranges in parallel increases the working set. Input
 conversion can allocate additional copies; preparing bytes avoids the
 intermediate integer-to-decimal representation.
 

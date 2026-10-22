@@ -56,7 +56,7 @@ Python's `alphabet` argument controls the finite-size `epsilon` diagnostic. Set 
 
 ### E is zero for a constant or very short input { #the-shuffle-score-is-zero-for-a-constant-or-tiny-input }
 
-E measures organization through its response across ranges. A constant sequence has a simple pattern, but no variation for this calculation to distinguish. Inputs of at most ten bytes also return zero. Try a longer sequence and consult [structural complexity E](../concepts/emc.md).
+E measures organization through its response across ranges. A constant sequence has a simple pattern, but no variation for this calculation to distinguish. Inputs of at most ten bytes also return zero. Try a longer sequence and consult [effective measure complexity E](../concepts/emc.md).
 
 ### A longer sample or different cap changes E { #a-longer-sample-or-different-cap-changes-the-score }
 
@@ -64,7 +64,7 @@ Length affects the factorization and the automatic range selection. Set `max_blo
 
 ### NID is nonzero on the diagonal or looks unlike an edit distance
 
-NID compares recurring substrings through concatenation counts. A finite sequence can add a new phrase at the join when concatenated with itself, producing a nonzero diagonal. See [information distance](../concepts/nid.md) for the formula and examples.
+NID compares recurring substrings through concatenation counts. A finite sequence can add a new phrase at the join when concatenated with itself, producing a nonzero diagonal. See [information distance](../concepts/nid.md) for practical comparisons and examples.
 
 ## File processing and execution
 

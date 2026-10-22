@@ -1,6 +1,6 @@
 # Your first factorization
 
-Start with a short sequence you can inspect by eye, then explore entropy density, structural complexity E and information distance.
+Start with a short sequence you can inspect by eye, then explore entropy density, effective measure complexity E and information distance.
 
 Install the package using the [installation guide](install.md).
 
@@ -66,7 +66,7 @@ assert all(term >= 0 for term in terms)
 assert abs(sum(terms) - E) < 1e-12
 ```
 
-The increments sum to E. See [structural complexity E](../concepts/emc.md) for their interpretation and the calculation.
+The increments sum to E. See [effective measure complexity E](../concepts/emc.md) for their interpretation and the calculation.
 
 ## 4. Compare two sequences
 

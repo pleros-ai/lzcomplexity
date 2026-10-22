@@ -10,31 +10,31 @@ The histogram ignores order. Entropy rate incorporates dependencies across time.
 
 ## The source quantity
 
-For a stationary symbolic process, let `p(w)` be the probability of a particular block `w` of `L` consecutive symbols. Its Shannon block entropy is
+For a stationary symbolic process, let $p(w)$ be the probability of a particular block $w$ of $L$ consecutive symbols. Its Shannon block entropy is
 
-```text
-H(L) = -sum_w p(w) · log₂(p(w))
-```
+$$
+H(L) = -\sum_w p(w)\,\log_2 p(w)
+$$
 
-The sum runs over possible length-`L` blocks, using `0 · log₂(0) = 0`. Its units are bits. The entropy rate is
+The sum runs over possible length-$L$ blocks, using $0\log_2 0 = 0$. Its units are bits. The entropy rate is
 
-```text
-h = lim_{L→∞} H(L) / L
-```
+$$
+h = \lim\limits_{L\to\infty}\frac{H(L)}{L}
+$$
 
-Under the usual finite-alphabet stationary conditions it is also the limit of `H(L) - H(L-1)`. Stationarity means that the probability law does not change when the observation time is shifted. Ergodicity is the additional connection that permits one sufficiently long typical realization to represent the source's statistical behavior.
+Under the usual finite-alphabet stationary conditions it is also the limit of $H(L)-H(L-1)$. Stationarity means that the probability law does not change when the observation time is shifted. Ergodicity is the additional connection that permits one sufficiently long typical realization to represent the source's statistical behavior.
 
 For a recording that moves between operating regimes, analyze comparable windows separately before assigning a single entropy rate to the whole source.
 
 ## The finite-sequence calculation
 
-For an input of `N` bytes with LZ76 count `C`, the implementation returns
+For an input of $N$ bytes with LZ76 count $C$, the implementation returns
 
-<div class="lz-formula">
-<p><strong>ĥ = C · log<sub>b</sub>(N) / N</strong></p>
-</div>
+$$
+\hat{h} = \frac{C\log_b N}{N}
+$$
 
-Here `b` is the logarithm base. The result is zero for `N ≤ 1`. For stationary ergodic sources with a finite alphabet, normalized LZ parsing connects the observed sequence to the source's entropy rate as length increases. See [Ziv (1978)](https://doi.org/10.1109/TIT.1978.1055911) and the [reference list](../project/references.md).
+Here $b$ is the logarithm base. The result is zero for $N\leq 1$. For stationary ergodic sources with a finite alphabet, normalized LZ parsing connects the observed sequence to the source's entropy rate as length increases. See [Ziv (1978)](https://doi.org/10.1109/TIT.1978.1055911) and the [reference list](../project/references.md).
 
 ```python
 import lzcomplexity as lz
@@ -48,7 +48,7 @@ The indefinitely repeated `01` pattern has zero entropy rate. The positive estim
 
 ## Units and default normalization
 
-| Base | Interpretation of `ĥ` |
+| Base | Interpretation of $\hat{h}$ |
 |---|---|
 | `log_base=2` | Bits per input byte symbol |
 | Observed alphabet size `k` | Alphabet-normalized entropy-rate estimate |

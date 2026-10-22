@@ -1,6 +1,6 @@
 # Reading the numbers
 
-`lz76()` returns the factor count, entropy density h, structural complexity E and additional diagnostics. This page explains the returned fields and their formulas.
+`lz76()` returns the factor count, entropy density h, effective measure complexity E and additional diagnostics. This page explains the returned fields and their formulas.
 
 ```python
 import lzcomplexity as lz
@@ -14,8 +14,8 @@ result = lz.lz76("00010111" * 256, log_base=2, max_block_size=8)
 |---|---|---|
 | `complexity` | LZ76 count `C` | Integer count under this implementation's final-phrase convention |
 | `factors` | Parser boundary positions | Byte offsets; the final position can exceed the input length |
-| `h` | `C · log_b(N) / N` | Finite entropy-rate estimate, in the chosen log-base units per byte symbol |
-| `emc` | Structural complexity E | E, its fitted profile increments and first-range contrast |
+| `h` | $C\log_b N/N$ | Finite entropy-rate estimate, in the chosen log-base units per byte symbol |
+| `emc` | Effective measure complexity E | E, its fitted profile increments and first-range contrast |
 | `epsilon` | Finite-size diagnostic | Calculated from sequence length, alphabet and logarithm base |
 | `factors_stddev` | Factor-dispersion diagnostic | The interval-based formula defined below |
 | `normal_error` | Formula using h and factor dispersion | A descriptive error field; see its definition below |
@@ -32,18 +32,24 @@ Empty and constant inputs return count one. Empty input returns the boundary vec
 
 ## Entropy density
 
-For `N > 1`, `h` is `C · log_b(N) / N`; otherwise it is zero. The base defaults to observed alphabet size, floored at two. It is an estimator, so finite-string values need not lie inside the limiting entropy bounds. [Entropy density](../concepts/entropy-density.md) explains the source assumptions and units.
+For input length $N>1$ and factor count $C$, entropy density is
 
-## Structural complexity E { #the-emc-dictionary }
+$$
+\hat{h} = \frac{C\log_b N}{N}.
+$$
+
+For shorter inputs it is zero. The base $b$ defaults to observed alphabet size, floored at two. Finite-string estimates can fall outside the limiting entropy bounds. [Entropy density](../concepts/entropy-density.md) explains the units and interpretation.
+
+## Effective measure complexity E { #the-emc-dictionary }
 
 | Key | Definition |
 |---|---|
 | `value` | E: the final level of the fitted nonnegative, nondecreasing range profile |
 | `summands` | Successive fitted increments; nonnegative and summing to `value` |
 | `max_block_size` | Maximum range included in the calculation, `M` |
-| `multi_information` | First-range contrast `r_1`, before fitting |
+| `multi_information` | First-range contrast, before fitting |
 
-These fields are returned under `result["emc"]`. Read [structural complexity E](../concepts/emc.md) for the meaning of the range profile and its increments.
+These fields are returned under `result["emc"]`. Read [effective measure complexity E](../concepts/emc.md) for the meaning of the range profile and its increments.
 
 ## Finite-size and error diagnostics { #legacy-finite-size-and-error-fields }
 
@@ -51,56 +57,53 @@ The following fields describe properties of the finite sequence and its factoriz
 
 ### `epsilon`
 
-For an ordinary input containing at least two distinct bytes, define `k` as the requested alphabet parameter (automatic when omitted), `b` as the selected logarithm base and `N` as byte length. Values of `k` and `b` are floored at two in the formula:
+For an ordinary input containing at least two distinct bytes, define $k$ as the requested alphabet parameter (automatic when omitted), $b$ as the selected logarithm base and $N$ as byte length. Values of $k$ and $b$ are floored at two in the formula:
 
-```text
-epsilon = 2 · (1 + log_b(log_b(k · N))) / log_b(N)
-```
+$$
+\epsilon = \frac{2\left(1+\log_b\left(\log_b(kN)\right)\right)}{\log_b N}
+$$
 
 `epsilon` is reported separately from h and E. Empty and constant inputs return zero.
 
 ### `factors_stddev`
 
-Let the boundary vector be `B = [b_0, …, b_(q-1)]`. Define successive nonnegative differences `d_i = max(b_i - b_(i-1), 0)` for `i = 1…q-1`. The complete analysis computes
+Let the boundary vector be $B=[b_0,\ldots,b_{q-1}]$. Define successive nonnegative differences $d_i=\max(b_i-b_{i-1},0)$ for $i=1,\ldots,q-1$. The complete analysis computes
 
-```text
-mu = (last_boundary - 1) / q
-s  = sqrt(sum_i((d_i - mu)^2) / max_i(d_i))
-```
+$$
+\mu = \frac{b_{q-1}-1}{q}, \qquad
+s = \sqrt{\frac{\sum_{i=1}^{q-1}(d_i-\mu)^2}{\max_i d_i}}
+$$
 
 The denominator is the **largest interval**. This normalization differs from a conventional sample standard deviation. An overshooting final boundary enters the formula; if all intervals are zero, the result is zero.
 
 ### `normal_error` and `poison_error`
 
-For `N > 1`, writing `s = factors_stddev`:
+For $N>1$, writing $s$ for `factors_stddev`:
 
-```text
-normal_error = h^(3/2) · s / sqrt(N / log_b(N))
-poison_error = h / N
-```
+$$
+\mathrm{normal\_error} = \frac{h^{3/2}s}{\sqrt{N/\log_b N}}, \qquad
+\mathrm{poison\_error} = \frac{h}{N}
+$$
 
 Both fields are zero for `N ≤ 1`. They are descriptive formulas, so use a separate sampling analysis when you need confidence intervals.
 
 ## The five `extras`
 
-The full analysis splits the **single** input at `N // 2`. If `N` is odd, the second half has one extra byte. Let
+The full analysis splits the **single** input at `N // 2`. If $N$ is odd, the second half has one extra byte. Let $A$ and $B$ be the factor counts of the first and second halves, $C$ the whole-input count, and
 
-```text
-A = C(first half)
-B = C(second half)
-C = C(whole input)
-Q = A + B - C
-```
+$$
+Q = A+B-C.
+$$
 
 The returned fields are:
 
 | Key | Implemented formula |
 |---|---|
-| `rajski_distance` | `2 - (A + B) / C` |
-| `redundancy` | `Q / (A + B)` |
-| `fh_uncertainty` | `Q / A` |
-| `lh_uncertainty` | `Q / B` |
-| `pearson_coefficient` | `Q / sqrt(A · B)` |
+| `rajski_distance` | $2-(A+B)/C$ |
+| `redundancy` | $Q/(A+B)$ |
+| `fh_uncertainty` | $Q/A$ |
+| `lh_uncertainty` | $Q/B$ |
+| `pearson_coefficient` | $Q/\sqrt{AB}$ |
 
 A zero whole/half count produces default zero extras in the Rust function. The public factorization short path normally gives count one for empty and constant data, so even these degenerate inputs can produce nonzero extras.
 

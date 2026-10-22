@@ -1,54 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="560" viewBox="0 0 1120 560" role="img" aria-labelledby="title description">
-  <title id="title">From a symbolic sequence to measurements of randomness, structure and distance</title>
-  <desc id="description">The sequence ABRACADABRA! has six LZ76 factors: A, B, R, AC, AD and ABRA!. Blue letters and curved arrows identify earlier patterns reused in later factors: A in AC and AD, and ABRA in ABRA!. h describes randomness, E describes correlations across ranges, and d compares two sequences.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="410" viewBox="0 0 600 410" role="img" aria-labelledby="title description">
+  <title id="title">LZ76 factorization of ABRACADABRA!</title>
+  <desc id="description">Input: ABRACADABRA!. The library produces six factors: A, B, R, AC, AD, ABRA!. In AC and AD the blue A matches the earlier A; C and D are the next symbols. In ABRA! the blue ABRA matches input positions one through four; the exclamation mark is the next symbol. Arrows connect the earlier ABRA to its later matched prefix, and the first A to the A in AC. Initial single-symbol factors A, B and R remain neutral.</desc>
   <defs>
-    <linearGradient id="paper" x2="1" y2="1"><stop stop-color="#fbfdff"/><stop offset="1" stop-color="#edf3fa"/></linearGradient>
-    <linearGradient id="tile" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#f7faff"/></linearGradient>
-    <filter id="shadow" x="-20%" y="-30%" width="140%" height="180%"><feDropShadow dx="0" dy="7" stdDeviation="10" flood-color="#26476f" flood-opacity=".055"/></filter>
-    <marker id="arrow" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 4 3-4 3" fill="none" stroke="#7ea6df" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <linearGradient id="paper" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".55" stop-color="#f6f9fd"/><stop offset="1" stop-color="#f2f7f8"/></linearGradient>
+    <linearGradient id="tile" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#fbfcff"/></linearGradient>
+    <marker id="arrow" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 4 3-4 3" fill="none" stroke="#8da9d1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker>
   </defs>
-  <rect x=".5" y=".5" width="1119" height="559" rx="28" fill="url(#paper)" stroke="#dfe7f1"/>
-  <g font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" fill="#20314b">
-    <text x="48" y="48" font-size="11" font-weight="600" letter-spacing="1.6" fill="#647891">LEMPEL–ZIV FACTORIZATION</text>
-    <text x="48" y="92" font-size="30" font-weight="600" letter-spacing="-.7">One sequence, six factors</text>
-    <text x="1072" y="48" text-anchor="end" font-size="13" fill="#647891">12 symbols</text>
-    <text x="48" y="170" font-size="11" font-weight="600" letter-spacing="1.5" fill="#647891">INPUT</text>
-    <rect x="224" y="132" width="848" height="62" rx="16" fill="#fff" stroke="#dfe7f1"/>
-    <rect x="255" y="144" width="131" height="38" rx="9" fill="#e9f1fd"/>
+  <rect x=".5" y=".5" width="599" height="409" rx="24" fill="url(#paper)" stroke="#dfe7ef"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" fill="#25344d">
+    <text x="30" y="45" font-size="22" font-weight="600" letter-spacing="-.4">LZ76 factorization</text>
+    <rect x="488" y="22" width="82" height="32" rx="10" fill="#efedf9"/>
+    <text x="529" y="44" text-anchor="middle" font-size="16" font-weight="500" fill="#7665ac">C = 6</text>
+    <text x="30" y="82" font-size="15" fill="#6e7e92">Input</text>
+    <rect x="30" y="96" width="540" height="73" rx="14" fill="#fff" stroke="#dfe7ef"/>
+    <rect x="67" y="114" width="128" height="36" rx="8" fill="#eaf1fd"/>
     <g font-family="'SFMono-Regular', Menlo, Consolas, monospace" font-size="26" font-weight="500" text-anchor="middle">
-      <g fill="#326fc1"><text x="271" y="171">A</text><text x="304" y="171">B</text><text x="337" y="171">R</text><text x="370" y="171">A</text></g>
-      <text x="403" y="171">C</text><text x="436" y="171">A</text><text x="469" y="171">D</text><text x="502" y="171">A</text><text x="535" y="171">B</text><text x="568" y="171">R</text><text x="601" y="171">A</text><text x="634" y="171">!</text>
+      <text x="83" y="141">A</text><text x="115" y="141">B</text><text x="147" y="141">R</text><text x="179" y="141">A</text><text x="211" y="141">C</text><text x="243" y="141">A</text><text x="275" y="141">D</text><text x="307" y="141">A</text><text x="339" y="141">B</text><text x="371" y="141">R</text><text x="403" y="141">A</text><text x="435" y="141">!</text>
     </g>
-    <text x="1038" y="169" text-anchor="end" font-size="13" fill="#7a8ba2">read from left to right</text>
-    <path d="M320 194C320 229 868 220 868 268" fill="none" stroke="#7ea6df" stroke-width="1.7" marker-end="url(#arrow)"/>
-    <text x="674" y="217" font-size="12" fill="#5a7fad">reuse ABRA</text>
-    <text x="48" y="253" font-size="11" font-weight="600" letter-spacing="1.5" fill="#647891">FACTORS</text>
-    <g fill="url(#tile)" stroke="#dce5f1" filter="url(#shadow)">
-      <rect x="48" y="276" width="106" height="66" rx="15"/>
-      <rect x="171" y="276" width="106" height="66" rx="15"/>
-      <rect x="294" y="276" width="106" height="66" rx="15"/>
-      <rect x="417" y="276" width="146" height="66" rx="15"/>
-      <rect x="580" y="276" width="146" height="66" rx="15"/>
-      <rect x="743" y="276" width="329" height="66" rx="15"/>
+    <path d="M131 171C131 202 466 190 466 227" fill="none" stroke="#8da9d1" stroke-width="1.6" marker-end="url(#arrow)"/>
+    <text x="315" y="191" font-size="13" fill="#6a85ad">ABRA</text>
+    <text x="30" y="220" font-size="15" fill="#6e7e92">Factors</text>
+    <g fill="url(#tile)" stroke="#dce4ef">
+      <rect x="30" y="240" width="48" height="60" rx="13"/>
+      <rect x="90" y="240" width="48" height="60" rx="13"/>
+      <rect x="150" y="240" width="48" height="60" rx="13"/>
+      <rect x="210" y="240" width="72" height="60" rx="13"/>
+      <rect x="294" y="240" width="72" height="60" rx="13"/>
+      <rect x="378" y="240" width="192" height="60" rx="13"/>
     </g>
     <g font-family="'SFMono-Regular', Menlo, Consolas, monospace" font-size="26" font-weight="500" text-anchor="middle">
-      <text x="101" y="318">A</text><text x="224" y="318">B</text><text x="347" y="318">R</text>
-      <text x="490" y="318"><tspan fill="#326fc1">A</tspan><tspan>C</tspan></text>
-      <text x="653" y="318"><tspan fill="#326fc1">A</tspan><tspan>D</tspan></text>
-      <text x="907.5" y="318"><tspan fill="#326fc1">ABRA</tspan><tspan>!</tspan></text>
+      <text x="54" y="279">A</text><text x="114" y="279">B</text><text x="174" y="279">R</text>
+      <text x="246" y="279"><tspan fill="#4779c5">A</tspan><tspan fill="#208a80">C</tspan></text>
+      <text x="330" y="279"><tspan fill="#4779c5">A</tspan><tspan fill="#208a80">D</tspan></text>
+      <text x="474" y="279"><tspan fill="#4779c5">ABRA</tspan><tspan fill="#208a80">!</tspan></text>
     </g>
-    <path d="M101 344C101 395 482 395 482 344" fill="none" stroke="#7ea6df" stroke-width="1.7" marker-end="url(#arrow)"/>
-    <text x="251" y="394" font-size="12" fill="#5a7fad">reuse A</text>
-    <text x="1072" y="382" text-anchor="end" font-size="12" fill="#7a8ba2">Blue marks a pattern seen earlier.</text>
-    <g fill="#fff" stroke="#dfe7f1">
-      <rect x="48" y="435" width="328" height="91" rx="16"/>
-      <rect x="396" y="435" width="328" height="91" rx="16"/>
-      <rect x="744" y="435" width="328" height="91" rx="16"/>
-    </g>
-    <g font-size="22" font-weight="500" fill="#326fc1" text-anchor="middle">
-      <text x="80" y="473" font-style="italic">h</text><text x="428" y="473">E</text><text x="776" y="473" font-style="italic">d</text>
-    </g>
-    <g font-size="16" font-weight="600"><text x="105" y="472">Randomness</text><text x="453" y="472">Structure</text><text x="801" y="472">Sequence distance</text></g>
-    <g font-size="12.5" fill="#647891"><text x="70" y="503">New information, symbol by symbol.</text><text x="418" y="503">Correlations across different ranges.</text><text x="766" y="503">Compare the patterns of two sequences.</text></g>
+    <path d="M54 303C54 349 238 349 238 309" fill="none" stroke="#8da9d1" stroke-width="1.6" marker-end="url(#arrow)"/>
+    <text x="141" y="353" text-anchor="middle" font-size="13" fill="#6a85ad">A</text>
+    <circle cx="38" cy="382" r="4" fill="#4779c5"/>
+    <text x="50" y="387" font-size="13" fill="#6e7e92">Matched prefix</text>
+    <circle cx="238" cy="382" r="4" fill="#208a80"/>
+    <text x="250" y="387" font-size="13" fill="#6e7e92">Next symbol</text>
   </g>
 </svg>

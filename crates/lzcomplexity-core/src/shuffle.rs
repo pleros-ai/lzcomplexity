@@ -1,4 +1,4 @@
-//! Structural complexity E and its scale profile.
+//! Effective measure complexity E and its scale profile.
 
 use rayon::prelude::*;
 
@@ -58,7 +58,7 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
     (res, mm)
 }
 
-/// Calculate structural complexity E from the original and sampled counts.
+/// Calculate effective measure complexity E from the original and sampled counts.
 ///
 /// For each block size `l`, `h_rand[l]` contains a sampled LZ76 count. With
 /// `g = log_b(N)/N`, the raw scale profile is

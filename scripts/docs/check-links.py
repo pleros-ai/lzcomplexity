@@ -18,10 +18,16 @@ class Page(HTMLParser):
         self.links = []
         self.metadata = {}
         self.canonicals = []
+        self.math_count = 0
+        self.math_wrappers = 0
         self.feed(text)
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if tag == "math":
+            self.math_count += 1
+        if "arithmatex" in attrs.get("class", "").split():
+            self.math_wrappers += 1
         if attrs.get("id"):
             self.ids.add(attrs["id"])
         for key in ("href", "src"):
@@ -52,7 +58,7 @@ def check(source, href):
         failures.append(f"{source.relative_to(ROOT)}: missing {href}")
     elif url.fragment and path in pages and unquote(url.fragment) not in pages[path].ids:
         failures.append(f"{source.relative_to(ROOT)}: missing anchor {href}")
-    if path.is_file() and path.suffix in (".css", ".js") and "v" in parse_qs(url.query):
+    if path.is_file() and path.suffix in (".css", ".js", ".svg", ".png", ".webp") and "v" in parse_qs(url.query):
         expected = hashlib.sha256(path.read_bytes()).hexdigest()[:12]
         if parse_qs(url.query)["v"] != [expected]:
             failures.append(f"{source.relative_to(ROOT)}: stale asset version {href}")
@@ -132,9 +138,14 @@ def check_social(source, page):
 
 
 for source, page in pages.items():
+    if page.math_count != page.math_wrappers:
+        failures.append(f"{source.relative_to(ROOT)}: an equation was not typeset")
     for href in page.links:
         check(source, href)
     check_social(source, page)
+for path in ("concepts/entropy-density/index.html", "guide/reading-the-numbers/index.html"):
+    if ROOT / path not in pages or not pages[ROOT / path].math_count:
+        failures.append(f"{path}: missing typeset equations")
 search = json.loads((ROOT / "search/search_index.json").read_text())
 for entry in search["docs"]:
     check(ROOT / "index.html", entry["location"])

@@ -24,7 +24,7 @@ analysis to Python and standalone command-line tools, powered by a Rust core.
 | Measure | What you can explore |
 |---|---|
 | Entropy density **h** | Unpredictability, the production of new information and freedom of choice within a sequence. |
-| Structural complexity **E** | Organization and correlations across different ranges of a sequence. |
+| Effective measure complexity **E** | Organization and correlations across different ranges of a sequence. |
 | Information distance **d** | Similarity between sequences through the patterns they share. |
 
 Use h and E together to distinguish changes in randomness from changes in

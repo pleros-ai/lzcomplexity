@@ -1,7 +1,7 @@
 # `lzcomplexity`
 
 Analyse one file and write per-sequence results as JSON. By default each
-reported sequence gets a factor count, entropy density h and structural complexity E.
+reported sequence gets a factor count, entropy density h and effective measure complexity E.
 
 ```text
 lzcomplexity [OPTIONS] [file]
@@ -80,7 +80,7 @@ The `start:end` slots are ignored. They do not restrict which
 lines receive E analysis. An empty first field, such as `-e=:f`,
 changes nothing. For a selected subset, prepare the input file yourself.
 
-The automatic cap depends on sequence length and adds ten for inputs longer than 50 bytes. The result records the cap used. See [structural complexity E](../concepts/emc.md) for the range profile and its interpretation.
+The automatic cap depends on sequence length and adds ten for inputs longer than 50 bytes. The result records the cap used. See [effective measure complexity E](../concepts/emc.md) for the range profile and its interpretation.
 
 ## JSON result
 

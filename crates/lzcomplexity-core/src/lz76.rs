@@ -54,7 +54,7 @@ pub struct Lz76Result {
     pub lzf: Vec<u32>,
 }
 
-/// Structural complexity E, its range limit and fitted increments.
+/// Effective measure complexity E, its range limit and fitted increments.
 #[derive(Clone, Debug)]
 pub struct LzShuffle {
     pub max_block_size: i32,

@@ -61,6 +61,7 @@ theme:
 
 extra_css:
   - assets/extra.css
+  - assets/cheatsheet.css
 
 extra_javascript:
   - assets/measure-engine.js
@@ -105,8 +106,8 @@ markdown_extensions:
   - pymdownx.keys
   - pymdownx.mark
   - pymdownx.smartsymbols
-  # Formulas are set as Unicode inside .lz-formula callouts rather than with
-  # MathJax, which would pull a script from a CDN and break the offline promise.
+  - pymdownx.arithmatex:
+      generic: true
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
@@ -115,6 +116,7 @@ markdown_extensions:
 
 hooks:
   - scripts/docs/asset-versions.py
+  - scripts/docs/render-math.py
 
 plugins:
   - search
@@ -129,14 +131,13 @@ nav:
           - Your first factorization: guide/first-factorization.md
           - Reading the numbers: guide/reading-the-numbers.md
           - Troubleshooting: guide/troubleshooting.md
-      - Concepts:
+      - Understanding the results:
           - LZ76 factorization: concepts/lz76.md
           - Entropy density (h): concepts/entropy-density.md
-          - Structural complexity (E): concepts/emc.md
+          - Effective measure complexity (E): concepts/emc.md
           - Information distance (NID): concepts/nid.md
           - Alphabets and log bases: concepts/alphabets.md
           - Sequence length and convergence: concepts/convergence.md
-          - Inside the implementation: concepts/implementation.md
       - Recipes:
           - Neural time-series: recipes/neuro.md
           - DNA and FASTA: recipes/genomics.md
@@ -158,6 +159,7 @@ nav:
   - Project:
       - Authors and citation: project/authors.md
       - Performance: project/performance.md
+      - Inside the implementation: concepts/implementation.md
       - Determinism: project/determinism.md
       - Migration reference: project/cpp-parity.md
       - Releases: project/releases.md

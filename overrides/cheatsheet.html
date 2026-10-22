@@ -1,0 +1,29 @@
+{% extends "main.html" %}
+
+{% block content %}
+  <div class="lz-sheet">
+    <header class="lz-sheet-heading">
+      <div>
+        <p class="lz-sheet-brand"><a href="{{ nav.homepage.url | url }}">Pleros</a><span aria-hidden="true"> / </span>lzcomplexity</p>
+        <h1>{{ page.meta.title or page.title }}</h1>
+        <p class="lz-sheet-description">{{ page.meta.sheet_description }}</p>
+      </div>
+      <div class="lz-sheet-tools">
+        <nav class="lz-sheet-switch" aria-label="Cheatsheets">
+          <a href="{{ 'guide/quick-reference/' | url }}"{% if page.meta.sheet_kind == 'python' %} aria-current="page"{% endif %}>Python</a>
+          <a href="{{ 'cli/quick-reference/' | url }}"{% if page.meta.sheet_kind == 'cli' %} aria-current="page"{% endif %}>Command line</a>
+        </nav>
+        <button class="lz-sheet-print" type="button" data-print aria-label="Print this cheatsheet">Print / PDF <span aria-hidden="true">↗</span></button>
+      </div>
+    </header>
+    {{ page.content }}
+    <footer class="lz-sheet-footer">
+      <span>lzcomplexity · Pleros</span>
+      {% if page.meta.sheet_kind == 'python' %}
+        <a href="{{ 'api/python/' | url }}">Full Python reference →</a>
+      {% else %}
+        <a href="{{ 'cli/' | url }}">Full command-line reference →</a>
+      {% endif %}
+    </footer>
+  </div>
+{% endblock %}

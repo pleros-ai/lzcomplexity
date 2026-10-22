@@ -1,7 +1,7 @@
 # Python API
 
 Five functions share the same Rust core. Import the package once, then choose
-whether you need a factor count, entropy density h, structural complexity E,
+whether you need a factor count, entropy density h, effective measure complexity E,
 a pairwise distance, or the complete result.
 
 ```python
@@ -22,7 +22,7 @@ See [input conversion](inputs.md) before analyzing numeric arrays.
 |---|---|---|
 | [`factorization`](#factorization) | One full-sequence factorization | `(int, list[int])` |
 | [`h`](#h) | Factor count and entropy normalization | `float` |
-| [`emc`](#emc) | Structural complexity across ranges | `(float, list[float])` |
+| [`emc`](#emc) | Effective measure complexity across ranges | `(float, list[float])` |
 | [`nid`](#nid) | Original and concatenated sequence factorizations | `float` |
 | [`lz76`](#lz76) | Full analysis, reusing the original factorization | `dict` |
 
@@ -89,9 +89,9 @@ h(seq, partitions=1, alphabet=None, log_base=None, jobs=0)
 
 Returns the finite-sequence LZ entropy-density estimate
 
-```text
-h = C * log_b(N) / N
-```
+$$
+\hat{h} = \frac{C\log_b N}{N}
+$$
 
 Here `C` is the returned factor count and `N` is the number of input bytes.
 For `N <= 1`, the function returns zero. `log_base=2` gives bits per input
@@ -109,13 +109,12 @@ emc(seq, partitions=1, alphabet=None, log_base=None,
     max_block_size=-1, jobs=0)
 ```
 
-Returns `(value, summands)` for **structural complexity E**, which is sensitive
+Returns `(value, summands)` for **effective measure complexity E**, which is sensitive
 to correlations across different ranges of a sequence.
 
 `value` is the final level of the fitted scale profile. `summands[l - 1]` is
 the increase between fitted levels `l-1` and `l`, and the increments sum to
-`value`. See [E](../concepts/emc.md) for interpretation and the
-[calculation reference](../concepts/implementation.md#6-structural-complexity-e) for the algorithm.
+`value`. See [E](../concepts/emc.md) for interpretation and range selection.
 
 ```python
 import math
@@ -139,9 +138,9 @@ nid(seq1, seq2, partitions=1, alphabet=None, log_base=None, jobs=0)
 
 Returns the LZ-based normalized information-distance estimate
 
-```text
-max(C(XY) - C(X), C(YX) - C(Y)) / max(C(X), C(Y))
-```
+$$
+d(X,Y) = \frac{\max\left(C(XY)-C(X),\,C(YX)-C(Y)\right)}{\max\left(C(X),C(Y)\right)}
+$$
 
 `XY` means concatenation, preserving the symbol codebook. The ratio uses
 factor counts, so `alphabet` and `log_base` do not change it. The formula is
