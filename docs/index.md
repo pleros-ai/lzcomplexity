@@ -15,7 +15,7 @@ hide:
 <h1>Lempel–Ziv<br><span>sequence analysis.</span></h1>
 <p class="lz-hero-lead">Measure randomness, correlations across scales and similarity in symbolic data.</p>
 <p class="lz-hero-description"><strong>lzcomplexity</strong> brings entropy density, effective measure complexity and information distance to Python, Rust and standalone command-line tools.</p>
-<div class="lz-actions"><a class="lz-button lz-button-primary" href="guide/quick-reference/">Get started <span aria-hidden="true">→</span></a><a class="lz-text-link" href="#try-it">Try it in your browser <span aria-hidden="true">↓</span></a></div>
+<div class="lz-actions"><a class="lz-button lz-button-primary" href="guide/">Get started <span aria-hidden="true">→</span></a><a class="lz-text-link" href="#try-it">Try it in your browser <span aria-hidden="true">↓</span></a></div>
 <div class="lz-install"><code>pip install lzcomplexity</code><button type="button" data-copy="pip install lzcomplexity" aria-label="Copy installation command">Copy <span aria-hidden="true">⧉</span></button></div>
 <p class="lz-tiny">Open source · MIT licensed · Python + Rust</p>
 </div>
@@ -44,11 +44,11 @@ hide:
 <div class="lz-lab-grid">
 <div class="lz-lab-inputs">
 <div class="lz-lab-input-heading"><label for="lz-input" id="lz-input-label">Your sequence</label><span id="lz-byte-count">6 / 256 bytes</span></div>
-<textarea id="lz-input" rows="4" spellcheck="false" autocomplete="off" aria-describedby="lz-limit lz-input-error">banana</textarea>
-<div id="lz-second-input" hidden><div class="lz-lab-input-heading"><label for="lz-input-b">Sequence B</label><span id="lz-byte-count-b">6 / 256 bytes</span></div><textarea id="lz-input-b" rows="4" spellcheck="false" autocomplete="off" aria-describedby="lz-limit lz-input-error">banaba</textarea></div>
+<textarea id="lz-input" rows="4" maxlength="256" spellcheck="false" autocomplete="off" aria-describedby="lz-limit lz-input-error">banana</textarea>
+<div id="lz-second-input" hidden><div class="lz-lab-input-heading"><label for="lz-input-b">Sequence B</label><span id="lz-byte-count-b">6 / 256 bytes</span></div><textarea id="lz-input-b" rows="4" maxlength="256" spellcheck="false" autocomplete="off" aria-describedby="lz-limit lz-input-error">banaba</textarea></div>
 <p class="lz-input-error" id="lz-input-error" role="alert" hidden></p>
 <div class="lz-presets" role="group" aria-label="Example sequences"><span>Examples</span><button type="button" data-example="banana">banana</button><button type="button" data-example="periodic">Periodic</button><button type="button" data-example="irregular">Irregular</button><button type="button" data-example="constant">Constant</button><button type="button" data-example="dna">DNA</button></div>
-<div class="lz-lab-controls"><button class="lz-button lz-button-primary" type="button" id="lz-analyze">Analyze sequence <span aria-hidden="true">→</span></button><span id="lz-limit">Up to 256 UTF-8 bytes per sequence.</span></div>
+<div class="lz-lab-controls"><button class="lz-button lz-button-primary" type="button" id="lz-analyze">Analyze sequence <span aria-hidden="true">→</span></button><span id="lz-limit">Each input is limited to 256 UTF-8 bytes.</span></div>
 <p class="lz-lab-input-note" id="lz-example-note">Start with banana to see the factor boundaries, or try a longer example to explore E.</p>
 </div>
 <div class="lz-lab-output" aria-live="polite" aria-atomic="true">
@@ -78,7 +78,7 @@ hide:
 </section>
 
 <section class="lz-section lz-get-started">
-<div class="lz-start-copy"><p class="lz-eyebrow">PYTHON, RUST AND THE COMMAND LINE</p><h2>Analyze a sequence.<br>Compare a collection.</h2><p>Factor a sequence, estimate its entropy density, explore effective measure complexity and compare it with another sequence. One Rust core powers all three interfaces.</p><div class="lz-interface-links"><a href="guide/quick-reference/">Python cheatsheet <span>↗</span></a><a href="cli/quick-reference/">Standalone binaries cheatsheet <span>↗</span></a><a href="api/rust/">Rust core <span>↗</span></a></div></div>
+<div class="lz-start-copy"><p class="lz-eyebrow">PYTHON, RUST AND THE COMMAND LINE</p><h2>Analyze a sequence.<br>Compare a collection.</h2><p>Factor a sequence, estimate its entropy density, explore effective measure complexity and compare it with another sequence. One Rust core powers all three interfaces.</p><div class="lz-interface-links"><a href="api/python/">Python library <span>↗</span></a><a href="cli/">Standalone binaries <span>↗</span></a><a href="api/rust/">Rust library <span>↗</span></a></div></div>
 <div class="lz-code-window"><div class="lz-code-head"><span><i></i><i></i><i></i></span><span>analysis.py</span><button type="button" data-copy="import lzcomplexity as lz&#10;&#10;sequence = &quot;00010111&quot; * 256&#10;result = lz.lz76(sequence, log_base=2, max_block_size=16)&#10;&#10;print(result[&quot;h&quot;])&#10;print(result[&quot;emc&quot;][&quot;value&quot;])&#10;print(lz.nid(sequence, &quot;01010101&quot; * 256))" aria-label="Copy Python example">Copy ⧉</button></div><pre><code><span class="lz-code-purple">import</span> lzcomplexity <span class="lz-code-purple">as</span> lz
 
 sequence = <span class="lz-code-yellow">"00010111"</span> * <span class="lz-code-orange">256</span>
@@ -103,6 +103,6 @@ result = lz.<span class="lz-code-green">lz76</span>(
 <div class="lz-research-note"><span>THE RESEARCH</span><p>Explore <a href="https://doi.org/10.1371/journal.pone.0214863">organization in written language</a>, <a href="https://doi.org/10.1063/1.5062364">computation at the edge of chaos</a> and <a href="https://doi.org/10.1103/PhysRevE.107.044212">complexity in coupled oscillators</a>.</p><a href="project/references/">All references ↗</a></div>
 </section>
 
-<section class="lz-documentation-banner" id="documentation"><div><p class="lz-eyebrow">DOCUMENTATION</p><h2>Guides, examples<br>and quick references.</h2><p>Quick references, worked examples, complete API documentation and the original manual.</p></div><div class="lz-documentation-links"><a href="guide/quick-reference/">Python cheatsheet <span>→</span></a><a href="cli/quick-reference/">Standalone binaries cheatsheet <span>→</span></a><a href="guide/reading-the-numbers/">Interpret the results <span>→</span></a><a href="project/manual/">Read the original manual <span>→</span></a></div></section>
+<section class="lz-documentation-banner" id="documentation"><div><p class="lz-eyebrow">DOCUMENTATION</p><h2>Guides and<br>API reference.</h2><p>Installation, worked examples, detailed function and command references, and compact usage cheatsheets.</p></div><div class="lz-documentation-links"><a href="guide/">Read the documentation <span>→</span></a><a href="api/python/">Python function reference <span>→</span></a><a href="cli/">Standalone binaries <span>→</span></a><a href="guide/quick-reference/">Usage cheatsheets <span>→</span></a></div></section>
 <footer class="lz-home-footer"><span><strong>lzcomplexity</strong> <span class="lz-muted">by Pleros</span></span><a href="project/authors/">Authors &amp; citation</a><a href="https://github.com/pleros-ai/lzcomplexity">GitHub <span aria-hidden="true">↗</span></a></footer>
 </div>

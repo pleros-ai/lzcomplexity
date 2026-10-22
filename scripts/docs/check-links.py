@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check generated links, offline search and crawler-visible social previews."""
+import ast
 import hashlib
 import json
 import pathlib
@@ -21,12 +22,15 @@ class Page(HTMLParser):
         self.canonicals = []
         self.math_count = 0
         self.math_wrappers = 0
+        self.is_cheatsheet = False
         self.text = []
         self.ignored_text_depth = 0
         self.feed(text)
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if "lz-sheet" in attrs.get("class", "").split():
+            self.is_cheatsheet = True
         if tag in ("script", "style"):
             self.ignored_text_depth += 1
         if tag == "math":
@@ -161,6 +165,20 @@ for source, page in pages.items():
 for path in ("concepts/entropy-density/index.html", "guide/reading-the-numbers/index.html"):
     if ROOT / path not in pages or not pages[ROOT / path].math_count:
         failures.append(f"{path}: missing typeset equations")
+expected_sheets = {"guide/quick-reference/index.html", "cli/quick-reference/index.html"}
+actual_sheets = {path.relative_to(ROOT).as_posix() for path, page in pages.items() if page.is_cheatsheet}
+if actual_sheets != expected_sheets:
+    failures.append("Only the two usage cheatsheets may use the cheatsheet layout")
+source_root = pathlib.Path(__file__).resolve().parents[2]
+exports = next(ast.literal_eval(node.value) for node in ast.parse(
+    (source_root / "python/lzcomplexity/__init__.py").read_text()).body
+    if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "__all__" for target in node.targets))
+functions = [node.name for node in ast.parse((source_root / "python/lzcomplexity/__init__.pyi").read_text()).body
+             if isinstance(node, ast.FunctionDef) and node.name in exports]
+for function in functions:
+    path = ROOT / "api/functions" / function / "index.html"
+    if path not in pages:
+        failures.append(f"Missing detailed Python function reference: {function}")
 search = json.loads((ROOT / "search/search_index.json").read_text())
 for entry in search["docs"]:
     check(ROOT / "index.html", entry["location"])
@@ -168,5 +186,5 @@ for entry in search["docs"]:
         failures.append(f"search: E uses an outdated name at {entry['location']}")
 for failure in sorted(set(failures)):
     print(failure, file=sys.stderr)
-print(f"Checked {len(pages)} HTML pages, {checked} internal references, E terminology, the search index and social previews.")
+print(f"Checked {len(pages)} HTML pages, {checked} internal references, {len(functions)} Python function references, two separate usage cheatsheets, E terminology, search and social previews.")
 raise SystemExit(bool(failures))

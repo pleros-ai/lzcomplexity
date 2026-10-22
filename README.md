@@ -3,15 +3,16 @@
   <p>Randomness, structure and similarity in symbolic sequences.</p>
 
 [![CI](https://github.com/pleros-ai/lzcomplexity/actions/workflows/ci.yml/badge.svg?branch=rust-backend)](https://github.com/pleros-ai/lzcomplexity/actions/workflows/ci.yml)
-[![Documentation](https://img.shields.io/badge/docs-online-0071e3)](https://pleros-ai.github.io/lzcomplexity/)
+[![Documentation](https://img.shields.io/badge/docs-online-0071e3)](https://pleros-ai.github.io/lzcomplexity/guide/)
 [![PyPI](https://img.shields.io/pypi/v/lzcomplexity?color=0071e3)](https://pypi.org/project/lzcomplexity/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23531093.svg)](https://zenodo.org/doi/10.5281/zenodo.23531093)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-5e6b7a?logo=python&logoColor=white)](https://pypi.org/project/lzcomplexity/)
 [![MIT](https://img.shields.io/badge/license-MIT-5e6b7a)](LICENSE)
 
-**[Documentation & playground](https://pleros-ai.github.io/lzcomplexity/)** ·
-**[Python cheatsheet](https://pleros-ai.github.io/lzcomplexity/guide/quick-reference/)** ·
-**[CLI cheatsheet](https://pleros-ai.github.io/lzcomplexity/cli/quick-reference/)**
+**[Documentation](https://pleros-ai.github.io/lzcomplexity/guide/)** ·
+**[Python API](https://pleros-ai.github.io/lzcomplexity/api/python/)** ·
+**[Command line](https://pleros-ai.github.io/lzcomplexity/cli/)** ·
+**[Playground](https://pleros-ai.github.io/lzcomplexity/#try-it)**
 
 </div>
 
@@ -49,8 +50,9 @@ d = lz.nid(sequence, other)                         # Distance between sequences
 
 Pass text or bytes directly. For categorical data, assign one byte to each
 symbol; for continuous signals, first choose a symbolic representation.
-The [Python cheatsheet](https://pleros-ai.github.io/lzcomplexity/guide/quick-reference/)
-covers input types, parameters and complete-analysis calls.
+The [Python reference](https://pleros-ai.github.io/lzcomplexity/api/python/)
+documents each function. The separate [usage cheatsheet](https://pleros-ai.github.io/lzcomplexity/guide/quick-reference/)
+collects the common calls.
 
 ## From the terminal
 
@@ -61,8 +63,9 @@ lzcomplexity recording.txt -F text -l 2  # Analyze a sequence; write a JSON repo
 lzdistance sequences.txt -I TXT        # Compare one sequence per line
 ```
 
-The [CLI cheatsheet](https://pleros-ai.github.io/lzcomplexity/cli/quick-reference/)
-includes file formats, batch analysis and distance matrices.
+The [command-line guide](https://pleros-ai.github.io/lzcomplexity/cli/)
+covers file formats, batch analysis and distance matrices, with a separate
+[usage cheatsheet](https://pleros-ai.github.io/lzcomplexity/cli/quick-reference/).
 
 ## Research applications
 
