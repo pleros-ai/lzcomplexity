@@ -3,30 +3,16 @@
   "use strict";
   if (typeof document === "undefined") return;
   function initialize() {
+    document.querySelectorAll("[data-print]").forEach(button => {
+      if (button.dataset.initialized) return;
+      button.dataset.initialized = "true";
+      button.addEventListener("click", () => window.print());
+    });
     const home = document.querySelector(".lz-home");
     if (!home || home.dataset.initialized || typeof LZMeasures === "undefined") return;
     home.dataset.initialized = "true";
     const { analyze, emc, distance } = LZMeasures;
     const get = id => home.querySelector("#" + id);
-    const fixtures = {
-      periodic: { sequence: "01".repeat(32), note: "Repetition makes the next symbol easier to predict." },
-      irregular: { sequence: "0001111011111000101101011011010111001101100101000001011110000111", note: "More new information, with the same two-symbol alphabet. Short-input estimates can exceed one." }
-    };
-    function specimen(name) {
-      const fixture = fixtures[name], result = analyze(fixture.sequence), grid = get("lz-symbol-grid");
-      grid.replaceChildren();
-      for (const bit of fixture.sequence) {
-        const tile = document.createElement("span");
-        tile.textContent = bit; tile.dataset.bit = bit; grid.append(tile);
-      }
-      get("lz-specimen-count").textContent = result.count;
-      get("lz-specimen-h").textContent = result.h.toFixed(3);
-      get("lz-specimen-note").textContent = fixture.note;
-      home.querySelectorAll("[data-specimen]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.specimen === name)));
-    }
-    home.querySelectorAll("[data-specimen]").forEach(button => button.addEventListener("click", () => specimen(button.dataset.specimen)));
-    specimen("periodic");
-
     const input = get("lz-input"), secondInput = get("lz-input-b"), error = get("lz-input-error");
     const tabs = [...home.querySelectorAll("[data-mode]")];
     const encoder = new TextEncoder();
@@ -109,7 +95,6 @@
         if (mode === "distance") {
           const comparison = distance(input.value, secondInput.value);
           get("lz-demo-distance").textContent = comparison.value.toFixed(4);
-          ["a", "b", "ab", "ba"].forEach((key, index) => { get("lz-count-" + key).textContent = comparison.counts[["x", "y", "xy", "yx"][index]]; });
         }
         panel.hidden = false;
         get("lz-lab-method").hidden = false;
@@ -158,7 +143,7 @@
       banana: ["banana", "banaba", "A short example for following the LZ76 factor boundaries."],
       periodic: ["00010111".repeat(32), "00010111".repeat(31) + "00010110", "A 256-byte sequence built from an eight-symbol repeating motif."],
       irregular: [irregular(256), irregular(256).split("").reverse().join(""), "A fixed pseudorandom example. Irregularity alone does not imply rich organization."],
-      constant: ["0".repeat(256), "0".repeat(256), "Identical symbols: a simple pattern with no change under rearrangement."],
+      constant: ["0".repeat(256), "0".repeat(256), "A constant 256-byte sequence. Compare it with Periodic and Irregular."],
       dna: ["ACGT".repeat(64), "ACGT".repeat(63) + "ACGA", "A repeating four-symbol motif, encoded as one UTF-8 byte per base."]
     };
     home.querySelectorAll("[data-example]").forEach(button => button.addEventListener("click", () => {

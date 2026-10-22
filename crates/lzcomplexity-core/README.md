@@ -20,8 +20,8 @@ standalone binaries, and can be used directly as a Rust library.
 - **Entropy density** — the normalized entropy-rate estimator
   `h ≈ c(S)·log_k(n)/n`, which converges to the true entropy rate of ergodic
   sources.
-- **Structural complexity E** — sensitivity to correlations across different
-  ranges of a sequence. See the [calculation reference](https://pleros-ai.github.io/lzcomplexity/shuffle-measure/).
+- **Effective measure complexity E** — sensitivity to correlations across different
+  ranges of a sequence. See the [calculation reference](https://pleros-ai.github.io/lzcomplexity/concepts/emc/).
 - **Normalized information distance (NID)** — an LZ76-based distance between two
   sequences.
 

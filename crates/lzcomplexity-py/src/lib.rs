@@ -173,7 +173,7 @@ fn h(
     Ok(core::lz76::lz76_entropy_density(&s, &args))
 }
 
-/// Compute structural complexity E, which is sensitive to correlations across
+/// Compute effective measure complexity E, which is sensitive to correlations across
 /// different ranges of a sequence.
 ///
 /// Returns the final level of the fitted scale profile and its nonnegative
@@ -229,7 +229,7 @@ fn emc(
 /// Run the full LZ76 analysis on a sequence.
 ///
 /// Computes the factor count, entropy density h, factor boundaries,
-/// structural complexity E, fitted increments and diagnostic fields.
+/// effective measure complexity E, fitted increments and diagnostic fields.
 /// The original factorization is shared by the calculations.
 ///
 /// Parameters
@@ -366,7 +366,7 @@ fn nid(
 /// -------------------
 /// - :func:`factorization` — complexity + factor boundaries.
 /// - :func:`h` — normalized entropy density (entropy-rate estimator).
-/// - :func:`emc` — structural complexity E (value + fitted increments).
+/// - :func:`emc` — effective measure complexity E (value + fitted increments).
 /// - :func:`nid` — normalized information distance between two sequences.
 /// - :func:`lz76` — the full analysis (everything, as a dict).
 ///

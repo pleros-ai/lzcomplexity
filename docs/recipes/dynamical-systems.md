@@ -40,7 +40,7 @@ When scanning a control parameter, hold the retained length, sampling scheme, pa
 
 Repeat the scan at several sample lengths to assess stability. Set `max_block_size` explicitly to compare the same ranges, then inspect the E profile to see which ranges contribute to the result.
 
-Use the [entropy-density](../concepts/entropy-density.md), [structural complexity E](../concepts/emc.md) and [convergence](../concepts/convergence.md) pages to interpret the response.
+Use the [entropy-density](../concepts/entropy-density.md), [effective measure complexity E](../concepts/emc.md) and [convergence](../concepts/convergence.md) pages to interpret the response.
 
 ## Connecting this to the manual's oscillator study
 

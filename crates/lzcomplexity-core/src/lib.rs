@@ -1,6 +1,6 @@
 //! lzcomplexity-core — LZ76 factorization and related complexity measures.
 //!
-//! Algorithms for entropy density h, structural complexity E and information
+//! Algorithms for entropy density h, effective measure complexity E and information
 //! distance, operating directly on byte sequences.
 
 pub mod lpf;

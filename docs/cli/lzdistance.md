@@ -2,8 +2,7 @@
 
 Compute all-pairs distance matrices from one or two sequence sources. A source
 can be a file containing multiple sequences or a directory of files. The tool
-always writes both an LZ-based information-distance matrix and a separate
-shuffle-distance matrix.
+writes an LZ-based information-distance matrix and additional diagnostics.
 
 ```text
 lzdistance [OPTIONS] [first source] [second source]
@@ -62,31 +61,20 @@ mapped back to filenames; the JSON does not include a per-row label array.
 Unlike `lzcomplexity`, this tool has **no alphabet-size flag**: `-a` selects
 the DNA strategy. Also, `-v` means version; use `-L` for verbose logs.
 
-## The two matrices
+## Read the matrices { #the-two-matrices }
 
-Let `C` denote the library's LZ76 factor count, and let `XY` mean
-concatenation. The information-distance cell is
+Use `information_distance` to compare shared patterns. It corresponds to
+Python's `nid()` and derives from Normalized Information Distance (NID).
+Lower values indicate more shared patterns. The
+[information-distance guide](../concepts/nid.md) explains its use and origin.
 
-```text
-information_distance(X, Y) =
-    max(C(XY) - C(X), C(YX) - C(Y)) / max(C(X), C(Y))
-```
+The report also includes `shuffle_information_distance`, a separate diagnostic
+matrix. Both matrices are written on every run. This additional diagnostic can
+be asymmetric and exceed one; its diagonal can also be nonzero.
 
-This formula is symmetric for untransformed operands. Self-distance can be nonzero for finite sequences. See [information distance](../concepts/nid.md).
-
-The second matrix uses the concatenation and its block-shuffled copies:
-
-```text
-shuffle_information_distance(X, Y) =
-    M * C(XY) / sum_l(C(shuffle_l(XY)))
-```
-
-`M` is the automatic cap for the concatenated length. This second matrix can be asymmetric and extend beyond `[0, 1]`; its diagonal can also be nonzero.
-
-Both matrices are computed on every run. With a transformation strategy,
-each cell is the minimum over candidate second operands, separately for each
-matrix. Transforms affect only the second operand, so transformed matrices
-need not remain symmetric even for a single input source.
+With a transformation strategy, each cell is the minimum over candidate second
+operands, separately for each matrix. Transforms affect only the second operand,
+so transformed matrices need not remain symmetric even for one source.
 
 ## Transformation strategies
 
@@ -135,7 +123,7 @@ The result file contains these keys:
 | `first_data_source_format` | Configured format label. |
 | `second_data_source`, `second_dim`, `second_data_source_format` | Included when a second path was supplied. |
 | `information_distance` | Full row-by-column array of count-based distances. |
-| `shuffle_information_distance` | Corresponding shuffle-distance array. |
+| `shuffle_information_distance` | Additional concatenation-structure diagnostic array. |
 | `directed_matrix` | Concatenation-order graph, controlled by `-g`. |
 
 For one source, both distance matrices are `first_dim × first_dim`. With two
@@ -172,7 +160,7 @@ output inside that directory; pass `-o` for an unambiguous location. Existing
 output files are overwritten.
 
 Pairwise work grows with the product of source sizes, with additional work
-for shuffle scales and candidate variants. Start with a small representative
+for range analysis and candidate variants. Start with a small representative
 subset, choose a suitable `-j`, and retain sequence order/preprocessing with
 results. There is no flag to compute only the first matrix.
 

@@ -50,8 +50,8 @@ shows a compact analysis record.
 
 ## Method references
 
-The [references](references.md) cover LZ76 parsing, entropy density, structural
-complexity and information distance, together with applications to language
+The [references](references.md) cover LZ76 parsing, entropy density, effective
+measure complexity and information distance, together with applications to language
 and nonlinear dynamics.
 
 ## License

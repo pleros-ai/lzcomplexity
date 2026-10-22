@@ -52,7 +52,7 @@ def emc(
     max_block_size: int = -1,
     jobs: int = 0,
 ) -> Tuple[float, List[float]]:
-    """Return structural complexity E and its fitted increments across ranges.
+    """Return effective measure complexity E and its fitted increments across ranges.
 
     Returns ``(value, summands)``. The nonnegative increments sum to E.
     ``max_block_size`` sets the maximum range; nonpositive values select it

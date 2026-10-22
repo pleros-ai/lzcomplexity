@@ -4,7 +4,7 @@ Top-level functions
 -------------------
 - ``factorization`` — complexity (factor count) and factor boundary list.
 - ``h`` — normalized entropy density (entropy-rate estimator).
-- ``emc`` — structural complexity E (value and fitted increments).
+- ``emc`` — effective measure complexity E (value and fitted increments).
 - ``nid`` — normalized information distance between two sequences.
 - ``lz76`` — the full analysis, returned as a dict with everything.
 

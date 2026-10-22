@@ -58,9 +58,9 @@ Convert floating-point measurements to symbols before analysis. Passing their de
 
 ## Transformations and normalization
 
-A one-to-one relabeling of individual byte symbols preserves the LZ count because equality between substrings is preserved. E can change because its sampling seeds are derived from the input bytes; see [implementation of E](implementation.md#6-structural-complexity-e).
+A one-to-one relabeling of individual byte symbols preserves the LZ count because equality between substrings is preserved. Use a consistent byte codebook when comparing E across samples.
 
-A cyclic shift changes both the parse start and the sampling seed. A many-to-one mapping changes the alphabet and may create new repeated substrings. Adding whitespace, separators or metadata changes the analyzed data unless you remove them before calling the library.
+A cyclic shift changes where parsing begins and can change the reported measures. A many-to-one mapping changes the alphabet and may create new repeated substrings. Adding whitespace, separators or metadata changes the analyzed data unless you remove them before calling the library.
 
 In Rust, symbol-changing mutations invalidate observed alphabet metadata. Explicit size declarations from `set_alphabet_size` and `with_alphabet_size` remain until `determine_alphabet` or `clear`. Constructor hints are described separately in the [Rust reference](../api/rust.md).
 
