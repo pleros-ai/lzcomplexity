@@ -1,20 +1,17 @@
 # Authors and citation
 
-`lzcomplexity` is developed by the Pleros group. The repository credits:
+`lzcomplexity` is developed by the Pleros group.
 
-- **Efrén Aragón Pérez** — principal author and creator of the original implementation.
-- **Daniel Estévez Moya** — author of the Rust rewrite used by the current backend.
-- **Ernesto Estévez Rams** — from the research lineage of the original C++ implementation.
-
-The current package metadata records these three authors in that order. The older C++ implementation remains on the repository's `main` branch; current Rust/Python documentation follows `rust-backend`.
+- **Efrén Aragón Pérez** — creator and principal author of the library.
+- **Daniel Estévez Moya** — Rust implementation.
+- **Ernesto Estévez Rams** — scientific foundations.
 
 ## Cite the library paper
 
-The library has a published reference:
-
 > Aragón-Pérez, E., & Estevez-Rams, E. (2025). Lzcomplexity: Entropy Measurement Library. *Revista Cubana de Física*, **42**(2), 80–86.
 
-The [journal record](https://www.revistacubanadefisica.org/index.php/rcf/article/view/31) provides the article and citation exports. It describes the library's research and implementation lineage; use this site's API reference for the current Rust-backed Python interface.
+The [journal record](https://www.revistacubanadefisica.org/index.php/rcf/article/view/31)
+provides the article and citation exports.
 
 ```bibtex
 @article{aragon_perez_lzcomplexity_2025,
@@ -29,56 +26,40 @@ The [journal record](https://www.revistacubanadefisica.org/index.php/rcf/article
 }
 ```
 
-## Record the software version too
+## Cite the software
 
-The software is archived on [Zenodo](https://zenodo.org/records/23531094).
-The all-version DOI is [10.5281/zenodo.23531093](https://zenodo.org/doi/10.5281/zenodo.23531093);
-the first archive has DOI [10.5281/zenodo.23531094](https://zenodo.org/records/23531094).
-Use an archive's own metadata when citing that deposit. The archive and your
-installed package need not identify the same build, so record the executable
-version or source commit separately.
-
-A paper citation does not uniquely identify the executable that produced a number. Record the installed version and, for a development build, its source commit and backend.
-
-```python
-import lzcomplexity as lz
-print(lz.__version__)
-```
-
-The following software citation uses `2.0.0` as an example. Replace it with the version you actually used:
+The project's [Zenodo archive](https://zenodo.org/doi/10.5281/zenodo.23531093)
+has DOI **10.5281/zenodo.23531093**. This DOI refers to the project across
+versions. A version-specific DOI is available on each archive record.
 
 ```bibtex
-@software{lzcomplexity_software,
-  title   = {lzcomplexity: LZ76 complexity, entropy rate and information distance
-             for symbolic sequences},
-  author  = {Arag{\'o}n P{\'e}rez, Efr{\'e}n and
-             Est{\'e}vez Moya, Daniel and
-             Est{\'e}vez Rams, Ernesto},
-  url     = {https://github.com/pleros-ai/lzcomplexity},
-  version = {2.0.0},
-  year    = {2026}
+@software{lzcomplexity,
+  title  = {lzcomplexity: LZ76 complexity, entropy rate and information distance
+            for symbolic sequences},
+  author = {Arag{\'o}n P{\'e}rez, Efr{\'e}n and
+            Est{\'e}vez Moya, Daniel and
+            Est{\'e}vez Rams, Ernesto},
+  doi    = {10.5281/zenodo.23531093},
+  url    = {https://github.com/pleros-ai/lzcomplexity}
 }
 ```
 
-For a methods section, add the byte encoding, preprocessing/symbolization, analyzed lengths, explicit logarithm base, shuffle cap and whether results came from Python, Rust or a CLI report. Distinguish the EMC-like shuffle score from theoretical EMC.
+For an analysis, record the package version and the encoding, sequence length,
+logarithm base and E range used. The [reproducibility guide](determinism.md)
+shows a compact analysis record.
 
-## Cite the method relevant to your analysis
+## Method references
 
-The software paper credits the implementation. The underlying methods also have their own research literature: Lempel and Ziv for parsing, entropy-rate work for the normalization, shuffle-based analyses for the qualitative complexity measure, and information-distance literature for sequence comparison. [References](references.md) groups those sources and distinguishes theoretical background from this implementation's definition.
+The [references](references.md) cover LZ76 parsing, entropy density, structural
+complexity and information distance, together with applications to language
+and nonlinear dynamics.
 
 ## License
 
-The current repository is MIT licensed. Its [LICENSE](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/LICENSE) records `Copyright (c) 2024 Efren Aragon Perez` and contains the applicable permission and warranty terms.
-
-The supplied [historical manual](manual.md) has its own version and notices. Historical platform, API and performance descriptions should be read in that version's context.
+The library is distributed under the [MIT license](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/LICENSE).
 
 ## Contributing and reporting issues
 
-Use the [GitHub issue tracker](https://github.com/pleros-ai/lzcomplexity/issues) for reproducible problems. Include:
-
-- installed version or source commit, OS, architecture and Python/Rust version;
-- the exact input bytes or a small generator;
-- options, byte length, logarithm base and shuffle cap;
-- expected behavior and actual output.
-
-For a documentation correction, link the page and give the conflicting code or reference. Scientific-method changes need an explicit definition and comparison goal, not only a new label for an existing score.
+Use the [GitHub issue tracker](https://github.com/pleros-ai/lzcomplexity/issues)
+for problems or suggestions. For a bug report, include the version, a small
+input example, the parameters, and the expected and actual output.

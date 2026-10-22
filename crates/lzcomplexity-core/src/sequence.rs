@@ -1,4 +1,4 @@
-//! Byte-sequence type mirroring the C++ `lz::sequence` class.
+//! Byte sequences, alphabet metadata and sequence transformations.
 
 use rand::Rng;
 use rand::SeedableRng;
@@ -25,7 +25,7 @@ impl AlphabetInfo {
             .map(|symbol| symbol as u8)
             .collect();
         let observed = symbols.len() as u32;
-        // Preserve the legacy constructor's exact-match hints, including
+        // Preserve exact-match constructor hints, including
         // zero for empty data and one for a singleton alphabet.
         let size = if legacy_hint == Some(observed) {
             observed
@@ -63,8 +63,7 @@ impl Sequence {
         }
     }
 
-    // Inherent constructor mirroring the C++ `sequence(string)`; not the
-    // `FromStr` trait (it is infallible and part of the public port surface).
+    // Infallible UTF-8 constructor; this is an inherent method rather than FromStr.
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
         Self::from_bytes(s.as_bytes().to_vec())
@@ -79,7 +78,7 @@ impl Sequence {
         }
     }
 
-    /// Construct from bytes using the legacy alphabet-size hint. The observed
+    /// Construct from bytes with an alphabet-size hint. The observed
     /// alphabet replaces a mismatching hint; use `set_alphabet_size` to declare
     /// a size that remains fixed through subsequent symbol changes.
     pub fn from_bytes_with_alphabet(b: Vec<u8>, alphabet_size: u32) -> Self {
@@ -145,8 +144,8 @@ impl Sequence {
     }
 
     /// Scan the data and rebuild the alphabet (sorted descending), replacing
-    /// any explicit size declaration. Retains the C++ exact-match hint behavior
-    /// for zero/one-symbol alphabets.
+    /// any explicit size declaration. An existing size matching a zero- or
+    /// one-symbol alphabet is preserved.
     pub fn determine_alphabet(&mut self) -> Vec<u8> {
         let hint = self
             .declared_alphabet_size
@@ -210,18 +209,18 @@ impl Sequence {
             .and_then(|s| s.iter().copied().max())
     }
 
-    /// Mirror of `seq.Take(l)` — first l characters, clamped.
+    /// Copy the first `l` bytes, clamping the length to the available data.
     pub fn take(&self, l: usize) -> Self {
         let n = l.min(self.data.len());
         Sequence::from_bytes_with_alphabet(self.data[..n].to_vec(), self.alphabet_size())
     }
 
-    /// Mirror of `seq.Drop(l)` — skip first l characters.
+    /// Copy the sequence after skipping its first `l` bytes.
     pub fn drop(&self, l: usize) -> Self {
         if l >= self.data.len() {
             return Self {
                 data: Vec::new(),
-                // Keep the legacy empty-result size without mistaking an
+                // Preserve the empty-result alphabet size without treating an
                 // inherited auto size for an explicit user declaration.
                 alphabet: OnceLock::from(AlphabetInfo {
                     symbols: Vec::new(),
@@ -233,7 +232,7 @@ impl Sequence {
         Sequence::from_bytes_with_alphabet(self.data[l..].to_vec(), self.alphabet_size())
     }
 
-    /// Mirror of `seq.Split(l)`.
+    /// Copy the prefix and suffix at byte position `l`, clamped to the length.
     pub fn split_at(&self, l: usize) -> (Self, Self) {
         let n = l.min(self.data.len());
         (
@@ -242,7 +241,8 @@ impl Sequence {
         )
     }
 
-    /// Mirror of `seq.Granularity(gr)`.
+    /// Sum each complete group of `gr` bytes with wrapping byte arithmetic.
+    /// Discard an incomplete trailing group; zero group size returns empty.
     pub fn granularity(&self, gr: u32) -> Self {
         if gr == 0 {
             return Self::new();
@@ -289,8 +289,7 @@ impl Sequence {
         if shift == 0 {
             return self;
         }
-        // Equivalent to std::rotate(begin, begin+shift, end), which rotates LEFT by `shift`.
-        // That's what the C++ rightShift does (rotates so beginning becomes [shift..]).
+        // The named right shift moves the byte at `shift` to the beginning.
         self.data.rotate_left(shift);
         self
     }
@@ -308,7 +307,7 @@ impl Sequence {
         self
     }
 
-    /// Mirror of `seq.charDensity()`.
+    /// Count occurrences of each byte in sorted byte order.
     pub fn char_density(&self) -> std::collections::BTreeMap<u8, u32> {
         let mut m = std::collections::BTreeMap::new();
         for &c in &self.data {
@@ -317,7 +316,7 @@ impl Sequence {
         m
     }
 
-    /// Mirror of `seq.map(f)` — returns new sequence with `f` applied to each byte.
+    /// Return a new sequence with `f` applied to each byte.
     pub fn map<F: Fn(u8) -> u8>(&self, f: F) -> Self {
         let mut data = Vec::with_capacity(self.data.len());
         for &c in &self.data {
@@ -400,8 +399,7 @@ impl std::ops::Add for &Sequence {
 
 /// In-place block shuffle of `s`. Picks two non-overlapping aligned blocks of
 /// `block_size` and swaps them. Deterministic when called via [`shuffle_copy_seeded`].
-///
-/// Mirrors `lz::Shuffle(sequence&, lz_uint)` from the C++.
+/// The final suffix outside the eligible aligned blocks stays fixed.
 pub fn shuffle_in_place(s: &mut Sequence, block_size: u32, rng: &mut ChaCha8Rng) {
     let seq_size = s.len();
     let bs = block_size as usize;

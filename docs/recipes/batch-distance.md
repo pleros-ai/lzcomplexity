@@ -44,7 +44,7 @@ lzdistance sequences/ -I text -o distances.json
 
 The reader sorts regular files by path, skips files ending in `.json` or `.log`, and takes the **first sequence from each file**. It does not recursively enumerate subdirectories. Keep only intended inputs in that directory and store the sorted path list with your results. For a multiline file, use the file route instead.
 
-## Python: compute exactly the matrix you need
+## Python: compute a distance matrix { #python-compute-exactly-the-matrix-you-need }
 
 ```python
 import lzcomplexity as lz
@@ -63,22 +63,22 @@ for row in matrix:
     print(row)
 ```
 
-`nid(a, b)` evaluates both concatenation orders, so the default measure is symmetric. Its finite-sequence diagonal is not guaranteed to be exactly zero. Do not silently treat it as an ideal mathematical metric. If you choose to force the diagonal to zero for a downstream algorithm, label that as a separate matrix-processing step.
+`nid(a, b)` evaluates both concatenation orders, giving a symmetric measure. Self-distances can be nonzero for finite sequences. If a downstream method requires a zero diagonal, apply that transformation separately and record it with your matrix.
 
 For a large self-comparison you can compute only `i < j`, mirror the values and calculate the diagonal separately. The number of distinct off-diagonal pairs is `n*(n-1)/2`; a cross-comparison requires `n*m` pairs. Each NID call performs four LZ factorizations. Time a representative subset before committing to a large batch.
 
 ## Transformations and ranges
 
-`-r`, `-b`, `-a` and `-y` alter how the second operand is compared. They do not merely speed up a fixed definition. For example, `-r` uses its reversal only; `-b` minimizes across original, reversal, bit-flipped and reversed bit-flipped variants. The DNA mode is not a full reverse-complement matcher. Keep one strategy across comparable matrices and read the [exact transformation table](../cli/lzdistance.md).
+`-r`, `-b`, `-a` and `-y` select transformations of the second operand before comparison. For example, `-r` uses its reversal only; `-b` minimizes across original, reversal, bit-flipped and reversed bit-flipped variants. The DNA mode is not a full reverse-complement matcher. Keep one strategy across comparable matrices and read the [exact transformation table](../cli/lzdistance.md).
 
 The `-i` and `-s` ranges gate computations without shrinking the matrix. Uncomputed cells remain `0.0`, which is indistinguishable from a genuine zero in the JSON. Store the selected ranges as metadata; do not reconstruct a missing-cell mask by testing for zero.
 
-`-g` produces a directed concatenation-order diagnostic, not a causal graph. A positive threshold is needed for a populated `directed_matrix` field in the current output. The [reference](../cli/lzdistance.md) documents the legacy bare-`-g` behavior.
+`-g` reports differences between the two concatenation orders. Use a positive threshold, such as `-g 1`, to include `directed_matrix` in the output. See the [graph options](../cli/lzdistance.md#concatenation-order-graph-g) for details.
 
 ## Parallelism
 
-The Rust core uses Rayon internally. The CLI's `-j` sets its worker count; the Python `jobs` keyword is reserved and currently ignored. Python extension calls currently retain the GIL, so wrapping them in Python threads does not provide independent concurrent native calls.
+The core uses Rayon internally. Set the CLI worker count with `-j`. In Python, configure `RAYON_NUM_THREADS` before the first native call; the `jobs` argument has no effect. The extension holds the GIL during each call, so use processes for independent Python analyses.
 
 For process-based batches, set `RAYON_NUM_THREADS` before starting each worker's first native call and budget the total workers across both levels. Benchmark your workload: process startup, copying inputs and nested parallelism can outweigh any benefit for small jobs. See [determinism and execution](../project/determinism.md).
 
-A low distance summarizes shared literal sequence structure under the chosen encoding. It does not by itself establish that two independent realizations have the same generating process, or that one system influences another.
+Interpret distances in terms of the supplied symbolic sequences and their recurring patterns. Match encodings, sequence lengths and preprocessing across the collection.

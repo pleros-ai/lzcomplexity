@@ -2,7 +2,7 @@ site_name: lzcomplexity
 site_description: Measure randomness, structure across scales and similarity in symbolic sequences. LZ76 analysis for Python, Rust and the command line, from Pleros.
 site_url: https://pleros-ai.github.io/lzcomplexity/
 repo_url: https://github.com/pleros-ai/lzcomplexity
-repo_name: pleros-ai/lzcomplexity
+repo_name: GitHub
 edit_uri: edit/rust-backend/docs/
 copyright: © Pleros Group · MIT licensed
 
@@ -131,12 +131,12 @@ nav:
       - Concepts:
           - LZ76 factorization: concepts/lz76.md
           - Entropy density (h): concepts/entropy-density.md
-          - EMC-like shuffle measure: concepts/emc.md
+          - Structural complexity (E): concepts/emc.md
           - Information distance (NID): concepts/nid.md
           - Alphabets and log bases: concepts/alphabets.md
           - Sequence length and convergence: concepts/convergence.md
           - Inside the implementation: concepts/implementation.md
-          - Shuffle definition: shuffle-measure.md
+          - Calculating E: shuffle-measure.md
       - Recipes:
           - Neural time-series: recipes/neuro.md
           - DNA and FASTA: recipes/genomics.md
@@ -158,7 +158,7 @@ nav:
       - Authors and citation: project/authors.md
       - Performance: project/performance.md
       - Determinism: project/determinism.md
-      - Rust vs C++: project/cpp-parity.md
+      - Migration reference: project/cpp-parity.md
       - Releases: project/releases.md
       - Original manual: project/manual.md
       - References: project/references.md

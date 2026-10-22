@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 270" role="img" aria-labelledby="title desc">
 <title id="title">One aligned block swap at width three</title>
-<desc id="desc">Two complete three-byte blocks exchange places. All other blocks retain their order, and the last three-byte block remains fixed under the legacy boundary rule.</desc>
+<desc id="desc">Two complete three-byte blocks exchange places. All other blocks retain their order, and the last three-byte block remains fixed under the sampling boundary rule.</desc>
 <rect width="720" height="270" rx="8" fill="#fffefa"/>
 <g font-family="Arial, sans-serif" fill="#354333"><text x="28" y="30" font-size="14" font-weight="600">Original sequence · block width 3</text><text x="28" y="164" font-size="14" font-weight="600">After one permitted swap</text></g>
 <rect x="28" y="48" width="76" height="44" rx="4" fill="#45634b" stroke="#aeb8a5"/>

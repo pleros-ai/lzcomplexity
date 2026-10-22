@@ -50,8 +50,8 @@
       get("lz-demo-count").textContent = result.count;
       get("lz-demo-h").textContent = result.h.toFixed(4);
       let description = "The final copied tail can be excluded from the reported count. Short-sequence estimates of h can exceed one.";
-      if (!result.bytes.length) description = "Empty input uses the library’s legacy count of one and h of zero; it is not an observed source.";
-      else if (input.value === "banana") description = "Four displayed pieces, a reported count of three: the final copied tail is excluded. Short-sequence estimates of h can exceed one.";
+      if (!result.bytes.length) description = "Empty input: count 1, h 0. Enter a sequence to inspect its factors.";
+      else if (input.value === "banana") description = "The count is 3: the final copied tail adds no new factor. Short-sequence estimates of h can exceed one.";
       else if (result.bytes.some(value => value >= 128)) description += " Non-ASCII pieces are shown as UTF-8 byte values.";
       get("lz-lab-description").textContent = description;
     }
@@ -84,8 +84,8 @@
       }
       shape("text", {x:left, y:bottom + 22, "text-anchor":"middle"}, "1");
       if (values.length > 1) shape("text", {x:right, y:bottom + 22, "text-anchor":"end"}, String(values.length));
-      shape("text", {x:(left + right) / 2, y:bottom + 22, "text-anchor":"middle"}, "Block range (bytes)");
-      chart.setAttribute("aria-label", "Fitted E score at block ranges 1 to " + values.length + ", ending at " + (values[values.length - 1] || 0).toFixed(4));
+      shape("text", {x:(left + right) / 2, y:bottom + 22, "text-anchor":"middle"}, "Range (bytes)");
+      chart.setAttribute("aria-label", "E profile at ranges 1 to " + values.length + ", ending at " + (values[values.length - 1] || 0).toFixed(4));
     }
     function update() {
       byteCount();
@@ -101,9 +101,9 @@
           get("lz-demo-e").textContent = structure.value.toFixed(4);
           get("lz-demo-range").textContent = structure.maxBlockSize;
           renderCurve(structure.fitted);
-          let description = "Fitted score across scales, using the library’s deterministic sampling and automatic range. Compare sequences of the same length and encoding.";
-          if (result.bytes.length <= 10) description = "At 10 bytes or fewer, the library leaves these sequences unchanged, so E* is zero. Try a longer example to explore the scale profile.";
-          else if (result.bytes.every(byte => byte === result.bytes[0])) description = "A constant sequence has a clear pattern, but rearranging identical symbols changes nothing, so this score is zero. E* does not count every kind of structure.";
+          let description = "E across ranges. Try sequences of the same length to compare their organization.";
+          if (result.bytes.length <= 10) description = "This short sequence has a flat E profile. Try Periodic to explore a longer example.";
+          else if (result.bytes.every(byte => byte === result.bytes[0])) description = "A constant sequence has E = 0. Try Periodic to see a nonzero range profile.";
           get("lz-e-description").textContent = description;
         }
         if (mode === "distance") {

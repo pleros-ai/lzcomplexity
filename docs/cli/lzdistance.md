@@ -35,7 +35,7 @@ mapped back to filenames; the JSON does not include a per-row label array.
 
 ## Options
 
-| Short / long | Value | Default | Current behavior |
+| Short / long | Value | Default | Behavior |
 |---|---|---|---|
 | positional first source | path | required for analysis | First file or directory. |
 | positional second source | path | omitted | Second file or directory; omitted means self-comparison. |
@@ -48,14 +48,14 @@ mapped back to filenames; the JSON does not include a per-row label array.
 | `-L`, `--logs` | flag | off | Print dimensions and output path. |
 | `-r`, `--reverse` | flag | off | Compare against the reversed second operand. |
 | `-b`, `--binary` | flag | off | Search original/reverse/ASCII-bit-flipped second operands. |
-| `-a`, `--adn` | flag | off | Search the legacy six DNA variants described below. |
+| `-a`, `--adn` | flag | off | Search the six DNA variants described below. |
 | `-y`, `--trajectory` | flag | off | Search eight digit-code rotations and their reversals. |
 | `-g`, `--get-direction` | optional integer threshold | absent | Compute the concatenation-order graph; see below. |
 | `-l`, `--log-base` | unsigned integer | automatic | Accepted; these count-ratio matrices do not depend on logarithm units. |
-| `-p`, `--partitions` | signed integer | `2` | Compatibility field; no current computation uses it. |
-| `-d`, `--default` | flag | on | Compatibility flag; no effect. |
-| `-t`, `--text` | flag | off | Compatibility flag; no effect. |
-| `-f`, `--factors` | path | none | Accepted but currently does not write a factor file. |
+| `-p`, `--partitions` | signed integer | `2` | Accepted; no effect. |
+| `-d`, `--default` | flag | on | Accepted; no effect. |
+| `-t`, `--text` | flag | off | Accepted; no effect. |
+| `-f`, `--factors` | path | none | Accepted; no factor file is written. |
 | `-v`, `--version` | flag | off | Print version and exit. |
 | `-h`, `--help` | flag | — | Print help and exit. |
 
@@ -72,9 +72,7 @@ information_distance(X, Y) =
     max(C(XY) - C(X), C(YX) - C(Y)) / max(C(X), C(Y))
 ```
 
-This formula is symmetric as a function of untransformed operands. A
-finite-sequence diagonal need not be zero, and the implementation does not
-clip the result or enforce metric axioms. See [information distance](../concepts/nid.md).
+This formula is symmetric for untransformed operands. Self-distance can be nonzero for finite sequences. See [information distance](../concepts/nid.md).
 
 The second matrix uses the concatenation and its block-shuffled copies:
 
@@ -83,11 +81,7 @@ shuffle_information_distance(X, Y) =
     M * C(XY) / sum_l(C(shuffle_l(XY)))
 ```
 
-`M` is the automatic cap for the concatenated length. Internally this is
-`1 - mutual_information(...)`, where that historical function name denotes
-an operational shuffle contrast. It is not calibrated Shannon mutual
-information, is generally asymmetric, and is not constrained to `[0, 1]`.
-Its diagonal is not a zero-distance guarantee.
+`M` is the automatic cap for the concatenated length. This second matrix can be asymmetric and extend beyond `[0, 1]`; its diagonal can also be nonzero.
 
 Both matrices are computed on every run. With a transformation strategy,
 each cell is the minimum over candidate second operands, separately for each
@@ -111,11 +105,7 @@ The binary flip maps ASCII `0` to ASCII `1` and **every other byte** to
 ASCII `0`. Use `-b` only with an appropriate ASCII `0`/`1` representation;
 PBM and raw-binary readers produce numeric bytes zero/one instead.
 
-DNA swaps lowercase the affected bases and preserve other bytes. The six
-candidates are the actual legacy operation, not a general canonical
-reverse-complement preprocessing pipeline. There is no separate RNA strategy
-flag. Normalize biological representations explicitly when required by your
-analysis. The trajectory strategy expects an eight-direction digit code;
+DNA swaps lowercase the affected bases and preserve other bytes. The A↔T and C↔G substitutions are tested separately. For a full reverse-complement comparison, prepare the sequences in Python as shown in the [genomics recipe](../recipes/genomics.md#reverse-complements). The trajectory strategy expects an eight-direction digit code;
 it does not infer geometric trajectories from coordinates.
 
 ## Row and column ranges
@@ -126,7 +116,7 @@ lzdistance trials.txt -I TXT -i 2:4 -s 1:3 -o subset.json
 
 Indices are one-based and inclusive. `2:` starts at the second sequence and
 continues to the end; `:3` starts at the first and ends at the third. A single
-value such as `-i 2` is also a lower bound in the current implementation,
+value such as `-i 2` is also a lower bound,
 not a single-row selection. Use `-i 2:2` for exactly the second row.
 
 Ranges **do not shrink the matrices**. Cells outside the selected rows or
@@ -146,7 +136,7 @@ The result file contains these keys:
 | `second_data_source`, `second_dim`, `second_data_source_format` | Included when a second path was supplied. |
 | `information_distance` | Full row-by-column array of count-based distances. |
 | `shuffle_information_distance` | Corresponding shuffle-distance array. |
-| `directed_matrix` | Legacy graph array, subject to the flag behavior below. |
+| `directed_matrix` | Concatenation-order graph, controlled by `-g`. |
 
 For one source, both distance matrices are `first_dim × first_dim`. With two
 nonempty sources they are `first_dim × second_dim`. JSON cell indices are
@@ -155,11 +145,7 @@ JSON; pretty-print with `python -m json.tool distances.json`.
 
 ## Concatenation-order graph: `-g`
 
-This optional graph compares `C(XY)` with `C(YX)`. It describes an asymmetry
-of the finite parse; it does **not** establish causal direction or predictive
-influence between measured systems.
-
-The current compute/save conventions are unusual:
+This graph compares `C(XY)` with `C(YX)`. Edges represent differences in the number of phrases required by the two concatenation orders. The output depends on the threshold:
 
 | Invocation | Behavior |
 |---|---|

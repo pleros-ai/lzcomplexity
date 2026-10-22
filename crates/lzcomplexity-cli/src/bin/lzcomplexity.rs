@@ -1,9 +1,7 @@
 //! `lzcomplexity` — standalone LZ76 complexity engine.
 //!
-//! A Rust port of the C++ `standalone/lzcomplexity.cpp`. Reads a sequence file
-//! (auto-detecting the format), computes LZ76 complexity, entropy density and
-//! random-shuffle EMC-like complexity measure, and writes a JSON report whose
-//! schema matches the C++ tool's `save_data`.
+//! Reads a sequence file, computes LZ76 complexity, entropy density h and
+//! structural complexity E, and writes the results as JSON.
 
 use std::process::ExitCode;
 
@@ -35,7 +33,7 @@ struct Cli {
     #[arg(short = 'd', long = "dlz", default_value_t = false)]
     dlz: bool,
 
-    /// Random-shuffle options `v1:f:v2:v3` (block size, summand factors, line range).
+    /// E options `v1:f:v2:v3` (maximum range, summand factors; final slots unused).
     #[arg(short = 'e', long = "rsemc-opt", value_name = "opts", num_args = 0..=1, default_missing_value = "a")]
     rsemc_opt: Option<String>,
 
@@ -72,7 +70,7 @@ struct Cli {
     #[arg(short = 'o', long = "output", value_name = "file_name")]
     output: Option<String>,
 
-    /// Compatibility option; ignored by the current Rust implementation.
+    /// Accepted but unused.
     #[arg(
         short = 'p',
         long = "partitions",
@@ -186,9 +184,7 @@ fn build_options(cli: &Cli) -> Options {
     }
 }
 
-/// Entropy density in the requested logarithm units. Keep the legacy alphabet
-/// default and arithmetic order, while honoring an explicit `-l` consistently
-/// with the shuffle score and the core entropy-density function.
+/// Entropy density in the requested logarithm units.
 fn standalone_entropy(seq: &core::Sequence, complexity: u32, args: &core::lz76::LzArgs) -> f64 {
     let n = seq.len() as f64;
     if n <= 1.0 {
@@ -238,9 +234,8 @@ fn run(opt: &Options) -> std::io::Result<()> {
         entry.insert("lz76Complexity".into(), json!(res.factorization));
         entry.insert("lz76EntropyDensity".into(), json!(entropy));
 
-        // The C++ `save_data` always writes the random-shuffle object. In
-        // entropy-only (-n) mode the shuffle stage is skipped, so it emits the
-        // default-constructed values (-1 / 0.0 / 0.0, summands omitted).
+        // Entropy-only mode emits an uncomputed E object with default values
+        // (-1 / 0.0 / 0.0, summands omitted).
         let mut rsc_map = Map::new();
         if opt.entropy_only {
             rsc_map.insert("value".into(), json!(0.0));
