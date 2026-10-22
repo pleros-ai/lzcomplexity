@@ -126,11 +126,12 @@ nav:
 
   - Documentation:
       - Getting started:
-          - Python cheatsheet: guide/quick-reference.md
+          - Overview: guide/index.md
           - Install: guide/install.md
           - Your first factorization: guide/first-factorization.md
           - Reading the numbers: guide/reading-the-numbers.md
           - Troubleshooting: guide/troubleshooting.md
+          - Python usage cheatsheet: guide/quick-reference.md
       - Understanding the results:
           - LZ76 factorization: concepts/lz76.md
           - Entropy density (h): concepts/entropy-density.md
@@ -145,16 +146,27 @@ nav:
           - Comparing many sequences: recipes/batch-distance.md
 
   - API reference:
-      - Python: api/python.md
+      - Python library:
+          - Overview: api/python.md
+          - factorization: api/functions/factorization.md
+          - h: api/functions/h.md
+          - emc: api/functions/emc.md
+          - nid: api/functions/nid.md
+          - lz76: api/functions/lz76.md
       - Input types: api/inputs.md
-      - Rust crate: api/rust.md
+      - Rust library:
+          - Overview: api/rust.md
+          - Analysis functions: api/rust/analysis.md
+          - Sequence: api/rust/sequence.md
+          - Configuration and results: api/rust/types.md
+          - Building blocks: api/rust/building-blocks.md
 
   - Command line:
-      - Binaries cheatsheet: cli/quick-reference.md
       - Overview: cli/index.md
       - lzcomplexity: cli/lzcomplexity.md
       - lzdistance: cli/lzdistance.md
       - Input formats: cli/formats.md
+      - CLI usage cheatsheet: cli/quick-reference.md
 
   - Project:
       - Authors and citation: project/authors.md

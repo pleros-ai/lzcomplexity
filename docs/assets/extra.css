@@ -59,6 +59,7 @@ html { scroll-behavior:smooth; scroll-padding-top:7.5rem; }
 .md-typeset .highlight { margin:1.3em 0; }
 .md-typeset table:not([class]) { box-shadow:none; border-color:var(--lz-line); border-radius:9px; font-size:.73rem; }
 .md-typeset table:not([class]) th { background:var(--lz-surface); }
+body:not(:has(.lz-sheet)) .md-typeset table:not([class]) :is(td,th):first-child code { white-space:nowrap; }
 .md-typeset .admonition,.md-typeset details { background:var(--lz-surface); box-shadow:none; border-width:1px; border-color:var(--lz-line); border-left:3px solid var(--lz-accent); font-size:.76rem; border-radius:9px; }
 .md-typeset .admonition-title,.md-typeset summary { background:var(--lz-soft); }
 .md-typeset blockquote { color:var(--lz-muted); border-left:3px solid var(--lz-line); }

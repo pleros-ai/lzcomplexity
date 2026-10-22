@@ -1,208 +1,153 @@
+---
+title: Python API
+description: Complete Python function reference for factorization, entropy density, effective measure complexity and information distance.
+---
+
 # Python API
 
-Five functions share the same Rust core. Import the package once, then choose
-whether you need a factor count, entropy density h, effective measure complexity E,
-a pairwise distance, or the complete result.
+The Python package provides five functions for analyzing symbolic sequences.
+This reference covers their parameters, returned values and behavior. For a
+compact list of calls, use the separate [usage cheatsheet](../guide/quick-reference.md).
 
 ```python
 import lzcomplexity as lz
 
-complexity, boundaries = lz.factorization("banana")
-assert complexity == 3
-assert boundaries == [0, 1, 2, 3, 7]
+count, boundaries = lz.factorization("1000110011101")
+assert count == 5
+assert boundaries == [0, 1, 2, 5, 9, 13]
 assert lz.h("01010101", log_base=2) == 0.75
 assert lz.nid("abcd", "abce") == 0.25
 ```
 
-See [input conversion](inputs.md) before analyzing numeric arrays.
-
 ## Choose a function
 
-| Function | Work performed | Return |
+| Function | Use it to obtain | Return type |
 |---|---|---|
-| [`factorization`](#factorization) | One full-sequence factorization | `(int, list[int])` |
-| [`h`](#h) | Factor count and entropy normalization | `float` |
-| [`emc`](#emc) | Effective measure complexity across ranges | `(float, list[float])` |
-| [`nid`](#nid) | Original and concatenated sequence factorizations | `float` |
-| [`lz76`](#lz76) | Full analysis, reusing the original factorization | `dict` |
+| [`factorization`](functions/factorization.md) | The LZ76 count and factor boundaries | `tuple[int, list[int]]` |
+| [`h`](functions/h.md) | Entropy density: the production of new information | `float` |
+| [`emc`](functions/emc.md) | Effective measure complexity E and its range profile | `tuple[float, list[float]]` |
+| [`nid`](functions/nid.md) | Information distance between two sequences | `float` |
+| [`lz76`](functions/lz76.md) | Factorization, h, E and diagnostic fields together | `dict` |
+
+Choose an individual function when you need one quantity. Use `lz76()` when
+you need several results for the same sequence; it shares the original
+factorization between the calculations.
+
+## Sequence inputs
+
+All five functions accept the same input forms. `nid()` accepts two sequences,
+converting each independently.
+
+| Input | Sequence analyzed |
+|---|---|
+| `str` | UTF-8 bytes |
+| `bytes` | The supplied bytes, unchanged |
+| `list[str]` | Strings joined without a separator, then UTF-8 encoded |
+| Integer sequence | Decimal representations joined without a separator |
+| Empty `list` | Empty byte sequence |
+
+Compatible integer tuples and one-dimensional integer arrays are accepted.
+Materialize generators before passing them in. Integer elements must fit a
+signed 64-bit integer.
+
+Encoding is part of the measurement. For example, `[0, 1, 10]` becomes the
+four characters `"0110"`, while `bytes([0, 1, 10])` contains three symbols.
+The [input reference](inputs.md) explains Unicode, arrays, codebooks and
+continuous observations in detail.
+
+The 256-byte limit on the website playground is specific to that demonstration;
+it is not a Python API input limit.
 
 ## Shared parameters
 
-| Parameter | Default | Behavior |
+All functions accept positional or keyword arguments. Parameters after the
+sequence usually read most clearly as keywords.
+
+| Parameter | Default | Meaning |
 |---|---|---|
-| `seq` | required | Converts to bytes using the [input rules](inputs.md). |
-| `partitions` | `1` | Unused. |
-| `alphabet` | `None` | Alphabet parameter for the `epsilon` diagnostic. `None` uses the observed byte alphabet, floored at two. It does not set the default logarithm base. |
-| `log_base` | `None` | Uses the observed byte alphabet, floored at two. Set `2` for base-two normalization. Explicit zero or one is also floored to two. |
-| `jobs` | `0` | Unused. Configure Rayon for native worker control. |
-| `max_block_size` | `-1` | Only `emc` and `lz76`: positive values set the maximum block range; nonpositive values select it automatically. |
+| `partitions` | `1` | Accepted but has no effect on the calculation. |
+| `alphabet` | `None` | Alphabet size used by the `epsilon` diagnostic in `lz76()`. Automatic selection uses the observed byte alphabet, with a minimum of two. It does not select entropy units. |
+| `log_base` | `None` | Logarithm base for h, E and related diagnostics. Automatic selection uses the observed byte alphabet, with a minimum of two. Pass `2` for bits per input byte. |
+| `max_block_size` | `-1` | Only `emc()` and `lz76()`: largest examined range for E, in bytes. Positive values set it explicitly; zero or a negative value selects it automatically. |
+| `jobs` | `0` | Accepted but has no effect. Use Rayon worker configuration. |
 
-`alphabet`, `log_base` and `jobs` are unsigned 32-bit parameters. Negative or
-out-of-range values raise conversion errors. `partitions` and `max_block_size`
-use signed 32-bit parameters. For repeatable measurements, pass `log_base` and
-`max_block_size` explicitly and record the package version and input encoding.
+Setting `alphabet` does not change the default `log_base`. Explicit logarithm
+bases zero and one are treated as two.
 
-!!! example "Alphabet size and units are separate controls"
+```python
+import lzcomplexity as lz
 
-    ```python
-    import lzcomplexity as lz
+assert lz.h("01010101", alphabet=4) == 0.75
+assert lz.h("01010101", log_base=4) == 0.375
+```
 
-    assert lz.h("01010101", alphabet=4) == 0.75
-    assert lz.h("01010101", log_base=4) == 0.375
-    ```
+### Parameter types and errors
 
-    The first call still uses the observed two-symbol alphabet as its default
-    base. The second changes the actual entropy units.
+`alphabet`, `log_base` and `jobs` accept unsigned 32-bit integers;
+`partitions` and `max_block_size` accept signed 32-bit integers. `None` is
+accepted only for `alphabet` and `log_base`. For those two parameters,
+`2**32 - 1` is reserved for automatic selection.
+
+An unsupported sequence representation or incompatible argument type raises
+`TypeError`. An integer parameter outside its supported range raises
+`OverflowError`. A list of integers outside signed 64-bit range is rejected
+as an unsupported sequence. Each function page identifies the parameters
+that affect its result.
 
 ## `factorization`
 
-```python
-factorization(seq, partitions=1, alphabet=None, log_base=None, jobs=0)
-```
+Returns the LZ76 count and byte boundaries. The count follows the completed-factor
+convention, so it cannot always be inferred from the number of boundary intervals.
 
-Returns `(complexity, boundaries)`. `complexity` is the library's LZ76 count;
-`boundaries` contains the parse positions, beginning at zero.
-
-The final boundary can exceed the input length. The count excludes a terminal
-component that extends beyond the input, so **do not replace the returned
-count with `len(boundaries) - 1`**. For `"banana"`, the count is three even
-though slicing the boundary intervals displays four fragments.
-
-```python
-import lzcomplexity as lz
-
-seq = "banana"
-complexity, boundaries = lz.factorization(seq)
-fragments = [seq[a:b] for a, b in zip(boundaries, boundaries[1:])]
-assert fragments == ["b", "a", "n", "ana"]
-```
-
-Boundaries index **bytes**, including for Unicode strings. Slice encoded bytes
-when the input contains non-ASCII characters. See [LZ76 factorization](../concepts/lz76.md)
-for the counting convention and [degenerate inputs](#empty-and-constant-inputs).
+[Full `factorization()` reference →](functions/factorization.md)
 
 ## `h`
 
-```python
-h(seq, partitions=1, alphabet=None, log_base=None, jobs=0)
-```
+Returns the finite-sequence entropy-density estimate in the selected units.
+Use it to compare the production of new information in consistently encoded samples.
 
-Returns the finite-sequence LZ entropy-density estimate
-
-$$
-\hat{h} = \frac{C\log_b N}{N}
-$$
-
-Here `C` is the returned factor count and `N` is the number of input bytes.
-For `N <= 1`, the function returns zero. `log_base=2` gives bits per input
-byte; the default uses observed-alphabet units. Finite estimates can exceed
-one in normalized units; the returned value is kept without clipping.
-
-Use this function when entropy density is all you need; it avoids the additional
-calculations performed by `emc` and `lz76`. See [entropy density](../concepts/entropy-density.md)
-for assumptions and finite-length interpretation.
+[Full `h()` reference →](functions/h.md)
 
 ## `emc`
 
-```python
-emc(seq, partitions=1, alphabet=None, log_base=None,
-    max_block_size=-1, jobs=0)
-```
+Returns effective measure complexity E and the nonnegative increments of its
+range profile. Set `max_block_size` to use the same examined ranges across samples.
 
-Returns `(value, summands)` for **effective measure complexity E**, which is sensitive
-to correlations across different ranges of a sequence.
-
-`value` is the final level of the fitted scale profile. `summands[l - 1]` is
-the increase between fitted levels `l-1` and `l`, and the increments sum to
-`value`. See [E](../concepts/emc.md) for interpretation and range selection.
-
-```python
-import math
-import lzcomplexity as lz
-
-seq = b"00010111" * 256
-value, summands = lz.emc(seq, log_base=2, max_block_size=8)
-assert value >= 0
-assert len(summands) == 8
-assert math.isclose(sum(summands), value, abs_tol=1e-12)
-```
-
-Compare E with matched lengths, encodings, units and range limits. Use
-`max_block_size` to examine how the result changes as longer ranges are included.
+[Full `emc()` reference →](functions/emc.md)
 
 ## `nid`
 
-```python
-nid(seq1, seq2, partitions=1, alphabet=None, log_base=None, jobs=0)
-```
+Returns an information-distance estimate derived from Normalized Information
+Distance (NID). Both arguments must use a common symbol encoding.
 
-Returns the LZ-based normalized information-distance estimate
-
-$$
-d(X,Y) = \frac{\max\left(C(XY)-C(X),\,C(YX)-C(Y)\right)}{\max\left(C(X),C(Y)\right)}
-$$
-
-`XY` means concatenation, preserving the symbol codebook. The ratio uses
-factor counts, so `alphabet` and `log_base` do not change it. The formula is
-symmetric in the two arguments. At finite lengths, self-distance can be
-nonzero. Values are returned without clipping. See [information distance](../concepts/nid.md).
+[Full `nid()` reference →](functions/nid.md)
 
 ## `lz76`
 
-```python
-lz76(seq, partitions=1, alphabet=None, log_base=None,
-     max_block_size=-1, jobs=0)
-```
+Returns a dictionary containing factorization, h, E, the E profile, finite-size
+diagnostics and the five additional count-based ratios.
 
-Returns the complete analysis as a dictionary. The original factorization is
-reused for h, E and the other reported quantities.
-
-```python
-import lzcomplexity as lz
-
-result = lz.lz76(b"00010111" * 256, log_base=2, max_block_size=8)
-print(result["complexity"])
-print(result["h"])
-print(result["emc"]["value"])
-```
-
-| Key | Type | Meaning |
-|---|---|---|
-| `complexity` | `int` | LZ76 count. |
-| `h` | `float` | Entropy density in the requested units. |
-| `factors` | `list[int]` | Byte boundary positions, including the terminal convention described above. |
-| `emc` | `dict` | `value`, `summands`, `max_block_size`, `multi_information`. |
-| `epsilon` | `float` | Finite-size diagnostic using the alphabet parameter. |
-| `factors_stddev` | `float` | Dispersion diagnostic derived from boundary lengths. |
-| `normal_error` | `float` | Diagnostic using `h`, boundary dispersion and length. |
-| `poison_error` | `float` | `h / N` when `N > 1`, otherwise zero. |
-| `extras` | `dict` | Half-sequence factor-count ratios listed below. |
-
-`emc["multi_information"]` is the raw first-range contrast, before fitting;
-it can be negative.
-
-The five `extras` keys are `rajski_distance`, `redundancy`, `fh_uncertainty`,
-`lh_uncertainty` and `pearson_coefficient`. They summarize the original and
-half-sequence factor counts. Their formulas appear in the
-[Rust reference](rust.md#extra-measures). For uncertainty estimates, repeat the
-analysis across independent samples or windows appropriate to the experiment;
-the diagnostic fields do not provide confidence intervals.
+[Full `lz76()` reference and output schema →](functions/lz76.md)
 
 ## Empty and constant inputs
 
-Empty and constant inputs return:
+These inputs have defined results rather than raising an exception:
 
-| Input | `factorization` | `h` | `emc` |
+| Input | `factorization()` | `h()` | `emc()` with automatic range |
 |---|---|---:|---|
-| `""` | `(1, [0, 1, 0])` | `0.0` | `(0.0, [0.0])` with automatic cap |
-| `"a"` | `(1, [0, 1, 1])` | `0.0` | `(0.0, [0.0])` with automatic cap |
-| `"aaaa"` | `(1, [0, 1, 4])` | `0.5` | `(0.0, [0.0])` with automatic cap |
+| `""` | `(1, [0, 1, 0])` | `0.0` | `(0.0, [0.0])` |
+| `"a"` | `(1, [0, 1, 1])` | `0.0` | `(0.0, [0.0])` |
+| `"aaaa"` | `(1, [0, 1, 4])` | `0.5` | `(0.0, [0.0])` |
 
-The empty boundary vector is non-monotonic, so handle empty inputs separately
-when slicing. E is zero for constant sequences and for inputs of ten bytes or
-fewer; use longer examples to explore its scale profile.
+Handle an empty sequence before slicing its boundary vector. Detailed boundary
+and finite-length behavior appears on the individual function pages.
 
-## Version and runtime help
+## Parallel execution and runtime help
+
+Calls run synchronously in the native Rust core. Set `RAYON_NUM_THREADS`
+before the first calculation to select its worker count; the Python `jobs`
+keyword does not control it. See [parallel execution](../project/determinism.md)
+for process-based workloads and worker configuration.
 
 ```python
 import lzcomplexity as lz
@@ -211,8 +156,5 @@ print(lz.__version__)
 help(lz.emc)
 ```
 
-Type stubs ship with the package. Native functions run synchronously. See
-[parallel execution](../project/determinism.md) for worker configuration.
-
-Source: [Python bindings](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-py/src/lib.rs)
-and [type stubs](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/python/lzcomplexity/__init__.pyi).
+Type stubs are included for editor completion and type checking.
+[Binding source](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-py/src/lib.rs).

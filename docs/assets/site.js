@@ -1,6 +1,23 @@
 /* Browser UI only. Native-compatible calculations live in measure-engine.js. */
 (function () {
   "use strict";
+  const MAX_BYTES = 256;
+  const encoder = new TextEncoder();
+  function utf8Prefix(value, available = MAX_BYTES) {
+    let result = "", length = 0;
+    for (const character of value) {
+      const size = encoder.encode(character).length;
+      if (length + size > available) break;
+      result += character; length += size;
+    }
+    return result;
+  }
+  function fitInsertion(value, start, end, insertion) {
+    const before = value.slice(0, start), after = value.slice(end);
+    const available = MAX_BYTES - encoder.encode(before + after).length;
+    return utf8Prefix(insertion, available);
+  }
+  if (typeof module === "object" && module.exports) module.exports = { utf8Prefix, fitInsertion };
   if (typeof document === "undefined") return;
   function initialize() {
     document.querySelectorAll("[data-print]").forEach(button => {
@@ -15,7 +32,6 @@
     const get = id => home.querySelector("#" + id);
     const input = get("lz-input"), secondInput = get("lz-input-b"), error = get("lz-input-error");
     const tabs = [...home.querySelectorAll("[data-mode]")];
-    const encoder = new TextEncoder();
     let mode = "parse";
     function byteCount() {
       get("lz-byte-count").textContent = encoder.encode(input.value).length + " / 256 bytes";
@@ -152,7 +168,40 @@
     }));
     get("lz-analyze").addEventListener("click", update);
     [input, secondInput].forEach(field => {
-      field.addEventListener("input", () => {
+      function insertWithinLimit(event, text) {
+        const start = field.selectionStart, end = field.selectionEnd;
+        const accepted = fitInsertion(field.value, start, end, text);
+        if (accepted === text) return;
+        event.preventDefault();
+        if (!accepted) return;
+        field.setRangeText(accepted, start, end, "end");
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      field.addEventListener("beforeinput", event => {
+        if (event.cancelable && !event.isComposing && event.inputType.startsWith("insert")) {
+          const text = event.data ??
+            (["insertLineBreak", "insertParagraph"].includes(event.inputType) ? "\n" : event.dataTransfer?.getData("text/plain"));
+          if (text !== undefined && text !== null) insertWithinLimit(event, text);
+        }
+      });
+      field.addEventListener("paste", event => {
+        if (event.clipboardData) insertWithinLimit(event, event.clipboardData.getData("text/plain"));
+      });
+      function enforceLimit() {
+        const limited = utf8Prefix(field.value);
+        if (limited !== field.value) {
+          const caret = Math.min(field.selectionStart, limited.length);
+          field.value = limited;
+          field.setSelectionRange(caret, caret);
+        }
+      }
+      field.addEventListener("compositionend", () => {
+        enforceLimit();
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      field.addEventListener("input", event => {
+        if (event.isComposing) return;
+        enforceLimit();
         byteCount();
         error.hidden = true; error.textContent = ""; field.removeAttribute("aria-invalid");
         get("lz-result-state").textContent = "Ready to analyze your new sequence."; get("lz-result-state").hidden = false;
