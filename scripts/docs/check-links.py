@@ -3,6 +3,7 @@
 import hashlib
 import json
 import pathlib
+import re
 import struct
 import sys
 from html.parser import HTMLParser
@@ -20,10 +21,14 @@ class Page(HTMLParser):
         self.canonicals = []
         self.math_count = 0
         self.math_wrappers = 0
+        self.text = []
+        self.ignored_text_depth = 0
         self.feed(text)
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if tag in ("script", "style"):
+            self.ignored_text_depth += 1
         if tag == "math":
             self.math_count += 1
         if "arithmatex" in attrs.get("class", "").split():
@@ -41,6 +46,14 @@ class Page(HTMLParser):
             self.metadata.setdefault(name, []).append(attrs.get("content", ""))
         if tag == "link" and attrs.get("rel") == "canonical":
             self.canonicals.append(attrs.get("href", ""))
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style"):
+            self.ignored_text_depth -= 1
+
+    def handle_data(self, data):
+        if not self.ignored_text_depth:
+            self.text.append(data)
 
 pages = {path: Page(path.read_text()) for path in ROOT.rglob("*.html")}
 failures = []
@@ -138,6 +151,8 @@ def check_social(source, page):
 
 
 for source, page in pages.items():
+    if re.search(r"structural\s+complexity", " ".join(page.text), re.IGNORECASE):
+        failures.append(f"{source.relative_to(ROOT)}: E uses an outdated name")
     if page.math_count != page.math_wrappers:
         failures.append(f"{source.relative_to(ROOT)}: an equation was not typeset")
     for href in page.links:
@@ -149,7 +164,9 @@ for path in ("concepts/entropy-density/index.html", "guide/reading-the-numbers/i
 search = json.loads((ROOT / "search/search_index.json").read_text())
 for entry in search["docs"]:
     check(ROOT / "index.html", entry["location"])
+    if re.search(r"structural\s+complexity", entry["title"] + " " + entry["text"], re.IGNORECASE):
+        failures.append(f"search: E uses an outdated name at {entry['location']}")
 for failure in sorted(set(failures)):
     print(failure, file=sys.stderr)
-print(f"Checked {len(pages)} HTML pages, {checked} internal references, the search index and social previews.")
+print(f"Checked {len(pages)} HTML pages, {checked} internal references, E terminology, the search index and social previews.")
 raise SystemExit(bool(failures))
