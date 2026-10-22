@@ -1,67 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="360" height="440" viewBox="0 0 360 440" role="img" aria-labelledby="title description">
-<title id="title">LZ76 factorization of ABRACADABRA!</title>
-<desc id="description">Each row shows the text available before the factor begins, the longest matching prefix, the following symbol, and the resulting factor. Positions are one-based. Empty history is shown as ∅ and an empty match as a dash. Blue marks the chosen earlier match; teal marks every following symbol, including A, B and R in the first three factors.</desc>
-<defs><linearGradient id="paper" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#f2f7fa"/></linearGradient></defs>
-<rect x="0.5" y="0.5" width="359" height="439" rx="20" fill="url(#paper)" stroke="#dfe7ef"/>
-<text x="16" y="32" font-size="18" fill="#25344d" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" font-weight="600">LZ76 factorization</text>
-<rect x="280" y="15" width="64" height="28" rx="10" fill="#efedf9" stroke="none"/>
-<text x="312" y="34" font-size="14" fill="#7665ac" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">C = 6</text>
-<text x="16" y="71" font-size="13" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Input</text>
-<text x="65" y="71" font-size="19" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="input" data-value="ABRACADABRA!">ABRACADABRA!</text>
-<text x="16" y="107" font-size="11" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Pos.</text>
-<text x="54" y="107" font-size="11" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Earlier text</text>
-<text x="161" y="107" font-size="11" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Match + next</text>
-<text x="289" y="107" font-size="11" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Factor</text>
-<rect x="12" y="119" width="336" height="42" rx="7" fill="#fff" stroke="none"/>
-<text x="16" y="147" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="position" data-start="1" data-value="1">1</text>
-<text x="54" y="147" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="history" data-start="1" data-value="">∅</text>
-<text x="161" y="147" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="match" data-start="1" data-value="">—</text>
-<text x="176.4" y="147" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace">+</text>
-<text x="191.4" y="147" font-size="14" fill="#208a80" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="new" data-start="1" data-value="A">A</text>
-<text x="269" y="147" font-size="15" fill="#97a7ba" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">→</text>
-<text x="289" y="147" font-size="14" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="1" data-value="A"><tspan fill="#4779c5"></tspan><tspan fill="#208a80">A</tspan></text>
-<rect x="12" y="164" width="336" height="42" rx="7" fill="#f0f4f9" stroke="none"/>
-<text x="16" y="192" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="position" data-start="2" data-value="2">2</text>
-<text x="54" y="192" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="history" data-start="2" data-value="A"><tspan fill="#25344d">A</tspan></text>
-<text x="161" y="192" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="match" data-start="2" data-value="">—</text>
-<text x="176.4" y="192" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace">+</text>
-<text x="191.4" y="192" font-size="14" fill="#208a80" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="new" data-start="2" data-value="B">B</text>
-<text x="269" y="192" font-size="15" fill="#97a7ba" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">→</text>
-<text x="289" y="192" font-size="14" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="2" data-value="B"><tspan fill="#4779c5"></tspan><tspan fill="#208a80">B</tspan></text>
-<rect x="12" y="209" width="336" height="42" rx="7" fill="#fff" stroke="none"/>
-<text x="16" y="237" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="position" data-start="3" data-value="3">3</text>
-<text x="54" y="237" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="history" data-start="3" data-value="AB"><tspan fill="#25344d">AB</tspan></text>
-<text x="161" y="237" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="match" data-start="3" data-value="">—</text>
-<text x="176.4" y="237" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace">+</text>
-<text x="191.4" y="237" font-size="14" fill="#208a80" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="new" data-start="3" data-value="R">R</text>
-<text x="269" y="237" font-size="15" fill="#97a7ba" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">→</text>
-<text x="289" y="237" font-size="14" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="3" data-value="R"><tspan fill="#4779c5"></tspan><tspan fill="#208a80">R</tspan></text>
-<rect x="12" y="254" width="336" height="42" rx="7" fill="#f0f4f9" stroke="none"/>
-<text x="16" y="282" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="position" data-start="4" data-value="4">4</text>
-<text x="54" y="282" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="history" data-start="4" data-value="ABR"><tspan fill="#25344d"></tspan><tspan fill="#4779c5">A</tspan><tspan fill="#25344d">BR</tspan></text>
-<text x="161" y="282" font-size="14" fill="#4779c5" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="match" data-start="4" data-value="A">A</text>
-<text x="176.4" y="282" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace">+</text>
-<text x="191.4" y="282" font-size="14" fill="#208a80" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="new" data-start="4" data-value="C">C</text>
-<text x="269" y="282" font-size="15" fill="#97a7ba" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">→</text>
-<text x="289" y="282" font-size="14" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="4" data-value="AC"><tspan fill="#4779c5">A</tspan><tspan fill="#208a80">C</tspan></text>
-<rect x="12" y="299" width="336" height="42" rx="7" fill="#fff" stroke="none"/>
-<text x="16" y="327" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="position" data-start="6" data-value="6">6</text>
-<text x="54" y="327" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="history" data-start="6" data-value="ABRAC"><tspan fill="#25344d"></tspan><tspan fill="#4779c5">A</tspan><tspan fill="#25344d">BRAC</tspan></text>
-<text x="161" y="327" font-size="14" fill="#4779c5" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="match" data-start="6" data-value="A">A</text>
-<text x="176.4" y="327" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace">+</text>
-<text x="191.4" y="327" font-size="14" fill="#208a80" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="new" data-start="6" data-value="D">D</text>
-<text x="269" y="327" font-size="15" fill="#97a7ba" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">→</text>
-<text x="289" y="327" font-size="14" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="6" data-value="AD"><tspan fill="#4779c5">A</tspan><tspan fill="#208a80">D</tspan></text>
-<rect x="12" y="344" width="336" height="42" rx="7" fill="#f0f4f9" stroke="none"/>
-<text x="16" y="372" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="position" data-start="8" data-value="8">8</text>
-<text x="54" y="372" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="history" data-start="8" data-value="ABRACAD"><tspan fill="#25344d"></tspan><tspan fill="#4779c5">ABRA</tspan><tspan fill="#25344d">CAD</tspan></text>
-<text x="161" y="372" font-size="14" fill="#4779c5" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="match" data-start="8" data-value="ABRA">ABRA</text>
-<text x="201.6" y="372" font-size="14" fill="#687a91" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace">+</text>
-<text x="216.6" y="372" font-size="14" fill="#208a80" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="new" data-start="8" data-value="!">!</text>
-<text x="269" y="372" font-size="15" fill="#97a7ba" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">→</text>
-<text x="289" y="372" font-size="14" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" data-role="factor" data-start="8" data-value="ABRA!"><tspan fill="#4779c5">ABRA</tspan><tspan fill="#208a80">!</tspan></text>
-<circle cx="19" cy="413" r="3.5" fill="#4779c5"/>
-<text x="29" y="417" font-size="11" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Matched prefix</text>
-<circle cx="183" cy="413" r="3.5" fill="#208a80"/>
-<text x="193" y="417" font-size="11" fill="#687a91" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif">Next symbol</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="350" viewBox="0 0 360 350" role="img" aria-labelledby="title description">
+<title id="title">LZ76 factorization of a binary sequence</title>
+<desc id="description">The binary sequence 1000110011101 has five factors: 1, 0, 001, 1001 and 1101. Dots mark factor boundaries. Curved arrows alternate above and below the sequence. The highlighted prefix 100 spans earlier factor boundaries; adding 1 gives the new factor 1001.</desc>
+<defs>
+<linearGradient id="paper" x2="1" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#f2f7fb"/></linearGradient>
+<marker id="arrow-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 2 1 L 8 5 L 2 9" fill="none" stroke="#a3b0c3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+<marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 2 1 L 8 5 L 2 9" fill="none" stroke="#4779c5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+</defs>
+<rect x="0.5" y="0.5" width="359" height="349" rx="20" fill="url(#paper)" stroke="#dfe7ef"/>
+<text x="18" y="35" font-size="18" fill="#25344d" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" font-weight="600">LZ76 factorization</text>
+<rect x="281" y="17" width="61" height="28" rx="11" fill="#efedf9" stroke="none"/>
+<text x="311.5" y="36" font-size="14" fill="#7665ac" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle">C = 5</text>
+<rect x="42.80000000000001" y="119.08" width="82.39999999999999" height="33.32" rx="7" fill="#eaf1fd" stroke="none" data-role="source-highlight" data-source-start="1" data-source-length="3"/>
+<rect x="162.8" y="119.08" width="75.2" height="33.32" rx="7" fill="#edf6f5" stroke="none"/>
+<path d="M 46.80 134.20 C 46.80 106.30, 69.60 106.30, 69.60 134.20" fill="none" stroke="#a3b0c3" stroke-width="1.8" stroke-linecap="round" marker-end="url(#arrow-muted)" data-role="factor-arrow" data-start="1" data-side="above"/>
+<path d="M 69.60 139.80 C 69.60 169.20, 98.40 169.20, 98.40 139.80" fill="none" stroke="#a3b0c3" stroke-width="1.8" stroke-linecap="round" marker-end="url(#arrow-muted)" data-role="factor-arrow" data-start="2" data-side="below"/>
+<path d="M 98.40 134.20 C 98.40 96.40, 160.80 96.40, 160.80 134.20" fill="none" stroke="#a3b0c3" stroke-width="1.8" stroke-linecap="round" marker-end="url(#arrow-muted)" data-role="factor-arrow" data-start="3" data-side="above"/>
+<path d="M 160.80 139.80 C 160.80 181.80, 240.00 181.80, 240.00 139.80" fill="none" stroke="#4779c5" stroke-width="1.8" stroke-linecap="round" marker-end="url(#arrow-blue)" data-role="factor-arrow" data-start="6" data-side="below"/>
+<path d="M 240.00 134.20 C 240.00 93.70, 313.20 93.70, 313.20 134.20" fill="none" stroke="#a3b0c3" stroke-width="1.8" stroke-linecap="round" marker-end="url(#arrow-muted)" data-role="factor-arrow" data-start="10" data-side="above"/>
+<circle cx="69.60000000000001" cy="137" r="3" fill="#7d8da5" data-role="boundary" data-position="1"/>
+<circle cx="98.4" cy="137" r="3" fill="#7d8da5" data-role="boundary" data-position="2"/>
+<circle cx="160.8" cy="137" r="3" fill="#7d8da5" data-role="boundary" data-position="5"/>
+<circle cx="240.0" cy="137" r="3" fill="#7d8da5" data-role="boundary" data-position="9"/>
+<text x="46.80000000000001" y="146.8" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" font-size="28" textLength="16.8" lengthAdjust="spacingAndGlyphs" data-role="factor" data-start="1" data-value="1"><tspan fill="#4779c5" data-role="source">1</tspan></text>
+<text x="75.60000000000001" y="146.8" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" font-size="28" textLength="16.8" lengthAdjust="spacingAndGlyphs" data-role="factor" data-start="2" data-value="0"><tspan fill="#4779c5" data-role="source">0</tspan></text>
+<text x="104.4" y="146.8" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" font-size="28" textLength="50.400000000000006" lengthAdjust="spacingAndGlyphs" data-role="factor" data-start="3" data-value="001"><tspan fill="#4779c5" data-role="source">0</tspan><tspan fill="#25344d">0</tspan><tspan fill="#25344d">1</tspan></text>
+<text x="166.8" y="146.8" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" font-size="28" textLength="67.2" lengthAdjust="spacingAndGlyphs" data-role="factor" data-start="6" data-value="1001"><tspan fill="#4779c5" data-role="match">1</tspan><tspan fill="#4779c5" data-role="match">0</tspan><tspan fill="#4779c5" data-role="match">0</tspan><tspan fill="#208a80" data-role="new">1</tspan></text>
+<text x="246.0" y="146.8" fill="#25344d" font-family="&#x27;SFMono-Regular&#x27;, Menlo, Consolas, monospace" font-size="28" textLength="67.2" lengthAdjust="spacingAndGlyphs" data-role="factor" data-start="10" data-value="1101"><tspan fill="#25344d">1</tspan><tspan fill="#25344d">1</tspan><tspan fill="#25344d">0</tspan><tspan fill="#25344d">1</tspan></text>
+<rect x="18" y="234" width="324" height="78" rx="13" fill="#f2f5fb" stroke="#e4eaf4"/>
+<text x="180.0" y="263" fill="#687a91" font-size="13" font-family="-apple-system, BlinkMacSystemFont, &#x27;Helvetica Neue&#x27;, Arial, sans-serif" text-anchor="middle" data-role="explanation" data-value="100 already spans earlier factors; 1001 is new."><tspan x="180.0" dy="0">100 already spans earlier factors; </tspan><tspan x="180.0" dy="22">1001 is new.</tspan></text>
+<path d="M 200.40 171.3 C 200.40 195.3, 180.00 210, 180.00 234" fill="none" stroke="#b9cbe7" stroke-width="1.2" stroke-linecap="round"/>
 </svg>
