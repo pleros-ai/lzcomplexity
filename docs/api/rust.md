@@ -40,7 +40,7 @@ fn main() {
 | `lz76::lz76_factors(seq, args)` | `Lz76Result` | Count, `epsilon` and boundaries. |
 | `lz76::lz76_entropy_density(seq, args)` | `f64` | Count-normalized entropy estimate. |
 | `lz76::entropy_density_from(count, seq, args)` | `f64` | Reuse a count already computed for exactly these bytes. |
-| `shuffle::lz76_random_shuffle_complexity(seq, args)` | `LzShuffle` | EMC-like shuffle score. |
+| `shuffle::lz76_random_shuffle_complexity(seq, args)` | `LzShuffle` | Structural complexity E. |
 | `shuffle::lz76_random_shuffle_complexity_with(seq, args, count)` | `LzShuffle` | Same score, reusing the original count (`i32`). |
 | `metrics::lz76_information_distance(first, second, args)` | `f64` | LZ-based pairwise distance. |
 | `metrics::lz76(seq, args)` | `LempelZiv` | Complete analysis; original factorization reused. |
@@ -65,10 +65,10 @@ assert!(!args.get_shuffle_terms);
 
 | Field | Type | Default | Effect |
 |---|---|---|---|
-| `chunks` | `i32` | `0` | Compatibility field; not used by the current factorization. |
-| `max_context` | `i32` | `0` | Compatibility field; not used by the current factorization. |
-| `block_size` | `i32` | `-1` | Positive shuffle cap; nonpositive selects the automatic cap. |
-| `get_shuffle_terms` | `bool` | `false` | Populate shuffle `summands`. |
+| `chunks` | `i32` | `0` | Unused. |
+| `max_context` | `i32` | `0` | Unused. |
+| `block_size` | `i32` | `-1` | Positive maximum block range; nonpositive selects it automatically. |
+| `get_shuffle_terms` | `bool` | `false` | Populate E increments in `summands`. |
 | `alphabet` | `u32` | `NO_ALPHABET` | Alphabet parameter in `epsilon`; auto uses sequence metadata. |
 | `log_base` | `u32` | `NO_ALPHABET` | Entropy/score units; auto uses sequence alphabet size. |
 
@@ -76,7 +76,7 @@ assert!(!args.get_shuffle_terms);
 two. Setting `args.alphabet` does not set `args.log_base`; specify both when
 that is the intended convention. `ALPHABET_SIZE` is the default floor, two.
 
-The current `PartialEq` implementation compares `chunks`, `max_context`,
+The `PartialEq` implementation compares `chunks`, `max_context`,
 `block_size`, `get_shuffle_terms` and `alphabet`, **omitting `log_base`**.
 Compare units explicitly when constructing a cache key or determining whether
 measurements used identical settings.
@@ -117,8 +117,8 @@ does not compute that optional analysis.
 summand vector. A negative default cap therefore means *uncomputed* in a
 result, while a negative cap in `LzArgs` means *select automatically*.
 
-The [Python reference](python.md) explains output meanings, legacy diagnostic
-fields and boundary conventions. High-level count functions return one for
+The [Python reference](python.md) explains output meanings, diagnostic fields
+and boundary conventions. High-level count functions return one for
 empty and constant inputs. The lower-level `lz76::factorize` instead returns
 `(0, 0.0, Vec::new(), 0.0)` for empty input; choose an entry point deliberately.
 
@@ -136,7 +136,7 @@ value. String construction uses UTF-8 bytes.
 | `with_capacity(n)` | Empty sequence with reserved data capacity. |
 | `from_str(text)` | Copy UTF-8 bytes. |
 | `from_bytes(data)` | Own the byte vector and determine its alphabet. |
-| `from_bytes_with_alphabet(data, size)` | Legacy constructor hint: a mismatch is replaced by the observed size (floored at two). An exact zero/one-symbol hint is retained. |
+| `from_bytes_with_alphabet(data, size)` | Constructor hint: a mismatch is replaced by the observed size (floored at two). An exact zero/one-symbol hint is retained. |
 | `with_alphabet_size(size)` | Empty sequence with an explicit size declaration. |
 | `as_bytes()`, `as_bytes_mut()` | Borrow the bytes immutably or mutably. |
 | `to_string_lossy()` | Return text with invalid UTF-8 replaced. |
@@ -192,8 +192,8 @@ assert_eq!(seq.alphabet_size(), 4); // explicit declaration retained
 | `&first + &second` | New concatenated sequence. |
 | `granularity(group_size)` | Wrapping byte sum for each complete group; discard an incomplete trailing group. Zero group size returns empty. |
 
-Subsequence constructors use the legacy alphabet-hint rules; do not assume
-an explicit declaration propagates unchanged through every derived sequence.
+Subsequence constructors apply the alphabet-hint rules above. Check the
+derived sequence's alphabet when using an explicit declaration.
 `granularity` is not a collision-free encoding of byte tuples: distinct groups
 can have the same sum. Define your scientific coarse-graining independently
 when distinct states must stay distinct.
@@ -201,7 +201,7 @@ when distinct states must stay distinct.
 ## Extra measures
 
 Let `C` be the original count, `F` the first-half count, `L` the second-half
-count, and `I = F + L - C`. The current formulas are:
+count, and `I = F + L - C`. The formulas are:
 
 | Rust field | Formula |
 |---|---|
@@ -211,18 +211,17 @@ count, and `I = F + L - C`. The current formulas are:
 | `lh_uncertainty` | `I / L` |
 | `lz_pearson_coefficient` | `I / sqrt(F * L)` |
 
-They are count-based diagnostics. The names do not establish Shannon
-information identities or a Pearson correlation of the original observations.
-If any required count is zero, the implementation returns default zero extras.
+These diagnostics summarize factor counts of the original sequence and its
+halves. If a required count is zero, all extras return zero. To calculate a
+sample Pearson correlation, use the original observations separately.
 
 ## Advanced shuffle routines
 
 `sequence::shuffle_in_place` performs one aligned-block swap using a supplied
 `ChaCha8Rng`. `sequence::shuffle_copy` repeats swaps on a clone with a
 content-derived seed; `shuffle_copy_seeded` accepts an explicit seed. The
-standalone copy helper and the EMC-like pipeline use different seed-derivation
-helpers; a bare `shuffle_copy` call is not a promise of the same surrogate as
-the measurement pipeline.
+standalone copy helper and the E calculation use different seed-derivation
+helpers; use the measurement entry point to reproduce its sampled variants.
 
 `shuffle::shuffle_factorization` returns `(counts, M)`, where indices `1..=M`
 hold surrogate counts and index zero is unused; storage has `M + 3` entries.
@@ -235,10 +234,9 @@ additional ten scales applied by the automatic measurement pipeline for
 concatenation. Their `_z` variants use `shuffle::merge_sequences` to pair
 corresponding positions; pairing stops at the shorter input. The paired
 shuffle-complexity routine splits one sequence into halves before pairing.
-These historical names denote operational shuffle contrasts, not calibrated
-Shannon mutual information. Pair labels are encoded as bytes with wrapping,
-so the helper does not preserve an arbitrary large alphabet of distinct pairs.
-Use it only after validating that representation for the intended inputs.
+These functions use factor-count contrasts. Pair labels are encoded as bytes
+with wrapping, so check that the paired alphabet fits the byte representation
+before using these helpers.
 
 ## Suffix arrays and lower-level building blocks
 
@@ -252,8 +250,7 @@ Use it only after validating that representation for the intended inputs.
 | `lz76::factorize(seq, args)` | Low-level tuple `(count, epsilon, boundaries, dispersion)`. |
 
 Small suffix arrays use comparison sorting; larger ones use the bundled
-`cdivsufsort` dependency, with Kasai LCP construction. This Rust crate does not
-expose the historical C++ `CaPS_SA` class. Low-level routines expect matching
+`cdivsufsort` dependency, with Kasai LCP construction. Low-level routines expect matching
 lengths and arrays; prefer high-level functions unless maintaining an
 algorithm implementation.
 

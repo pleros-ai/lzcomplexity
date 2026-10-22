@@ -1,10 +1,8 @@
 //! Suffix array + LCP construction.
 //!
-//! The C++ library has its own CaPS algorithm (a parallel SA construction).
-//! We build larger suffix arrays with `cdivsufsort` (a byte-level divsufsort)
-//! and compute LCP with Kasai's algorithm. Small inputs use comparison sorting.
-//! The suffix array of a string is unique, so both construction paths produce
-//! the same suffix order and downstream results.
+//! Small inputs use comparison sorting; larger inputs use `cdivsufsort`.
+//! Kasai's algorithm constructs the longest-common-prefix array from the
+//! resulting suffix order.
 
 /// Suffix array + LCP array for a text of length `n`.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -28,8 +26,7 @@ impl SuffixArray {
 
 /// Build a suffix array for the given text.
 ///
-/// The output `sa` does **not** contain a sentinel suffix — its length is
-/// exactly `text.len()`, matching what the C++ `CaPS_SA` produces.
+/// The output contains one position per input byte, with no sentinel suffix.
 pub fn build_suffix_array(text: &[u8]) -> Vec<u32> {
     if text.is_empty() {
         return Vec::new();
@@ -59,7 +56,7 @@ fn sort_based_sa(text: &[u8]) -> Vec<u32> {
 /// Kasai's algorithm — computes the LCP array from a text and its suffix array.
 ///
 /// `lcp[i]` is the longest common prefix length between `sa[i-1]` and `sa[i]`
-/// (with `lcp[0] = 0`). Same convention as `lz::utils::LZ_SuffixArray::LCP`.
+/// (with `lcp[0] = 0`).
 pub fn build_lcp(text: &[u8], sa: &[u32]) -> Vec<u32> {
     let n = sa.len();
     if n == 0 {

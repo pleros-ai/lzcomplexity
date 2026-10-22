@@ -1,78 +1,52 @@
-# EMC-like shuffle measure
+# Calculating E
 
-The public names `emc`, `emc_value` and `LzShuffle` denote a magnitude
-**qualitatively similar to effective measure complexity (EMC)**. They remain
-for compatibility. The score is not an exact EMC or excess-entropy estimate.
-This note describes the existing released calculation.
+E combines LZ76 factor-count differences across a series of block ranges. This page gives the formula and sampling procedure used by `emc()` and the E fields returned by `lz76()`.
 
-## Calculation
+## Formula
 
-For an input byte sequence of length `N`, let `C` be its LZ76 factor count.
-For each block size `l = 1, ..., M`, create a block-shuffled copy and count its
-LZ76 factors, `C_l`. With logarithm base `b`, calculate
+Let `N` be the input byte length, `C` its LZ76 factor count, `b` the logarithm base and `M` the maximum block size. At each range `l = 1, …, M`, construct a rearranged copy as described below and compute its factor count `C_l`.
 
 ```text
 g   = log_b(N) / N
-r_l = l * g * (C_l - C)
+r_l = l · (C_l · g - C · g)
 ```
 
-The raw contrasts `r_l` can be negative or decrease with block size. The
-implementation fits a nonnegative, nondecreasing sequence to them by
-least-squares isotonic regression (pool adjacent violators, then clip below
-zero). Calling the fitted values `f_1, ..., f_M`, with `f_0 = 0`, it returns
+For `N ≤ 1`, the normalization `g` is zero. The raw values `r_l` can be negative or decrease as the range increases.
+
+The calculation fits a nonnegative, nondecreasing sequence `f_1, …, f_M` to the raw values by least-squares isotonic regression. It uses the pool-adjacent-violators algorithm, then clips fitted values below zero. With `f_0 = 0`, the result is:
 
 ```text
-score              = f_M
-summands[l - 1]    = f_l - f_(l-1)
-multi_information  = r_1
+E                    = f_M
+summands[l - 1]      = f_l - f_(l-1)
+multi_information    = r_1
 ```
 
-The summands are nonnegative fitted increments and sum to the score. They do
-not represent established conditional-entropy differences. The historical
-`multi_information` field contains the raw first-scale contrast, which can
-be negative; it is not calibrated Shannon mutual information.
+The increments are nonnegative and sum to E. The `multi_information` output stores the raw first-range difference; it can be negative and is separate from the fitted increments.
 
-## Block shuffling
+For a raw profile `[3, 2, 4]`, the first two values are pooled, giving `[2.5, 2.5, 4]`. E is `4` and the increments are `[2.5, 0, 1.5]`.
 
-Each scale starts from a fresh copy of the original sequence and runs
-`floor(N/2)` block-swap iterations. Each iteration selects two distinct,
-non-overlapping blocks aligned at multiples of `l` and swaps their contents,
-preserving symbol order inside each block. There is one surrogate per scale.
+## Sampling at each range
 
-A scale-specific seed comes from an FNV-1a hash of the full input and the block
-size. Calls with identical bytes and parameters are reproducible with the
-pinned RNG dependencies. The finite series of swaps is not a uniform draw
-from all possible block permutations.
+Each range starts from a fresh copy of the original sequence and performs `floor(N/2)` block swaps. Each swap selects two distinct blocks aligned at multiples of `l`. Their contents are exchanged, preserving the order within each block. There is one sampled copy per range.
 
-For `N > 0`, the legacy boundary rule leaves the suffix starting at
-`floor((N - 1)/l) * l` fixed. At least the final byte remains unchanged; when
-`N` is divisible by `l`, a whole final block stays fixed. Inputs of at most ten
-bytes, or scales with fewer than two eligible blocks, are unchanged.
+![One aligned block swap at width three; the final block stays fixed](assets/block-swap.svg)
 
-Constant sequences also remain unchanged under every shuffle and therefore
-score zero. This describes the measure's response to shuffling; it does not
-mean that a constant sequence lacks a pattern.
+*One swap at a block width of three bytes. A 24-byte sequence undergoes twelve swaps at each range.*
 
-## Parameters and comparisons
+The suffix beginning at `floor((N - 1)/l) · l` remains fixed. This includes the final byte and, when the length is divisible by the block width, the entire last block. Inputs of at most ten bytes and ranges with fewer than two eligible blocks remain unchanged.
 
-A positive `max_block_size` sets `M`. Nonpositive values use the existing
-length-based helper approximating `N = M * 2**M`, then add ten when `N > 50`.
-This convention selects scales; it does not guarantee convergence.
+The sampler makes a finite series of swaps, rather than drawing uniformly from every possible block permutation. Its `ChaCha8` seed is derived from the input's FNV-1a hash and the block width. The pinned `rand` and `rand_chacha` dependencies fix the random stream, so identical inputs and parameters reproduce the same sampled copies.
 
-Python/core `log_base=None` follows the observed input alphabet size, floored
-at two. An explicit `alphabet` argument affects the finite-size `epsilon`
-diagnostic without changing that default base. The CLI's legacy default uses
-an explicitly declared alphabet when supplied. Pass `-l 2` in the CLI and
-`log_base=2` in Python to compare base-two results.
+## Maximum range and normalization
 
-For comparisons, match input length, byte encoding, logarithm base, block-size
-cap and package/source version. Examine sensitivity to length and cap. Cyclic
-shifts and symbol relabeling also change the content-derived seeds and can
-change the finite-surrogate score.
+A positive `max_block_size` sets `M`. For a nonpositive value, the length-based helper approximates `N = M · 2^M` and adds ten when `N > 50`.
 
-Finite-sample LZ behavior, seams between shuffled blocks, incomplete mixing,
-the fixed suffix and the projection all affect the result. A larger score is
-not a universal ranking by theoretical EMC. Base-two normalization does not
-make it a calibrated shared-information bit count, and the API supplies no
-calibrated confidence interval for this score. Its legacy error fields and
-`extras` are separate diagnostics.
+Python and Rust default to the observed alphabet size, floored at two, for the logarithm base. In Python, an explicit `alphabet` argument affects `epsilon`; use `log_base` to select the normalization of E. The CLI uses a declared alphabet as its default base when one is supplied. Set `log_base=2` in Python and `-l 2` in the CLI for matched base-two results.
+
+## Comparing results
+
+Use the same length, byte encoding, logarithm base and maximum range for direct comparisons. Examine several lengths and ranges to understand sensitivity. Periodic sequences can respond differently depending on the alignment between their period and the block ranges.
+
+Cyclic shifts and symbol relabeling change the content-derived seeds and may change E, even when some factor counts are preserved. For variation across observations, analyze separate samples or recording windows; repeating an identical call reproduces the same result.
+
+See [structural complexity E](concepts/emc.md) for interpretation and [inside the implementation](concepts/implementation.md) for the surrounding analysis pipeline.

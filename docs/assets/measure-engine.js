@@ -1,4 +1,4 @@
-/* Browser companion to lzcomplexity's released Rust implementation.
+/* Browser companion to lzcomplexity's Rust implementation.
  * The small-input LPF search is deliberately simple. Seed expansion, ChaCha8,
  * 64-bit rand 0.8.6 inclusive sampling, block swaps and score projection follow
  * crates/lzcomplexity-core/{sequence,shuffle,metrics,lz76}.rs without changing

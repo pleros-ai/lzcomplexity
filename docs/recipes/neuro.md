@@ -1,8 +1,8 @@
 # Sampled signals and neural time-series
 
-The library takes **symbols**, not a continuous voltage or an fMRI time-series directly. A neural-data workflow therefore has two parts: a domain-specific preprocessing protocol, followed by an explicitly defined conversion from samples to symbols.
+Convert a sampled recording to a symbolic sequence, then use h and E to study its unpredictability and organization. The symbolization rule determines which variations in the recording are represented.
 
-The manual's brain-connectivity example thresholds each regional time-series at its mean, then compares entropy density and the shuffle-based score. The example below demonstrates that conversion on synthetic data. It is an analysis recipe, not a validated measure of consciousness, a connectivity estimator or a clinical decision rule.
+The manual's neural example uses a binary threshold at each regional time series' mean. The synthetic example below follows that approach for one channel.
 
 ## Start with one channel
 
@@ -22,7 +22,7 @@ def symbolize(samples, threshold):
     return bytes(1 if x > threshold else 0 for x in values)
 
 
-# An illustrative sampled signal, not a physiological recording.
+# Synthetic 8 Hz signal with additive noise.
 rng = random.Random(7)
 fs = 250.0
 samples = [
@@ -36,28 +36,28 @@ result = lz.lz76(symbols, log_base=2, max_block_size=16)
 print("samples:", len(symbols))
 print("fraction above threshold:", sum(symbols) / len(symbols))
 print("h:", result["h"])
-print("EMC-like score:", result["emc"]["value"])
+print("E:", result["emc"]["value"])
 print("block-size cap:", result["emc"]["max_block_size"])
 ```
 
-`bytes` gives exactly one input symbol per sample, including zero bytes. `log_base=2` fixes the entropy-density units to bits per input symbol. The cap of 16 is an explicit example setting, not a generally optimal choice.
+`bytes` gives exactly one input symbol per sample, including zero bytes. `log_base=2` fixes the entropy-density units to bits per input symbol. This example examines ranges up to 16 samples; choose the range to suit your sampling rate and question.
 
 Threshold equality goes to zero. Choosing `>=` instead of `>` can change results when the signal has many repeated values. Record that convention.
 
 ## Replace the synthetic series with your data
 
-Perform acquisition-specific quality control before symbolization: handle artifacts, missing samples, preprocessing, sampling-rate differences and the choice of analysis interval according to your study protocol. The library does not perform those operations for you.
+Before symbolization, apply your acquisition protocol for artifacts, missing samples, filtering and analysis intervals. Match sampling rates across recordings you want to compare.
 
-A threshold based on each epoch's mean emphasizes variations within that epoch. A common threshold fitted to a reference interval preserves a different comparison. Neither choice is automatic in the library. If comparing groups or conditions, use a justified and consistently applied rule; avoid changing preprocessing to obtain the desired complexity ordering.
+A threshold based on each epoch's mean emphasizes variations within that epoch. A common threshold fitted to a reference interval preserves a different comparison. Choose one rule and apply it consistently across groups or conditions.
 
 Use equally long windows with the same sampling rate and symbolization. Then compare more than a single number:
 
 - `h`: the normalized LZ entropy-rate estimate of the symbolic series;
-- the EMC-like score: the response to block shuffling under matched caps and units;
+- E: sensitivity to correlations across temporal ranges;
 - symbol frequencies: thresholding can change the balance of zeros and ones;
 - sensitivity to window length and cap, with repeated subjects/epochs as appropriate.
 
-A finite-sample estimate can exceed an asymptotic entropy bound. The shuffle score is not calibrated mutual information, and its legacy error fields are not uncertainty intervals for a neural experiment. See [reading the numbers](../guide/reading-the-numbers.md).
+Use repeated epochs or subjects to estimate variability. [Reading the numbers](../guide/reading-the-numbers.md) explains the returned values and diagnostic fields.
 
 ## Multiple channels: choose the question first
 
@@ -81,10 +81,10 @@ channel_major = b"".join(channels)
 assert len(time_major) == len(channel_major)
 ```
 
-Those streams contain the same entries in different orders; LZ analysis can distinguish them. A flattened series is not automatically a connectivity network. Its artificial channel boundaries and ordering need to fit your hypothesis.
+Those streams contain the same entries in different orders. Time-major ordering puts simultaneous channel states next to each other; channel-major ordering preserves each channel's temporal run. Choose the ordering that represents the relationships you want to study.
 
 ## Related research and reproducibility
 
-The manual discusses task-based fMRI and regional symbolic series. Its historical figures are examples from a particular analysis, not acceptance thresholds for this package or new results reproduced here. The [manual and coverage guide](../project/manual.md) locates those studies and the full reference PDF.
+The [manual](../project/manual.md) discusses task-based fMRI and regional symbolic series, with worked examples and research references.
 
-Save your preprocessing version, sampling rate, window boundaries, threshold rule, channel ordering, input bytes or their hash, package/source revision, log base and shuffle cap. The same symbolic bytes with the same settings are reproducible; a different symbolization is a different observation of the system.
+Save your preprocessing version, sampling rate, window boundaries, threshold rule, channel ordering, input bytes or their hash, package version, logarithm base and maximum range. The same symbolic bytes with the same settings are reproducible; a different symbolization is a different observation of the system.

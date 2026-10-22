@@ -2,7 +2,7 @@
 
 `nid(x, y)` compares two byte sequences using their LZ76 factor counts. It asks how much additional parsing complexity appears when one sequence follows the other.
 
-This is a computable LZ-based dissimilarity inspired by normalized information distance. The theoretical metric is defined using uncomputable Kolmogorov complexity; substituting finite LZ counts does not automatically transfer its metric guarantees. [Li et al. (2004)](https://doi.org/10.1109/TIT.2004.838101) is the theoretical reference.
+Lower values indicate more shared patterns under this comparison. The normalized-information-distance framework is developed in [Li et al. (2004)](https://doi.org/10.1109/TIT.2004.838101).
 
 ## The implemented formula
 
@@ -22,7 +22,7 @@ assert lz.nid("abcd", "abce") == 0.25
 assert lz.nid("abcd", "abce") == lz.nid("abce", "abcd")
 ```
 
-For that example, `C(X) = C(Y) = 4` and `C(XY) = C(YX) = 5`, so the result is `(5 - 4) / 4 = 0.25`. It is not an edit-distance percentage or a calibrated probability of common origin.
+For that example, `C(X) = C(Y) = 4` and `C(XY) = C(YX) = 5`, so the result is `(5 - 4) / 4 = 0.25`. The result is a ratio of factor-count differences.
 
 ## Identical inputs need not give zero
 
@@ -34,13 +34,13 @@ assert lz.factorization("bananabanana")[0] == 4
 assert lz.nid("banana", "banana") == 1 / 3
 ```
 
-This finite self-distance is why callers should not assume an exact metric. A distance matrix can have a nonzero diagonal, and the implementation does not replace the diagonal with zeros. Do not silently force metric properties in a downstream analysis without making that additional choice explicit.
+A distance matrix therefore preserves these finite self-distances on its diagonal. For clustering or embedding, choose a method that accepts a dissimilarity matrix, or check the additional properties your method requires.
 
 ## What the comparison is sensitive to
 
-LZ parsing recognizes repeated literal substrings. Symbolization, byte encoding, sampling length, phase and the join between `X` and `Y` can change the result. Two independent realizations of the same stochastic source need not share long literal substrings; the score is not a direct test of whether their generating processes are identical.
+LZ parsing recognizes repeated literal substrings. Symbolization, byte encoding, sampling length, phase and the join between `X` and `Y` can change the result. Independent realizations of the same source can contain different literal patterns, so use suitable within-source and between-source controls when interpreting distances.
 
-Concatenation introduces a boundary without a special separator. A phrase can cross that join. Adding a separator changes the measurement, so specify and consistently apply any such preprocessing rather than treating it as an innocuous formatting operation.
+Concatenation introduces a boundary without a special separator. A phrase can cross that join. Adding a separator changes the analyzed sequence; apply that choice consistently across comparisons.
 
 Keep compared lengths and representations similar. The denominator uses factor counts, not sequence length, so comparing a short excerpt to a long recording has a different interpretation from comparing two matched epochs. Integer factor counts also make small inputs coarse: changing one factor is substantial when the denominator is only a few factors.
 
@@ -55,7 +55,7 @@ The public factor-count path returns one for empty or constant input. Consequent
 | `("aaaa", "aaaa")` | `0.0` |
 | `("aaaa", "bbbb")` | `1.0` |
 
-These are consequences of the implementation's short-input conventions, not evidence about the relationship between two unknown sources. Exclude missing sequences before constructing a scientific comparison matrix.
+Exclude missing sequences before constructing a comparison matrix.
 
 ## The separate shuffle matrix
 
@@ -65,9 +65,9 @@ The `lzdistance` CLI also writes `shuffle_information_distance`. That field is a
 d_shuffle(X, Y) = C(XY) / mean_l C(shuffle_l(XY))
 ```
 
-It compares the concatenation with its own block-swapped surrogates. It does not compute a Shannon mutual information between `X` and `Y`. It can be asymmetric, nonzero for identical inputs and greater than one. For two identical constant inputs it is one, because all original and shuffled counts equal one.
+This statistic describes the structure of the concatenation. It can be asymmetric, nonzero for identical inputs and greater than one. For two identical constant inputs it is one, because all counts in the ratio equal one.
 
-Keep these outputs separate. The direct `information_distance` matrix corresponds to `lz.nid`; the shuffle matrix has no Python top-level binding and should be interpreted as a concatenation structure diagnostic. The [CLI reference](../cli/lzdistance.md) gives its JSON schema and matrix strategies.
+The direct `information_distance` matrix corresponds to `lz.nid`. The `shuffle_information_distance` matrix is a separate concatenation-structure diagnostic available through the CLI. The [CLI reference](../cli/lzdistance.md) gives its JSON schema and matrix strategies.
 
 ## A usable comparison workflow
 
@@ -75,6 +75,6 @@ Keep these outputs separate. The direct `information_distance` matrix correspond
 2. Use comparable lengths and retain the factor counts as well as the ratio.
 3. Inspect self-distances and appropriate unrelated controls.
 4. Treat the matrix as a dissimilarity unless your downstream method's required properties have been checked.
-5. Report backend/version, encoding, lengths and the exact matrix field used.
+5. Record the package version, encoding, lengths and matrix field used.
 
 The `extras` dictionary returned by `lz76()` is different again: it compares two halves of a **single** sequence using factor-count formulas. [Reading the numbers](../guide/reading-the-numbers.md) explains those fields.

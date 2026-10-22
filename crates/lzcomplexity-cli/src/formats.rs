@@ -1,10 +1,7 @@
-//! Input format detection and readers — a faithful port of the C++
-//! `pnm.cpp` readers + `config_utils.hpp` (`read_input`, `read_csv`,
-//! `read_dna`, `FileTypeQ`).
+//! Input format detection and sequence readers.
 //!
-//! Every reader turns a file into one or more [`Sequence`]s whose bytes match
-//! what the C++ standalone would have produced, so the downstream LZ76
-//! computations (already proven equal to the C++ core) yield identical results.
+//! Readers convert text, tables, FASTA, raw binary and supported PNM images
+//! into one or more byte sequences for analysis.
 
 use std::fs;
 use std::io::{self, BufRead, Read};
@@ -13,7 +10,7 @@ use std::path::Path;
 use flate2::read::MultiGzDecoder;
 use lzcomplexity_core::Sequence;
 
-/// Mirror of the C++ `MagickNumber` enum (same ordinal values).
+/// Input formats recognized by the readers and output schema.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Format {
     P1,
@@ -34,9 +31,8 @@ pub enum Format {
 }
 
 impl Format {
-    /// Name used in JSON output — mirrors the C++ `MagicValues` map. Note the
-    /// C++ map has no entries for DNA/RNA/FASTA (nlohmann returns ""), and maps
-    /// both CSV and TSV to the string "CSV".
+    /// Format label used in JSON reports. DNA, RNA and FASTA use an empty
+    /// label; both comma- and space-delimited tables use "CSV".
     pub fn magic_name(self) -> &'static str {
         match self {
             Format::P1 => "PNM_P1",
@@ -55,9 +51,8 @@ impl Format {
         }
     }
 
-    /// Ordinal value of the matching C++ `MagickNumber` enum. The C++
-    /// `save_factors` writes the raw enum (an int), unlike `save_data` which
-    /// writes the `MagicValues` string.
+    /// Numeric format identifier used in factor-output JSON. Main reports
+    /// use the string returned by `magic_name` instead.
     pub fn magic_ordinal(self) -> u32 {
         match self {
             Format::P1 => 0,
@@ -79,7 +74,7 @@ impl Format {
     }
 }
 
-/// Mirror of `detail::parseFormat` in `config_complexity.hpp`.
+/// Resolve a case-insensitive format selector, defaulting to automatic detection.
 pub fn parse_format(s: &str) -> Format {
     match s.to_ascii_lowercase().as_str() {
         "pbm" | "pbmbin" => Format::P4,
@@ -97,13 +92,11 @@ pub fn parse_format(s: &str) -> Format {
     }
 }
 
-/// Mirror of `pnm::FileTypeQ`: peek the first (up to) 4 bytes, stopping at a
-/// newline, and classify. Bytes past the newline / end are treated as the
-/// sentinel `'A'` the C++ pre-fills, except the C++ null-terminates what it
-/// reads (so a short first line leaves `'\0'` in `c[2]`).
+/// Classify up to four leading bytes, stopping before a newline. The probe
+/// is initialized with `A` bytes and terminated with zero after the bytes read.
 pub fn file_type_q(bytes: &[u8]) -> Format {
     let mut c = [b'A'; 5];
-    // istream::get(c, 5) reads up to 4 chars, stops before '\n', null-terminates.
+    // Read up to four bytes, stopping before a newline.
     let mut n = 0usize;
     for &b in bytes.iter() {
         if b == b'\n' || n >= 4 {
@@ -141,7 +134,7 @@ fn trim(s: &str) -> &str {
 
 // ── RAW readers ─────────────────────────────────────────────────────────────
 
-/// `ReadRAW` text, single sequence: the first non-blank line, byte-for-byte.
+/// Read the first nonblank line of text, trimming ASCII edge whitespace.
 fn read_raw_txt_single(bytes: &[u8]) -> Sequence {
     let text = String::from_utf8_lossy(bytes);
     for line in text.split('\n') {
@@ -153,9 +146,7 @@ fn read_raw_txt_single(bytes: &[u8]) -> Sequence {
     Sequence::new()
 }
 
-/// `ReadRAW` text, multi sequence: every non-blank line → a sequence. The C++
-/// loop only skips blank lines; its `#`-comment `continue` is a no-op (it
-/// re-tests `line.size()==0`, already false), so comment lines ARE emitted.
+/// Read every nonblank trimmed text line as a sequence, including `#` lines.
 fn read_raw_txt_multi(bytes: &[u8]) -> Vec<Sequence> {
     let text = String::from_utf8_lossy(bytes);
     let mut out = Vec::new();
@@ -169,15 +160,13 @@ fn read_raw_txt_multi(bytes: &[u8]) -> Vec<Sequence> {
     out
 }
 
-/// `ReadBin` / RAW binary: expand the file's bytes into a bit sequence.
-/// The C++ uses `fsize = (filesize - 1) * CHARBITS` bits, reading each byte
-/// most-significant-bit first and pushing 0/1 byte symbols.
+/// Expand raw bytes into numeric zero/one symbols, most-significant bit first.
+/// A one-byte file produces eight symbols; larger files omit the final byte.
 fn read_raw_bin(bytes: &[u8]) -> Sequence {
     if bytes.is_empty() {
         return Sequence::new();
     }
-    // For a 1-byte file the C++ `fsize = (1-1)*CHARBITS = 0`, which trips the
-    // `size==0` branch in `ReadBin` and emits the 8 bits of that single byte.
+    // A one-byte input emits its eight bits; larger inputs omit the last byte.
     let nbits = if bytes.len() == 1 {
         8
     } else {
@@ -197,9 +186,8 @@ fn read_raw_bin(bytes: &[u8]) -> Sequence {
 
 // ── CSV / TSV ───────────────────────────────────────────────────────────────
 
-/// `read_csv`: first row seeds one sequence per column; subsequent rows append
-/// their columns. `multiline=false` keeps only the first column. TSV uses a
-/// space delimiter (matching the C++ `read_csv(path, seqs, multiline, ' ')`).
+/// Concatenate cells down each table column. With `multiline=false`, keep
+/// only the first column. The TCSV selector uses a literal space delimiter.
 fn read_csv(bytes: &[u8], multiline: bool, delim: char) -> Vec<Sequence> {
     let text = String::from_utf8_lossy(bytes);
     let mut lines = text.split('\n');
@@ -234,7 +222,7 @@ fn read_csv(bytes: &[u8], multiline: bool, delim: char) -> Vec<Sequence> {
 }
 
 fn split_keep_empty(s: &str, delim: char) -> Vec<&str> {
-    // The C++ `split(..., false)` keeps empty tokens and trims trailing '\r'.
+    // Preserve empty cells and remove a trailing carriage return.
     let s = s.strip_suffix('\r').unwrap_or(s);
     s.split(delim).collect()
 }
@@ -287,8 +275,7 @@ fn read_dna(path: &Path, multiline: bool) -> io::Result<Vec<Sequence>> {
 /// Parse the `want` header integers of a PNM file, starting right after the
 /// 2-character magic (so dimensions on the magic line are NOT lost), skipping
 /// `#` comment lines and whitespace. Returns the integers and the byte offset
-/// where the raster begins (just past the newline ending the last header line —
-/// matching the C++ `getline`-based header consumption).
+/// where the raster begins, just past the newline ending the last header line.
 fn parse_pnm_header(bytes: &[u8], want: usize) -> Option<(Vec<u64>, usize)> {
     let mut i = 2usize.min(bytes.len()); // skip "Pn"
     let mut ints = Vec::with_capacity(want);
@@ -328,9 +315,8 @@ fn parse_pnm_header(bytes: &[u8], want: usize) -> Option<(Vec<u64>, usize)> {
     Some((ints, i))
 }
 
-/// Split a flat pixel buffer into the shape the C++ readers produce: one
-/// concatenated sequence when `multiline` is false, or one sequence per image
-/// row (`width` pixels each) when true.
+/// Return one sequence for a flat pixel buffer, or one per image row
+/// (`width` pixels each) when `multiline` is true.
 fn shape_pixels(data: Vec<u8>, width: usize, multiline: bool) -> Vec<Sequence> {
     if !multiline {
         return vec![Sequence::from_bytes(data)];
@@ -343,9 +329,8 @@ fn shape_pixels(data: Vec<u8>, width: usize, multiline: bool) -> Vec<Sequence> {
         .collect()
 }
 
-/// `ReadPBM`: `width*height` 0/1 pixels → symbols with byte value 0/1 (NOT ASCII
-/// '0'/'1'). P4 (binary) reads the raster as one contiguous MSB-first bitstream
-/// (the C++ `ReadBin(is, s, width*height)` — no row padding).
+/// Read `width*height` pixels as numeric zero/one byte symbols. The binary
+/// P4 reader treats the raster as a contiguous MSB-first bitstream, without row padding.
 fn read_pbm(bytes: &[u8], bin: bool, multiline: bool) -> Vec<Sequence> {
     let Some((dims, raster)) = parse_pnm_header(bytes, 2) else {
         return vec![Sequence::new()];
@@ -354,7 +339,7 @@ fn read_pbm(bytes: &[u8], bin: bool, multiline: bool) -> Vec<Sequence> {
     let total = w.saturating_mul(h);
     let mut data = Vec::with_capacity(total);
     if bin {
-        // Contiguous MSB-first bitstream; pad past EOF with 1s (C++ get()→0xFF).
+        // Contiguous MSB-first bitstream; pad past EOF with ones.
         let body = &bytes[raster.min(bytes.len())..];
         'outer: for &byte in body {
             for bit in (0..8).rev() {
@@ -392,7 +377,7 @@ fn read_pgm(bytes: &[u8], bin: bool, multiline: bool) -> Vec<Sequence> {
     let total = w.saturating_mul(h);
     let mut data = Vec::with_capacity(total);
     if bin {
-        // Exactly `total` raw bytes; pad past EOF with 0xFF (C++ get()→-1).
+        // Read exactly `total` raw bytes; pad past EOF with 0xFF.
         let body = &bytes[raster.min(bytes.len())..];
         for &b in body.iter().take(total) {
             data.push(b);
@@ -416,8 +401,7 @@ fn read_pgm(bytes: &[u8], bin: bool, multiline: bool) -> Vec<Sequence> {
 
 // ── Top-level dispatch ──────────────────────────────────────────────────────
 
-/// Resolve `Auto` by peeking the file, then read into sequences. Mirrors
-/// `read_input` + `ReadPNM`.
+/// Resolve automatic format detection, then read the file into sequences.
 pub fn read_input(path: &Path, multiline: bool, format: Format) -> io::Result<Vec<Sequence>> {
     let effective = if format == Format::Auto {
         let mut head = [0u8; 8];
@@ -436,8 +420,7 @@ pub fn read_input(path: &Path, multiline: bool, format: Format) -> io::Result<Ve
         Format::P4 => Ok(read_pbm(&fs::read(path)?, true, multiline)),
         Format::P2 => Ok(read_pgm(&fs::read(path)?, false, multiline)),
         Format::P5 => Ok(read_pgm(&fs::read(path)?, true, multiline)),
-        // PPM (P3/P6) and PAM (P7): the C++ `ReadPNM` switch has no case for
-        // these and throws, leaving one empty sequence.
+        // Unsupported PPM (P3/P6) and PAM (P7) inputs produce one empty sequence.
         Format::P3 | Format::P6 | Format::P7 => Ok(vec![Sequence::new()]),
         // RAW binary is always one sequence (the whole file as a bitstream),
         // even under multi-line.
@@ -455,7 +438,7 @@ pub fn read_input(path: &Path, multiline: bool, format: Format) -> io::Result<Ve
 }
 
 /// Multi-line file → one concatenated sequence (skipping `#`/`>` comment lines).
-/// Mirrors `multiLineToOneLine(concatenate=true)`.
+/// Other lines are appended directly, without separators.
 pub fn multiline_to_one(path: &Path) -> io::Result<Sequence> {
     let f = fs::File::open(path)?;
     let reader = io::BufReader::new(f);

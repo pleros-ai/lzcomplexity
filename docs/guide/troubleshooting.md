@@ -1,12 +1,12 @@
 # Troubleshooting
 
-Start by identifying the installed package, interpreter and input representation. Most discrepancies arise before the LZ calculation: a different wheel, a source checkout that was not rebuilt, a changed encoding or a different normalization default.
+This page covers installation, input representation, numerical results and batch execution.
 
 ## Installation and imports
 
 ### `ModuleNotFoundError: lzcomplexity`
 
-Install into the interpreter that runs the script:
+Install into the interpreter that runs your script:
 
 ```sh
 python -m pip show lzcomplexity
@@ -14,90 +14,80 @@ python -m pip install lzcomplexity
 python -c 'import sys, lzcomplexity as lz; print(sys.executable, lz.__version__, lz.__file__)'
 ```
 
-In a notebook, check `sys.executable` in the active kernel. Installing through a different terminal's `pip` can target another environment.
+In a notebook, check `sys.executable` in the active kernel. A terminal's `pip` may target a different environment.
 
 ### Pip tries to compile or cannot build a wheel
 
-Your interpreter/platform may lack a compatible prebuilt wheel. Check [PyPI's files](https://pypi.org/project/lzcomplexity/#files), then either select a supported Python/platform combination or install the source build requirements: Rust 1.85+, Cargo and a native C compiler. See [install](install.md).
-
-Do not apply the historical manual's CMake or oneTBB instructions to the current Rust checkout.
+If a compatible wheel is unavailable, pip builds the extension from source. Install Rust 1.85+, Cargo and a native C compiler, then retry. The [installation guide](install.md) lists the build requirements; [PyPI](https://pypi.org/project/lzcomplexity/#files) lists downloadable wheels.
 
 ### Source changes do not affect Python results
 
-An installed wheel is a compiled copy. Editing `.rs` files does not modify it. Rebuild and reinstall from the intended checkout:
+Rebuild and reinstall the extension after changing Rust source:
 
 ```sh
 python -m pip install --force-reinstall .
 ```
 
-For development inside an environment containing maturin, use `maturin develop --release`. Check `lz.__file__` and the Git revision again.
+For development with maturin, use `maturin develop --release`. Check `lz.__file__` to confirm which installation Python imports.
 
-### Old Python examples fail to unpack results
+### Unpacking a result raises an error { #old-python-examples-fail-to-unpack-results }
 
-The current API has five functions. `factorization()` returns a pair, `emc()` returns a pair, and `lz76()` returns a dictionary. `entropy_density()` was replaced by `h()`. Use the [migration table](../project/cpp-parity.md) or [Python reference](../api/python.md).
+`factorization()` returns `(count, boundaries)`, `emc()` returns `(E, summands)`, and `lz76()` returns a dictionary. Use `h()` to obtain entropy density directly. See the [Python reference](../api/python.md) for return types.
 
 ## Numbers and input data
 
 ### My integer list has the wrong length or alphabet
 
-Integer sequences are joined through decimal text: `[0, 1, 10]` becomes `"0110"`. Use `bytes([0, 1, 10])` when each integer from 0 through 255 should be one symbol. Floating-point samples must be symbolized deliberately before analysis.
+Integer sequences are joined through decimal text: `[0, 1, 10]` becomes `"0110"`. Use `bytes([0, 1, 10])` when each integer from 0 through 255 should represent one symbol.
 
-A Unicode string is encoded as UTF-8, so one visible character can occupy multiple input bytes. Normalize/encode your data consistently; see [input types](../api/inputs.md).
+Unicode strings use UTF-8, so one visible character may occupy several input bytes. Choose an encoding and apply it consistently; see [input types](../api/inputs.md).
 
-### The reported factor count differs from the number of displayed pieces
+### The factor count differs from the number of displayed pieces
 
-The factor count and the boundary vector follow the current implementation's complete-component and trailing-component conventions. A final boundary can be an end sentinel beyond the input length. Slice with clamped bounds and use the returned count as the library's value. The [factorization page](../concepts/lz76.md) explains the `banana` example.
+A final copied tail appears in the boundary vector but is excluded from the completed-phrase count. Clamp each end position to the input length when displaying pieces. The [factorization page](../concepts/lz76.md) explains the `banana` example.
 
-### `h` is greater than one
+### h is greater than one
 
-One is not a universal upper limit for a finite LZ estimate. The log base determines units, the alphabet determines the corresponding asymptotic reference, and short-sequence bias can exceed an asymptotic bound. Check the observed bytes, length and explicit `log_base` before interpreting a value. Do not clip an estimate just to fit a plot. See [entropy density](../concepts/entropy-density.md).
+Short-sequence estimates can exceed the limiting entropy bound. Check the byte representation, sample length and `log_base`, then examine how the result changes with longer samples. See [entropy density](../concepts/entropy-density.md).
 
 ### Setting `alphabet=4` did not change the units
 
-In Python/core, an explicit `alphabet` affects the `epsilon` diagnostic, while the default log base still follows the observed alphabet. Set `log_base` explicitly. The CLI has a legacy default using an explicitly declared alphabet; pass `-l 2` and Python `log_base=2` when comparing them.
+Python's `alphabet` argument controls the finite-size `epsilon` diagnostic. Set `log_base` to choose entropy units. For base-two results, use Python `log_base=2` or CLI `-l 2`. The [alphabet guide](../concepts/alphabets.md) explains the defaults.
 
-### CLI `-l` appears to be ignored
+### E is zero for a constant or very short input { #the-shuffle-score-is-zero-for-a-constant-or-tiny-input }
 
-The current source corrects the entropy-density report's handling of explicit logarithm units. A released executable built before PR #14 can still exhibit the old behavior. Check the executable's provenance, not just a source tree elsewhere on the machine. See [versions](../project/releases.md).
+E measures organization through its response across ranges. A constant sequence has a simple pattern, but no variation for this calculation to distinguish. Inputs of at most ten bytes also return zero. Try a longer sequence and consult [structural complexity E](../concepts/emc.md).
 
-### The shuffle score is zero for a constant or tiny input
+### A longer sample or different cap changes E { #a-longer-sample-or-different-cap-changes-the-score }
 
-A constant sequence is unchanged by every permutation. Inputs of at most ten bytes are also unchanged by the released sampler. Their zero contrast follows from this procedure; it does not assert that a constant pattern lacks structure. See [the EMC-like measure](../concepts/emc.md).
-
-### A longer sample or different cap changes the score
-
-Input length changes finite-sample LZ behavior and can change the automatic scale cutoff. An explicit cap changes which contrasts enter the fitted profile. Cyclic shifts and symbol relabeling also change the content-derived random seed. Compare matched settings and check their sensitivity; a larger score is not a universal ranking by theoretical EMC.
-
-### The score differs from the manual's figure
-
-Check the software revision, aggregation definition, sequence generation, length, preprocessing, cap and scaling used in that figure. Historical normalized curves are qualitative comparisons from particular experiments, not exact expected outputs for every release. Start with the [manual coverage guide](../project/manual.md).
+Length affects the factorization and the automatic range selection. Set `max_block_size` explicitly when comparing samples, use equal lengths where possible, and check the profile as well as the final E value. See [length and convergence](../concepts/convergence.md).
 
 ### NID is nonzero on the diagonal or looks unlike an edit distance
 
-This is a finite LZ-based operational distance. It is not guaranteed to satisfy the exact metric properties of theoretical normalized information distance. It compares literal patterns through concatenation counts, not character substitutions or an alignment. See [information distance](../concepts/nid.md).
+NID compares recurring substrings through concatenation counts. A finite sequence can add a new phrase at the join when concatenated with itself, producing a nonzero diagonal. See [information distance](../concepts/nid.md) for the formula and examples.
 
 ## File processing and execution
 
 ### The CLI processes only one line
 
-For raw text, single-sequence mode reads the first nonblank line rather than joining the entire file. Use `lzcomplexity input.txt -F text -m` for line-wise input. `lzdistance` file sources use multiline reading. A directory source instead takes the first sequence from each sorted input file.
+Text mode reads the first nonblank line unless multiline analysis is enabled. Use `lzcomplexity input.txt -F text -m` to process each line. `lzdistance` reads file sources as multiple sequences; a directory source contributes the first sequence from each sorted file.
 
 ### A CSV header or binary file changes results unexpectedly
 
-The CLI's readers have specific legacy behavior: CSV/TSV columns are concatenated as strings, headers are not automatically removed, and raw binary input is expanded into a bitstream with its own tail convention. PNM readers also flatten or split data according to their mode. Read [input formats](../cli/formats.md), and preprocess explicitly when those conventions do not match your data.
+CSV columns are concatenated as text, including headers. Raw binary files are expanded into bits using the reader's length convention. Check [input formats](../cli/formats.md) and inspect sequence lengths before processing a dataset.
 
 ### Many matrix cells are zero after selecting a range
 
-`lzdistance -i` and `-s` gate computations without shrinking dimensions. Gated-out cells remain zero in the JSON. Preserve the selected ranges and a mask separately; a zero alone does not identify whether a cell was computed.
+`lzdistance -i` and `-s` select cells to compute while preserving full matrix dimensions. Cells outside those ranges remain zero. Keep the selected ranges with the output so you can distinguish skipped cells from measured zeros.
 
 ### `jobs=1` does not change Python worker usage
 
-The Python keyword is currently reserved and ignored. Set `RAYON_NUM_THREADS` before the first native call or launch a fresh process with the desired setting. The CLI's `-j` configures its own worker pool. See [execution](../project/determinism.md).
+The Python `jobs` argument has no effect. Set `RAYON_NUM_THREADS` before the first native call, or start a fresh process with the desired setting. The CLI's `-j` configures its worker pool. See [parallel execution](../project/determinism.md).
 
 ### A Python thread pool does not accelerate the analysis
 
-The current extension retains the GIL while it computes. Rayon can use native workers inside one call, but Python threads do not make multiple binding calls execute independently. Consider process-based batches for sufficiently large jobs and budget their native worker counts; measure the full workload first.
+The extension holds the GIL during computation. Rayon workers can run inside a call; use processes for independent Python analyses. Budget the native worker count per process and benchmark a representative batch.
 
-## Report a reproducible issue
+## Report an issue { #report-a-reproducible-issue }
 
-Use the [issue tracker](https://github.com/pleros-ai/lzcomplexity/issues). Include the package and source revision, platform/interpreter, a minimal input or generation script, explicit arguments, the observed output and the expected behavior. For file problems, include the format and the exact reader command. Avoid posting private datasets; a small synthetic input that reproduces the behavior is more useful.
+Open an [issue](https://github.com/pleros-ai/lzcomplexity/issues) with a small reproducible input, your command or Python call, the output, and the expected behavior. Include the package version and operating system. For file-reader problems, include the format selector and a small sample file.

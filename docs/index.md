@@ -33,18 +33,17 @@ hide:
 <nav class="lz-section-nav" aria-label="On this page"><span>Explore lzcomplexity</span><a href="#measures">The measures</a><a href="#try-it">Playground</a><a href="#applications">Applications</a><a href="#documentation">Documentation <span aria-hidden="true">↗</span></a></nav>
 
 <section class="lz-section lz-measures" id="measures">
-<div class="lz-section-heading"><p class="lz-eyebrow">THREE COMPLEMENTARY PERSPECTIVES</p><h2>Randomness.<br>Organization.<br>Similarity.</h2><p>A random sequence can be unpredictable without being richly organized. These measures help distinguish the freedom to vary, correlations across ranges and the information two sequences share.</p><a class="lz-text-link" href="guide/reading-the-numbers/">Learn to interpret the results <span aria-hidden="true">→</span></a></div>
+<div class="lz-section-heading"><p class="lz-eyebrow">THE MEASURES</p><h2>Randomness, structure<br>and similarity.</h2><p>Use h to study the production of new information, E to examine organization across ranges, and d to compare sequences.</p><a class="lz-text-link" href="guide/reading-the-numbers/">Learn to interpret the results <span aria-hidden="true">→</span></a></div>
 <div class="lz-measure-list">
 <a class="lz-measure" href="concepts/entropy-density/"><span class="lz-measure-symbol">h</span><div><span class="lz-measure-name">ENTROPY DENSITY</span><h3>How random is it?</h3><p>Captures how much new information a sequence produces: its unpredictability and freedom to vary. In language and creative processes, this can reflect innovation within a context.</p></div><span class="lz-measure-arrow" aria-hidden="true">↗</span></a>
-<a class="lz-measure" href="concepts/emc/"><span class="lz-measure-symbol">E<span>*</span></span><div><span class="lz-measure-name">STRUCTURAL COMPLEXITY</span><h3>How structured it is?</h3><p>Sensitive to correlations across different ranges and levels of organization. In text, think of the context carried by letters, words and longer passages.</p></div><span class="lz-measure-arrow" aria-hidden="true">↗</span></a>
+<a class="lz-measure" href="concepts/emc/"><span class="lz-measure-symbol">E</span><div><span class="lz-measure-name">STRUCTURAL COMPLEXITY</span><h3>How structured it is?</h3><p>Sensitive to correlations across different ranges and levels of organization. In text, think of the context carried by letters, words and longer passages.</p></div><span class="lz-measure-arrow" aria-hidden="true">↗</span></a>
 <a class="lz-measure" href="concepts/nid/"><span class="lz-measure-symbol">d</span><div><span class="lz-measure-name">INFORMATION DISTANCE</span><h3>How different are they?</h3><p>Reflects differences in recurring patterns and how much one sequence adds beyond the other. Compare signals, texts or symbolic trajectories beyond a symbol-by-symbol match.</p></div><span class="lz-measure-arrow" aria-hidden="true">↗</span></a>
-<p class="lz-measure-footnote">E* is qualitatively similar to effective measure complexity. <a href="concepts/emc/">Definition and interpretation →</a></p>
 </div>
 </section>
 
 <section class="lz-lab" id="try-it" aria-labelledby="lz-lab-title">
 <div class="lz-lab-heading"><div><p class="lz-eyebrow">INTERACTIVE PLAYGROUND</p><h2 id="lz-lab-title">Explore your own sequences.</h2><p>Paste a sequence, choose an example and explore what changes.</p></div><span class="lz-local-note"><span aria-hidden="true">●</span> Runs on your device</span></div>
-<div class="lz-lab-tabs" role="tablist" aria-label="Choose a measure"><button type="button" id="lz-tab-parse" role="tab" aria-selected="true" aria-controls="lz-panel-parse" data-mode="parse">Factorization &amp; h</button><button type="button" id="lz-tab-structure" role="tab" aria-selected="false" aria-controls="lz-panel-structure" data-mode="structure" tabindex="-1">Structure E*</button><button type="button" id="lz-tab-distance" role="tab" aria-selected="false" aria-controls="lz-panel-distance" data-mode="distance" tabindex="-1">Distance d</button></div>
+<div class="lz-lab-tabs" role="tablist" aria-label="Choose a measure"><button type="button" id="lz-tab-parse" role="tab" aria-selected="true" aria-controls="lz-panel-parse" data-mode="parse">Factors &amp; h</button><button type="button" id="lz-tab-structure" role="tab" aria-selected="false" aria-controls="lz-panel-structure" data-mode="structure" tabindex="-1">Structure E</button><button type="button" id="lz-tab-distance" role="tab" aria-selected="false" aria-controls="lz-panel-distance" data-mode="distance" tabindex="-1">Distance d</button></div>
 <div class="lz-lab-grid">
 <div class="lz-lab-inputs">
 <div class="lz-lab-input-heading"><label for="lz-input" id="lz-input-label">Your sequence</label><span id="lz-byte-count">6 / 256 bytes</span></div>
@@ -53,7 +52,7 @@ hide:
 <p class="lz-input-error" id="lz-input-error" role="alert" hidden></p>
 <div class="lz-presets" role="group" aria-label="Example sequences"><span>Examples</span><button type="button" data-example="banana">banana</button><button type="button" data-example="periodic">Periodic</button><button type="button" data-example="irregular">Irregular</button><button type="button" data-example="constant">Constant</button><button type="button" data-example="dna">DNA</button></div>
 <div class="lz-lab-controls"><button class="lz-button lz-button-primary" type="button" id="lz-analyze">Analyze sequence <span aria-hidden="true">→</span></button><span id="lz-limit">Up to 256 UTF-8 bytes per sequence.</span></div>
-<p class="lz-lab-input-note" id="lz-example-note">Start with banana to see the factor boundaries, or try a longer example to explore E*.</p>
+<p class="lz-lab-input-note" id="lz-example-note">Start with banana to see the factor boundaries, or try a longer example to explore E.</p>
 </div>
 <div class="lz-lab-output" aria-live="polite" aria-atomic="true">
 <p class="lz-lab-description" id="lz-result-state" hidden>Ready to analyze your new sequence.</p>
@@ -64,16 +63,16 @@ hide:
 <p class="lz-lab-description" id="lz-lab-description">The final copied tail is excluded from the reported count. Short-sequence estimates of h can exceed one.</p>
 </div>
 <div id="lz-panel-structure" role="tabpanel" aria-labelledby="lz-tab-structure" tabindex="0" hidden>
-<div class="lz-result-heading"><span>Structure across ranges</span><a href="concepts/emc/">About E* ↗</a></div>
-<div class="lz-lab-results lz-structure-results"><div><strong id="lz-demo-e">—</strong><span>EMC-like score E*</span></div><div><strong id="lz-demo-range">—</strong><span>Maximum block range · bytes</span></div></div>
-<svg class="lz-curve" id="lz-e-chart" viewBox="0 0 480 180" role="img" aria-label="Fitted E score across block ranges"><text x="240" y="90" text-anchor="middle">Choose an example to see its scale profile.</text></svg>
+<div class="lz-result-heading"><span>Structure across ranges</span><a href="concepts/emc/">About E ↗</a></div>
+<div class="lz-lab-results lz-structure-results"><div><strong id="lz-demo-e">—</strong><span>Structural complexity E</span></div><div><strong id="lz-demo-range">—</strong><span>Range examined · bytes</span></div></div>
+<svg class="lz-curve" id="lz-e-chart" viewBox="0 0 480 180" role="img" aria-label="E profile across ranges"><text x="240" y="90" text-anchor="middle">Choose an example to see its scale profile.</text></svg>
 <p class="lz-lab-description" id="lz-e-description">The scale profile shows the fitted score as the examined range increases.</p>
 </div>
 <div id="lz-panel-distance" role="tabpanel" aria-labelledby="lz-tab-distance" tabindex="0" hidden>
 <div class="lz-result-heading"><span>Sequence comparison</span><a href="concepts/nid/">About distance ↗</a></div>
 <div class="lz-distance-score"><strong id="lz-demo-distance">—</strong><span>Normalized information distance</span></div>
 <div class="lz-distance-counts"><span>C(A) <strong id="lz-count-a">—</strong></span><span>C(B) <strong id="lz-count-b">—</strong></span><span>C(AB) <strong id="lz-count-ab">—</strong></span><span>C(BA) <strong id="lz-count-ba">—</strong></span></div>
-<p class="lz-lab-description">Lower values indicate more shared patterns under this estimator. At finite lengths, even a sequence compared with itself can have a nonzero distance.</p>
+<p class="lz-lab-description">A lower d indicates more shared patterns. The four counts show how combining the sequences changes their LZ76 factorization.</p>
 </div>
 <p class="lz-lab-method" id="lz-lab-method">UTF-8 byte analysis · base-two logarithms · <a href="concepts/implementation/">calculation details ↗</a></p>
 </div>

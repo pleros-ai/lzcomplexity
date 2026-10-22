@@ -16,10 +16,10 @@ Conversion follows this order:
 | Integer sequences, including compatible one-dimensional integer arrays | Decimal representation of each integer, concatenated with no separator. |
 | Empty `list` | Empty byte sequence. |
 
-The final branch extracts signed 64-bit integers through the Python sequence
-protocol. Ordinary tuples of integers work; arbitrary iterators and generators
-do not. Despite the broad `Iterable[int]` type hint, the current bridge does
-not accept every iterable. Floats are not automatically discretized.
+Integer inputs use the Python sequence protocol and must fit signed 64-bit
+integers. Tuples and compatible arrays work. Materialize iterators and
+generators with `list(...)`, or convert them to bytes. Bin continuous values
+before passing them to the library.
 
 !!! tip "Use `bytes` for one symbol per sample"
 
@@ -114,8 +114,8 @@ distance = lz.nid(a, b)
 
 Keep the codebook with the results. Independent codebooks can assign the
 same byte to different events, making a distance comparison misleading.
-Changing byte labels also changes content-derived shuffle seeds, so preserve
-one encoding when comparing the EMC-like score.
+Changing byte labels changes the sampling seed for E, so keep one encoding
+across a comparison.
 
 There is no general wide-alphabet mode. Encoding a single category as a
 multi-byte token changes the measured sequence and introduces internal token
@@ -145,7 +145,7 @@ workflow. The core does not filter, interpolate or infer sampling intervals.
 
 ## Rejection and degenerate-input behavior
 
-| Input | Current result |
+| Input | Result |
 |---|---|
 | `[1.5, 2.5]`, a nonempty float array | `TypeError`; no implicit binning. |
 | `None`, a scalar integer, a dictionary | `TypeError`. |
@@ -162,8 +162,8 @@ data.
 
 The library returns a factor count of one for empty and constant sequences.
 For empty input, `factorization` returns `(1, [0, 1, 0])`; `h` returns zero.
-These are compatibility conventions, not evidence about a measured source.
-See [the Python reference](python.md#empty-and-constant-inputs).
+See [the Python reference](python.md#empty-and-constant-inputs) for the complete
+empty-input results.
 
 ## Memory and length
 
@@ -173,9 +173,8 @@ buffers. Parallel shuffle scales can multiply the working set. Input
 conversion can allocate additional copies; preparing bytes avoids the
 intermediate integer-to-decimal representation.
 
-Index arrays use 32-bit values, and the native suffix-array dependency uses a
-signed index representation. Do not interpret addressable RAM as a supported
-sequence-length guarantee. Benchmark representative lengths and caps on your
-own machine; no universal peak-memory bound is promised here.
+Index arrays use 32-bit values, and the suffix-array dependency uses signed
+indices. Check memory use on representative lengths and range limits before
+scaling up an analysis.
 
 Source: [input coercion](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-py/src/lib.rs).
