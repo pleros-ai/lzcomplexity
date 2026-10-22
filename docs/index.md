@@ -56,7 +56,7 @@ hide:
 <div id="lz-panel-parse" role="tabpanel" aria-labelledby="lz-tab-parse" tabindex="0">
 <div class="lz-result-heading"><span>Factorization</span><a href="guide/first-factorization/" aria-label="Read the factorization guide">About this result ↗</a></div>
 <div class="lz-parse" id="lz-parse" aria-label="Pieces of the sequence"><span>b</span><span>a</span><span>n</span><span>ana</span></div>
-<div class="lz-lab-results"><div><strong id="lz-demo-count">3</strong><span>LZ76 count</span></div><div><strong id="lz-demo-h">1.2925</strong><span>Entropy density h · base 2</span></div></div>
+<div class="lz-lab-results"><div><strong id="lz-demo-count">3</strong><span>LZ76 count</span></div><div><strong id="lz-demo-h">0.8155</strong><span id="lz-h-label">Entropy density h · base 3</span></div></div>
 <p class="lz-lab-description" id="lz-lab-description">The final copied tail is excluded from the reported count. Short-sequence estimates of h can exceed one.</p>
 </div>
 <div id="lz-panel-structure" role="tabpanel" aria-labelledby="lz-tab-structure" tabindex="0" hidden>
@@ -71,7 +71,7 @@ hide:
 
 <p class="lz-lab-description">A lower d indicates more shared patterns. Compare sequences with the same encoding and similar lengths.</p>
 </div>
-<p class="lz-lab-method" id="lz-lab-method">UTF-8 byte analysis · base-two logarithms · <a href="guide/quick-reference/">Python cheatsheet ↗</a></p>
+<p class="lz-lab-method" id="lz-lab-method">UTF-8 byte analysis<span id="lz-normalization"> · automatic logarithm base 3</span> · <a href="guide/quick-reference/">Python cheatsheet ↗</a></p>
 </div>
 </div>
 <noscript><p>Enable JavaScript to use the playground, or <a href="guide/install/">install the Python library</a> to analyze sequences locally.</p></noscript>
