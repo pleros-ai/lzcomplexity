@@ -155,12 +155,23 @@
       }
       return result;
     }
+    // Escherichia phage lambda, J02459.1, bases 1–256.
+    // https://www.ebi.ac.uk/ena/browser/api/fasta/J02459.1?download=false
+    const dna =
+      "GGGCGGCGACCTCGCGGGTTTTCGCTATTTATGAAAATTTTCCGGTTTAAGGCGTTTCCGTTCT" +
+      "TCTTCGTCATAACTTAATGTTTTTATTTAAAATACCCTCTGAAAAGAAAGGAAACGACAGGTGC" +
+      "TGAAAGCGAGGCTTTTTGGCCTCTGTCGTTTCCTTTCTCTGTTTTTGTCCGTGGAATGAACAAT" +
+      "GGAAGTCAACAAAAAGCAGCTGGCTGACATTTTCGGTGCGAGTATCCGTACCATTCAGAACTGG";
+    const relatedDna = dna.split("");
+    relatedDna[63] = "C";
+    relatedDna[127] = "T";
+    relatedDna[191] = "C";
     const examples = {
       banana: ["banana", "banaba", "A short example for following the LZ76 factor boundaries."],
       periodic: ["00010111".repeat(32), "00010111".repeat(31) + "00010110", "A 256-byte sequence built from an eight-symbol repeating motif."],
       irregular: [irregular(256), irregular(256).split("").reverse().join(""), "A fixed pseudorandom example. Irregularity alone does not imply rich organization."],
       constant: ["0".repeat(256), "0".repeat(256), "A constant 256-byte sequence. Compare it with Periodic and Irregular."],
-      dna: ["ACGT".repeat(64), "ACGT".repeat(63) + "ACGA", "A repeating four-symbol motif, encoded as one UTF-8 byte per base."]
+      dna: [dna, relatedDna.join(""), "First 256 bases of bacteriophage λ (GenBank J02459.1). Sequence B has three substitutions."]
     };
     home.querySelectorAll("[data-example]").forEach(button => button.addEventListener("click", () => {
       const [first, second, note] = examples[button.dataset.example];
