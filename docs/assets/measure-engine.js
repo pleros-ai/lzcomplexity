@@ -31,9 +31,14 @@
     }
     return { count: boundaries.length - (boundaries[boundaries.length - 1] > n ? 2 : 1), boundaries };
   }
-  function analyze(text) {
+  function normalization(bytes, requestedBase) {
+    const alphabetSize = new Set(bytes).size;
+    return { alphabetSize, logBase: Math.max(2, requestedBase ?? alphabetSize) };
+  }
+  function analyze(text, options = {}) {
     const bytes = encode(text), result = factorize(bytes), n = bytes.length;
-    return { ...result, bytes, h: n > 1 ? result.count / (n / (Math.log(n) / Math.log(2))) : 0 };
+    const units = normalization(bytes, options.logBase);
+    return { ...result, ...units, bytes, h: n > 1 ? result.count / (n / (Math.log(n) / Math.log(units.logBase))) : 0 };
   }
   function rotateLeft(value, bits) { return ((value << bits) | (value >>> (32 - bits))) >>> 0; }
   // rand_core 0.6.4 SeedableRng::seed_from_u64: eight PCG32 words.
@@ -134,7 +139,7 @@
     const bytes = encode(text), n = bytes.length, count = factorize(bytes).count;
     const maxBlockSize = options.maxBlockSize > 0 ? options.maxBlockSize : autoBlockSize(n);
     if (!Number.isInteger(maxBlockSize) || maxBlockSize > 256) throw new Error("Block-size cap must be an integer from 1 to 256.");
-    const logBase = Math.max(2, options.logBase || 2);
+    const { alphabetSize, logBase } = normalization(bytes, options.logBase);
     const g = n > 1 ? (Math.log(n) / Math.log(logBase)) / n : 0;
     const originalH = count * g, base = hashBytes(bytes), counts = [];
     for (let size = 1; size <= maxBlockSize; size++) {
@@ -144,7 +149,7 @@
     const raw = counts.map((c, i) => (i + 1) * (c * g - originalH));
     const fitted = isotonic(raw);
     const summands = fitted.map((value, i) => value - (i > 0 ? fitted[i - 1] : 0));
-    return { value: fitted.at(-1) || 0, summands, maxBlockSize, multiInformation: raw[0] || 0, raw, fitted, counts };
+    return { value: fitted.at(-1) || 0, summands, maxBlockSize, multiInformation: raw[0] || 0, raw, fitted, counts, alphabetSize, logBase };
   }
   function distance(textA, textB) {
     const a = encode(textA), b = encode(textB);

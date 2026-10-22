@@ -10,6 +10,7 @@ that can otherwise be hidden by identical LZ factor counts.
 """
 import json
 import random
+import re
 from pathlib import Path
 
 import lzcomplexity as lz
@@ -55,3 +56,39 @@ output = {"source": "Native lzcomplexity 2.0.0 wheel from current Rust core; 64-
           "cases": cases, "distances": distances}
 (ROOT / "tests/docs/measure-cases.json").write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n")
 print(f"Wrote {len(cases)} native E cases and {len(distances)} distance cases.")
+
+# Automatic normalization follows the same observed-byte alphabet as Python.
+preset_source = (ROOT / "docs/assets/site.js").read_text()
+dna_parts = re.search(r"const dna =\s*((?:\"[ACGT]+\"\s*\+?\s*)+);", preset_source)
+if dna_parts is None:
+    raise ValueError("Could not read the DNA preset for automatic-base fixtures")
+dna = "".join(re.findall(r'"([ACGT]+)"', dna_parts.group(1)))
+auto_inputs = [
+    ("empty", ""),
+    ("single symbol", "A"),
+    ("constant", "a" * 64),
+    ("binary", "00010111" * 32),
+    ("banana", "banana"),
+    ("three symbols", "abcaacbcbbaacabc" * 8),
+    ("four symbols", "ACGT" * 64),
+    ("DNA reference", dna),
+    ("typed text", "the quick brown fox jumps over the lazy dog" * 4),
+    ("Unicode bytes", "éà猫👩‍🔬" * 8),
+]
+auto_cases = []
+for name, text in auto_inputs:
+    alphabet_size = len(set(text.encode("utf-8")))
+    result = lz.lz76(text, max_block_size=8)
+    assert result["h"] == lz.h(text)
+    auto_cases.append({
+        "name": name, "input": text, "alphabetSize": alphabet_size,
+        "logBase": max(2, alphabet_size), "count": result["complexity"],
+        "boundaries": result["factors"], "h": result["h"],
+        "maxBlockSize": 8, "emc": result["emc"],
+    })
+auto_output = {
+    "source": "Native Python defaults: observed UTF-8 byte alphabet, minimum base two; explicit maximum range eight.",
+    "cases": auto_cases,
+}
+(ROOT / "tests/docs/auto-base-cases.json").write_text(json.dumps(auto_output, ensure_ascii=False, indent=2) + "\n")
+print(f"Wrote {len(auto_cases)} native automatic-base cases.")
