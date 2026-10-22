@@ -4,6 +4,24 @@ The historical `emc` entries below describe a shuffle-based magnitude
 qualitatively similar to EMC, not exact EMC or excess entropy. See the
 [current method description](docs/shuffle-measure.md) for its definition.
 
+## [2.0.1](https://github.com/pleros-ai/lzcomplexity/compare/v2.0.0...v2.0.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* correct sequence metadata, CLI units and EMC-like documentation ([#14](https://github.com/pleros-ai/lzcomplexity/issues/14)) ([9b551eb](https://github.com/pleros-ai/lzcomplexity/commit/9b551eb34047f3a72e389a171023a28c7a90f1eb))
+
+
+### Documentation
+
+* add practical cheatsheets and sequence illustrations ([#20](https://github.com/pleros-ai/lzcomplexity/issues/20)) ([01e3310](https://github.com/pleros-ai/lzcomplexity/commit/01e3310b36f4d1c1e1f7e93459a3b8a0dd02ffbc))
+* launch comprehensive Pleros documentation and sequence explorer ([#16](https://github.com/pleros-ai/lzcomplexity/issues/16)) ([2cdfc47](https://github.com/pleros-ai/lzcomplexity/commit/2cdfc4743f7110047ffc6813122cc0cb636a2068))
+* refine explanations of E and improve the reading experience ([#19](https://github.com/pleros-ai/lzcomplexity/issues/19)) ([22e4b74](https://github.com/pleros-ai/lzcomplexity/commit/22e4b742c0b435de14dee29688f6fdfe56c951d4))
+* refine homepage layout at tablet widths ([1cec1ab](https://github.com/pleros-ai/lzcomplexity/commit/1cec1abc6928422e8c5ffbfc3097b5ae3fb8e6bb))
+* refine site design, add measure playground and social previews ([#17](https://github.com/pleros-ai/lzcomplexity/issues/17)) ([dfdb40b](https://github.com/pleros-ai/lzcomplexity/commit/dfdb40bdc850543ebdfbf0653ad4cfa601d2c8cf))
+* refine the site and build compact reference sheets ([#21](https://github.com/pleros-ai/lzcomplexity/issues/21)) ([6c35494](https://github.com/pleros-ai/lzcomplexity/commit/6c354942a9dbde1622996aff91100df0614e2829))
+* version site assets to refresh cached deployments ([959cb9f](https://github.com/pleros-ai/lzcomplexity/commit/959cb9ffa76a42c8b28996fa1f41283da59a5083))
+
 ## [2.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v1.0.2...v2.0.0) (2026-07-26)
 
 
