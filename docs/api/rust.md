@@ -40,7 +40,7 @@ fn main() {
 | `lz76::lz76_factors(seq, args)` | `Lz76Result` | Count, `epsilon` and boundaries. |
 | `lz76::lz76_entropy_density(seq, args)` | `f64` | Count-normalized entropy estimate. |
 | `lz76::entropy_density_from(count, seq, args)` | `f64` | Reuse a count already computed for exactly these bytes. |
-| `shuffle::lz76_random_shuffle_complexity(seq, args)` | `LzShuffle` | Structural complexity E. |
+| `shuffle::lz76_random_shuffle_complexity(seq, args)` | `LzShuffle` | Effective measure complexity E. |
 | `shuffle::lz76_random_shuffle_complexity_with(seq, args, count)` | `LzShuffle` | Same score, reusing the original count (`i32`). |
 | `metrics::lz76_information_distance(first, second, args)` | `f64` | LZ-based pairwise distance. |
 | `metrics::lz76(seq, args)` | `LempelZiv` | Complete analysis; original factorization reused. |
@@ -108,8 +108,8 @@ All fields below are public. Structs implement `Clone` and `Debug`.
 | `LempelZiv` | `complexity`, `entropy_density`, `random_shuffle_complexity`, `paired_shuffle_complexity`, `lz_normal_errors`, `lz_poison_errors`, `epsilon`, `factors_stddev`, `factors`, `extras` |
 | `LzExtra` | `lz_rajski_distance`, `redundancy`, `fh_uncertainty`, `lh_uncertainty`, `lz_pearson_coefficient` (all `f64`) |
 
-Within `LempelZiv`, `complexity` is `u32`, `factors` is `Vec<u32>`, the shuffle
-fields are `LzShuffle`, `extras` is `LzExtra`, and the remaining scalars are
+Within `LempelZiv`, `complexity` is `u32`, `factors` is `Vec<u32>`, `random_shuffle_complexity` and
+`paired_shuffle_complexity` are `LzShuffle`, `extras` is `LzExtra`, and the remaining scalars are
 `f64`. The full driver leaves `paired_shuffle_complexity` at its default; it
 does not compute that optional analysis.
 
@@ -215,28 +215,18 @@ These diagnostics summarize factor counts of the original sequence and its
 halves. If a required count is zero, all extras return zero. To calculate a
 sample Pearson correlation, use the original observations separately.
 
-## Advanced shuffle routines
+## Additional Rust helpers { #advanced-shuffle-routines }
 
-`sequence::shuffle_in_place` performs one aligned-block swap using a supplied
-`ChaCha8Rng`. `sequence::shuffle_copy` repeats swaps on a clone with a
-content-derived seed; `shuffle_copy_seeded` accepts an explicit seed. The
-standalone copy helper and the E calculation use different seed-derivation
-helpers; use the measurement entry point to reproduce its sampled variants.
+For a custom analysis pipeline, the crate also exposes
+`sequence::shuffle_in_place`, `sequence::shuffle_copy`,
+`sequence::shuffle_copy_seeded`, `shuffle::shuffle_factorization`,
+`shuffle::shuffle_entropy_calculation` and `shuffle::max_block_size`.
+Use the high-level E entry points above for standard measurements.
 
-`shuffle::shuffle_factorization` returns `(counts, M)`, where indices `1..=M`
-hold surrogate counts and index zero is unused; storage has `M + 3` entries.
-`shuffle_entropy_calculation` consumes those counts and the original count.
-The public `shuffle::max_block_size(N)` helper does not itself include the
-additional ten scales applied by the automatic measurement pipeline for
-`N > 50`.
-
-`metrics::mutual_information` and `lz76_random_shuffle_distance` operate on
-concatenation. Their `_z` variants use `shuffle::merge_sequences` to pair
-corresponding positions; pairing stops at the shorter input. The paired
-shuffle-complexity routine splits one sequence into halves before pairing.
-These functions use factor-count contrasts. Pair labels are encoded as bytes
-with wrapping, so check that the paired alphabet fits the byte representation
-before using these helpers.
+The additional pairwise helpers include `metrics::mutual_information`,
+`metrics::lz76_random_shuffle_distance` and their `_z` variants. See the
+[item-level Rust documentation](#suffix-arrays-and-lower-level-building-blocks)
+for generating their complete reference.
 
 ## Suffix arrays and lower-level building blocks
 

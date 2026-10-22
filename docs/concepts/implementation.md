@@ -20,7 +20,7 @@ Python inputs / CLI file readers / Rust Sequence
 
 An explicit size set through `with_alphabet_size` or `set_alphabet_size` is retained until `clear` or `determine_alphabet`. The observed symbol list still describes the actual bytes. A mismatching constructor hint is replaced by observed metadata. See the [Rust reference](../api/rust.md) for the public methods.
 
-Operations that merely permute the bytes, such as reversing or block swapping, retain valid observed alphabet metadata.
+Operations that merely permute the bytes, such as reversing or circular shifting, retain valid observed alphabet metadata.
 
 ## 2. Suffix array
 
@@ -62,34 +62,24 @@ The first boundaries are `0, 1`. A final attempted phrase can extend past the in
 
 The extras split the sequence at `N // 2`, factorize both halves, and form ratios from those counts and the whole-sequence count. Their formulas are listed in [reading the numbers](../guide/reading-the-numbers.md).
 
-## 6. Structural complexity E
+## 6. Effective measure complexity E { #6-structural-complexity-e }
 
-Let `N` be the input byte length, `C` its factor count, `b` the logarithm base and `M` the maximum range. For each range `l = 1, …, M`, the core rearranges a fresh copy of the original and computes its factor count `C_l`:
+E summarizes correlations across the examined ranges. Use `max_block_size` in
+Python, `block_size` in Rust, or `-e` in the CLI to choose the largest range
+in bytes. A nonpositive value selects it from the input length.
 
-```text
-g   = log_b(N) / N
-r_l = l · (C_l · g − C · g)
-```
+The result contains E and the increments of its fitted range profile. The
+increments are nonnegative and sum to E. In `lz76()` results, these appear as
+`emc["value"]` and `emc["summands"]`; the Rust equivalents are `emc_value` and
+`summands`.
 
-For `N ≤ 1`, `g` is zero. The raw profile is fitted by least-squares isotonic regression using the pool-adjacent-violators algorithm, then negative fitted values are clipped to zero. This gives a nonnegative, nondecreasing profile `f_1, …, f_M`. With `f_0 = 0`:
-
-```text
-E                 = f_M
-summands[l − 1]    = f_l − f_(l−1)
-multi_information = r_1
-```
-
-The increments sum to E. `multi_information` stores the raw first-range difference and can be negative.
-
-At each range, the copy undergoes `floor(N/2)` swaps between distinct, aligned blocks of `l` bytes. Order within each block is preserved. The suffix starting at `floor((N − 1)/l) · l` stays fixed; this includes the last byte and, when the length is divisible by `l`, the entire final block. Inputs of at most ten bytes, and ranges with fewer than two eligible blocks, remain unchanged.
-
-There is one sampled copy per range. The sampler uses ChaCha8 with a seed derived from the input's FNV-1a hash and the range. Pinned random-number dependencies make the copies reproducible. Different ranges can run independently through Rayon.
-
-A positive `max_block_size` selects `M` directly. Otherwise, the length-based helper approximates `N = M · 2^M` and adds ten when `N > 50`. Python and Rust default to the observed byte alphabet size, floored at two, for the logarithm base. The CLI uses a declared alphabet as its default base when supplied. Set `log_base=2` in Python and `-l 2` in the CLI for matching base-two normalization.
+Keep encoding, length, logarithm base and maximum range consistent across a
+comparison. Set `log_base=2` in Python or `-l 2` in the CLI for base-two units.
+The [E guide](emc.md) shows a complete example and explains the range profile.
 
 ## Work reuse and concurrency
 
-The full `lz76()` call reuses the original factorization for entropy density, E and extras. Sampled copies and the two half-sequences are factorized separately.
+The full `lz76()` call reuses the original factorization for entropy density, E and extras. E examines several ranges, while the additional diagnostics also analyze the two half-sequences.
 
 `nid()` computes the counts of `X`, `Y`, `XY` and `YX` using nested independent Rayon tasks. Thread scheduling changes when tasks run, not their input sequences or factor-count formulas.
 
@@ -97,7 +87,7 @@ Python's `jobs` and `partitions` arguments do not control execution. Configure R
 
 ## Memory and representation limits
 
-Suffix, LCP, LPF and factor-boundary arrays use memory proportional to input size. Each concurrent surrogate task also owns sequence and factorization buffers. More concurrent tasks can increase peak memory.
+Suffix, LCP, LPF and factor-boundary arrays use memory proportional to input size. Each concurrent range task also owns sequence and factorization buffers. More concurrent tasks can increase peak memory.
 
 Indices and several counts use 32-bit integer types, while host lengths use `usize`; some internal paths also use signed 32-bit count storage. For large workloads, account for these index limits as well as available RAM, and measure peak memory on representative inputs.
 
@@ -105,11 +95,11 @@ Indices and several counts use 32-bit integer types, while host lengths use `usi
 
 | Stage | Source |
 |---|---|
-| Sequence and shuffling primitives | [`sequence.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/sequence.rs) |
+| Sequence storage and transformations | [`sequence.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/sequence.rs) |
 | Suffix array and Kasai LCP | [`suffix_array.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/suffix_array.rs) |
 | Longest previous factors | [`lpf.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/lpf.rs) |
 | Factor counts, boundaries, normalization | [`lz76.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/lz76.rs) |
-| E calculation and seed derivation | [`shuffle.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/shuffle.rs) |
+| E calculation | [`shuffle.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/shuffle.rs) |
 | Distances, extras and complete driver | [`metrics.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/metrics.rs) |
 
 For running-time and benchmark reporting, continue to [Performance](../project/performance.md).

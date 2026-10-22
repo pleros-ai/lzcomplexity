@@ -1,69 +1,54 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
   <title id="title">lzcomplexity · Pleros</title>
-  <desc id="description">Entropy, structure and information distance. ABRACADABRA! is split into six verified LZ76 factors: A, B, R, AC, AD and ABRA!. Curved arrows mark reuse of the earlier A. Python, Rust and command-line tools.</desc>
+  <desc id="description">Entropy, Effective measure complexity and information distance. LZ76 factorization splits ABRACADABRA! into six factors: A, B, R, AC, AD and ABRA!. Blue marks the matching prefixes A and ABRA; teal marks their following symbols C, D and the exclamation mark. Arrows join earlier text to the corresponding later prefix. Python, Rust and command-line tools.</desc>
   <defs>
-    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#eaf1fb"/>
-    </linearGradient>
-    <linearGradient id="line" x1="0" x2="1">
-      <stop stop-color="#c5d9f9"/>
-      <stop offset=".45" stop-color="#4285ed"/>
-      <stop offset="1" stop-color="#c5d9f9"/>
-    </linearGradient>
-    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
-      <stop stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#f6f9ff"/>
-    </linearGradient>
-    <filter id="shadow" x="-40%" y="-40%" width="180%" height="200%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#284773" flood-opacity=".08"/>
-    </filter>
-    <marker id="arrow" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="m1 1 4 3-4 3" fill="none" stroke="#8eb4ef" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <linearGradient id="paper" x2="1" y2="1"><stop stop-color="#fff"/><stop offset=".6" stop-color="#f6f9fd"/><stop offset="1" stop-color="#edf6f6"/></linearGradient>
+    <linearGradient id="tile" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#fafcff"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-40%" width="160%" height="200%"><feDropShadow dx="0" dy="7" stdDeviation="12" flood-color="#2b4b73" flood-opacity=".045"/></filter>
+    <marker id="arrow" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="m1 1 4 3-4 3" fill="none" stroke="#8da9d1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></marker>
   </defs>
-  <rect width="1200" height="630" fill="url(#background)"/>
-  <circle cx="1100" cy="90" r="330" fill="#dceafe" opacity=".35"/>
-  <circle cx="1150" cy="50" r="230" fill="#eaf2fe" opacity=".8"/>
-  <g font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif">
-    <g transform="translate(72 56)">
-      <rect width="38" height="38" rx="11" fill="#1670e9"/>
-      <path d="M11 10v17h9m0-17h8l-8 17h8" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="52" y="25" font-size="17" font-weight="600" fill="#32445d" letter-spacing="2">PLEROS</text>
-      <text x="164" y="25" font-size="15" fill="#67758b" letter-spacing="1.6">/ SCIENTIFIC COMPUTING</text>
+  <rect width="1200" height="630" fill="url(#paper)"/>
+  <circle cx="1110" cy="10" r="290" fill="#e7ecfb" opacity=".45"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" fill="#25344d">
+    <g transform="translate(74 48)">
+      <rect width="36" height="36" rx="10" fill="#4779c5"/>
+      <path d="M10 9v17h9m0-17h8l-8 17h8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="50" y="24" font-size="17" font-weight="600" letter-spacing="2">PLEROS</text>
+      <text x="164" y="24" font-size="14" fill="#6e7e92" letter-spacing="1.5">/ SCIENTIFIC COMPUTING</text>
     </g>
-    <text x="69" y="212" font-size="91" font-weight="650" fill="#16243b" letter-spacing="-5">lzcomplexity</text>
-    <text x="73" y="270" font-size="31" font-weight="400" fill="#52657e" letter-spacing="-.6">Entropy, structure &amp; information distance</text>
-    <g transform="translate(73 325)" font-family="'SFMono-Regular', Menlo, Consolas, monospace" font-size="25" font-weight="500" text-anchor="middle">
-      <path d="M39 20C39-25 340-25 340 20" fill="none" stroke="url(#line)" stroke-width="2" marker-end="url(#arrow)"/>
-      <path d="M39 78C39 139 488 139 488 78" fill="none" stroke="url(#line)" stroke-width="2" marker-end="url(#arrow)"/>
-      <g fill="url(#tile)" stroke="#dce5f1" filter="url(#shadow)">
-        <rect x="0" y="23" width="78" height="52" rx="13"/>
-        <rect x="94" y="23" width="78" height="52" rx="13"/>
-        <rect x="188" y="23" width="78" height="52" rx="13"/>
-        <rect x="282" y="23" width="132" height="52" rx="13"/>
-        <rect x="430" y="23" width="132" height="52" rx="13"/>
-        <rect x="578" y="23" width="264" height="52" rx="13"/>
-      </g>
-      <g fill="#526b90">
-        <text x="39" y="58">A</text><text x="133" y="58">B</text><text x="227" y="58">R</text>
-        <text x="348" y="58"><tspan fill="#3678d6">A</tspan><tspan>C</tspan></text>
-        <text x="496" y="58"><tspan fill="#3678d6">A</tspan><tspan>D</tspan></text>
-        <text x="710" y="58"><tspan fill="#3678d6">ABRA</tspan><tspan>!</tspan></text>
-      </g>
-      <g font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="400" fill="#72829a">
-        <text x="983" y="44">LZ76</text><text x="983" y="70">6 factors</text>
-      </g>
+    <text x="69" y="187" font-size="90" font-weight="650" letter-spacing="-5">lzcomplexity</text>
+    <text x="74" y="239" font-size="27" fill="#5c6d85" letter-spacing="-.5">Entropy · Effective measure complexity · Information distance</text>
+    <text x="74" y="309" font-size="17" fill="#6e7e92">Input</text>
+    <rect x="214" y="273" width="910" height="60" rx="14" fill="#fff" stroke="#dfe7ef"/>
+    <rect x="240" y="285" width="112" height="36" rx="8" fill="#eaf1fd"/>
+    <g font-family="'SFMono-Regular', Menlo, Consolas, monospace" font-size="26" font-weight="500" text-anchor="middle">
+      <text x="254" y="312">A</text><text x="282" y="312">B</text><text x="310" y="312">R</text><text x="338" y="312">A</text><text x="366" y="312">C</text><text x="394" y="312">A</text><text x="422" y="312">D</text><text x="450" y="312">A</text><text x="478" y="312">B</text><text x="506" y="312">R</text><text x="534" y="312">A</text><text x="562" y="312">!</text>
     </g>
-    <g transform="translate(74 514)">
-      <text x="0" y="0" font-size="19" fill="#52657e">Python</text>
-      <circle cx="85" cy="-6" r="2.5" fill="#8ea3be"/>
-      <text x="105" y="0" font-size="19" fill="#52657e">Rust</text>
-      <circle cx="166" cy="-6" r="2.5" fill="#8ea3be"/>
-      <text x="186" y="0" font-size="19" fill="#52657e">Command line</text>
-      <text x="0" y="47" font-size="17" fill="#72829a">pleros-ai.github.io/lzcomplexity</text>
+    <path d="M296 335C296 363 879 350 879 375" fill="none" stroke="#8da9d1" stroke-width="1.8" marker-end="url(#arrow)"/>
+    <text x="74" y="424" font-size="17" fill="#6e7e92">Factors</text>
+    <g fill="url(#tile)" stroke="#dce4ef" filter="url(#shadow)">
+      <rect x="214" y="387" width="70" height="61" rx="13"/>
+      <rect x="302" y="387" width="70" height="61" rx="13"/>
+      <rect x="390" y="387" width="70" height="61" rx="13"/>
+      <rect x="478" y="387" width="114" height="61" rx="13"/>
+      <rect x="610" y="387" width="114" height="61" rx="13"/>
+      <rect x="742" y="387" width="290" height="61" rx="13"/>
     </g>
-    <g transform="translate(882 505)" font-size="29" font-weight="500" text-anchor="middle">
-      <g fill="#f8fbff" stroke="#d7e3f3"><circle cx="0" cy="0" r="28"/><circle cx="76" cy="0" r="28"/><circle cx="152" cy="0" r="28"/></g>
-      <g fill="#3678d6"><text x="0" y="10" font-style="italic">h</text><text x="76" y="10">E</text><text x="152" y="10" font-style="italic">d</text></g>
+    <g font-family="'SFMono-Regular', Menlo, Consolas, monospace" font-size="28" font-weight="500" text-anchor="middle">
+      <text x="249" y="428">A</text><text x="337" y="428">B</text><text x="425" y="428">R</text>
+      <text x="535" y="428"><tspan fill="#4779c5">A</tspan><tspan fill="#208a80">C</tspan></text>
+      <text x="667" y="428"><tspan fill="#4779c5">A</tspan><tspan fill="#208a80">D</tspan></text>
+      <text x="887" y="428"><tspan fill="#4779c5">ABRA</tspan><tspan fill="#208a80">!</tspan></text>
+    </g>
+    <g text-anchor="middle" fill="#7665ac"><text x="1088" y="408" font-size="14">LZ76</text><text x="1088" y="433" font-size="19" font-weight="500">C = 6</text></g>
+    <path d="M249 451C249 496 527 496 527 457" fill="none" stroke="#8da9d1" stroke-width="1.8" marker-end="url(#arrow)"/>
+    <g transform="translate(74 553)" fill="#5c6d85" font-size="19">
+      <text>Python</text><circle cx="85" cy="-6" r="2.5" fill="#9aaabe"/><text x="105">Rust</text><circle cx="166" cy="-6" r="2.5" fill="#9aaabe"/><text x="186">Command line</text>
+      <text y="40" font-size="17" fill="#7a899d">pleros-ai.github.io/lzcomplexity</text>
+    </g>
+    <g transform="translate(924 551)" font-size="28" font-weight="500" text-anchor="middle">
+      <circle r="27" fill="#eef3fc"/><circle cx="75" r="27" fill="#f0edf9"/><circle cx="150" r="27" fill="#eaf5f2"/>
+      <text y="10" font-style="italic" fill="#4779c5">h</text><text x="75" y="10" fill="#7665ac">E</text><text x="150" y="10" font-style="italic" fill="#208a80">d</text>
     </g>
   </g>
 </svg>

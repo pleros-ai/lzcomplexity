@@ -1,6 +1,8 @@
 # Compare a collection of sequences
 
-Use `lzdistance` when your sequences are already in files and you want its information-distance and shuffle-distance matrices. Use a Python loop when you only need NID or already hold the sequences in memory.
+Use `lzdistance` to compare sequences stored in files, or a Python loop when
+you already hold the sequences in memory. Both routes provide information
+distance based on Normalized Information Distance (NID).
 
 Before either route, standardize encoding and preprocessing. Keep a manifest linking each matrix row and column to a record identifier.
 
@@ -29,12 +31,10 @@ report = json.loads(Path("distances.json").read_text())
 print("information distance:")
 for row in report["information_distance"]:
     print(row)
-print("shuffle distance:")
-for row in report["shuffle_information_distance"]:
-    print(row)
 ```
 
-These are two different quantities. The shuffle-distance matrix is not the same as taking differences between individual sequences' `emc()` scores. See the [CLI reference](../cli/lzdistance.md) for formulas, dimensions and all output fields.
+The `information_distance` matrix corresponds to Python's `nid()`. See the
+[CLI reference](../cli/lzdistance.md) for dimensions and all output fields.
 
 ## Directory input
 

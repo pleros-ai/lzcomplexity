@@ -8,8 +8,8 @@ The Rust core shares work across Python and the command-line tools. Factorizatio
 |---|---|
 | `factorization(seq)` | One original-sequence suffix-array/LCP/LPF pipeline, except short-path inputs |
 | `h(seq)` | Original factorization followed by scalar normalization |
-| `emc(seq, max_block_size=M)` | Original factorization plus one surrogate factorization per scale |
-| `lz76(seq, max_block_size=M)` | Reuses the original count for `h`, E and extras; also factorizes surrogates and two halves |
+| `emc(seq, max_block_size=M)` | Original factorization plus additional work at each examined range |
+| `lz76(seq, max_block_size=M)` | Reuses the original count for h, E and extras; analyzes ranges and two halves |
 | `nid(x, y)` | Factor counts for `x`, `y`, `xy` and `yx` |
 | Full distance matrix | Pairwise work repeated over rows/columns; pair count grows with both dimensions |
 
@@ -19,7 +19,7 @@ Not every task costs the same: a constant sequence takes an early path, while a 
 
 Below 2,048 bytes, suffixes are comparison-sorted. At and above that threshold, the core uses `cdivsufsort`. LCP is computed with Kasai's algorithm and the LPF stage operates on those arrays.
 
-Independent shuffle scales run through Rayon. Direct distance evaluation also schedules independent counts concurrently. A single “full analysis” call reuses the original factor count but does not eliminate surrogate work.
+Independent ranges run through Rayon. Distance evaluation also schedules independent counts concurrently. The full `lz76()` analysis reuses the original factor count; its cost still grows with the number of examined ranges.
 
 Python's `jobs` and `partitions` arguments have no effect on execution. For Python process-level experiments, set `RAYON_NUM_THREADS` before importing and using the library. CLI worker selection is described in its runtime help and [reference](../cli/index.md).
 
@@ -27,7 +27,7 @@ Python's `jobs` and `partitions` arguments have no effect on execution. For Pyth
 
 The byte buffer, suffix array, LCP array, LPF array and returned boundaries occupy memory proportional to input size. Concurrent scale tasks allocate additional sequence and factorization buffers. Increasing concurrency may increase peak RAM even when elapsed time improves.
 
-The API does not stream an indefinitely long sequence through a fixed memory window. A larger input therefore requires a corresponding memory budget. Internal indices and some counts are 32-bit, with additional signed count storage in shuffle paths; do not infer a safe maximum input length solely from the host's address space.
+The API does not stream an indefinitely long sequence through a fixed memory window. A larger input therefore requires a corresponding memory budget. Internal indices and some counts are 32-bit, with additional signed count storage in E calculations; do not infer a safe maximum input length solely from the host's address space.
 
 ## A small timing harness
 

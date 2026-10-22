@@ -40,7 +40,7 @@ Applies LZ-based analysis to a phase transition in the Ising model.
 Estevez-Rams, E., Mesa-Rodriguez, A., & Estevez-Moya, D. (2019). **Complexity-entropy analysis at different levels of organisation in written language.** *PLOS ONE*, **14**(5), e0214863. [10.1371/journal.pone.0214863](https://doi.org/10.1371/journal.pone.0214863).
 
 Studies innovation and context at different organizational levels of text,
-providing an application of entropy and structural complexity together.
+providing an application of entropy and effective measure complexity together.
 
 ## Brain activity
 

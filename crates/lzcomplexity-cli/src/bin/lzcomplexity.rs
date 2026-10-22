@@ -1,7 +1,7 @@
 //! `lzcomplexity` — standalone LZ76 complexity engine.
 //!
 //! Reads a sequence file, computes LZ76 complexity, entropy density h and
-//! structural complexity E, and writes the results as JSON.
+//! effective measure complexity E, and writes the results as JSON.
 
 use std::process::ExitCode;
 

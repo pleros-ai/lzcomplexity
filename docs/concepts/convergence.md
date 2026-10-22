@@ -49,4 +49,4 @@ The fields `epsilon`, `normal_error`, `poison_error` and `factors_stddev` descri
 
 Estimate sampling uncertainty from repeated observations or a resampling analysis that respects temporal dependence. For example, consecutive symbols in a recording can be correlated, so resampling individual symbols answers a different question from resampling whole trials or suitable recording windows.
 
-**Related:** [alphabets and encoding](alphabets.md), [structural complexity E](emc.md), and [performance](../project/performance.md).
+**Related:** [alphabets and encoding](alphabets.md), [effective measure complexity E](emc.md), and [performance](../project/performance.md).
