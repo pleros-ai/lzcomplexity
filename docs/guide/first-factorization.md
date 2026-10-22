@@ -9,24 +9,15 @@ Install the package using the [installation guide](install.md).
 ```python
 import lzcomplexity as lz
 
-sequence = "ABRACADABRA!"
+sequence = "1000110011101"
 count, boundaries = lz.factorization(sequence)
-print(count)       # 6
-print(boundaries)  # [0, 1, 2, 3, 5, 7, 12]
+print(count)       # 5
+print(boundaries)  # [0, 1, 2, 5, 9, 13]
 ```
 
-The factors are `A | B | R | AC | AD | ABRA!`. For this example, each factor extends the longest match in the preceding text by one symbol:
+![Binary LZ76 factors: 1·0·001·1001·1101. The matching prefix 100 crosses earlier factor boundaries.](../assets/sequence-workflow.svg)
 
-| Position (from 1) | Earlier text | Matched prefix | Next symbol | Factor |
-| --- | --- | --- | --- | --- |
-| 1 | empty | none | `A` | `A` |
-| 2 | `A` | none | `B` | `B` |
-| 3 | `AB` | none | `R` | `R` |
-| 4 | `ABR` | `A` | `C` | `AC` |
-| 6 | `ABRAC` | `A` | `D` | `AD` |
-| 8 | `ABRACAD` | `ABRA` | `!` | `ABRA!` |
-
-The last match, `ABRA`, crosses earlier factor boundaries: it consists of the first `A`, `B`, `R` and the `A` in `AC`. Matches are substrings of earlier text; they do not have to be whole factors. “Next symbol” means the symbol that extends the match, rather than necessarily a symbol never seen before.
+In `1001`, the prefix `100` already occurs across earlier factor boundaries: `1·0·0`. Adding `1` gives `1001`, which is new. The parser matches substrings, including those crossing factor boundaries; [LZ76 factorization](../concepts/lz76.md) explains the full rule.
 
 `count` is the LZ76 complexity. The boundaries are positions in the input bytes. To display the factors:
 
@@ -35,7 +26,7 @@ pieces = [
     sequence[start:min(end, len(sequence))]
     for start, end in zip(boundaries, boundaries[1:])
 ]
-assert pieces == ["A", "B", "R", "AC", "AD", "ABRA!"]
+assert pieces == ["1", "0", "001", "1001", "1101"]
 ```
 
 A repeated suffix can be an unfinished factor. For example, `banana` has three complete factors followed by a copied tail, `b | a | n | ana`: the function returns count `3` and boundaries `[0, 1, 2, 3, 7]`. The boundary beyond the input length marks that unfinished tail; it is excluded from the count. See [LZ76 factorization](../concepts/lz76.md) for this convention. For non-ASCII strings, encode to bytes before slicing by the returned positions.
@@ -45,11 +36,11 @@ A repeated suffix can be an unfinished factor. For example, `banana` has three c
 ```python
 h_normalized = lz.h(sequence)
 h_bits = lz.h(sequence, log_base=2)
-print(round(h_normalized, 6))  # 0.693426
-print(round(h_bits, 6))        # 1.792481
+print(round(h_normalized, 6))  # 1.423246
+print(round(h_bits, 6))        # 1.423246
 ```
 
-The default base is the observed alphabet size, six for `ABRACADABRA!`. Base two expresses the estimate in bits per input byte. Both values describe the same sequence in different units.
+The default base is the observed alphabet size. This sequence is binary, so the default and base-two results are the same, in bits per input byte. Short-sample estimates can exceed one; see [reading the numbers](reading-the-numbers.md).
 
 Short examples help explain the calculation; use longer samples to study a source's entropy rate.
 
