@@ -1,171 +1,162 @@
 # `lzdistance`
 
-Compute all-pairs distance matrices from one or two sequence sources. A source
-can be a file containing multiple sequences or a directory of files. The tool
-writes an LZ-based information-distance matrix and additional diagnostics.
+`lzdistance` compares collections of symbolic sequences. It writes an
+information-distance matrix derived from Normalized Information Distance
+(NID), together with additional diagnostic output. Lower information-distance
+values indicate more shared patterns.
 
 ```text
-lzdistance [OPTIONS] [first source] [second source]
+lzdistance [OPTIONS] first-source [second-source]
 ```
 
+## Compare a collection with itself
+
+Put one sequence on each text line:
+
 ```sh
-printf '01010101\n00110011\n' > trials.txt
+printf '%s\n' 'abcd' 'abce' > trials.txt
 lzdistance trials.txt -I TXT -o distances.json
 ```
 
-One source compares the set with itself. Two sources produce a rectangular
-matrix: rows correspond to the first source, columns to the second.
+The `information_distance` field in `distances.json` is:
 
-## Source loading and order
+```json
+[[0.0, 0.25], [0.25, 0.0]]
+```
 
-File sources use multiline mode: text lines, CSV columns, FASTA records or
-image rows become sequences according to the selected [format](formats.md).
-Raw binary remains one expanded bitstream.
+Rows and columns follow the input sequence order. Entry `[0][1]` compares the
+first sequence with the second. Diagonal values depend on the finite-sequence
+parse; they are not forced to zero for every input. See [information distance](../concepts/nid.md).
 
-Directories are traversed nonrecursively. Regular files are sorted by path;
-files whose extensions are exactly `json` or `log` are excluded. Each retained
-file is read in single-sequence mode and contributes its **first** sequence.
-Format selection applies to the source as a whole. For a directory of FASTA
-files, specify `-I FASTA` rather than relying on filename detection.
+## Compare two collections
 
-An omitted or empty second dataset falls back to self-comparison. Keep a
-record of the sorted file list alongside matrix output when indices must be
-mapped back to filenames; the JSON does not include a per-row label array.
+```sh
+printf '%s\n' 'abcd' 'abce' > first.txt
+printf '%s\n' 'abcf' 'zzzz' 'dcba' > second.txt
+lzdistance first.txt second.txt -I TXT -S TXT -o between.json
+```
+
+This produces a 2 × 3 matrix: rows come from `first.txt`, columns from
+`second.txt`. One source gives a square self-comparison. An empty second
+collection also falls back to self-comparison.
+
+A file source reads all sequences: text lines, table columns, FASTA records
+or image rows, depending on the [format](formats.md). A directory instead
+contributes the first sequence from each regular file, sorted by path:
+
+```sh
+lzdistance recordings/ -I TXT -o recordings-distances.json
+lzdistance genomes.fa -I FASTA -o genome-distances.json
+```
+
+Directories are not searched recursively; files ending exactly in `.json`
+or `.log` are excluded. Keep the file order with your results: the report
+does not include a filename label for every matrix row.
+
+## Select rows and columns
+
+```sh
+lzdistance first.txt second.txt -I TXT -S TXT \
+  -i 2:2 -s 1:2 -o selected.json
+```
+
+Ranges are one-based and inclusive. This computes row 2 against columns 1–2.
+`2:` starts at the second sequence; `:3` ends at the third. A single `2` means
+from the second sequence onward; use `2:2` for exactly one row or column.
+
+The output keeps its full matrix shape. Cells outside the selected ranges
+remain zero and mean **not computed**. They must not be interpreted as
+measured identity. Range selections do not restrict the optional directed graph.
+
+## Compare transformed sequences
+
+Choose a strategy when reversing or recoding a sequence should count as
+similarity for your application. Transformations apply to the second operand.
+Each cell takes the smallest distance among that strategy's candidates.
+
+| Flag | Candidates |
+|---|---|
+| No strategy flag | Original sequence. |
+| `-r` | Reversed sequence only. |
+| `-b` | Original, reversed, ASCII-bit-flipped and reversed bit-flipped. |
+| `-a` | Original/reversed; A↔T-swapped/reversed; C↔G-swapped/reversed. |
+| `-y` | Eight rotations of direction codes `1`–`8`, each with its reversal. |
+
+`-b` expects ASCII `0`/`1`; it maps any non-`0` byte to `0`. `-a` tests
+A↔T and C↔G substitutions separately and lowercases affected bases. It is
+not a full reverse-complement search; see the [genomics recipe](../recipes/genomics.md#reverse-complements)
+for that workflow. `-y` requires an existing eight-direction digit encoding.
+
+Strategies do not compose. If several flags are present, precedence is
+`-b`, then `-a`, then `-y`, then `-r`. Transformed matrices may be asymmetric.
+
+## Read the report { #the-two-matrices }
+
+<span id="output-schema"></span>
+
+| Field | Meaning |
+|---|---|
+| `first_data_source`, `first_dim`, `first_data_source_format` | First path, sequence count and configured reader. |
+| `second_data_source`, `second_dim`, `second_data_source_format` | Second-source metadata, when a second path is supplied. |
+| `information_distance` | The row-by-column LZ-based information distances; the same measure as Python's `nid()`. |
+| `shuffle_information_distance` | A separate diagnostic matrix, written on every run. |
+| `directed_matrix` | Concatenation-order graph, described below. |
+
+Use `information_distance` for the comparison illustrated above. The additional
+diagnostic is not interchangeable with it: it can be asymmetric, exceed one
+and have a nonzero diagonal. Both matrices are always computed; there is no
+flag to request only the first.
+
+### Optional directed graph { #concatenation-order-graph-g }
+
+`-g 1` also saves a graph based on differences between the factor counts of
+`XY` and `YX`:
+
+```sh
+lzdistance trials.txt -I TXT -g 1 -o directed.json
+```
+
+The integer is a threshold on that count difference. For a pair with
+`delta = C(YX) - C(XY)`, an absolute difference above the threshold gives
+entries `-delta` and `delta`; otherwise both entries are one. The diagonal
+is zero. With two sources, nodes are ordered as the first collection followed
+by the second, and only cross-collection edges are filled.
+
+The graph uses original sequences, ignoring transformations and row/column
+ranges. With no `-g`, the report contains `directed_matrix: []`. A bare `-g`
+or `-g 0` computes the graph but omits it from JSON; use a positive threshold
+to request a saved graph. Put a bare `-g` after the paths or write `-g=0`.
 
 ## Options
 
-| Short / long | Value | Default | Behavior |
-|---|---|---|---|
-| positional first source | path | required for analysis | First file or directory. |
-| positional second source | path | omitted | Second file or directory; omitted means self-comparison. |
-| `-I`, `--first-format` | format | `AUTO` | First source's reader. |
-| `-S`, `--second-format` | format | `AUTO` | Second source's reader. |
-| `-i`, `--first` | `start:end` | all | Gate first-source rows, using one-based indices. |
-| `-s`, `--second` | `start:end` | all | Gate second-source columns. |
-| `-j`, `--jobs` | unsigned integer | Rayon default | Positive values set the native worker count. |
-| `-o`, `--output` | path | `<first source>.lzdist.json` | Output file; the suffix is appended. |
-| `-L`, `--logs` | flag | off | Print dimensions and output path. |
-| `-r`, `--reverse` | flag | off | Compare against the reversed second operand. |
-| `-b`, `--binary` | flag | off | Search original/reverse/ASCII-bit-flipped second operands. |
-| `-a`, `--adn` | flag | off | Search the six DNA variants described below. |
-| `-y`, `--trajectory` | flag | off | Search eight digit-code rotations and their reversals. |
-| `-g`, `--get-direction` | optional integer threshold | absent | Compute the concatenation-order graph; see below. |
-| `-l`, `--log-base` | unsigned integer | automatic | Accepted; these count-ratio matrices do not depend on logarithm units. |
-| `-p`, `--partitions` | signed integer | `2` | Accepted; no effect. |
-| `-d`, `--default` | flag | on | Accepted; no effect. |
-| `-t`, `--text` | flag | off | Accepted; no effect. |
-| `-f`, `--factors` | path | none | Accepted; no factor file is written. |
-| `-v`, `--version` | flag | off | Print version and exit. |
-| `-h`, `--help` | flag | — | Print help and exit. |
+| Option | Default | Use |
+|---|---|---|
+| `-I`, `--first-format FORMAT` | `AUTO` | First-source reader. |
+| `-S`, `--second-format FORMAT` | `AUTO` | Second-source reader. |
+| `-i`, `--first START:END` | all | Select rows, without shrinking the matrix. |
+| `-s`, `--second START:END` | all | Select columns, without shrinking the matrix. |
+| `-j`, `--jobs N` | native default | Use N workers; zero retains the default. |
+| `-o`, `--output PATH` | `<first-source>.lzdist.json` | Set the output path. |
+| `-L`, `--logs` | off | Print matrix dimensions and output path. |
+| `-r`, `--reverse` | off | Reverse the second operand. |
+| `-b`, `--binary` | off | Compare binary variants. |
+| `-a`, `--adn` | off | Compare the DNA variants above. |
+| `-y`, `--trajectory` | off | Compare direction-code rotations. |
+| `-g`, `--get-direction [N]` | absent | Compute the optional directed graph. |
+| `-l`, `--log-base N` | automatic | Accepted; these count-ratio matrices are independent of logarithm units. |
+| `-p`, `--partitions N` | `2` | Accepted; no effect. |
+| `-d`, `--default` | on | Accepted; no effect. |
+| `-t`, `--text` | off | Accepted; no effect. |
+| `-f`, `--factors PATH` | none | Accepted; no factor file is written. |
+| `-v`, `--version` | — | Print version and exit. |
+| `-h`, `--help` | — | Print help and exit. |
 
-Unlike `lzcomplexity`, this tool has **no alphabet-size flag**: `-a` selects
-the DNA strategy. Also, `-v` means version; use `-L` for verbose logs.
+`-a` selects DNA comparisons, not alphabet size. `-v` prints the version;
+verbose logs use `-L`.
 
-## Read the matrices { #the-two-matrices }
+The output suffix is appended: `trials.txt` produces
+`trials.txt.lzdist.json`. Use `-o` to choose a clear path, especially for directory
+sources. Existing files are overwritten. Missing sources and I/O failures
+return a failing exit status; no arguments prints help successfully.
 
-Use `information_distance` to compare shared patterns. It corresponds to
-Python's `nid()` and derives from Normalized Information Distance (NID).
-Lower values indicate more shared patterns. The
-[information-distance guide](../concepts/nid.md) explains its use and origin.
-
-The report also includes `shuffle_information_distance`, a separate diagnostic
-matrix. Both matrices are written on every run. This additional diagnostic can
-be asymmetric and exceed one; its diagonal can also be nonzero.
-
-With a transformation strategy, each cell is the minimum over candidate second
-operands, separately for each matrix. Transforms affect only the second operand,
-so transformed matrices need not remain symmetric even for one source.
-
-## Transformation strategies
-
-When multiple strategy flags are supplied, precedence is `-b`, then `-a`,
-then `-y`, then `-r`. They do not compose.
-
-| Strategy | Candidates for the second operand |
-|---|---|
-| Default | Original sequence only. |
-| `-r` | Reversed sequence only. |
-| `-b` | Original, reversed, bit-flipped, reversed bit-flipped. |
-| `-a` | Original/reversed; A↔T swapped/reversed; C↔G swapped/reversed. |
-| `-y` | Eight rotations of digit codes `1`–`8`, each with its reversal. |
-
-The binary flip maps ASCII `0` to ASCII `1` and **every other byte** to
-ASCII `0`. Use `-b` only with an appropriate ASCII `0`/`1` representation;
-PBM and raw-binary readers produce numeric bytes zero/one instead.
-
-DNA swaps lowercase the affected bases and preserve other bytes. The A↔T and C↔G substitutions are tested separately. For a full reverse-complement comparison, prepare the sequences in Python as shown in the [genomics recipe](../recipes/genomics.md#reverse-complements). The trajectory strategy expects an eight-direction digit code;
-it does not infer geometric trajectories from coordinates.
-
-## Row and column ranges
-
-```sh
-lzdistance trials.txt -I TXT -i 2:4 -s 1:3 -o subset.json
-```
-
-Indices are one-based and inclusive. `2:` starts at the second sequence and
-continues to the end; `:3` starts at the first and ends at the third. A single
-value such as `-i 2` is also a lower bound,
-not a single-row selection. Use `-i 2:2` for exactly the second row.
-
-Ranges **do not shrink the matrices**. Cells outside the selected rows or
-columns remain zero. Those zeros mean *not computed* and must not be
-interpreted as measured identity. Range gates affect the two distance
-matrices, not the optional directed matrix.
-
-## Output schema
-
-The result file contains these keys:
-
-| Key | Meaning |
-|---|---|
-| `first_data_source` | First path. |
-| `first_dim` | Full number of first-source sequences. |
-| `first_data_source_format` | Configured format label. |
-| `second_data_source`, `second_dim`, `second_data_source_format` | Included when a second path was supplied. |
-| `information_distance` | Full row-by-column array of count-based distances. |
-| `shuffle_information_distance` | Additional concatenation-structure diagnostic array. |
-| `directed_matrix` | Concatenation-order graph, controlled by `-g`. |
-
-For one source, both distance matrices are `first_dim × first_dim`. With two
-nonempty sources they are `first_dim × second_dim`. JSON cell indices are
-zero-based even though command-line ranges are one-based. Output is compact
-JSON; pretty-print with `python -m json.tool distances.json`.
-
-## Concatenation-order graph: `-g`
-
-This graph compares `C(XY)` with `C(YX)`. Edges represent differences in the number of phrases required by the two concatenation orders. The output depends on the threshold:
-
-| Invocation | Behavior |
-|---|---|
-| No `-g` | Graph is not computed; JSON includes `directed_matrix: []`. |
-| Bare `-g` or `-g 0` | Threshold-zero graph is computed but omitted from JSON. |
-| `-g 1` | Graph is computed and included. |
-
-Place a bare `-g` after source paths or use `-g=0` so its optional value does
-not consume a path. For a pair, define `delta = C(YX) - C(XY)`. If
-`abs(delta) > threshold`, entries are `-delta` in the first-to-second position
-and `delta` in the reverse position; otherwise both entries are one. The
-self-comparison diagonal remains zero.
-
-With two sources, graph nodes are ordered as all first-source sequences then
-all second-source sequences. Only cross-source edges are filled; within-set
-blocks remain zero. The graph uses original sequences and ignores strategy
-transforms and row/column gates.
-
-## Output paths and cost
-
-The default name appends `.lzdist.json`: `trials.txt` becomes
-`trials.txt.lzdist.json`. A directory ending in `/` can therefore place the
-output inside that directory; pass `-o` for an unambiguous location. Existing
-output files are overwritten.
-
-Pairwise work grows with the product of source sizes, with additional work
-for range analysis and candidate variants. Start with a small representative
-subset, choose a suitable `-j`, and retain sequence order/preprocessing with
-results. There is no flag to compute only the first matrix.
-
-No arguments prints help and exits successfully. Version exits before
-loading sources. Missing sources and I/O failures return a failing exit
-status; do not consume an older result after a failed command.
-
-Source: [distance implementation](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-cli/src/bin/lzdistance.rs).
+**Quick commands:** [CLI cheatsheet](quick-reference.md).

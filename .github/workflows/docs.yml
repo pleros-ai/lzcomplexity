@@ -50,6 +50,7 @@ jobs:
         with:
           node-version: "22"
       - run: node scripts/docs/test-demo.cjs
+      - run: node scripts/docs/test-input-limit.cjs
       - run: python scripts/docs/generate-factorization-visuals.py --check
       - run: python scripts/docs/test-factorization-visual.py
       - run: mkdocs build --strict

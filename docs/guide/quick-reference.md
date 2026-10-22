@@ -1,9 +1,9 @@
 ---
-title: Python cheatsheet
+title: Python usage cheatsheet
 template: cheatsheet.html
 sheet_kind: python
-sheet_description: Python API · symbolic sequence analysis
-description: A compact Python reference for inputs, LZ76 factors, entropy density, effective measure complexity E and information distance.
+sheet_description: Install, prepare inputs and call the five functions.
+description: A short usage cheatsheet for the lzcomplexity Python library.
 ---
 
 <div class="lz-sheet-grid" markdown="1">
@@ -36,12 +36,8 @@ Python 3.9+.
 | `["AC", "GT"]` | Joined text: `"ACGT"`. |
 | `[0, 1, 10]` | Decimal text: `"0110"`. |
 
-Integer arrays also become decimal text. For a Python list of state codes
-0–255, use `bytes(labels)`. For a validated NumPy `uint8` array, use
-`labels.tobytes()`. Keep one shared encoding when comparing sequences.
-
-ASCII characters occupy one byte; other UTF-8 characters may occupy several.
-[Input details](../api/inputs.md).
+For state codes 0–255, use `bytes(labels)`; for a NumPy `uint8` array,
+use `labels.tobytes()`. [Input guide](../api/inputs.md).
 
 </section>
 
@@ -58,8 +54,7 @@ symbols = bytes(x > 0 for x in signal)
 h = lz.h(symbols, log_base=2)
 ```
 
-Here nonpositive → 0 and positive → 1. The result describes your chosen
-symbolic representation. [Signal recipes](../recipes/dynamical-systems.md).
+Here nonpositive → 0, positive → 1.
 
 </section>
 
@@ -69,29 +64,27 @@ symbolic representation. [Signal recipes](../recipes/dynamical-systems.md).
 
 ```python
 count, boundaries = lz.factorization(
-    "banana"
+    "1000110011101"
 )
-# count:      3
-# boundaries: [0, 1, 2, 3, 7]
+# count: 5
+# boundaries: [0, 1, 2, 5, 9, 13]
 ```
 
-Returns **`(int, list[int])`**. Use the returned count directly. Boundaries
-are byte offsets; the last can extend beyond the input.
-[Display the phrases](first-factorization.md).
+Use the returned count. Slice encoded bytes using `boundaries`.
+[Worked example](first-factorization.md).
 
 </section>
 
 <section class="lz-sheet-section lz-sheet-teal" markdown="1">
 
-## h · randomness and variability
+## Entropy density h
 
 ```python
 h = lz.h("01010101", log_base=2)
 # 0.75
 ```
 
-Returns **`float`**: entropy density. Use h to investigate randomness,
-variability or degrees of freedom in a symbolic sequence.
+`log_base=2` selects bits per input byte. Returns `float`.
 
 </section>
 
@@ -107,8 +100,7 @@ E, increments = lz.emc(
 )
 ```
 
-Returns **`(float, list[float])`**. E captures correlations across ranges.
-The fitted increments sum to E; here the maximum range is 16 bytes.
+Unpack `(E, increments)`. `max_block_size` sets the maximum range.
 
 </section>
 
@@ -121,8 +113,7 @@ distance = lz.nid("abcd", "abce")
 # 0.25
 ```
 
-Returns **`float`**. Derived from Normalized Information Distance, it compares
-shared patterns between sequences. Lower values indicate greater similarity.
+Returns `float`. Use the same symbol encoding for both inputs.
 
 </section>
 
@@ -141,8 +132,7 @@ E = result["emc"]["value"]
 boundaries = result["factors"]
 ```
 
-Returns **`dict`**. The `emc` entry also contains `summands` and
-`max_block_size`. [All result fields](../api/python.md#lz76).
+[Full result reference](../api/python.md#lz76).
 
 </section>
 
@@ -155,12 +145,8 @@ Returns **`dict`**. The `emc` entry also contains `summands` and
 | `log_base=2` | h in bits per input byte. |
 | `max_block_size=16` | E includes ranges up to 16 bytes. |
 
-Without `log_base`, the observed byte alphabet sets the base, with a minimum
-of two. Omit `max_block_size` to select E's range automatically; this parameter
-belongs to `emc` and `lz76`.
-
-For comparisons, match encoding, sequence length and settings. Longer
-sequences support exploration of longer correlations.
+Omit these controls for automatic settings. `max_block_size` belongs to
+`emc` and `lz76`.
 
 </section>
 
