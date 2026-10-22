@@ -124,6 +124,7 @@ nav:
 
   - Documentation:
       - Getting started:
+          - Python cheatsheet: guide/quick-reference.md
           - Install: guide/install.md
           - Your first factorization: guide/first-factorization.md
           - Reading the numbers: guide/reading-the-numbers.md
@@ -136,7 +137,6 @@ nav:
           - Alphabets and log bases: concepts/alphabets.md
           - Sequence length and convergence: concepts/convergence.md
           - Inside the implementation: concepts/implementation.md
-          - Calculating E: shuffle-measure.md
       - Recipes:
           - Neural time-series: recipes/neuro.md
           - DNA and FASTA: recipes/genomics.md
@@ -149,6 +149,7 @@ nav:
       - Rust crate: api/rust.md
 
   - Command line:
+      - Binaries cheatsheet: cli/quick-reference.md
       - Overview: cli/index.md
       - lzcomplexity: cli/lzcomplexity.md
       - lzdistance: cli/lzdistance.md

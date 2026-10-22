@@ -1,7 +1,7 @@
 # References
 
 Research behind the library's methods, together with applications to language,
-phase transitions and nonlinear dynamics.
+brain activity, phase transitions and nonlinear dynamics.
 
 ## The library
 
@@ -41,6 +41,14 @@ Estevez-Rams, E., Mesa-Rodriguez, A., & Estevez-Moya, D. (2019). **Complexity-en
 
 Studies innovation and context at different organizational levels of text,
 providing an application of entropy and structural complexity together.
+
+## Brain activity
+
+Mesa-Rodríguez, A., Estevez-Rams, E., & Kantz, H. (2025). **Entropy measures as indicators of connectivity paths in the human brain.** arXiv preprint, arXiv:2507.04442. [Paper and versions](https://arxiv.org/abs/2507.04442).
+
+Uses entropy, complexity and Lempel–Ziv distance to explore patterns and
+connectivity in task-based fMRI during motor, working-memory, emotion-recognition
+and language tasks.
 
 ## Information distance
 

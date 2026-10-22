@@ -58,7 +58,7 @@ Convert floating-point measurements to symbols before analysis. Passing their de
 
 ## Transformations and normalization
 
-A one-to-one relabeling of individual byte symbols preserves the LZ count because equality between substrings is preserved. E can change because its sampling seeds are derived from the input bytes; see [calculating E](../shuffle-measure.md).
+A one-to-one relabeling of individual byte symbols preserves the LZ count because equality between substrings is preserved. E can change because its sampling seeds are derived from the input bytes; see [implementation of E](implementation.md#6-structural-complexity-e).
 
 A cyclic shift changes both the parse start and the sampling seed. A many-to-one mapping changes the alphabet and may create new repeated substrings. Adding whitespace, separators or metadata changes the analyzed data unless you remove them before calling the library.
 

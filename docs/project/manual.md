@@ -16,7 +16,7 @@ pages on this site for executable examples, or consult the
 | Installation | [Install](../guide/install.md) |
 | Factorization and factor boundaries | [LZ76 factorization](../concepts/lz76.md), [worked example](../guide/first-factorization.md) |
 | Entropy density and normalization | [Entropy density](../concepts/entropy-density.md), [alphabets and units](../concepts/alphabets.md) |
-| Structural complexity E | [E](../concepts/emc.md), [calculation](../shuffle-measure.md) |
+| Structural complexity E | [E](../concepts/emc.md), [calculation](../concepts/implementation.md#6-structural-complexity-e) |
 | Information distance | [Information distance](../concepts/nid.md) |
 | Sequence encoding, construction and transformations | [Python inputs](../api/inputs.md), [Rust API](../api/rust.md) |
 | Functions, parameters and result structures | [Python API](../api/python.md), [Rust API](../api/rust.md) |
