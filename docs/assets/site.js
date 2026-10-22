@@ -51,6 +51,7 @@
       }
       get("lz-demo-count").textContent = result.count;
       get("lz-demo-h").textContent = result.h.toFixed(4);
+      get("lz-h-label").textContent = "Entropy density h · base " + result.logBase;
       let description = "The final copied tail can be excluded from the reported count. Short-sequence estimates of h can exceed one.";
       if (!result.bytes.length) description = "Empty input: count 1, h 0. Enter a sequence to inspect its factors.";
       else if (input.value === "banana") description = "The count is 3: the final copied tail adds no new factor. Short-sequence estimates of h can exceed one.";
@@ -96,6 +97,8 @@
       const panel = get("lz-panel-" + mode);
       try {
         const result = analyze(input.value);
+        get("lz-normalization").textContent = " · automatic logarithm base " + result.logBase;
+        get("lz-normalization").hidden = mode === "distance";
         panel.hidden = false;
         if (mode === "parse") renderParse(result);
         if (mode === "structure") {

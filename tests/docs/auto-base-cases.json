@@ -1,0 +1,411 @@
+{
+  "source": "Native Python defaults: observed UTF-8 byte alphabet, minimum base two; explicit maximum range eight.",
+  "cases": [
+    {
+      "name": "empty",
+      "input": "",
+      "alphabetSize": 0,
+      "logBase": 2,
+      "count": 1,
+      "boundaries": [
+        0,
+        1,
+        0
+      ],
+      "h": 0.0,
+      "maxBlockSize": 8,
+      "emc": {
+        "value": 0.0,
+        "summands": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_block_size": 8,
+        "multi_information": 0.0
+      }
+    },
+    {
+      "name": "single symbol",
+      "input": "A",
+      "alphabetSize": 1,
+      "logBase": 2,
+      "count": 1,
+      "boundaries": [
+        0,
+        1,
+        1
+      ],
+      "h": 0.0,
+      "maxBlockSize": 8,
+      "emc": {
+        "value": 0.0,
+        "summands": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_block_size": 8,
+        "multi_information": 0.0
+      }
+    },
+    {
+      "name": "constant",
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "alphabetSize": 1,
+      "logBase": 2,
+      "count": 1,
+      "boundaries": [
+        0,
+        1,
+        64
+      ],
+      "h": 0.09375,
+      "maxBlockSize": 8,
+      "emc": {
+        "value": 0.0,
+        "summands": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_block_size": 8,
+        "multi_information": 0.0
+      }
+    },
+    {
+      "name": "binary",
+      "input": "0001011100010111000101110001011100010111000101110001011100010111000101110001011100010111000101110001011100010111000101110001011100010111000101110001011100010111000101110001011100010111000101110001011100010111000101110001011100010111000101110001011100010111",
+      "alphabetSize": 2,
+      "logBase": 2,
+      "count": 4,
+      "boundaries": [
+        0,
+        1,
+        4,
+        7,
+        10,
+        257
+      ],
+      "h": 0.125,
+      "maxBlockSize": 8,
+      "emc": {
+        "value": 3.5234375,
+        "summands": [
+          0.96875,
+          0.84375,
+          0.515625,
+          0.0,
+          1.1953125,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_block_size": 8,
+        "multi_information": 0.96875
+      }
+    },
+    {
+      "name": "banana",
+      "input": "banana",
+      "alphabetSize": 3,
+      "logBase": 3,
+      "count": 3,
+      "boundaries": [
+        0,
+        1,
+        2,
+        3,
+        7
+      ],
+      "h": 0.8154648767857287,
+      "maxBlockSize": 8,
+      "emc": {
+        "value": 0.0,
+        "summands": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_block_size": 8,
+        "multi_information": 0.0
+      }
+    },
+    {
+      "name": "three symbols",
+      "input": "abcaacbcbbaacabcabcaacbcbbaacabcabcaacbcbbaacabcabcaacbcbbaacabcabcaacbcbbaacabcabcaacbcbbaacabcabcaacbcbbaacabcabcaacbcbbaacabc",
+      "alphabetSize": 3,
+      "logBase": 3,
+      "count": 8,
+      "boundaries": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        10,
+        14,
+        18,
+        129
+      ],
+      "h": 0.2760317671875126,
+      "maxBlockSize": 8,
+      "emc": {
+        "value": 2.7171877082520774,
+        "summands": [
+          0.7590873597656598,
+          0.6900794179687815,
+          0.6555754470703423,
+          0.0,
+          0.6124454834472939,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_block_size": 8,
+        "multi_information": 0.7590873597656598
+      }
+    },
+    {
+      "name": "four symbols",
+      "input": "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT",
+      "alphabetSize": 4,
+      "logBase": 4,
+      "count": 4,
+      "boundaries": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        257
+      ],
+      "h": 0.0625,
+      "maxBlockSize": 8,
+      "emc": {
+        "value": 1.296875,
+        "summands": [
+          0.8046875,
+          0.0,
+          0.0,
+          0.0,
+          0.4921875,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_block_size": 8,
+        "multi_information": 0.9375
+      }
+    },
+    {
+      "name": "DNA reference",
+      "input": "GGGCGGCGACCTCGCGGGTTTTCGCTATTTATGAAAATTTTCCGGTTTAAGGCGTTTCCGTTCTTCTTCGTCATAACTTAATGTTTTTATTTAAAATACCCTCTGAAAAGAAAGGAAACGACAGGTGCTGAAAGCGAGGCTTTTTGGCCTCTGTCGTTTCCTTTCTCTGTTTTTGTCCGTGGAATGAACAATGGAAGTCAACAAAAAGCAGCTGGCTGACATTTTCGGTGCGAGTATCCGTACCATTCAGAACTGG",
+      "alphabetSize": 4,
+      "logBase": 4,
+      "count": 60,
+      "boundaries": [
+        0,
+        1,
+        4,
+        9,
+        11,
+        12,
+        15,
+        19,
+        23,
+        26,
+        28,
+        31,
+        33,
+        35,
+        38,
+        43,
+        49,
+        51,
+        55,
+        61,
+        64,
+        70,
+        73,
+        77,
+        82,
+        88,
+        94,
+        98,
+        101,
+        105,
+        110,
+        115,
+        119,
+        123,
+        127,
+        134,
+        138,
+        142,
+        146,
+        149,
+        154,
+        162,
+        167,
+        175,
+        181,
+        185,
+        189,
+        194,
+        198,
+        202,
+        207,
+        210,
+        215,
+        220,
+        227,
+        232,
+        236,
+        242,
+        245,
+        249,
+        254,
+        257
+      ],
+      "h": 0.9375,
+      "maxBlockSize": 8,
+      "emc": {
+        "value": 0.14453125,
+        "summands": [
+          0.09375,
+          0.03125,
+          0.0,
+          0.0,
+          0.01953125,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_block_size": 8,
+        "multi_information": 0.09375
+      }
+    },
+    {
+      "name": "typed text",
+      "input": "the quick brown fox jumps over the lazy dogthe quick brown fox jumps over the lazy dogthe quick brown fox jumps over the lazy dogthe quick brown fox jumps over the lazy dog",
+      "alphabetSize": 27,
+      "logBase": 27,
+      "count": 30,
+      "boundaries": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        17,
+        19,
+        21,
+        23,
+        24,
+        25,
+        27,
+        28,
+        30,
+        32,
+        36,
+        37,
+        38,
+        39,
+        41,
+        43,
+        173
+      ],
+      "h": 0.27240996463026707,
+      "maxBlockSize": 8,
+      "emc": {
+        "value": 1.6707811163989716,
+        "summands": [
+          0.5084986006431652,
+          0.43585594340842737,
+          0.22700830385855597,
+          0.06356232508039561,
+          0.060535547695614866,
+          0.0,
+          0.0,
+          0.3753203957128126
+        ],
+        "max_block_size": 8,
+        "multi_information": 0.5084986006431652
+      }
+    },
+    {
+      "name": "Unicode bytes",
+      "input": "éà猫👩‍🔬éà猫👩‍🔬éà猫👩‍🔬éà猫👩‍🔬éà猫👩‍🔬éà猫👩‍🔬éà猫👩‍🔬éà猫👩‍🔬",
+      "alphabetSize": 14,
+      "logBase": 14,
+      "count": 14,
+      "boundaries": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        13,
+        14,
+        17,
+        18,
+        145
+      ],
+      "h": 0.18308669826614735,
+      "maxBlockSize": 8,
+      "emc": {
+        "value": 2.098958219408332,
+        "summands": [
+          0.6800363078456901,
+          0.39232863914174443,
+          0.0,
+          0.34437736102442007,
+          0.0,
+          0.0,
+          0.6822159113964774,
+          0.0
+        ],
+        "max_block_size": 8,
+        "multi_information": 0.6800363078456901
+      }
+    }
+  ]
+}
