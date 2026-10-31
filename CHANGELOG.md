@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/pleros-ai/lzcomplexity/compare/v3.0.0...v3.0.1) (2026-10-31)
+
+
+### CI
+
+* replace retiring macOS 14 release runners ([#28](https://github.com/pleros-ai/lzcomplexity/issues/28)) ([c64473c](https://github.com/pleros-ai/lzcomplexity/commit/c64473c0759985c6a0ce107cf73610d2f7806873))
+
 ## [3.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v2.0.0...v3.0.0) (2026-10-31)
 
 ### Estimator and API changes
