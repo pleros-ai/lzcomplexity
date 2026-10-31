@@ -1,8 +1,8 @@
-//! Effective measure complexity E and its scale profile.
+//! Explicit random-shuffle estimator and legacy shuffle diagnostics.
 
 use rayon::prelude::*;
 
-use crate::lz76::{lz76_factorization, LzArgs, LzShuffle};
+use crate::lz76::{lz76_factorization, EmcResult, LzArgs};
 use crate::sequence::{shuffle_copy_seeded, Sequence};
 use crate::NO_ALPHABET;
 
@@ -58,7 +58,7 @@ pub fn shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
     (res, mm)
 }
 
-/// Calculate effective measure complexity E from the original and sampled counts.
+/// Calculate the random-shuffle E estimate from original and sampled counts.
 ///
 /// For each block size `l`, `h_rand[l]` contains a sampled LZ76 count. With
 /// `g = log_b(N)/N`, the raw scale profile is
@@ -76,12 +76,12 @@ pub fn shuffle_entropy_calculation(
     complexity: i32,
     h_rand: &[i32],
     mm: usize,
-) -> LzShuffle {
-    let mut result = LzShuffle {
+) -> EmcResult {
+    let mut result = EmcResult {
         max_block_size: mm as i32,
         ..Default::default()
     };
-    if args.get_shuffle_terms {
+    if args.get_emc_terms {
         result.summands = vec![0.0; mm];
     }
     let log_base = if args.log_base == NO_ALPHABET {
@@ -116,7 +116,7 @@ pub fn shuffle_entropy_calculation(
     let mut prev = 0.0f64; // Ê_fit(0) = 0
     for l in 1..=len {
         let term = fitted[l - 1] - prev;
-        if args.get_shuffle_terms {
+        if args.get_emc_terms {
             result.summands[l - 1] = term;
         }
         prev = fitted[l - 1];
@@ -133,7 +133,7 @@ pub fn shuffle_entropy_calculation(
 /// Blocks are stored as `(sum, count)` pairs, so this is O(n) overall. The
 /// non-negative projection is then the pointwise positive part, which preserves
 /// monotonicity.
-fn non_negative_isotonic(y: &[f64]) -> Vec<f64> {
+pub(crate) fn non_negative_isotonic(y: &[f64]) -> Vec<f64> {
     let mut sums: Vec<f64> = Vec::with_capacity(y.len());
     let mut counts: Vec<usize> = Vec::with_capacity(y.len());
     for &v in y {
@@ -161,7 +161,7 @@ fn non_negative_isotonic(y: &[f64]) -> Vec<f64> {
 }
 
 /// `lz76RandomShuffleComplexity` — full pipeline.
-pub fn lz76_random_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> LzShuffle {
+pub fn lz76_random_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> EmcResult {
     lz76_random_shuffle_complexity_with(seq, args, lz76_factorization(seq, args) as i32)
 }
 
@@ -171,13 +171,13 @@ pub fn lz76_random_shuffle_complexity_with(
     seq: &Sequence,
     args: &LzArgs,
     complexity: i32,
-) -> LzShuffle {
+) -> EmcResult {
     let (h_rand, mm) = shuffle_factorization(seq, args);
     shuffle_entropy_calculation(seq, args, complexity, &h_rand, mm)
 }
 
 /// `lz76PairedShuffleComplexity` — shuffle on the merged (Z) sequence.
-pub fn lz76_paired_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> LzShuffle {
+pub fn lz76_paired_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> EmcResult {
     let mid = seq.len() / 2;
     let (past, future) = seq.split_at(mid);
     let merged = merge_sequences(&past, &future);
@@ -233,7 +233,7 @@ mod tests {
         data.extend(std::iter::repeat_n(b'1', 50));
         let seq = Sequence::from_bytes(data);
         let mut args = LzArgs::new();
-        args.get_shuffle_terms = true;
+        args.get_emc_terms = true;
         let n = 100.0f64;
         (seq, args, (n.ln() / 2f64.ln()) / n)
     }
@@ -302,7 +302,7 @@ mod tests {
         let data: Vec<u8> = b"00010111".iter().copied().cycle().take(2000).collect();
         let seq = Sequence::from_bytes(data);
         let mut args = LzArgs::new();
-        args.get_shuffle_terms = true;
+        args.get_emc_terms = true;
         let r = lz76_random_shuffle_complexity(&seq, &args);
 
         assert_eq!(r.summands.len(), r.max_block_size as usize);

@@ -51,8 +51,13 @@ def emc(
     log_base: int | None = None,
     max_block_size: int = -1,
     jobs: int = 0,
+    *,
+    method: str = "chao-shen",
 ) -> Tuple[float, List[float]]:
-    """Return effective measure complexity E and its fitted increments across ranges.
+    """Return Effective Measure Complexity E and its fitted increments.
+
+    ``method="chao-shen"`` is the default; ``method="shuffle"`` selects
+    the earlier random-shuffle estimator.
 
     Returns ``(value, summands)``. The nonnegative increments sum to E.
     ``max_block_size`` sets the maximum range; nonpositive values select it
@@ -83,11 +88,16 @@ def lz76(
     log_base: int | None = None,
     max_block_size: int = -1,
     jobs: int = 0,
+    *,
+    method: str = "chao-shen",
 ) -> Dict[str, Any]:
     """Full LZ76 analysis, returned as a dict.
 
+    ``method="chao-shen"`` is the default; select ``method="shuffle"``
+    for the earlier estimator.
+
     Keys: ``complexity``, ``h``, ``factors``, ``emc`` (a dict of
-    ``value``/``summands``/``max_block_size``/``multi_information``),
+    ``value``/``summands``/``max_block_size``/``multi_information``/``method``),
     ``epsilon``, ``factors_stddev``, ``normal_error``, ``poison_error``,
     ``extras`` (a dict). ``emc`` contains E and its scale profile;
     ``multi_information`` is the raw first-range contrast. See

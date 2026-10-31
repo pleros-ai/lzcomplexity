@@ -56,7 +56,7 @@ Python's `alphabet` argument controls the finite-size `epsilon` diagnostic. Set 
 
 ### E is zero for a constant or very short input { #the-shuffle-score-is-zero-for-a-constant-or-tiny-input }
 
-E measures organization through its response across ranges. A constant sequence has a simple pattern, but no variation for this calculation to distinguish. Inputs of at most ten bytes also return zero. Try a longer sequence and consult [effective measure complexity E](../concepts/emc.md).
+E measures organization through its response across ranges. A constant sequence has a simple pattern, but no variation for this calculation to distinguish. The optional shuffle estimator also returns zero for inputs of at most ten bytes; Chao–Shen does not have that restriction. Try a longer sequence and consult [effective measure complexity E](../concepts/emc.md).
 
 ### A longer sample or different cap changes E { #a-longer-sample-or-different-cap-changes-the-score }
 

@@ -1,8 +1,47 @@
 # Changelog
 
-The historical `emc` entries below describe a shuffle-based magnitude
-qualitatively similar to EMC, not exact EMC or excess entropy. See the
-[current method description](docs/shuffle-measure.md) for its definition.
+## [3.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v2.0.0...v3.0.0) (2026-10-31)
+
+### Estimator and API changes
+
+- Restore Chao–Shen as the default Effective Measure Complexity estimator,
+  using overlapping block counts and the July 28 projected ladder calculation.
+- Keep the earlier deterministic shuffle estimator selectable with CLI
+  `--emc-method shuffle` and Python `emc(..., method="shuffle")` /
+  `lz76(..., method="shuffle")`.
+- Use neutral E names: CLI JSON `emc`, Rust `LempelZiv.emc`, `EmcResult`,
+  `get_emc_terms` and `emc::emc`. JSON/Python full results record `emc.method`.
+  Consumers of the earlier CLI JSON or Rust names must update their field access.
+- Rename the CLI range option to `--emc-opt`, retaining `--rsemc-opt` as
+  an accepted alias and leaving `-e` unchanged.
+- Match the browser playground to Chao–Shen and clarify range selection.
+  The automatic ceiling follows the observed alphabet independently of log units.
+
+Versions through 2.0.0 used the earlier shuffle estimator. The Chao–Shen
+experiments on `fix/emc-block-entropy-estimator` were
+reverted before integration; this release restores that estimator.
+See the [current calculation](docs/concepts/implementation.md#6-structural-complexity-e).
+
+
+### ⚠ BREAKING CHANGES
+
+* E defaults to Chao-Shen. CLI JSON uses emc, and Rust exposes LempelZiv.emc, EmcResult, and get_emc_terms.
+
+### Bug Fixes
+
+* correct sequence metadata, CLI units and EMC-like documentation ([#14](https://github.com/pleros-ai/lzcomplexity/issues/14)) ([9b551eb](https://github.com/pleros-ai/lzcomplexity/commit/9b551eb34047f3a72e389a171023a28c7a90f1eb))
+* default E to Chao-Shen and make shuffle opt-in ([#27](https://github.com/pleros-ai/lzcomplexity/issues/27)) ([3411e71](https://github.com/pleros-ai/lzcomplexity/commit/3411e71b0e265f00eee71f1dea0e16bf455472b5))
+
+
+### Documentation
+
+* add practical cheatsheets and sequence illustrations ([#20](https://github.com/pleros-ai/lzcomplexity/issues/20)) ([01e3310](https://github.com/pleros-ai/lzcomplexity/commit/01e3310b36f4d1c1e1f7e93459a3b8a0dd02ffbc))
+* launch comprehensive Pleros documentation and sequence explorer ([#16](https://github.com/pleros-ai/lzcomplexity/issues/16)) ([2cdfc47](https://github.com/pleros-ai/lzcomplexity/commit/2cdfc4743f7110047ffc6813122cc0cb636a2068))
+* refine explanations of E and improve the reading experience ([#19](https://github.com/pleros-ai/lzcomplexity/issues/19)) ([22e4b74](https://github.com/pleros-ai/lzcomplexity/commit/22e4b742c0b435de14dee29688f6fdfe56c951d4))
+* refine homepage layout at tablet widths ([1cec1ab](https://github.com/pleros-ai/lzcomplexity/commit/1cec1abc6928422e8c5ffbfc3097b5ae3fb8e6bb))
+* refine site design, add measure playground and social previews ([#17](https://github.com/pleros-ai/lzcomplexity/issues/17)) ([dfdb40b](https://github.com/pleros-ai/lzcomplexity/commit/dfdb40bdc850543ebdfbf0653ad4cfa601d2c8cf))
+* refine the site and build compact reference sheets ([#21](https://github.com/pleros-ai/lzcomplexity/issues/21)) ([6c35494](https://github.com/pleros-ai/lzcomplexity/commit/6c354942a9dbde1622996aff91100df0614e2829))
+* version site assets to refresh cached deployments ([959cb9f](https://github.com/pleros-ai/lzcomplexity/commit/959cb9ffa76a42c8b28996fa1f41283da59a5083))
 
 ## [2.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v1.0.2...v2.0.0) (2026-07-26)
 

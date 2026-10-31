@@ -8,13 +8,14 @@ They can be inspected directly or stored alongside your analysis records.
 `LzArgs::new()` and `LzArgs::default()` construct the same configuration:
 
 ```rust
-use lzcomplexity_core::{LzArgs, NO_ALPHABET};
+use lzcomplexity_core::{EmcMethod, LzArgs, NO_ALPHABET};
 
 let args = LzArgs::default();
 assert_eq!(args.chunks, 0);
 assert_eq!(args.max_context, 0);
 assert_eq!(args.block_size, -1);
-assert!(!args.get_shuffle_terms);
+assert_eq!(args.emc_method, EmcMethod::ChaoShen);
+assert!(!args.get_emc_terms);
 assert_eq!(args.alphabet, NO_ALPHABET);
 assert_eq!(args.log_base, NO_ALPHABET);
 ```
@@ -23,8 +24,9 @@ assert_eq!(args.log_base, NO_ALPHABET);
 |---|---|---|---|
 | `chunks` | `i32` | `0` | Accepted configuration field; does not affect the current calculations. |
 | `max_context` | `i32` | `0` | Accepted configuration field; does not limit the current factorization. |
+| `emc_method` | `EmcMethod` | `ChaoShen` | Select `ChaoShen` or the earlier `Shuffle` estimator. |
 | `block_size` | `i32` | `-1` | Maximum range for E; positive values are explicit, nonpositive values select automatically. |
-| `get_shuffle_terms` | `bool` | `false` | Include the E profile increments in `LzShuffle::summands`. |
+| `get_emc_terms` | `bool` | `false` | Include the E profile increments in `EmcResult::summands`. |
 | `alphabet` | `u32` | `NO_ALPHABET` | Alphabet parameter for the `epsilon` diagnostic; automatic uses sequence metadata. |
 | `log_base` | `u32` | `NO_ALPHABET` | Base for entropy density and E; automatic uses sequence metadata. |
 
@@ -65,7 +67,7 @@ For an ordinary sequence of length `N > 1`, the diagnostic is
 selected alphabet parameter and `b` is the logarithm base, each floored at two.
 The high-level function returns zero `epsilon` for empty and constant inputs.
 
-### `LzShuffle` { #lzshuffle }
+### `EmcResult` { #emcresult }
 
 Returned by the [E functions](analysis.md#effective-measure-complexity-e).
 It implements `Clone`, `Debug` and `Default`.
@@ -77,15 +79,15 @@ It implements `Clone`, `Debug` and `Default`.
 | `multi_information` | `f64` | First-range contrast before fitting; it may be negative. |
 | `summands` | `Vec<f64>` | Nonnegative increments of the fitted profile, included when requested. |
 
-With `get_shuffle_terms = true`, the increments sum to `emc_value`. Without it,
+With `get_emc_terms = true`, the increments sum to `emc_value`. Without it,
 the vector is empty and E is still calculated.
 
 ```text
-LzShuffle::new(max_block_size: i32, emc_value: f64, multi_information: f64) -> LzShuffle
+EmcResult::new(max_block_size: i32, emc_value: f64, multi_information: f64) -> EmcResult
 ```
 
 This constructor sets the three scalar fields and leaves `summands` empty.
-`LzShuffle::default()` is `new(-1, 0.0, 0.0)`. Thus a negative range in a result
+`EmcResult::default()` is `new(-1, 0.0, 0.0)`. Thus a negative range in a result
 means the container has not been computed; a negative range in `LzArgs` requests
 automatic range selection.
 
@@ -98,8 +100,8 @@ and `Default`.
 |---|---|---|
 | `complexity` | `u32` | Full-sequence LZ76 count. |
 | `entropy_density` | `f64` | h in the selected logarithm units per byte. |
-| `random_shuffle_complexity` | `LzShuffle` | E and the requested range profile. |
-| `paired_shuffle_complexity` | `LzShuffle` | Optional paired-state E result; the full driver leaves it at its default. |
+| `emc` | `EmcResult` | E and the requested range profile. |
+| `paired_shuffle_complexity` | `EmcResult` | Optional paired-state E result; the full driver leaves it at its default. |
 | `lz_normal_errors` | `f64` | Error diagnostic formed from h, length and factor-length dispersion. |
 | `lz_poison_errors` | `f64` | Error diagnostic `h / N` for `N > 1`, otherwise zero. The field spelling is part of the API. |
 | `epsilon` | `f64` | Finite-size diagnostic from factorization. |

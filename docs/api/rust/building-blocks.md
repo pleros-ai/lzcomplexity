@@ -109,8 +109,9 @@ shuffle::max_block_size(size: usize) -> usize
 
 Estimate the range `M` associated with `N = M * 2^M`, using the input byte length
 `size` as `N`. Lengths below ten return one. This helper returns the base range
-estimate; automatic E calculations add ten to it when the input is longer than
-50 bytes. A positive `LzArgs::block_size` overrides automatic selection.
+estimate; the explicit shuffle estimator adds ten when the input is longer
+than 50 bytes. The default Chao–Shen estimator uses its alphabet-aware ceiling
+and peak cutoff instead. A positive `LzArgs::block_size` overrides automatic selection.
 
 ### `shuffle_factorization` { #shuffle_factorization }
 
@@ -118,7 +119,8 @@ estimate; automatic E calculations add ten to it when the input is longer than
 shuffle::shuffle_factorization(seq: &Sequence, args: &LzArgs) -> (Vec<i32>, usize)
 ```
 
-Return intermediate factor counts and the maximum range `M` used for E.
+Return intermediate factor counts and the maximum range `M` used by the
+explicit shuffle estimator. Chao–Shen does not call this helper.
 The vector is one-indexed: positions `1..=M` hold the count at each range;
 position zero is unused and two trailing entries are reserved. These values
 are **factor counts**, despite the internal variable name `h_rand`.
@@ -137,7 +139,7 @@ shuffle::shuffle_entropy_calculation(
     complexity: i32,
     counts: &[i32],
     max_range: usize,
-) -> LzShuffle
+) -> EmcResult
 ```
 
 Calculate E from an original-sequence factor count and the corresponding
@@ -146,7 +148,7 @@ logarithm base. Supply values for these exact bytes and settings; the function
 trusts the provided counts.
 
 `max_range` becomes the result's `max_block_size`. When
-`args.get_shuffle_terms` is true, `summands` has `max_range` entries. If the count
+`args.get_emc_terms` is true, `summands` has `max_range` entries. If the count
 slice contains fewer ranges than requested, only available ranges are processed
 and remaining increments stay zero. Inputs of length at most one, zero range or
 no available counts return zero E. Standard measurements use the complete output
@@ -158,7 +160,7 @@ use lzcomplexity_core::{lz76, shuffle, LzArgs, Sequence};
 let seq = Sequence::from_bytes(b"00010111".repeat(32));
 let mut args = LzArgs::default();
 args.block_size = 4;
-args.get_shuffle_terms = true;
+args.get_emc_terms = true;
 let count = lz76::lz76_factorization(&seq, &args) as i32;
 let (counts, max_range) = shuffle::shuffle_factorization(&seq, &args);
 let e = shuffle::shuffle_entropy_calculation(&seq, &args, count, &counts, max_range);

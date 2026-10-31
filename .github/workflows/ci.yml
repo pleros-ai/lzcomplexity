@@ -97,3 +97,4 @@ jobs:
           assert not hasattr(lz, "entropy_density"), "entropy_density was renamed to h"
           print("Python API OK")
           PY
+          python -m unittest discover -s tests -p 'test_*.py'

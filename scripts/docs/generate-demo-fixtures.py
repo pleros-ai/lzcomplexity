@@ -52,7 +52,7 @@ for a, b in pairs:
         "x": lz.factorization(a)[0], "y": lz.factorization(b)[0],
         "xy": lz.factorization(a + b)[0], "yx": lz.factorization(b + a)[0]}})
 
-output = {"source": "Native lzcomplexity 2.0.0 wheel from current Rust core; 64-bit rand 0.8.6 / ChaCha8 0.3.1; base 2 unless options override.",
+output = {"source": "Native lzcomplexity local Chao-Shen default from current Rust core; base 2 unless options override.",
           "cases": cases, "distances": distances}
 (ROOT / "tests/docs/measure-cases.json").write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n")
 print(f"Wrote {len(cases)} native E cases and {len(distances)} distance cases.")

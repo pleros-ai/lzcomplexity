@@ -1,7 +1,8 @@
 # Reproducibility and parallel execution
 
 Identical input bytes and parameters produce the same E value, independently
-of worker scheduling.
+of worker scheduling. Chao–Shen uses sorted histogram counts; the optional
+shuffle estimator retains its deterministic RNG stream.
 
 ## Inputs and settings
 
@@ -59,7 +60,7 @@ import hashlib
 import lzcomplexity as lz
 
 sequence = b"00010111" * 1024
-settings = {"log_base": 2, "max_block_size": 16}
+settings = {"log_base": 2, "max_block_size": 16, "method": "chao-shen"}
 record = {
     "package_version": lz.__version__,
     "input_bytes": len(sequence),
