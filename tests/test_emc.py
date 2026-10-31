@@ -38,7 +38,7 @@ class EmcTests(unittest.TestCase):
         self.assertEqual(lz.emc(b"01" * 5, method="shuffle")[0], 0)
 
     def test_matches_built_july_28_chao_shen_binary(self):
-        cases = json.loads((ROOT / "tests/chao-shen-history.json").read_text())["cases"]
+        cases = json.loads((ROOT / "tests/chao-shen-history.json").read_text(encoding="utf-8"))["cases"]
         for case in cases:
             with self.subTest(name=case["name"], base=case["log_base"]):
                 actual = lz.lz76(case["input"], log_base=case["log_base"],
@@ -52,14 +52,23 @@ class EmcTests(unittest.TestCase):
                     self.assertAlmostEqual(actual_term, old_term, places=12)
 
     def test_shuffle_matches_pre_change_corpus(self):
-        for case in json.loads((ROOT / "tests/docs/shuffle-cases.json").read_text())["cases"]:
+        for case in json.loads((ROOT / "tests/docs/shuffle-cases.json").read_text(encoding="utf-8"))["cases"]:
             options = case.get("options", {})
             actual = lz.lz76(case["input"], method="shuffle",
                              log_base=options.get("logBase", 2),
                              max_block_size=options.get("maxBlockSize", -1))["emc"]
             with self.subTest(input=case["input"][:16], options=options):
                 for key, expected in case["emc"].items():
-                    self.assertEqual(actual[key], expected, key)
+                    if isinstance(expected, list):
+                        self.assertEqual(len(actual[key]), len(expected), key)
+                        for value, reference in zip(actual[key], expected):
+                            self.assertAlmostEqual(value, reference, places=12, msg=key)
+                    elif isinstance(expected, float):
+                        # Reference fixtures come from macOS; allow libm rounding
+                        # differences on Windows and Linux.
+                        self.assertAlmostEqual(actual[key], expected, places=12, msg=key)
+                    else:
+                        self.assertEqual(actual[key], expected, key)
 
     def test_units_do_not_change_automatic_range(self):
         data = b"ACGT" * 1000
