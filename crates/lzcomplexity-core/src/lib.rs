@@ -3,6 +3,8 @@
 //! Algorithms for entropy density h, effective measure complexity E and information
 //! distance, operating directly on byte sequences.
 
+pub mod block_entropy;
+pub mod emc;
 pub mod lpf;
 pub mod lz76;
 pub mod metrics;
@@ -10,7 +12,8 @@ pub mod sequence;
 pub mod shuffle;
 pub mod suffix_array;
 
-pub use lz76::{LempelZiv, Lz76Result, LzArgs, LzExtra, LzShuffle};
+pub use emc::EmcMethod;
+pub use lz76::{EmcResult, LempelZiv, Lz76Result, LzArgs, LzExtra};
 pub use sequence::Sequence;
 pub use suffix_array::{build_suffix_array, SuffixArray};
 

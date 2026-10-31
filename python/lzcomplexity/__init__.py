@@ -14,6 +14,9 @@ Materialize generators with ``list(...)`` or ``bytes(...)`` first. For
 ``list[int]``, each element's decimal representation is concatenated:
 ``[0, 1, 10]`` becomes the symbolic string ``"0110"``.
 
+E defaults to Chao–Shen. Pass ``method="shuffle"`` to ``emc()`` or
+``lz76()`` for the earlier random-shuffle estimator.
+
 E is sensitive to correlations across different ranges of a sequence.
 Compare matched lengths, encodings, logarithm bases and range limits.
 

@@ -50,6 +50,11 @@ E, increments = lz.emc(sequence, max_block_size=16)  # Structure across ranges
 d = lz.nid(sequence, other)                         # Distance between sequences
 ```
 
+E defaults to Chao–Shen block entropy estimation. Use
+`lz.emc(sequence, method="shuffle")` or `lz.lz76(sequence, method="shuffle")`
+for the earlier random-shuffle estimator. The standalone accepts
+`--emc-method shuffle`; `-e 8:f` still chooses the range and profile output.
+
 Pass text or bytes directly. For categorical data, assign one byte to each
 symbol; for continuous signals, first choose a symbolic representation.
 The [Python reference](https://pleros-ai.github.io/lzcomplexity/api/python/)

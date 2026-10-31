@@ -652,7 +652,7 @@ mod tests {
             let fresh = Sequence::from_bytes(seq.as_bytes().to_vec());
             let mut args = LzArgs::new();
             args.block_size = 8;
-            args.get_shuffle_terms = true;
+            args.get_emc_terms = true;
             assert_eq!(
                 lz76_entropy_density(seq, &args).to_bits(),
                 lz76_entropy_density(&fresh, &args).to_bits()

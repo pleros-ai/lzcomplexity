@@ -74,3 +74,13 @@ See the [dynamical systems recipe](../recipes/dynamical-systems.md) for a worked
 
 [Inside the implementation](../concepts/implementation.md) follows the calculation
 from input bytes to results.
+
+## Block entropy estimation
+
+Chao, A., & Shen, T.-J. (2003). **Nonparametric estimation of Shannon's index
+of diversity when there are unseen species in sample.** *Environmental and
+Ecological Statistics*, **10**, 429–443. [10.1023/A:1026096204727](https://doi.org/10.1023/A:1026096204727).
+
+The default E estimator applies coverage-adjusted block entropy to overlapping
+windows. See the [implementation](../concepts/implementation.md#6-structural-complexity-e)
+for the formula and the all-singleton fallback.

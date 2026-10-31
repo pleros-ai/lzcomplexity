@@ -111,7 +111,9 @@ Use it to compare the production of new information in consistently encoded samp
 ## `emc`
 
 Returns effective measure complexity E and the nonnegative increments of its
-range profile. Set `max_block_size` to use the same examined ranges across samples.
+range profile. Chao–Shen is the default. Select `method="shuffle"` in
+`emc()` or `lz76()` for the earlier estimator. Unknown method names raise
+`ValueError`. Set `max_block_size` to use the same examined ranges across samples.
 
 [Full `emc()` reference →](functions/emc.md)
 

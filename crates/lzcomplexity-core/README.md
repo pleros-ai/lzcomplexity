@@ -87,3 +87,8 @@ the command-line tools.
 ## License
 
 MIT — see [LICENSE](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/LICENSE).
+
+E defaults to Chao–Shen block entropy estimation. Call `emc::emc` with
+`LzArgs::default()`, or set `args.emc_method = EmcMethod::Shuffle` to select
+the earlier random-shuffle estimator. Results use `EmcResult` and the full
+analysis stores E in `LempelZiv.emc`.

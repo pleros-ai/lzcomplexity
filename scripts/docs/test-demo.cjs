@@ -55,6 +55,13 @@ for (const test of distances) {
   assert.deepEqual(actual.counts, test.counts);
   close(distance(test.b, test.a).value, actual.value, 'distance symmetry');
 }
+for (const test of require('../../tests/docs/shuffle-cases.json').cases) {
+  const actual = emc(test.input, {logBase: 2, ...test.options, method: 'shuffle'});
+  close(actual.value, test.emc.value, 'legacy shuffle value');
+  assert.equal(actual.maxBlockSize, test.emc.max_block_size);
+  closeArray(actual.summands, test.emc.summands, 'legacy shuffle increments');
+  close(actual.multiInformation, test.emc.multi_information, 'legacy shuffle contrast');
+}
 const rng = new _testing.ChaCha8(BigInt(rngCase.seed));
 assert.deepEqual(rngCase.u64.map(() => rng.next64().toString()), rngCase.u64, 'native ChaCha8 u64 words');
 const bytes = new TextEncoder().encode(rngCase.input);
@@ -72,6 +79,8 @@ assert.throws(() => distance('a', 'a'.repeat(257)), /256 UTF-8 bytes/);
 assert.throws(() => emc('abc', {maxBlockSize: 2.5}), /Block-size cap/);
 assert.throws(() => emc('abc', {maxBlockSize: 257}), /Block-size cap/);
 assert.equal(emc('a'.repeat(256)).value, 0, 'constant sequence preserves native E');
-assert.equal(emc('0101010101').value, 0, 'N <= 10 preserves native shuffle no-op');
+assert.equal(emc('0101010101', {method: 'shuffle'}).value, 0, 'N <= 10 preserves native shuffle no-op');
+assert.ok(emc('0101010101').value > 0, 'Chao–Shen analyzes short sequences');
+assert.throws(() => emc('abc', {method: 'unknown'}), /method must/);
 assert.equal(distance('banana', 'banana').value, 1 / 3, 'do not force native self-distance to zero');
 console.log(`${parseCases.length} existing parse fixtures, ${measureCases.length} native E fixtures, ${autoBaseCases.length} native automatic-base fixtures, ${distances.length} native distance fixtures, 50 ChaCha8 words and 53 exact block swaps match.`);

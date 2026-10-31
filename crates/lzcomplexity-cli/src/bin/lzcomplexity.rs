@@ -5,13 +5,20 @@
 
 use std::process::ExitCode;
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use lzcomplexity_cli::formats::{self, Format};
 use lzcomplexity_cli::{default_output, term};
 use lzcomplexity_core as core;
 use serde_json::{json, Map, Value};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[derive(Clone, Copy, Debug, Default, ValueEnum)]
+enum EmcMethod {
+    #[default]
+    ChaoShen,
+    Shuffle,
+}
 
 #[derive(Parser, Debug)]
 #[command(
@@ -34,8 +41,12 @@ struct Cli {
     dlz: bool,
 
     /// E options `v1:f:v2:v3` (maximum range, summand factors; final slots unused).
-    #[arg(short = 'e', long = "rsemc-opt", value_name = "opts", num_args = 0..=1, default_missing_value = "a")]
-    rsemc_opt: Option<String>,
+    #[arg(short = 'e', long = "emc-opt", alias = "rsemc-opt", value_name = "opts", num_args = 0..=1, default_missing_value = "a")]
+    emc_opt: Option<String>,
+
+    /// Effective Measure Complexity estimator.
+    #[arg(long, value_enum, default_value = "chao-shen")]
+    emc_method: EmcMethod,
 
     /// Save the factorization to this file.
     #[arg(short = 'f', long = "factors", value_name = "file_name")]
@@ -114,7 +125,7 @@ fn parse_alphabet(s: &Option<String>) -> u32 {
 
 /// Parse `-e v1:f:v2:v3` — v1 is the max block size (or `a` = auto = 0), `f`
 /// requests the summand terms. Mirrors `parseExcessOptions`.
-fn apply_rsemc(args: &mut core::lz76::LzArgs, opt: &str) {
+fn apply_emc(args: &mut core::lz76::LzArgs, opt: &str) {
     let parts: Vec<&str> = opt.split(':').collect();
     if parts.is_empty() || parts[0].is_empty() {
         return;
@@ -130,7 +141,7 @@ fn apply_rsemc(args: &mut core::lz76::LzArgs, opt: &str) {
     let factor_idx = if first == "f" { 0 } else { 1 };
     if let Some(tok) = parts.get(factor_idx) {
         if *tok == "f" {
-            args.get_shuffle_terms = true;
+            args.get_emc_terms = true;
         }
     }
 }
@@ -162,9 +173,13 @@ fn build_options(cli: &Cli) -> Options {
         Some(v) => v.parse::<u32>().unwrap_or(args.alphabet),
         None => args.alphabet,
     };
+    args.emc_method = match cli.emc_method {
+        EmcMethod::ChaoShen => core::EmcMethod::ChaoShen,
+        EmcMethod::Shuffle => core::EmcMethod::Shuffle,
+    };
     args.block_size = -1;
-    if let Some(opt) = &cli.rsemc_opt {
-        apply_rsemc(&mut args, opt);
+    if let Some(opt) = &cli.emc_opt {
+        apply_emc(&mut args, opt);
     }
 
     Options {
@@ -236,21 +251,22 @@ fn run(opt: &Options) -> std::io::Result<()> {
 
         // Entropy-only mode emits an uncomputed E object with default values
         // (-1 / 0.0 / 0.0, summands omitted).
-        let mut rsc_map = Map::new();
+        let mut emc_map = Map::new();
         if opt.entropy_only {
-            rsc_map.insert("value".into(), json!(0.0));
-            rsc_map.insert("max_block_size".into(), json!(-1));
-            rsc_map.insert("multi_information".into(), json!(0.0));
+            emc_map.insert("value".into(), json!(0.0));
+            emc_map.insert("max_block_size".into(), json!(-1));
+            emc_map.insert("multi_information".into(), json!(0.0));
         } else {
-            let rsc = core::shuffle::lz76_random_shuffle_complexity(seq, &opt.args);
-            rsc_map.insert("value".into(), json!(rsc.emc_value));
-            rsc_map.insert("max_block_size".into(), json!(rsc.max_block_size));
-            rsc_map.insert("multi_information".into(), json!(rsc.multi_information));
-            if !rsc.summands.is_empty() {
-                rsc_map.insert("summands".into(), json!(rsc.summands));
+            let e = core::emc::emc_with(seq, &opt.args, res.factorization as i32);
+            emc_map.insert("value".into(), json!(e.emc_value));
+            emc_map.insert("max_block_size".into(), json!(e.max_block_size));
+            emc_map.insert("multi_information".into(), json!(e.multi_information));
+            if !e.summands.is_empty() {
+                emc_map.insert("summands".into(), json!(e.summands));
             }
         }
-        entry.insert("lz76RandomShuffleComplexity".into(), Value::Object(rsc_map));
+        emc_map.insert("method".into(), json!(opt.args.emc_method.as_str()));
+        entry.insert("emc".into(), Value::Object(emc_map));
         seq_entries.push(Value::Object(entry));
     }
 
@@ -361,6 +377,55 @@ fn main() -> ExitCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn emc_selection_and_json_use_neutral_names() {
+        let dir = std::env::temp_dir().join(format!("lz-emc-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("input.txt");
+        let output = dir.join("output.json");
+        let data = "00010111".repeat(256);
+        std::fs::write(&input, &data).unwrap();
+        let seq = core::Sequence::from_str(&data);
+        for method in [None, Some("chao-shen"), Some("shuffle")] {
+            let mut command = vec![
+                "lzcomplexity",
+                input.to_str().unwrap(),
+                "-e",
+                "8:f",
+                "-o",
+                output.to_str().unwrap(),
+            ];
+            if let Some(method) = method {
+                command.extend(["--emc-method", method]);
+            }
+            let options = build_options(&Cli::parse_from(command));
+            run(&options).unwrap();
+            let report: Value = serde_json::from_slice(&std::fs::read(&output).unwrap()).unwrap();
+            let entry = &report["sequences"][0];
+            assert!(entry.get("lz76RandomShuffleComplexity").is_none());
+            let e = &entry["emc"];
+            assert_eq!(e["method"], method.unwrap_or("chao-shen"));
+            assert_eq!(e["max_block_size"], 8);
+            let expected = core::emc::emc(&seq, &options.args);
+            assert!((e["value"].as_f64().unwrap() - expected.emc_value).abs() < 1e-12);
+            let terms = e["summands"].as_array().unwrap();
+            assert_eq!(terms.len(), 8);
+            let sum: f64 = terms.iter().map(|v| v.as_f64().unwrap()).sum();
+            assert!((sum - expected.emc_value).abs() < 1e-12);
+        }
+        let cli = Cli::parse_from(["lzcomplexity", input.to_str().unwrap(), "-n"]);
+        run(&build_options(&cli)).unwrap();
+        // Default output is next to the input; entropy-only retains an uncomputed E.
+        let report: Value =
+            serde_json::from_slice(&std::fs::read(input.with_extension("lz76.json")).unwrap())
+                .unwrap();
+        assert_eq!(report["sequences"][0]["emc"]["max_block_size"], -1);
+        assert!(
+            Cli::try_parse_from(["lzcomplexity", "input.txt", "--emc-method", "typo"]).is_err()
+        );
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     fn entropy_report_honors_requested_units_and_keeps_legacy_defaults() {

@@ -5,7 +5,8 @@ implementation and applications to symbolic signals and nonlinear dynamics.
 
 [Download the manual (PDF)](../downloads/manual-0.9.pdf){ .md-button .md-button--primary }
 
-The PDF includes the earlier class-based API. Use the API and installation
+The PDF includes the earlier class-based API and predates the Chao–Shen
+default. For the current E estimator, use the [E guide](../concepts/emc.md). Use the API and installation
 pages on this site for executable examples, or consult the
 [migration reference](cpp-parity.md) when adapting a manual example.
 

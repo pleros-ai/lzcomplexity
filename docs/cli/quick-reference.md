@@ -122,11 +122,13 @@ Without `-m`, `lzcomplexity` reads the first sequence.
 
 ## Read results and get help
 
+Chao–Shen is the default. Use `--emc-method shuffle` for the earlier estimator.
+
 | Analysis JSON field | Read as |
 |---|---|
 | `lz76Complexity` | Factor count. |
 | `lz76EntropyDensity` | h. |
-| <code>lz76RandomShuffleComplexity<wbr>.value</code> | E. |
+| <code>emc<wbr>.value</code> | E. |
 
 ```sh
 lzcomplexity --help

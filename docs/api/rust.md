@@ -20,23 +20,23 @@ dependency. All input positions and lengths refer to **bytes**.
 ## Start with the high-level functions
 
 ```rust
-use lzcomplexity_core::{lz76, metrics, shuffle, LzArgs, Sequence};
+use lzcomplexity_core::{emc, lz76, metrics, LzArgs, Sequence};
 
 let seq = Sequence::from_str("1000110011101");
 let mut args = LzArgs::default();
 args.log_base = 2;
 args.block_size = 8;
-args.get_shuffle_terms = true;
+args.get_emc_terms = true;
 
 let factors = lz76::lz76_factors(&seq, &args);
 assert_eq!(factors.factorization, 5);
 assert_eq!(factors.lzf, vec![0, 1, 2, 5, 9, 13]);
 
 let h = lz76::lz76_entropy_density(&seq, &args);
-let e = shuffle::lz76_random_shuffle_complexity(&seq, &args);
+let e = emc::emc(&seq, &args);
 let full = metrics::lz76(&seq, &args);
 assert_eq!(h, full.entropy_density);
-assert_eq!(e.emc_value, full.random_shuffle_complexity.emc_value);
+assert_eq!(e.emc_value, full.emc.emc_value);
 ```
 
 Choose an entry point for the result you need:
@@ -46,7 +46,7 @@ Choose an entry point for the result you need:
 | Count factors | `lz76::lz76_factorization` | [Factor count](rust/analysis.md#lz76_factorization) |
 | Obtain factor boundaries | `lz76::lz76_factors` | [Factor boundaries](rust/analysis.md#lz76_factors) |
 | Measure entropy density | `lz76::lz76_entropy_density` | [Entropy density](rust/analysis.md#lz76_entropy_density) |
-| Measure effective measure complexity | `shuffle::lz76_random_shuffle_complexity` | [E](rust/analysis.md#lz76_random_shuffle_complexity) |
+| Measure effective measure complexity | `emc::emc` | [E](rust/analysis.md#emc) |
 | Compare two sequences | `metrics::lz76_information_distance` | [Information distance](rust/analysis.md#lz76_information_distance) |
 | Obtain the complete analysis | `metrics::lz76` | [Full result](rust/analysis.md#lz76) |
 
@@ -83,14 +83,14 @@ for E and whether its profile increments are returned. `LzArgs::new()` and
 
 By default, the logarithm base follows the sequence's alphabet size, with a
 minimum of two. Set `log_base = 2` for base-two units. Set `block_size` to a
-positive value for an explicit maximum range and `get_shuffle_terms = true` to
+positive value for an explicit maximum range and `get_emc_terms = true` to
 obtain E's increments. The [configuration reference](rust/types.md#lzargs)
 explains every field, sentinel and default.
 
 ## Result structures
 
 The [result reference](rust/types.md#result-structures) describes the complete
-fields of `Lz76Result`, `LzShuffle`, `LempelZiv` and `LzExtra`, their constructors,
+fields of `Lz76Result`, `EmcResult`, `LempelZiv` and `LzExtra`, their constructors,
 default values and the meaning of the diagnostics.
 
 Factor boundaries may contain an endpoint beyond the input length. Such a final
@@ -123,7 +123,7 @@ The [building-block reference](rust/building-blocks.md) documents the public
 sequence sampling functions, range selection, intermediate count calculations
 and paired-state encoding. Their signatures retain the names used in the crate.
 For a standard E measurement, use
-[`lz76_random_shuffle_complexity`](rust/analysis.md#lz76_random_shuffle_complexity).
+[`emc`](rust/analysis.md#emc).
 
 ## Suffix arrays and lower-level building blocks
 

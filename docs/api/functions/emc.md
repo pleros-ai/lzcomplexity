@@ -7,7 +7,7 @@ connecting it.
 
 ```text
 emc(seq, partitions=1, alphabet=None, log_base=None,
-    max_block_size=-1, jobs=0) -> tuple[float, list[float]]
+    max_block_size=-1, jobs=0, *, method="chao-shen") -> tuple[float, list[float]]
 ```
 
 ## Parameters
@@ -18,7 +18,8 @@ emc(seq, partitions=1, alphabet=None, log_base=None,
 | `partitions` | `1` | Accepted; has no effect. |
 | `alphabet` | `None` | Does not change E or select its logarithm base. |
 | `log_base` | `None` | Normalization base. Omitted: observed byte alphabet size, with a minimum of two. Pass `2` for base-two units. Values zero and one are treated as two. |
-| `max_block_size` | `-1` | Largest examined range in bytes. A positive `M` includes ranges `1` through `M`; zero or a negative value selects the limit automatically from the input length. |
+| `max_block_size` | `-1` | Largest examined range in bytes. A positive `M` includes ranges `1` through `M`; zero or a negative value selects the limit automatically from input length and alphabet size, stopping at the earliest raw ladder peak for Chao–Shen. |
+| `method` | `"chao-shen"` | Keyword-only. `"chao-shen"` uses coverage-adjusted block entropies; `"shuffle"` reproduces the earlier random-shuffle estimate. |
 | `jobs` | `0` | Accepted; has no effect. Native workers use [Rayon configuration](../../project/determinism.md). |
 
 See [parameter types and errors](../python.md#parameter-types-and-errors)
@@ -50,7 +51,7 @@ sequence = b"00010111" * 256
 E, increments = lz.emc(sequence, log_base=2, max_block_size=8)
 profile = list(accumulate(increments))
 
-assert E == 3.2105712890625
+assert math.isclose(E, 2.8818337213449023, abs_tol=1e-12)
 assert len(increments) == 8
 assert all(term >= 0 for term in increments)
 assert math.isclose(sum(increments), E, abs_tol=1e-12)
@@ -91,8 +92,9 @@ The same input bytes and parameters give the same E and increments. Worker
 scheduling does not change the result. E can depend on the symbol encoding
 and alignment, so keep preprocessing consistent and retain the settings.
 
-Constant inputs return E zero. Inputs of ten bytes or fewer also return zero
-with this calculation. Empty and one-byte inputs produce zero increments;
+Constant inputs return E zero. The shuffle estimator also returns zero
+for inputs of ten bytes or fewer; Chao–Shen can give a nonzero estimate for
+short inputs. Empty and one-byte inputs produce zero increments;
 an explicit positive cap still determines their list length. Use longer
 sequences when exploring E and its profile.
 

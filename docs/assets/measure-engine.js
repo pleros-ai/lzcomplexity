@@ -1,7 +1,7 @@
 /* Browser companion to lzcomplexity's Rust implementation.
  * The small-input LPF search is deliberately simple. Seed expansion, ChaCha8,
  * 64-bit rand 0.8.6 inclusive sampling, block swaps and score projection follow
- * crates/lzcomplexity-core/{sequence,shuffle,metrics,lz76}.rs without changing
+ * crates/lzcomplexity-core/{sequence,emc,block_entropy,shuffle,metrics,lz76}.rs without changing
  * the production library. Native parity fixtures live in tests/docs/.
  * BigInt preserves the Rust u64 arithmetic on every supported browser.
  */
@@ -135,21 +135,60 @@
     }
     return sums.flatMap((sum, i) => Array(counts[i]).fill(Math.max(0, sum / counts[i])));
   }
+  function reliableBlockSize(n, alphabet) {
+    const sigma = Math.max(2, alphabet);
+    let size = 1;
+    while (size < 64 && (size + 1) * sigma ** (size + 1) <= n) size++;
+    return size;
+  }
+  function blockEntropy(bytes, size) {
+    const histogram = new Map();
+    for (let i = 0; i + size <= bytes.length; i++) {
+      const key = Array.from(bytes.subarray(i, i + size)).join(",");
+      histogram.set(key, (histogram.get(key) || 0) + 1);
+    }
+    const counts = [...histogram.values()].sort((a, b) => a - b);
+    const m = counts.reduce((total, c) => total + c, 0);
+    if (m === 0) return 0;
+    const coverage = 1 - counts.filter(c => c === 1).length / m;
+    let entropy = 0;
+    for (const count of counts) {
+      const p = (coverage > 0 ? coverage : 1) * (count / m);
+      const inclusion = coverage > 0 ? -Math.expm1(m * Math.log1p(-p)) : 1;
+      if (inclusion > 0) entropy -= p * Math.log2(p) / inclusion;
+    }
+    return entropy;
+  }
   function emc(text, options = {}) {
     const bytes = encode(text), n = bytes.length, count = factorize(bytes).count;
-    const maxBlockSize = options.maxBlockSize > 0 ? options.maxBlockSize : autoBlockSize(n);
-    if (!Number.isInteger(maxBlockSize) || maxBlockSize > 256) throw new Error("Block-size cap must be an integer from 1 to 256.");
+    const method = options.method ?? "chao-shen";
+    if (method !== "chao-shen" && method !== "shuffle") throw new Error("method must be 'chao-shen' or 'shuffle'");
     const { alphabetSize, logBase } = normalization(bytes, options.logBase);
+    const automatic = !(options.maxBlockSize > 0);
+    let maxBlockSize = automatic ? (method === "shuffle" ? autoBlockSize(n) : reliableBlockSize(n, alphabetSize)) : options.maxBlockSize;
+    if (!Number.isInteger(maxBlockSize) || maxBlockSize > 256) throw new Error("Block-size cap must be an integer from 1 to 256.");
     const g = n > 1 ? (Math.log(n) / Math.log(logBase)) / n : 0;
-    const originalH = count * g, base = hashBytes(bytes), counts = [];
+    const originalH = count * g, counts = [];
+    const base = method === "shuffle" ? hashBytes(bytes) : 0n;
     for (let size = 1; size <= maxBlockSize; size++) {
-      const seed = base ^ ((BigInt(size) * 0x9e3779b97f4a7c15n) & MASK64);
-      counts.push(factorize(shuffled(bytes, size, seed)).count);
+      if (method === "shuffle") {
+        const seed = base ^ ((BigInt(size) * 0x9e3779b97f4a7c15n) & MASK64);
+        counts.push(factorize(shuffled(bytes, size, seed)).count);
+      } else {
+        counts.push(blockEntropy(bytes, size) * Math.LN2 / Math.log(logBase));
+      }
     }
-    const raw = counts.map((c, i) => (i + 1) * (c * g - originalH));
+    let raw = counts.map((c, i) => method === "shuffle" ? (i + 1) * (c * g - originalH) : c - (i + 1) * originalH);
+    const multiInformation = raw[0] || 0;
+    if (automatic && method === "chao-shen") {
+      let best = 0;
+      for (let i = 1; i < raw.length; i++) if (raw[i] > raw[best]) best = i;
+      maxBlockSize = best + 1;
+      raw = raw.slice(0, maxBlockSize);
+    }
     const fitted = isotonic(raw);
     const summands = fitted.map((value, i) => value - (i > 0 ? fitted[i - 1] : 0));
-    return { value: fitted.at(-1) || 0, summands, maxBlockSize, multiInformation: raw[0] || 0, raw, fitted, counts, alphabetSize, logBase };
+    return { value: fitted.at(-1) || 0, summands, maxBlockSize, multiInformation, raw, fitted, counts, alphabetSize, logBase, method };
   }
   function distance(textA, textB) {
     const a = encode(textA), b = encode(textB);
