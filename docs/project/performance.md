@@ -1,6 +1,6 @@
 # Performance and scaling
 
-The Rust core shares work across Python and the command-line tools. Factorization constructs sequence-indexing arrays; calculating E repeats factorization at several ranges. The table below helps estimate the work needed for each operation.
+The Rust core shares work across Python and the command-line tools. Factorization constructs sequence-indexing arrays; calculating E builds overlapping-window histograms at several ranges. The optional shuffle estimator repeats factorization on surrogate sequences. The table below helps estimate the work needed for each operation.
 
 ## Where the time goes
 
@@ -25,7 +25,7 @@ Python's `jobs` and `partitions` arguments have no effect on execution. For Pyth
 
 ## Peak memory matters
 
-The byte buffer, suffix array, LCP array, LPF array and returned boundaries occupy memory proportional to input size. Concurrent scale tasks allocate additional sequence and factorization buffers. Increasing concurrency may increase peak RAM even when elapsed time improves.
+The byte buffer, suffix array, LCP array, LPF array and returned boundaries occupy memory proportional to input size. Concurrent Chao–Shen tasks allocate window histograms. Shuffle tasks allocate additional sequence and factorization buffers. Increasing concurrency may increase peak RAM even when elapsed time improves.
 
 The API does not stream an indefinitely long sequence through a fixed memory window. A larger input therefore requires a corresponding memory budget. Internal indices and some counts are 32-bit, with additional signed count storage in E calculations; do not infer a safe maximum input length solely from the host's address space.
 

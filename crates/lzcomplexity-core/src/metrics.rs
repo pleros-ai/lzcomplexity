@@ -1,11 +1,12 @@
 //! Information distance, mutual information, extras, and the top-level
 //! `lz76(seq, args) -> LempelZiv` driver.
 
+use crate::emc::emc_with;
 use crate::lz76::{
     entropy_density_from, lz76_factorization, lz76_factors, LempelZiv, LzArgs, LzExtra,
 };
 use crate::sequence::Sequence;
-use crate::shuffle::{lz76_random_shuffle_complexity_with, merge_sequences, shuffle_factorization};
+use crate::shuffle::{merge_sequences, shuffle_factorization};
 use crate::NO_ALPHABET;
 
 /// `lz76InformationDistance(T1, T2, args)` from the C++.
@@ -100,7 +101,7 @@ pub fn lz76_extras_with(seq: &Sequence, args: &LzArgs, c_lz: f64) -> LzExtra {
 /// `lz76(seq, args)` — the complete analysis.
 pub fn lz76(seq: &Sequence, args: &LzArgs) -> LempelZiv {
     // Factorize the full sequence ONCE; reuse the count for entropy, the
-    // random-shuffle stage, and the extras instead of re-factorizing 3 more times.
+    // E calculation, and the extras instead of re-factorizing 3 more times.
     let res = lz76_factors(seq, args);
     let factorization = res.factorization;
     let entropy = if seq.len() <= 1 {
@@ -108,7 +109,7 @@ pub fn lz76(seq: &Sequence, args: &LzArgs) -> LempelZiv {
     } else {
         entropy_density_from(factorization, seq, args)
     };
-    let rsc = lz76_random_shuffle_complexity_with(seq, args, factorization as i32);
+    let e = emc_with(seq, args, factorization as i32);
     let extras = lz76_extras_with(seq, args, factorization as f64);
     let stddev = factor_stddev_of(&res.lzf); // computed once, used twice below
 
@@ -132,7 +133,7 @@ pub fn lz76(seq: &Sequence, args: &LzArgs) -> LempelZiv {
     LempelZiv {
         complexity: factorization,
         entropy_density: entropy,
-        random_shuffle_complexity: rsc,
+        emc: e,
         paired_shuffle_complexity: Default::default(),
         lz_normal_errors: normal_error,
         lz_poison_errors: poison_error,

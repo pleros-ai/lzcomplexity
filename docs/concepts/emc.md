@@ -10,6 +10,19 @@ to words and longer passages. In a symbolic trajectory, it can extend from
 local transitions to recurring patterns over many observations. Studying h
 and E together helps distinguish randomness from organized variation.
 
+## Estimator
+
+The default estimates block entropies with Chao–Shen from overlapping byte
+windows, subtracts the LZ76 entropy-rate contribution and fits a nonnegative,
+nondecreasing profile. E is the final fitted level. No random surrogate is
+needed for this calculation. This is a finite-sample estimate; its accuracy
+depends on sequence length and the examined ranges.
+
+To reproduce the earlier random-shuffle calculation, use
+`lz.emc(sequence, method="shuffle")` or
+`lz.lz76(sequence, method="shuffle")`. In the standalone, pass
+`--emc-method shuffle`. Record the estimator when comparing results.
+
 ## Calculate E
 
 ```python
@@ -35,7 +48,9 @@ print(result["emc"]["value"])
 
 `max_block_size` sets the largest examined range in bytes. A value of `16`,
 for example, includes ranges from one to sixteen bytes. When the argument is
-omitted or nonpositive, the library chooses the maximum from the input length.
+omitted or nonpositive, Chao–Shen chooses a ceiling from the length and observed alphabet size, then
+stops at the earliest raw ladder peak. An explicit positive cap retains the
+entire requested ladder.
 
 Start with a range appropriate to the patterns you want to investigate, then
 compare several choices. Keep the input length, encoding, logarithm base and

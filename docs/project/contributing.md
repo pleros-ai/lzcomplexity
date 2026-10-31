@@ -48,8 +48,8 @@ the random-generator fixtures appear in `scripts/docs/generate-rng-fixtures.rs`.
 | Social previews | `overrides/main.html`, `docs/assets/social-card.svg`, `docs/assets/social-card.png` |
 | Navigation and toolchain | `mkdocs.yml`, `requirements-docs.txt` |
 
-The browser playground accepts 256 UTF-8 bytes per sequence, uses base-two
-logarithms and selects the E range automatically. Asset URLs are versioned by
+The browser playground accepts 256 UTF-8 bytes per sequence, uses the observed byte alphabet
+for logarithm units and selects the Chao–Shen E range automatically. Asset URLs are versioned by
 content so published changes refresh cached CSS and JavaScript.
 
 ## Publishing

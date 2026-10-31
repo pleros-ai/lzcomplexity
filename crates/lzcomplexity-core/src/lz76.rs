@@ -12,7 +12,8 @@ pub struct LzArgs {
     pub chunks: i32,
     pub max_context: i32,
     pub block_size: i32,
-    pub get_shuffle_terms: bool,
+    pub emc_method: crate::emc::EmcMethod,
+    pub get_emc_terms: bool,
     pub alphabet: u32,
     pub log_base: u32,
 }
@@ -23,7 +24,8 @@ impl LzArgs {
             chunks: 0,
             max_context: 0,
             block_size: -1,
-            get_shuffle_terms: false,
+            emc_method: Default::default(),
+            get_emc_terms: false,
             alphabet: NO_ALPHABET,
             log_base: NO_ALPHABET,
         }
@@ -41,7 +43,8 @@ impl PartialEq for LzArgs {
         self.chunks == other.chunks
             && self.max_context == other.max_context
             && self.block_size == other.block_size
-            && self.get_shuffle_terms == other.get_shuffle_terms
+            && self.emc_method == other.emc_method
+            && self.get_emc_terms == other.get_emc_terms
             && self.alphabet == other.alphabet
     }
 }
@@ -56,14 +59,14 @@ pub struct Lz76Result {
 
 /// Effective measure complexity E, its range limit and fitted increments.
 #[derive(Clone, Debug)]
-pub struct LzShuffle {
+pub struct EmcResult {
     pub max_block_size: i32,
     pub emc_value: f64,
     pub multi_information: f64,
     pub summands: Vec<f64>,
 }
 
-impl LzShuffle {
+impl EmcResult {
     pub fn new(max_block_size: i32, emc_value: f64, multi_information: f64) -> Self {
         Self {
             max_block_size,
@@ -74,7 +77,7 @@ impl LzShuffle {
     }
 }
 
-impl Default for LzShuffle {
+impl Default for EmcResult {
     fn default() -> Self {
         Self::new(-1, 0.0, 0.0)
     }
@@ -95,8 +98,8 @@ pub struct LzExtra {
 pub struct LempelZiv {
     pub complexity: u32,
     pub entropy_density: f64,
-    pub random_shuffle_complexity: LzShuffle,
-    pub paired_shuffle_complexity: LzShuffle,
+    pub emc: EmcResult,
+    pub paired_shuffle_complexity: EmcResult,
     pub lz_normal_errors: f64,
     pub lz_poison_errors: f64,
     pub epsilon: f64,

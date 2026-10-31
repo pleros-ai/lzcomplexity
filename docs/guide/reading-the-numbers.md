@@ -44,6 +44,7 @@ For shorter inputs it is zero. The base $b$ defaults to observed alphabet size, 
 
 | Key | Definition |
 |---|---|
+| `method` | `"chao-shen"` (default) or `"shuffle"` |
 | `value` | E: the final level of the fitted nonnegative, nondecreasing range profile |
 | `summands` | Successive fitted increments; nonnegative and summing to `value` |
 | `max_block_size` | Maximum range included in the calculation, `M` |

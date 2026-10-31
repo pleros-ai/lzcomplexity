@@ -100,7 +100,8 @@ E, increments = lz.emc(
 )
 ```
 
-Unpack `(E, increments)`. `max_block_size` sets the maximum range.
+Unpack `(E, increments)`. Chao–Shen is the default; pass `method="shuffle"`
+for the earlier estimator. `max_block_size` sets the maximum range.
 
 </section>
 

@@ -50,3 +50,15 @@ walks through this convention with `"banana"`.
 Source builds use Cargo and maturin. The [installation guide](../guide/install.md)
 covers the required tools; [parallel execution](determinism.md) explains worker
 configuration for Python, Rust and the command line.
+
+## E estimator and result names
+
+E now defaults to Chao–Shen. To reproduce the earlier shuffle results, pass
+`method="shuffle"` to `emc()` or `lz76()`, or `--emc-method shuffle` in the CLI.
+Numerical results from the two estimators must be distinguished in saved analyses.
+The historical C++ backend is unchanged by this Rust-library update.
+
+The standalone now writes the neutral JSON key `emc`, replacing the historical
+`lz76RandomShuffleComplexity` key. Both CLI and Python full results include
+`emc.method`. Rust uses `LempelZiv.emc`, `EmcResult`, `get_emc_terms` and
+`emc::emc`; explicit helpers in `shuffle` continue to calculate shuffle results.

@@ -12,7 +12,7 @@
 // types. It is macro noise, not our code.
 #![allow(clippy::useless_conversion)]
 
-use pyo3::exceptions::PyTypeError;
+use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyBytes, PyDict, PyList};
 
@@ -59,7 +59,7 @@ fn build_args(
     alphabet: Option<u32>,
     log_base: Option<u32>,
     max_block_size: i32,
-    shuffle_terms: bool,
+    emc_terms: bool,
 ) -> core::lz76::LzArgs {
     let mut a = core::lz76::LzArgs::new();
     a.chunks = partitions;
@@ -68,8 +68,18 @@ fn build_args(
     a.alphabet = alphabet.unwrap_or(core::NO_ALPHABET);
     a.log_base = log_base.unwrap_or(core::NO_ALPHABET);
     a.block_size = max_block_size;
-    a.get_shuffle_terms = shuffle_terms;
+    a.get_emc_terms = emc_terms;
     a
+}
+
+fn parse_emc_method(method: &str) -> PyResult<core::EmcMethod> {
+    match method {
+        "chao-shen" => Ok(core::EmcMethod::ChaoShen),
+        "shuffle" => Ok(core::EmcMethod::Shuffle),
+        _ => Err(PyValueError::new_err(
+            "method must be 'chao-shen' or 'shuffle'",
+        )),
+    }
 }
 
 // ── Top-level functions ─────────────────────────────────────────────────────
@@ -194,7 +204,11 @@ fn h(
 ///     Logarithm base for normalization. ``None`` uses the observed input
 ///     alphabet size, floored at two, independently of ``alphabet``.
 /// max_block_size : int, default -1
-///     Maximum block range in bytes. Nonpositive values select it automatically.
+///     Maximum block range in bytes. Nonpositive values use the alphabet-aware
+///     ceiling and stop at the earliest raw ladder peak for Chao–Shen.
+/// method : str, keyword-only, default "chao-shen"
+///     "chao-shen" estimates block entropies from overlapping-window counts.
+///     "shuffle" selects the earlier deterministic random-shuffle estimator.
 /// jobs : int, default 0
 ///     Unused. Rayon manages native parallelism.
 ///
@@ -210,7 +224,7 @@ fn h(
 /// >>> import lzcomplexity as lz
 /// >>> value, summands = lz.emc("01001010101101010101110101010101010000100101011", log_base=2)
 #[pyfunction]
-#[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, max_block_size=-1, jobs=0))]
+#[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, max_block_size=-1, jobs=0, *, method="chao-shen"))]
 fn emc(
     seq: &Bound<'_, PyAny>,
     partitions: i32,
@@ -218,11 +232,13 @@ fn emc(
     log_base: Option<u32>,
     max_block_size: i32,
     jobs: u32,
+    method: &str,
 ) -> PyResult<PyObject> {
     let _ = jobs;
     let s = coerce_sequence(seq)?;
-    let args = build_args(partitions, alphabet, log_base, max_block_size, true);
-    let r = core::shuffle::lz76_random_shuffle_complexity(&s, &args);
+    let mut args = build_args(partitions, alphabet, log_base, max_block_size, true);
+    args.emc_method = parse_emc_method(method)?;
+    let r = core::emc::emc(&s, &args);
     Python::with_gil(|py| Ok((r.emc_value, r.summands).to_object(py)))
 }
 
@@ -245,6 +261,9 @@ fn emc(
 ///     two, independently of an explicit ``alphabet``.
 /// max_block_size : int, default -1
 ///     Maximum block range for E. Nonpositive values select it automatically.
+/// method : str, keyword-only, default "chao-shen"
+///     "chao-shen" estimates block entropies from overlapping-window counts.
+///     "shuffle" selects the earlier deterministic random-shuffle estimator.
 /// jobs : int, default 0
 ///     Unused. Rayon manages native parallelism.
 ///
@@ -257,7 +276,7 @@ fn emc(
 ///     - ``h`` (float): normalized entropy density.
 ///     - ``factors`` (list[int]): factor boundary indices.
 ///     - ``emc`` (dict): ``{"value", "summands", "max_block_size",
-///       "multi_information"}`` for E. The ``multi_information`` field is the
+///       "multi_information", "method"}`` for E. The ``multi_information`` field is the
 ///       raw first-range contrast before fitting.
 ///     - ``epsilon`` (float): finite-size diagnostic.
 ///     - ``factors_stddev`` (float): factor-dispersion diagnostic.
@@ -266,7 +285,7 @@ fn emc(
 ///     - ``extras`` (dict): ``{"rajski_distance", "redundancy",
 ///       "fh_uncertainty", "lh_uncertainty", "pearson_coefficient"}``.
 #[pyfunction]
-#[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, max_block_size=-1, jobs=0))]
+#[pyo3(signature = (seq, partitions=1, alphabet=None, log_base=None, max_block_size=-1, jobs=0, *, method="chao-shen"))]
 fn lz76(
     seq: &Bound<'_, PyAny>,
     partitions: i32,
@@ -274,20 +293,20 @@ fn lz76(
     log_base: Option<u32>,
     max_block_size: i32,
     jobs: u32,
+    method: &str,
 ) -> PyResult<PyObject> {
     let _ = jobs;
     let s = coerce_sequence(seq)?;
-    let args = build_args(partitions, alphabet, log_base, max_block_size, true);
+    let mut args = build_args(partitions, alphabet, log_base, max_block_size, true);
+    args.emc_method = parse_emc_method(method)?;
     let r = core::metrics::lz76(&s, &args);
     Python::with_gil(|py| {
         let emc = PyDict::new_bound(py);
-        emc.set_item("value", r.random_shuffle_complexity.emc_value)?;
-        emc.set_item("summands", r.random_shuffle_complexity.summands.clone())?;
-        emc.set_item("max_block_size", r.random_shuffle_complexity.max_block_size)?;
-        emc.set_item(
-            "multi_information",
-            r.random_shuffle_complexity.multi_information,
-        )?;
+        emc.set_item("method", args.emc_method.as_str())?;
+        emc.set_item("value", r.emc.emc_value)?;
+        emc.set_item("summands", r.emc.summands.clone())?;
+        emc.set_item("max_block_size", r.emc.max_block_size)?;
+        emc.set_item("multi_information", r.emc.multi_information)?;
 
         let extras = PyDict::new_bound(py);
         extras.set_item("rajski_distance", r.extras.lz_rajski_distance)?;

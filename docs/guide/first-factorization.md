@@ -52,7 +52,7 @@ result = lz.lz76(sequence, log_base=2, max_block_size=8)
 
 print(result["complexity"])       # 4
 print(result["h"])                # 0.021484375
-print(result["emc"]["value"])    # 3.2105712890625
+print(result["emc"]["value"])    # Chao–Shen estimate
 print(result["emc"]["max_block_size"])  # 8
 ```
 

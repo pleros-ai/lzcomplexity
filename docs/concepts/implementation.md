@@ -64,18 +64,39 @@ The extras split the sequence at `N // 2`, factorize both halves, and form ratio
 
 ## 6. Effective measure complexity E { #6-structural-complexity-e }
 
-E summarizes correlations across the examined ranges. Use `max_block_size` in
-Python, `block_size` in Rust, or `-e` in the CLI to choose the largest range
-in bytes. A nonpositive value selects it from the input length.
+The default is Chao–Shen. For each range `l`, count all `N-l+1` overlapping
+byte windows. For counts `n_i`, sample size `m`, and singleton count `f1`, use
+coverage `C = 1 - f1/m`, adjusted probabilities `p_i = C*n_i/m`, and
 
-The result contains E and the increments of its fitted range profile. The
-increments are nonnegative and sum to E. In `lz76()` results, these appear as
-`emc["value"]` and `emc["summands"]`; the Rust equivalents are `emc_value` and
-`summands`.
+```text
+H_CS(l) = -sum_i p_i * log_b(p_i) / (1 - (1-p_i)^m)
+raw(l) = H_CS(l) - l*h_LZ
+```
 
-Keep encoding, length, logarithm base and maximum range consistent across a
-comparison. Set `log_base=2` in Python or `-l 2` in the CLI for base-two units.
-The [E guide](emc.md) shows a complete example and explains the range profile.
+When every observed block is a singleton, coverage is zero and the calculation
+falls back to the empirical plug-in entropy. Empty histograms have entropy zero.
+Histogram counts are sorted before summing so hash iteration cannot change the result.
+
+Fit `raw` by nonnegative isotonic regression. E is the final fitted level;
+`summands` contains its nonnegative increments, which sum to E.
+`multi_information` retains `H_CS(1) - h_LZ` before fitting.
+
+Use `max_block_size` in Python, `block_size` in Rust, or `-e` in the CLI to
+choose the largest range in bytes. In automatic mode, the ceiling is the largest
+`l` satisfying `l * sigma^l <= N` (minimum one), where `sigma` is the observed
+alphabet size floored at two. Stop at the earliest maximum of the raw ladder
+before fitting. An explicit positive cap includes the whole requested ladder.
+Changing `log_base` changes units, while the automatic ceiling uses the alphabet.
+
+Select `method="shuffle"` in Python, `EmcMethod::Shuffle` in Rust, or
+`--emc-method shuffle` in the standalone for the earlier estimator. It draws
+deterministic block-swapped surrogates, factorizes each with LZ76, and fits
+`raw(l) = l * (h_LZ(surrogate_l) - h_LZ(original))`. Its automatic cutoff,
+RNG, normalization and projection retain the earlier behavior.
+
+Both interfaces return the selected result under `emc`. The CLI JSON and Python
+full result include `emc.method`. Keep estimator, encoding, length, logarithm
+base and range consistent across comparisons. See the [E guide](emc.md).
 
 ## Work reuse and concurrency
 
@@ -87,7 +108,7 @@ Python's `jobs` and `partitions` arguments do not control execution. Configure R
 
 ## Memory and representation limits
 
-Suffix, LCP, LPF and factor-boundary arrays use memory proportional to input size. Each concurrent range task also owns sequence and factorization buffers. More concurrent tasks can increase peak memory.
+Suffix, LCP, LPF and factor-boundary arrays use memory proportional to input size. Each Chao–Shen range task owns a window histogram; shuffle tasks own sequence and factorization buffers. More concurrent tasks can increase peak memory.
 
 Indices and several counts use 32-bit integer types, while host lengths use `usize`; some internal paths also use signed 32-bit count storage. For large workloads, account for these index limits as well as available RAM, and measure peak memory on representative inputs.
 
@@ -99,7 +120,7 @@ Indices and several counts use 32-bit integer types, while host lengths use `usi
 | Suffix array and Kasai LCP | [`suffix_array.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/suffix_array.rs) |
 | Longest previous factors | [`lpf.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/lpf.rs) |
 | Factor counts, boundaries, normalization | [`lz76.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/lz76.rs) |
-| E calculation | [`shuffle.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/shuffle.rs) |
+| E calculation | [`emc.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/emc.rs), [`block_entropy.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/block_entropy.rs) |
 | Distances, extras and complete driver | [`metrics.rs`](https://github.com/pleros-ai/lzcomplexity/blob/rust-backend/crates/lzcomplexity-core/src/metrics.rs) |
 
 For running-time and benchmark reporting, continue to [Performance](../project/performance.md).

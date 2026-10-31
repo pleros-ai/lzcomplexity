@@ -1,8 +1,24 @@
 # Changelog
 
-The historical `emc` entries below describe a shuffle-based magnitude
-qualitatively similar to EMC, not exact EMC or excess entropy. See the
-[current method description](docs/shuffle-measure.md) for its definition.
+## Unreleased
+
+- Restore Chao–Shen as the default Effective Measure Complexity estimator,
+  using overlapping block counts and the July 28 projected ladder calculation.
+- Keep the earlier deterministic shuffle estimator selectable with CLI
+  `--emc-method shuffle` and Python `emc(..., method="shuffle")` /
+  `lz76(..., method="shuffle")`.
+- Use neutral E names: CLI JSON `emc`, Rust `LempelZiv.emc`, `EmcResult`,
+  `get_emc_terms` and `emc::emc`. JSON/Python full results record `emc.method`.
+  Consumers of the earlier CLI JSON or Rust names must update their field access.
+- Rename the CLI range option to `--emc-opt`, retaining `--rsemc-opt` as
+  an accepted alias and leaving `-e` unchanged.
+- Match the browser playground to Chao–Shen and clarify range selection.
+  The automatic ceiling follows the observed alphabet independently of log units.
+
+The released historical `emc` entries below describe the earlier shuffle
+estimator. The Chao–Shen experiments on `fix/emc-block-entropy-estimator` were
+reverted before integration; this change restores that estimator locally.
+See the [current calculation](docs/concepts/implementation.md#6-structural-complexity-e).
 
 ## [2.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v1.0.2...v2.0.0) (2026-07-26)
 

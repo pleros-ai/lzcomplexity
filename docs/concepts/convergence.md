@@ -16,7 +16,7 @@ The following boundary cases are useful when inspecting short inputs:
 
 - Empty and constant inputs have factor count one.
 - `h` is zero for lengths zero and one.
-- E is zero for inputs of at most ten bytes, which the range sampler leaves unchanged.
+- The shuffle estimator returns zero for inputs of at most ten bytes. Chao–Shen can return nonzero E for short inputs, but small samples still need cautious interpretation.
 - A final copied phrase can have an end boundary beyond the input and be excluded from the completed-factor count.
 
 Use short strings to follow the calculation. Use longer samples and comparisons across lengths to study the source.

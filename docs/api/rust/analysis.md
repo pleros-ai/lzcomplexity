@@ -94,20 +94,52 @@ let count = lz76::lz76_factorization(&seq, &args);
 assert_eq!(lz76::entropy_density_from(count, &seq, &args), 0.75);
 ```
 
-## Effective measure complexity E
+## Effective Measure Complexity E
+
+### `emc` { #emc }
+
+```rust
+emc::emc(seq: &Sequence, args: &LzArgs) -> EmcResult
+emc::emc_with(seq: &Sequence, args: &LzArgs, complexity: i32) -> EmcResult
+```
+
+Return Effective Measure Complexity E. `emc_with` reuses an existing original
+LZ76 factor count. The default `args.emc_method = EmcMethod::ChaoShen` uses
+coverage-adjusted block entropies from overlapping windows. Set
+`EmcMethod::Shuffle` to reproduce the earlier estimator. Both return
+nonnegative fitted increments when `args.get_emc_terms` is true.
+
+Automatic Chao–Shen selection uses an alphabet-aware ceiling and stops at the
+earliest raw ladder maximum. A positive `block_size` keeps the entire requested
+ladder. See the [calculation](../../concepts/implementation.md#6-structural-complexity-e).
+
+```rust
+use lzcomplexity_core::{emc, EmcMethod, LzArgs, Sequence};
+let seq = Sequence::from_str(&"00010111".repeat(256));
+let mut args = LzArgs::new();
+args.block_size = 8;
+args.get_emc_terms = true;
+let default = emc::emc(&seq, &args);
+args.emc_method = EmcMethod::Shuffle;
+let legacy = emc::emc(&seq, &args);
+assert_eq!(default.summands.len(), 8);
+assert_eq!(legacy.summands.len(), 8);
+```
 
 ### `lz76_random_shuffle_complexity` { #lz76_random_shuffle_complexity }
 
 ```text
-shuffle::lz76_random_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> LzShuffle
+shuffle::lz76_random_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> EmcResult
 ```
 
-Return effective measure complexity E and the range limit used for the analysis.
+Return the explicit random-shuffle estimate and its range limit. This helper
+always uses shuffle, independently of `args.emc_method`. Use `emc::emc` for
+the selected estimator.
 E is sensitive to correlations across different ranges of the sequence.
 `args.block_size > 0` sets the maximum range; a nonpositive value selects it
 automatically. `args.log_base` controls units as for h.
 
-Set `args.get_shuffle_terms = true` to populate `summands` with the nonnegative
+Set `args.get_emc_terms = true` to populate `summands` with the nonnegative
 increments of the fitted range profile. These increments sum to `emc_value`.
 Otherwise, `summands` is empty while E is still computed. Identical bytes and
 settings give the same result.
@@ -119,7 +151,7 @@ let seq = Sequence::from_bytes(b"00010111".repeat(256));
 let mut args = LzArgs::default();
 args.log_base = 2;
 args.block_size = 8;
-args.get_shuffle_terms = true;
+args.get_emc_terms = true;
 let result = shuffle::lz76_random_shuffle_complexity(&seq, &args);
 assert_eq!(result.max_block_size, 8);
 assert_eq!(result.summands.len(), 8);
@@ -137,7 +169,7 @@ and choosing comparable ranges.
 ```text
 shuffle::lz76_random_shuffle_complexity_with(
     seq: &Sequence, args: &LzArgs, complexity: i32
-) -> LzShuffle
+) -> EmcResult
 ```
 
 Calculate the same E result using an existing original-sequence factor count.
@@ -148,7 +180,7 @@ to `i32` only when the value fits.
 ### `lz76_paired_shuffle_complexity` { #lz76_paired_shuffle_complexity }
 
 ```text
-shuffle::lz76_paired_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> LzShuffle
+shuffle::lz76_paired_shuffle_complexity(seq: &Sequence, args: &LzArgs) -> EmcResult
 ```
 
 Split `seq` at `N / 2`, pair corresponding bytes of the two halves into a derived
@@ -248,9 +280,9 @@ diagnostics and the five extra count ratios. The original factorization is
 reused across the calculations. Use it when you need several of these results
 for the same sequence.
 
-`random_shuffle_complexity` contains E. `paired_shuffle_complexity` remains at
+`emc` contains E. `paired_shuffle_complexity` remains at
 its default value; call the paired function separately if needed. Profile
-increments are included only when `args.get_shuffle_terms` is true.
+increments are included only when `args.get_emc_terms` is true.
 [Result types](types.md#lempelziv) defines every field.
 
 ```rust

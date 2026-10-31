@@ -47,6 +47,22 @@ For two sequences, `lz76Distance.InformationDistance` contains one value.
 For `n > 1` sequences it has `n - 1` entries; a zero- or one-sequence input
 produces `[0.0]`. Use [`lzdistance`](lzdistance.md) for all-pairs comparisons.
 
+## Choose the estimator
+
+Chao–Shen is the default. Pass `--emc-method shuffle` for the earlier
+random-shuffle estimator, or `--emc-method chao-shen` explicitly for the default.
+This choice is independent of `-e`, which controls the range and profile output.
+
+```sh
+lzcomplexity sequence.txt -e 8:f
+lzcomplexity sequence.txt -e 8:f --emc-method shuffle
+```
+
+The range option is also named `--emc-opt`; the historical `--rsemc-opt`
+spelling remains an accepted alias.
+
+JSON uses the neutral key `emc` for both methods and records `emc.method`.
+
 ## Choose E's range { #shuffle-options-e }
 
 `-e 16` measures E up to range 16; `-e 16:f` also includes the profile increments
@@ -93,10 +109,11 @@ and the `sequences` array. Each array entry contains:
 | `alphabet`, `alphabet_size` | Distinct byte values and observed alphabet size. |
 | `lz76Complexity` | LZ76 factor count. |
 | `lz76EntropyDensity` | h in the selected logarithm units. |
-| `lz76RandomShuffleComplexity.value` | E. |
-| `lz76RandomShuffleComplexity.max_block_size` | Maximum range used for E. |
-| `lz76RandomShuffleComplexity.summands` | Profile increments, present when requested with `:f`. |
-| `lz76RandomShuffleComplexity.multi_information` | First-range contrast. |
+| `emc.method` | `"chao-shen"` or `"shuffle"`. |
+| `emc.value` | E. |
+| `emc.max_block_size` | Maximum range used for E. |
+| `emc.summands` | Profile increments, present when requested with `:f`. |
+| `emc.multi_information` | First-range contrast. |
 
 With `-n`, the E object remains present with `max_block_size = -1` and zero
 values: E was not computed. A computed result has a positive range. The
@@ -111,7 +128,8 @@ signed-byte values. Format labels follow the [reader conventions](formats.md).
 | `-m`, `--multi-line` | off | Process every sequence. |
 | `-l`, `--log-base N` | alphabet size | Set logarithm units for h and E. |
 | `-a`, `--alphabet N` | observed size | Set the alphabet parameter and, unless `-l` is supplied, the log base. |
-| `-e`, `--rsemc-opt [OPTS]` | automatic range | Configure E as described above. |
+| `--emc-method METHOD` | `chao-shen` | Choose `chao-shen` or `shuffle`. |
+| `-e`, `--emc-opt [OPTS]` | automatic range | Configure E as described above. |
 | `-n`, `--entropy-density` | off | Skip E; retain count and h. |
 | `-d`, `--dlz` | off | Add consecutive distances; implies `-m`. |
 | `-f`, `--factors PATH` | none | Save a separate boundary file. |

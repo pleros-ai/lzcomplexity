@@ -107,7 +107,7 @@
           get("lz-demo-range").textContent = structure.maxBlockSize;
           renderCurve(structure.fitted);
           let description = "E across ranges. Try sequences of the same length to compare their organization.";
-          if (result.bytes.length <= 10) description = "This short sequence has a flat E profile. Try Periodic to explore a longer example.";
+          if (result.bytes.length <= 10) description = "This is a short sample. Try Periodic to explore a longer example.";
           else if (result.bytes.every(byte => byte === result.bytes[0])) description = "A constant sequence has E = 0. Try Periodic to see a nonzero range profile.";
           get("lz-e-description").textContent = description;
         }
