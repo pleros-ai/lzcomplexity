@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## [3.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v2.0.0...v3.0.0) (2026-10-31)
+
+### Estimator and API changes
 
 - Restore Chao–Shen as the default Effective Measure Complexity estimator,
   using overlapping block counts and the July 28 projected ladder calculation.
@@ -15,12 +17,10 @@
 - Match the browser playground to Chao–Shen and clarify range selection.
   The automatic ceiling follows the observed alphabet independently of log units.
 
-The released historical `emc` entries below describe the earlier shuffle
-estimator. The Chao–Shen experiments on `fix/emc-block-entropy-estimator` were
-reverted before integration; this change restores that estimator locally.
+Versions through 2.0.0 used the earlier shuffle estimator. The Chao–Shen
+experiments on `fix/emc-block-entropy-estimator` were
+reverted before integration; this release restores that estimator.
 See the [current calculation](docs/concepts/implementation.md#6-structural-complexity-e).
-
-## [3.0.0](https://github.com/pleros-ai/lzcomplexity/compare/v2.0.0...v3.0.0) (2026-10-31)
 
 
 ### ⚠ BREAKING CHANGES
